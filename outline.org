@@ -1,0 +1,7 @@
+## ARAST OUTLINE **
+
+* Client
+
+* Queueing System
+
+
