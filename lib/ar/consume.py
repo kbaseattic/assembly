@@ -28,7 +28,4 @@ def fetch_job(queue):
 def callback(ch, method, properties, body):
     print " [*] %r:%r" % (method.routing_key, body)
 
-def main():
-    fetch_job(config.JOB_MEDIUM)
 
-main()
