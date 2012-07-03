@@ -1,6 +1,10 @@
 """
 Arast Daemon
 
+The Arast daemon runs on compute nodes.
+Functionality:
+ - Monitors job queue for job
+
 """
 
 #! /usr/bin/python

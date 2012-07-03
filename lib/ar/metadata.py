@@ -8,11 +8,13 @@ def get_jobs():
     return jobs
 
 def insert_job(data):
-    job_id = get_jobs().insert(data)
+    jobs = get_jobs()
+    job_id = jobs.insert(data)
+
     return job_id
 
 def update_job(job_id, field, value):
     jobs = get_jobs()
-    job = jobs.find_one('_id')
-    job[field] = value
-    jobs.save(job)
+    jobs.update({'_id' : job_id},
+                {'$set' : {field : value}})
+    print jobs.find_one({'_id' : job_id})
