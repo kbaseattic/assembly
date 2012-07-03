@@ -5,10 +5,9 @@ Job router.  Recieves job requests.  Manages data transfer, job queuing.
 import pika
 import sys
 import json
-import pymongo
 from bson import json_util
 import config
-
+import metadata
 
 
 def send_message(body, routingKey):
@@ -43,19 +42,8 @@ def get_upload_url(body):
 def route_job(body):
     client_params = json.loads(body) #dict of params
     routing_key = determine_routing_key (1, body)
-    write_metadata(client_params)
+    print metadata.insert_job(client_params)
     send_message(body, routing_key)
-
-def write_metadata(data):
-    """
-    Insert Job metadata into database.  Returns Job id
-
-    """
-    connection = pymongo.Connection(config.MONGO_HOST, config.MONGO_PORT)
-    db = connection[config.DB_NAME]
-    jobs = db[config.COLLECTION]
-    return jobs.insert(document)
-
 
 
 

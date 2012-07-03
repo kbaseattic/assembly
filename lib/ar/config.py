@@ -14,6 +14,27 @@ DB_NAME = 'arast'
 COLLECTION = 'jobs'
 
 
+## Available Assemblers ##
+assemblers = [
+{
+        'name' : 'Kiki',
+        'aliases' : ['kiki', 'ki'],
+        'command' : 'kiki'
+},
+{
+        'name' : 'Velvet',
+        'aliases' : ['velvet',],
+        'command' : 'velvet'
+},
+{
+        'name' : 'SOAPdenovo',
+        'aliases' : ['soap'],
+        'command' : 'soapdenovo'
+}
+]
+
+
+
 """
 Example routing keys:
   medium.parallel

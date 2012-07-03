@@ -1,7 +1,84 @@
-## ARAST OUTLINE **
+## ARAST OUTLINE ##
+
+
+## System Modules ##
 
 * Client
+** TODO Remove dependency on RabbitMQ
+** arast-run
+** arast-stat
 
-* Queueing System
+* Decision Engine
+Based on QC preprocessing, implicit and explicit user parameters, routes jobs to specific work queues
+** TODO Decide what assemblers
+** STARTED Write metadata
+** TODO Get storage location
+
+* Queueing Manager
+Manages variable types of queues via RabbitMQ
+** Recieve RPC call and add job to queue
+
+* TODO Metadata
+A MongoDB server to store all job metadata
+* API
+** connect()
+** update_record(id, field, value)
+
+* TODO Volume Manager
+** Ceph?
+
+** Multiple volumes
+
+** Dirty Volume Manager
+*** VM image
+*** 
 
 
+* TODO Compute Node Monitor
+Monitors compute instances, building and tearing down VMs as needed
+
+* arastd
+Runs on compute instances.  Monitors job queues, runs pending, configuration-specific, jobs.
+** Consume pending job
+** TODO Run assemblies
+** Update metadata for progress
+
+## Auxillary ##
+* TODO Start-up script
+** DONE Init MongoDB
+** TODO Init RabbitMQ
+
+
+* TODO Create OpenStack VM Images
+** TODO Control Server
+** TODO Compute Nodes
+
+## Example workflow ##
+* Client: 'arast.py -a kiki velvet -d /home/cbun/test_data/ -l username
+-> Authentication
+* ???: Send back upload url / initiate transfer
+* ???: Update metadata{'status':'transferring'}
+-> Transfer complete
+* router: post to queue
+* ???: Update metadata{'status':'queued', 'data':'$DATA'}
+* arastd: consume job
+** start QC
+* arastd: Update metadata{'status':'QC'}
+-> Finished QC
+* arastd: Update metadata{'status':'QC done','qc_data':'$QC_FILE'}
+* arastd: Start assemblies
+* arastd: Update metadata{'status':'Assembly...'}
+
+
+
+## Database Collections ##
+* Jobs
+** date_submitted
+** date_completed
+** id
+** status
+** data
+** qc_data
+
+* Quality
+** binary/file
