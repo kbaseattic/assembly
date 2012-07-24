@@ -1,7 +1,7 @@
 """
 Arast Daemon
 
-The Arast daemon runs on compute nodes.
+The Arast daemon runs on compute nodes/instances.
 Functionality:
  - Monitors job queue for job
 

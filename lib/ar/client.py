@@ -1,5 +1,5 @@
 """
-Client to send RPC calls to RabbitMQ
+Client to initiate an Assembly RAST job submission.
 """
 
 

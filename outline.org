@@ -40,6 +40,7 @@ Monitors compute instances, building and tearing down VMs as needed
 * arastd
 Runs on compute instances.  Monitors job queues, runs pending, configuration-specific, jobs.
 ** Consume pending job
+ * TODO Keep a assembler queue (python module, or rabbitmq?)
 ** TODO Run assemblies
 ** Update metadata for progress
 

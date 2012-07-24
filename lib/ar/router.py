@@ -11,6 +11,8 @@ import metadata
 
 
 def send_message(body, routingKey):
+    """ Place the job request on the correct job queue """
+
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host = config.RABBITMQ_HOST))
     channel = connection.channel()
@@ -25,6 +27,8 @@ def send_message(body, routingKey):
     connection.close()
 
 def get_data_size(files):
+    #TODO
+    """ Return the size in MB of the total data """
     return 2
 
 def transfer_data(files):
