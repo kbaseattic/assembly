@@ -2,7 +2,7 @@
 Settings and constants
 """
 
-RABBITMQ_HOST = "localhost"
+RABBITMQ_HOST = '140.221.84.108'
 DEFAULT_UPLOAD='null_upload_url'
 DEFAULT_ROUTING_KEY = "medium.simple"
 JOB_MEDIUM = "medium.simple"
@@ -13,6 +13,11 @@ MONGO_PORT = 27017
 DB_NAME = 'arast'
 COLLECTION = 'jobs'
 
+
+## Shock ##
+ARASTURL = '140.221.84.110:8000'
+ARASTUSER = 'cbun'
+ARASTPASSWORD = '1234'
 
 ## Available Assemblers ##
 assemblers = [
