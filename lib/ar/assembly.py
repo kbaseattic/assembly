@@ -95,7 +95,15 @@ def run_velvet(datapath):
     print args
     p = subprocess.Popen(args)
     p.wait()
-    tar(datapath, velvet_data, 'velvet_data.tar.gz')
+
+    args_g = [velvet_cfg['bin_g'], velvet_data]
+
+    print args_g
+    g = subprocess.Popen(args_g)
+    g.wait()
+    
+
+#    tar(datapath, velvet_data, 'velvet_data.tar.gz')
 
 def run_soapdenovo():
     return 2
