@@ -71,10 +71,28 @@ def run_velvet(datapath):
             file_type]
     raw_path = datapath + '/raw/'
     paired_reads = get_paired(get_fasta(raw_path))
-    print paired_reads
-    for file in os.listdir(raw_path):
-        readfile = raw_path + file
-        args.append(readfile)
+
+    # Found paired
+    if len(paired_reads) > 0:
+        print "Found paired ends"
+        print paired_reads
+        pair_str = '-shortPaired'
+        args.append(pair_str)
+        args.append(str(raw_path + paired_reads[0][0]))
+        args.append(str(raw_path + paired_reads[0][1]))
+        for i in range(1,len(paired_reads)):
+            flag = pair_str + str(i+1)
+            args.append(flag)
+            args.append(str(raw_path + paired_reads[i][0]))
+            args.append(str(raw_path + paired_reads[i][1]))
+
+    else:
+        for file in os.listdir(raw_path):
+            readfile = raw_path + file
+            args.append(readfile)
+    
+    print ("Running subprocess")
+    print args
     p = subprocess.Popen(args)
     p.wait()
     tar(datapath, velvet_data, 'velvet_data.tar.gz')
