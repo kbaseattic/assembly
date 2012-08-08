@@ -1,5 +1,6 @@
 import config
 import pymongo
+import uuid
 
 def get_jobs():
     connection = pymongo.Connection(config.MONGO_HOST, config.MONGO_PORT)
@@ -9,8 +10,9 @@ def get_jobs():
 
 def insert_job(data):
     jobs = get_jobs()
+    my_id = str(uuid.uuid4())
+    data['_id'] = my_id
     job_id = jobs.insert(data)
-
     return job_id
 
 def update_job(job_id, field, value):

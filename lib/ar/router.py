@@ -45,10 +45,16 @@ def get_upload_url(body):
 
 def route_job(body):
     client_params = json.loads(body) #dict of params
+    
     routing_key = determine_routing_key (1, body)
     job_id =  metadata.insert_job(client_params)
     metadata.update_job(job_id, 'status', 'queued')
-    send_message(body, routing_key)
+    print client_params
+    p = dict(client_params)
+    msg = json.dumps(p)
+
+    send_message(msg, routing_key)
+#    send_message(body, routing_key)
 
 
 

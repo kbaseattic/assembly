@@ -17,13 +17,8 @@ from progressbar import Counter, ProgressBar, Timer
 import client_config
 
 # get env vars
-#ARASTURL = os.getenv("ARASTURL")
-#ARASTUSER = os.getenv("ARASTUSER")
-#ARASTPASSWORD = os.getenv("ARASTPASSWORD")
 ARASTURL = client_config.ARASTURL
-print ARASTURL
 ARASTUSER = client_config.ARASTUSER
-print ARASTUSER
 ARASTPASSWORD = client_config.ARASTPASSWORD
 
 
@@ -61,7 +56,20 @@ p_run.add_argument("-s", "--size", action="store", dest="size",
 p_run.add_argument("-d", "--directory", action="store",
                   dest="directory",
                   help="specify input directory")
+p_run.add_argument("-c", "--config", action="store",
+                  dest="config",
+                  help="specify parameter configuration file")
+p_run.add_argument("-m", "--message", action="store",
+                  dest="msg",
+                  help="specify a description or message to attach to job")
+p_run.add_argument("-p", "--params", action="store",
+                  dest="params", nargs='*',
+                  help="specify global assembly parameters")
 
+
+# filetype, special flags, config file, -m 'description'
+# global, -k=31, -cov
+# velvet
 
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
@@ -71,7 +79,6 @@ def post(url, files):
 	global ARASTUSER, ARASTPASSWORD
 	r = None
 	if ARASTUSER and ARASTPASSWORD:
-            print "Uploading"
             r = requests.post(url, auth=(ARASTUSER, ARASTPASSWORD), files=files)
 	else:
             r = requests.post(url, files=files)
@@ -111,6 +118,25 @@ def printNodeTable(n):
 		t.add_row(["",k,val])		
 	print t
 
+# upload all files in list, return list of ids
+def upload(url, files):
+    ids = []
+    for f in files:
+        files = {}
+        print "Uploading: %s" % f
+        files["file"] = (os.path.basename(f), open(f, 'rb'))
+        res = post(url, files)
+        ids.append(res['D']['id'])
+        
+        #Error check
+        if res["E"] is None:
+        # Prettytable 0.6 breaks this
+                    #printNodeTable(res["D"])
+            print "File(s) uploaded"
+        else:
+            print "shock: err from server: %s" % res["E"][0]
+    return ids
+
 
 def main():
 	global ARASTURL, ARASTUSER, ARASTPASSWORD
@@ -132,33 +158,30 @@ def main():
 		sys.exit()
 	url = "http://%s" % (ARASTURL)
 
-        # Upload file to Shock
-        res = {}
+        # Upload file(s) to Shock
+        res_ids = []
 	if args.command == "run":
-            url += "/node"
-            files = {}
+            if args.directory or args.filename:
+                url += "/node"
             if args.filename:
-                print args.filename
-                files["file"] = (os.path.basename(args.filename[0]), open(args.filename[0], 'rb'))
-		res = post(url, files)
-		if res["E"] is None:
-                    # Prettytable 0.6 breaks this
-                    #printNodeTable(res["D"])
-                    print "File(s) uploaded"
-		else:
-                    print "shock: err from server: %s" % res["E"][0]
+                res_ids = upload(url, args.filename)
+            elif args.directory:
+                ls_files = os.listdir(args.directory)
+                fullpaths = [str(args.directory + file) for file in ls_files]
+                res_ids = upload(url, fullpaths)
+                options['filename'] = ls_files
 
         # Send message to RPC Server
         options['ARASTUSER'] = ARASTUSER
-        options['id'] = res["D"]["id"]
+        options['ids'] = res_ids
         del options['ARASTPASSWORD']
         del options['ARASTURL']
         print options
         rpc_body = json.dumps(options, sort_keys=True)
         arast_rpc = RpcClient()
         print " [x] Sending message: %r" % (rpc_body)
-        #response = arast_rpc.call(rpc_body)
-        #print " [.] Response: %r" % (response)
+        response = arast_rpc.call(rpc_body)
+        print " [.] Response: %r" % (response)
 
 ## Send RPC call ##
 class RpcClient:
