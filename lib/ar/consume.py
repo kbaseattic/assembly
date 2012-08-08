@@ -21,19 +21,29 @@ def compute(body):
     params = json.loads(body)
 
     # Download data
-    url = "http://%s" % (ARASTURL)
-    url += "/node/%s" % (params['id'])
-    url += "?download" 
-    r = get(url)
+    files = params['filename']
+    ids = params['ids']
+    job_id = params['_id']
+
     filename = 'data/'
-    filename += params['id']
+    filename += job_id
     datapath = filename
     filename += "/raw/"
     os.makedirs(filename)
-    filename += params['filename'][0]
-    with open(filename, "wb") as code:
-        code.write(r.content)
 
+    url = "http://%s" % (ARASTURL)
+    for i in range(len(files)):
+        file = files[i]
+        id = ids[i]
+        temp_url = url
+        temp_url += "/node/%s" % (id)
+        temp_url += "?download" 
+        r = get(temp_url)
+        cur_file = filename
+        cur_file += file
+        with open(cur_file, "wb") as code:
+            code.write(r.content)
+    print "Job %r downloaded" % (job_id)
     # Run assemblies
     print params['assemblers']
     for a in params['assemblers']:
