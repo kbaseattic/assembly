@@ -165,6 +165,9 @@ def main():
                 url += "/node"
             if args.filename:
                 res_ids = upload(url, args.filename)
+                base_files = [os.path.basename(f) for f in args.filename]
+                del options['filename']
+                options['filename'] = base_files
             elif args.directory:
                 ls_files = os.listdir(args.directory)
                 fullpaths = [str(args.directory + file) for file in ls_files]
