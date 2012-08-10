@@ -11,10 +11,7 @@ import os
 import config
 import assembly as asm
 
-# Set up environment
-ARASTURL = config.ARASTURL #Shock
-ARASTUSER = config.ARASTUSER
-ARASTPASSWORD = config.ARASTPASSWORD
+from ConfigParser import SafeConfigParser
 
 def compute(body):
     print "Computing..."
@@ -25,7 +22,7 @@ def compute(body):
     ids = params['ids']
     job_id = params['_id']
 
-    filename = 'data/'
+    filename = '/mnt/data/'
     filename += job_id
     datapath = filename
     filename += "/raw/"
@@ -47,7 +44,7 @@ def compute(body):
     # Run assemblies
     print params['assemblers']
     for a in params['assemblers']:
-        asm.run(a, datapath)
+        asm.run(a, datapath, job_id)
 
 def get(url):     
     global ARASTUSER, ARASTPASSWORD
@@ -61,7 +58,7 @@ def get(url):
 
 def fetch_job(queue):
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host = config.RABBITMQ_HOST))
+            host = parser.get('rabbitmq','host')))
     channel = connection.channel()
 
     result = channel.queue_declare(queue=queue,
@@ -85,6 +82,17 @@ def callback(ch, method, properties, body):
 # For now, use this instead of daemon
 def main():
     print "consuming"
-    fetch_job(config.JOB_MEDIUM)
+    fetch_job(parser.get('rabbitmq','job.medium'))
+
+
+parser = SafeConfigParser()
+parser.read('arast.conf')
+
+# Set up environment
+ARASTURL = parser.get('shock','host')
+
+# TODO remove default user
+ARASTUSER = config.ARASTUSER
+ARASTPASSWORD = config.ARASTPASSWORD
 
 main()

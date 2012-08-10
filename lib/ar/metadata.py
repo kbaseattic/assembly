@@ -16,6 +16,8 @@ def insert_job(data):
     return job_id
 
 def update_job(job_id, field, value):
+    print type(job_id)
+    print job_id
     jobs = get_jobs()
     jobs.update({'_id' : job_id},
                 {'$set' : {field : value}})

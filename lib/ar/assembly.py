@@ -1,51 +1,40 @@
+#! /usr/bin/env python
+
+"""Assembly execution drivers.
+
+This module provides the default parameters and handling of
+assembler-specific configurations.
+
+Assembler defaults are set in the 'arast.conf' file
+
 """
-Assembly execution library
-"""
+
+import metadata
 import os
+import re
 import subprocess
 import tarfile
-import re
 
-## Available Assemblers ##
-assemblers = [
-{
-        'name' : 'Kiki',
-        'aliases' : ['kiki', 'ki'],
-        'command' : 'kiki'
-},
-{
-        'name' : 'Velvet',
-        'aliases' : ['velvet',],
-        'command' : 'velvet'
-},
-{
-        'name' : 'SOAPdenovo',
-        'aliases' : ['soap'],
-        'command' : 'soapdenovo'
-}
-]
+from ConfigParser import SafeConfigParser
 
-velvet_cfg = {
-    'bin_h' : '/usr/bin/velveth',
-    'bin_g' : '/usr/bin/velvetg',
-    'output_dir' : 'auto',
-    'hash_length' : '29',
-    'file_type' : '-fasta'
-}
-
+def get_default(key):
+    """Get assemblers default value from config file."""
+    return parser.get('assemblers', key)
 
 def is_available(assembler):
     """ Check if ASSEMBLER is a valid/available assembler
     """
     return True
 
-def run(assembler, datapath):
+def run(assembler, datapath, job_id):
+    metadata.update_job(job_id, 'status', 'running')
     if is_available(assembler):
         if assembler == 'kiki':
             print "Starting kiki"
             run_kiki(datapath)
         elif assembler == 'velvet':
             run_velvet(datapath)
+    metadata.update_job(job_id, 'status', 'complete')
 
 def run_kiki():
 
@@ -59,9 +48,12 @@ def run_velvet(datapath):
     os.makedirs(velvet_data)
 
     # Set up parameters
-    velveth = velvet_cfg['bin_h']
-    hash = velvet_cfg['hash_length']
-    file_type = velvet_cfg['file_type']
+    velveth = basepath + get_default('velvet.path')
+    velvetg = velveth
+    velveth += get_default('velvet.exec_h')
+    velvetg += get_default('velvet.exec_g')
+    hash = get_default('velvet.hash_length')
+    file_type = get_default('velvet.file_type')
 
     # Run velvet
     print "Starting velvet"
@@ -96,12 +88,11 @@ def run_velvet(datapath):
     p = subprocess.Popen(args)
     p.wait()
 
-    args_g = [velvet_cfg['bin_g'], velvet_data]
+    args_g = [velvetg, velvet_data]
 
     print args_g
     g = subprocess.Popen(args_g)
     g.wait()
-    
 
 #    tar(datapath, velvet_data, 'velvet_data.tar.gz')
 
@@ -148,3 +139,7 @@ def get_fasta(directory):
     fasta_files = [file for file in files if re.search(r'.fa$|.fasta$', file) is not None]
     return fasta_files
     
+
+parser = SafeConfigParser()
+parser.read('arast.conf')
+basepath = get_default('basepath')
