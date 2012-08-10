@@ -5,15 +5,15 @@ import router
 
 def on_request(ch, method, props, body):
     print " [.] Incoming request:  %r" % (body)
-    url = router.get_upload_url(body)
+    #url = router.get_upload_url(body)
+
+    url = str(router.route_job(body))
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
                      properties=pika.BasicProperties(
             correlation_id=props.correlation_id),
                      body=url)
     ch.basic_ack(delivery_tag=method.delivery_tag)
-
-    router.route_job(body)
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
         host=config.RABBITMQ_HOST))

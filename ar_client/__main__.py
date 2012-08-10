@@ -175,16 +175,26 @@ def main():
                 options['filename'] = ls_files
 
         # Send message to RPC Server
-        options['ARASTUSER'] = ARASTUSER
-        options['ids'] = res_ids
-        del options['ARASTPASSWORD']
-        del options['ARASTURL']
-        print options
-        rpc_body = json.dumps(options, sort_keys=True)
-        arast_rpc = RpcClient()
-        print " [x] Sending message: %r" % (rpc_body)
-        response = arast_rpc.call(rpc_body)
-        print " [.] Response: %r" % (response)
+            options['ARASTUSER'] = ARASTUSER
+            options['ids'] = res_ids
+            del options['ARASTPASSWORD']
+            del options['ARASTURL']
+            print options
+            rpc_body = json.dumps(options, sort_keys=True)
+            arast_rpc = RpcClient()
+            print " [x] Sending message: %r" % (rpc_body)
+            response = arast_rpc.call(rpc_body)
+            print " [.] Response: %r" % (response)
+
+        # Stat
+        if args.command == 'stat':
+            options['ARASTUSER'] = ARASTUSER
+            rpc_body = json.dumps(options, sort_keys=True)
+            arast_rpc = RpcClient()
+            print " [x] Sending message: %r" % (rpc_body)
+            response = arast_rpc.call(rpc_body)
+            print " [.] Response: %s" % (response)
+
 
 ## Send RPC call ##
 class RpcClient:
