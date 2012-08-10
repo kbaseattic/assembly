@@ -13,6 +13,7 @@ import requests
 import prettytable as pt
 import uuid
 from progressbar import Counter, ProgressBar, Timer
+from ConfigParser import SafeConfigParser
 
 import client_config
 
@@ -146,8 +147,6 @@ def main():
         options = vars(args)
 
 	# overwrite env vars in args
-	if args.ARASTURL:
-		ARASTURL = args.ARASTURL
 	if args.ARASTUSER:
 		ARASTUSER = args.ARASTUSER				
 	if args.ARASTPASSWORD:
@@ -156,7 +155,12 @@ def main():
 		print parser.print_usage()
 		print "arast: err: ARASTURL not set"
 		sys.exit()
-	url = "http://%s" % (ARASTURL)
+
+        # Request Shock URL
+        url_req = {}
+        url_req['command'] = 'get_url'
+        url_rpc = RpcClient()
+	url = "http://%s" % url_rpc.call(json.dumps(url_req))
 
         # Upload file(s) to Shock
         res_ids = []
@@ -228,4 +232,8 @@ class RpcClient:
             self.connection.process_data_events()
         return self.response
 
+
+
+cparser = SafeConfigParser()
+cparser.read('settings.conf')
 main()
