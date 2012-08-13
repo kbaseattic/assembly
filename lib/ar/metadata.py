@@ -1,11 +1,11 @@
-import config
 import pymongo
 import uuid
+from ConfigParser import SafeConfigParser
 
 def get_jobs():
-    connection = pymongo.Connection(config.MONGO_HOST, config.MONGO_PORT)
-    db = connection[config.DB_NAME]
-    jobs = db[config.COLLECTION]
+    connection = pymongo.Connection(host,port)
+    db = connection[db]
+    jobs = db[collection]
     return jobs
 
 def insert_job(data):
@@ -30,4 +30,9 @@ def list_jobs(user):
         r.append(j)
     return r
         
-    
+parser = SafeConfigParser()
+parser.read('arast.conf')    
+host = parser.get('meta', 'mongo.host')
+port = int(parser.get('meta', 'mongo.port'))
+db = parser.get('meta', 'mongo.db')
+collection = parser.get('meta', 'mongo.collection')
