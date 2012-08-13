@@ -10,9 +10,10 @@ from ConfigParser import SafeConfigParser
 
 def get_jobs():
     """Fetch approriate database and collection for jobs."""
+    global db, collection
     connection = pymongo.Connection(host,port)
-    db = connection[db]
-    jobs = db[collection]
+    database = connection[db]
+    jobs = databaseb[collection]
     return jobs
 
 def insert_job(data):
@@ -38,7 +39,8 @@ def list_jobs(user):
     for j in jobs.find({'ARASTUSER':user}):
         r.append(j)
     return r
-        
+
+global host, port, db, collection        
 parser = SafeConfigParser()
 parser.read('arast.conf')    
 host = parser.get('meta', 'mongo.host')
