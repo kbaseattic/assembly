@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+import config
+import logging
+>>>>>>> d205f04b6e5a423e8c472732e87674439420cc96
 import pymongo
 import uuid
 from ConfigParser import SafeConfigParser
@@ -16,12 +21,14 @@ def insert_job(data):
     return job_id
 
 def update_job(job_id, field, value):
-    print type(job_id)
-    print job_id
+    logging.info("Updating metadata job %s" % job_id)
     jobs = get_jobs()
     jobs.update({'_id' : job_id},
                 {'$set' : {field : value}})
-    print jobs.find_one({'_id' : job_id})
+    if jobs.find_one({'_id' : job_id}) is not None:
+        logging.info("Job updated: %s:%s:%s" % (job_id, field, value))
+    else:
+        logging.warning("Job %s not updated!" % job_id)
 
 def list_jobs(user):
     r = []
