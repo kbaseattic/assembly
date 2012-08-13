@@ -2,6 +2,7 @@
 Consumes a job from the queue
 """
 
+import logging
 import pika
 import sys
 import json

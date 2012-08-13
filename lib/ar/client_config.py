@@ -1,1 +1,0 @@
-ARAST_HOST='localhost'

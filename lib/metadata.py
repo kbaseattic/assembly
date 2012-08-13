@@ -1,3 +1,7 @@
+"""
+Handles metadata and MongoDB
+"""
+
 import config
 import logging
 import pymongo
@@ -5,6 +9,7 @@ import uuid
 from ConfigParser import SafeConfigParser
 
 def get_jobs():
+    """Fetch approriate database and collection for jobs."""
     connection = pymongo.Connection(host,port)
     db = connection[db]
     jobs = db[collection]
