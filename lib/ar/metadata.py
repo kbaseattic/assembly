@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-=======
 import config
 import logging
->>>>>>> d205f04b6e5a423e8c472732e87674439420cc96
 import pymongo
 import uuid
 from ConfigParser import SafeConfigParser
