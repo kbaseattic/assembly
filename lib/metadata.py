@@ -13,7 +13,7 @@ def get_jobs():
     global db, collection
     connection = pymongo.Connection(host,port)
     database = connection[db]
-    jobs = databaseb[collection]
+    jobs = database[collection]
     return jobs
 
 def insert_job(data):
