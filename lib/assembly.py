@@ -28,15 +28,15 @@ def is_available(assembler):
 
 def run(assembler, datapath, job_id):
     logging.info("Running assembler: %s" % assembler)
-    logging.warning("Not changing job status until port forwarding issue resolved")
-    #metadata.update_job(job_id, 'status', 'running')
+    #logging.warning("Not changing job status until port forwarding issue resolved")
+    metadata.update_job(job_id, 'status', 'running')
     result_tar = 'NO_TAR'
     if is_available(assembler):
         if assembler == 'kiki':
             run_kiki(datapath)
         elif assembler == 'velvet':
             result_tar = run_velvet(datapath)
-    #metadata.update_job(job_id, 'status', 'complete')
+    metadata.update_job(job_id, 'status', 'complete')
     return result_tar
 
 def run_kiki():
