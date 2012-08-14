@@ -23,6 +23,12 @@ def insert_job(data):
     job_id = jobs.insert(data)
     return job_id
 
+def get_next_id(user):
+    connection = pymongo.Connection(host,port)
+    database = connection[db]
+    ids = database['ids']
+    # TODO finish this
+
 def update_job(job_id, field, value):
     logging.info("Updating metadata job %s" % job_id)
     jobs = get_jobs()

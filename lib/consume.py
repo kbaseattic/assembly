@@ -11,11 +11,11 @@ import os
 
 import config
 import assembly as asm
+import metadata
 
 from ConfigParser import SafeConfigParser
 
 def compute(body):
-    print "Computing..."
     params = json.loads(body)
 
     # Download data
@@ -41,26 +41,23 @@ def compute(body):
         cur_file += file
         with open(cur_file, "wb") as code:
             code.write(r.content)
-    print "Job %r downloaded" % (job_id)
     # Run assemblies
-    print params['assemblers']
+    download_ids = {}
     for a in params['assemblers']:
         result_tar = asm.run(a, datapath, job_id)
         #send to shock
         url += '/node'
-        print url
-        upload(url, result_tar, job_id, a)
-        #TODO update metadate for location
+        res = upload(url, result_tar, job_id, a)
+        # Get location
+        download_ids[a] = res['D']['id']
+    metadata.update_job(job_id, 'result_data', download_ids)
 
 def upload(url, file, job_id, assembler):
     files = {}
-    print file
     files["file"] = (os.path.basename(file), open(file, 'rb'))
-#    files["_id"] = job_id
-#    files["assembler"] = assembler
-    print files
-    post(url, files)
-
+    logging.debug("Message sent to shock on upload: %s" % files)
+    res = post(url, files)
+    return res
 
 def post(url, files):
 	global ARASTUSER, ARASTPASSWORD
@@ -71,7 +68,6 @@ def post(url, files):
             r = requests.post(url, files=files)
 
         res = json.loads(r.text)
-        print r.text
 	return res
 
 
