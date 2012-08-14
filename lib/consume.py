@@ -45,7 +45,35 @@ def compute(body):
     # Run assemblies
     print params['assemblers']
     for a in params['assemblers']:
-        asm.run(a, datapath, job_id)
+        result_tar = asm.run(a, datapath, job_id)
+        #send to shock
+        url += '/node'
+        print url
+        upload(url, result_tar, job_id, a)
+        #TODO update metadate for location
+
+def upload(url, file, job_id, assembler):
+    files = {}
+    print file
+    files["file"] = (os.path.basename(file), open(file, 'rb'))
+#    files["_id"] = job_id
+#    files["assembler"] = assembler
+    print files
+    post(url, files)
+
+
+def post(url, files):
+	global ARASTUSER, ARASTPASSWORD
+	r = None
+	if ARASTUSER and ARASTPASSWORD:
+            r = requests.post(url, auth=(ARASTUSER, ARASTPASSWORD), files=files)
+	else:
+            r = requests.post(url, files=files)
+
+        res = json.loads(r.text)
+        print r.text
+	return res
+
 
 def get(url):     
     global ARASTUSER, ARASTPASSWORD

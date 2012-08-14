@@ -8,7 +8,7 @@ assembler-specific configurations.
 Assembler defaults are set in the 'arast.conf' file
 
 """
-
+import logging
 import metadata
 import os
 import re
@@ -27,14 +27,17 @@ def is_available(assembler):
     return True
 
 def run(assembler, datapath, job_id):
-    metadata.update_job(job_id, 'status', 'running')
+    logging.info("Running assembler: %s" % assembler)
+    logging.warning("Not changing job status until port forwarding issue resolved")
+    #metadata.update_job(job_id, 'status', 'running')
+    result_tar = 'NO_TAR'
     if is_available(assembler):
         if assembler == 'kiki':
-            print "Starting kiki"
             run_kiki(datapath)
         elif assembler == 'velvet':
-            run_velvet(datapath)
-    metadata.update_job(job_id, 'status', 'complete')
+            result_tar = run_velvet(datapath)
+    #metadata.update_job(job_id, 'status', 'complete')
+    return result_tar
 
 def run_kiki():
 
@@ -83,18 +86,18 @@ def run_velvet(datapath):
             readfile = raw_path + file
             args.append(readfile)
     
-    print ("Running subprocess")
-    print args
+
+    logging.info(args)
     p = subprocess.Popen(args)
     p.wait()
 
     args_g = [velvetg, velvet_data]
-
-    print args_g
+    logging.info(args_g)
     g = subprocess.Popen(args_g)
     g.wait()
 
-#    tar(datapath, velvet_data, 'velvet_data.tar.gz')
+    tarfile = tar(datapath, velvet_data, 'velvet_data.tar.gz')
+    return tarfile
 
 def run_soapdenovo():
     return 2
@@ -106,7 +109,9 @@ def tar(outpath, asm_data, tarname):
     os.makedirs(outfile)
     outfile += tarname
     targs = ['tar', '-czvf', outfile, asm_data]
-    subprocess.Popen(targs)
+    t = subprocess.Popen(targs)
+    t.wait()
+    return outfile
 
 def get_paired(directory):
     """ Return a list of tuples of paired reads from directory or list
