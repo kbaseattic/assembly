@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """
 arast-client -- commandline client for Assembly RAST
 
@@ -5,7 +6,7 @@ A lot of code taken from Jared Wilkening / ShockClient
 
 """
 
-#!/usr/bin/python
+
 import os, sys, json, shutil
 import pika
 import argparse
@@ -15,7 +16,10 @@ import uuid
 from progressbar import Counter, ProgressBar, Timer
 from ConfigParser import SafeConfigParser
 
+#TODO remove this
 import client_config
+import shock
+
 
 # get env vars
 ARASTURL = client_config.ARASTURL
@@ -74,6 +78,12 @@ p_run.add_argument("-p", "--params", action="store",
 
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
+
+# get
+p_get = subparsers.add_parser('get', description='Download result data', help='download data')
+p_get.add_argument("-a", "--assemblers", action="store",
+                  dest="assemblers", nargs='*',
+                  help="specify which assembly data to get")
 
 
 def post(url, files):
@@ -191,13 +201,31 @@ def main():
             print " [.] Response: %r" % (response)
 
         # Stat
-        if args.command == 'stat':
-            options['ARASTUSER'] = ARASTUSER
-            rpc_body = json.dumps(options, sort_keys=True)
-            arast_rpc = RpcClient()
-            print " [x] Sending message: %r" % (rpc_body)
-            response = arast_rpc.call(rpc_body)
-            print " [.] Response: %s" % (response)
+        elif args.command == 'stat':
+		options['ARASTUSER'] = ARASTUSER
+		rpc_body = json.dumps(options, sort_keys=True)
+		arast_rpc = RpcClient()
+		print " [x] Sending message: %r" % (rpc_body)
+		response = arast_rpc.call(rpc_body)
+		print " [.] Response: %s" % (response)
+
+	elif args.command == 'get':
+		job = ''
+		if args.assemblers:
+			pass
+#		if args.job_id:
+#			pass
+		options['ARASTUSER'] = ARASTUSER
+		rpc_body = json.dumps(options, sort_keys=True)
+		arast_rpc = RpcClient()
+		print " [x] Sending message: %r" % (rpc_body)
+		response = arast_rpc.call(rpc_body)
+		print " [.] Response: %s" % (response)
+		params = json.loads(response)
+		for id in params.values():
+			shock.download(url, id, '', ARASTUSER, ARASTPASSWORD)
+			
+
 
 
 ## Send RPC call ##

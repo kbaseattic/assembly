@@ -23,7 +23,7 @@ def send_message(body, routingKey):
                           body=body,
                           properties=pika.BasicProperties(
                           delivery_mode=2)) #persistant message
-    logging.info(" [x] Sent to queue: %r: %r" % (routingKey, body))
+    logging.debug(" [x] Sent to queue: %r: %r" % (routingKey, body))
     connection.close()
 
 
@@ -63,6 +63,8 @@ def on_request(ch, method, props, body):
         for doc in docs:
             try:
                 msg.append([str(doc['_id']), str(doc['status'])])
+                if doc['status'] == 'complete':
+                    msg.append(doc['result_data'])
             except:
                 msg.append("MALFORMED JOB RECORD")
         ack = pprint.pformat(msg)
@@ -71,8 +73,18 @@ def on_request(ch, method, props, body):
     elif params['command'] == 'run':
         ack = str(route_job(body))
     
+    # if 'get_url'
     elif params['command'] == 'get_url':
         ack = get_upload_url()
+
+    elif params['command'] == 'get':
+        docs = metadata.list_jobs(params['ARASTUSER'])
+        
+        # Get latest
+        doc = docs[-1]
+        result_data = doc['result_data']
+        ack = json.dumps(result_data)
+
 
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
