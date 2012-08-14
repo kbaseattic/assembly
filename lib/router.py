@@ -57,9 +57,14 @@ def on_request(ch, method, props, body):
     # if 'stat'
     if params['command'] == 'stat':
         docs = metadata.list_jobs(params['ARASTUSER'])
+        msg = str(docs)
+
         msg = []
         for doc in docs:
-            msg.append([str(doc['_id']),str(doc['status'])])
+            try:
+                msg.append([str(doc['_id']), str(doc['status'])])
+            except:
+                msg.append("MALFORMED JOB RECORD")
         ack = pprint.pformat(msg)
 
     # if 'run'
