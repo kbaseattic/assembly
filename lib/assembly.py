@@ -91,9 +91,10 @@ def run_velvet(datapath):
             hash,
             file_type]
     raw_path = datapath + '/raw/'
-    paired_reads = get_paired(get_fasta(raw_path))
 
-    # Found paired
+
+    # Find paired
+    paired_reads = get_paired(get_fasta(raw_path))
     if len(paired_reads) > 0:
         print "Found paired ends"
         print paired_reads
@@ -191,9 +192,26 @@ def get_fasta(directory):
     """ Return the list of Fasta files in DIRECTORY
     """
     files = os.listdir(directory)
-    fasta_files = [file for file in files if re.search(r'.fa$|.fasta$', file) is not None]
+    fasta_files = [file for file in files 
+                   if re.search(r'.fa$|.fasta$', file, re.IGNORECASE) is not None]
     return fasta_files
+
+def get_fastq(directory):
+    """ Return the list of Fastq files in DIRECTORY
+    """
+    files = os.listdir(directory)
+    fastq_files = [file for file in files 
+                   if re.search(r'.fq$|.fastq$', file, re.IGNORECASE) is not None]
+    return fastq_files
     
+def get_quala(directory):
+    """ Return the list of Quala files in DIRECTORY
+    """
+    files = os.listdir(directory)
+    quala_files = [file for file in files 
+                   if re.search(r'.qa$|.quala$', file, re.IGNORECASE) is not None]
+    return fastq_files
+
 
 parser = SafeConfigParser()
 parser.read('arast.conf')
