@@ -23,22 +23,23 @@ def get_default(key):
     return parser.get('assemblers', key)
 
 def is_available(assembler):
-    """ Check if ASSEMBLER is a valid/available assembler
+    """ Check if ASSEMBLER is a valid/available assembler.
     """
-    return True
+    assemblers = ['kiki','velvet']
+    if assembler in assemblers:
+        return True
+    else:
+        return False
 
 def run(assembler, datapath, job_id):
     logging.info("Running assembler: %s" % assembler)
-    #logging.warning("Not changing job status until port forwarding issue resolved")
     metadata.update_job(job_id, 'status', 'running:')
-    result_tar = 'ILLEGAL_ASSEMBLER'
-    if is_available(assembler):
-        if assembler == 'kiki':
-            metadata.update_job(job_id, 'status', "running: kiki")
-            result_tar = run_kiki(datapath)
-        elif assembler == 'velvet':
-            metadata.update_job(job_id, 'status', "running: velvet")
-            result_tar = run_velvet(datapath)
+    if assembler == 'kiki':
+        metadata.update_job(job_id, 'status', 'running: kiki')
+        result_tar = run_kiki(datapath)
+    elif assembler == 'velvet':
+        metadata.update_job(job_id, 'status', 'running: velvet')
+        result_tar = run_velvet(datapath)
     return result_tar
 
 def run_kiki(datapath):
@@ -63,10 +64,6 @@ def run_kiki(datapath):
 
     contigfile = raw_path + '*.contig'
     contigs = glob.glob(contigfile)
-    print contigs
-
-        
-
     
     tarfile = tar_list(datapath, contigs, 'ki_data.tar.gz')
     # Return location of finished data
@@ -125,7 +122,9 @@ def run_velvet(datapath):
     g = subprocess.Popen(args_g)
     g.wait()
 
-    tarfile = tar(datapath, velvet_data, 'velvet_data.tar.gz')
+    vfiles = [velvet_data + 'contigs.fa', velvet_data + 'stats.txt']
+
+    tarfile = tar_list(datapath, vfiles, 'velvet_data.tar.gz')
     return tarfile
 
 def run_soapdenovo():
