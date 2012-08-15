@@ -39,7 +39,7 @@ def get(url, user, password ):
     
     r = None
     if user and password:
-        r = requests.get(url, auth=(user, password))       
+        r = requests.get(url, auth=(user, password), timeout=20)       
     else:
-        r = requests.get(url)
+        r = requests.get(url, timeout=20)
     return r

@@ -116,4 +116,4 @@ def start():
     print " [x] Awaiting RPC requests..."
     channel.start_consuming()
 
-start()
+#start()
