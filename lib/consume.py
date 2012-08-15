@@ -51,6 +51,7 @@ def compute(body):
         # Get location
         download_ids[a] = res['D']['id']
     metadata.update_job(job_id, 'result_data', download_ids)
+    metadata.update_job(job_id, 'status', 'complete')
 
 def upload(url, file, job_id, assembler):
     files = {}

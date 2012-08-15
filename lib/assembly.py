@@ -14,6 +14,7 @@ import os
 import re
 import subprocess
 import tarfile
+import glob
 
 from ConfigParser import SafeConfigParser
 
@@ -29,23 +30,51 @@ def is_available(assembler):
 def run(assembler, datapath, job_id):
     logging.info("Running assembler: %s" % assembler)
     #logging.warning("Not changing job status until port forwarding issue resolved")
-    metadata.update_job(job_id, 'status', 'running')
-    result_tar = 'NO_TAR'
+    metadata.update_job(job_id, 'status', 'running:')
+    result_tar = 'ILLEGAL_ASSEMBLER'
     if is_available(assembler):
         if assembler == 'kiki':
-            run_kiki(datapath)
+            metadata.update_job(job_id, 'status', "running: kiki")
+            result_tar = run_kiki(datapath)
         elif assembler == 'velvet':
+            metadata.update_job(job_id, 'status', "running: velvet")
             result_tar = run_velvet(datapath)
-    metadata.update_job(job_id, 'status', 'complete')
     return result_tar
 
-def run_kiki():
+def run_kiki(datapath):
 
+    ki_exec = basepath + get_default('kiki.path')
+    ki_exec += get_default('kiki.exec')
+    raw_path = datapath + '/raw/'
+
+
+    args = [ki_exec, '-k', '29', '-i']
+    for file in os.listdir(raw_path):
+        readfile = raw_path + file
+        print readfile
+        args.append(readfile)
+    #args.append('-o')
+    #args.append('ki/')
+    ki_data = raw_path + 'ki/'    
+    print args
+    print "Starting kiki"
+    p = subprocess.Popen(args)
+    p.wait()
+
+    contigfile = raw_path + '*.contig'
+    contigs = glob.glob(contigfile)
+    print contigs
+
+        
+
+    
+    tarfile = tar_list(datapath, contigs, 'ki_data.tar.gz')
     # Return location of finished data
-    return 2
+    return tarfile
 
 
 def run_velvet(datapath):
+
     velvet_data = datapath 
     velvet_data += '/velvet/'
     os.makedirs(velvet_data)
@@ -106,12 +135,34 @@ def run_soapdenovo():
 def tar(outpath, asm_data, tarname):
     print "Compressing"
     outfile = outpath + '/tar/'
-    os.makedirs(outfile)
+
+    try:
+        os.makedirs(outfile)
+    except:
+        pass
+
     outfile += tarname
     targs = ['tar', '-czvf', outfile, asm_data]
     t = subprocess.Popen(targs)
     t.wait()
     return outfile
+
+def tar_list(outpath, file_list, tarname):
+    outfile = outpath + '/tar/'
+
+    try:
+        os.makedirs(outfile)
+    except:
+        pass
+
+    outfile += tarname
+    targs = ['tar', '-czvf', outfile]
+    for file in file_list:
+        targs.append(file)
+    t = subprocess.Popen(targs)
+    t.wait()
+    return outfile
+    
 
 def get_paired(directory):
     """ Return a list of tuples of paired reads from directory or list
