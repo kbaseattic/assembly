@@ -18,15 +18,7 @@ import time
 from progressbar import Counter, ProgressBar, Timer
 from ConfigParser import SafeConfigParser
 
-#TODO remove this
-import client_config
 import shock
-
-
-# get env vars
-ARASTURL = client_config.ARASTURL
-ARASTUSER = client_config.ARASTUSER
-ARASTPASSWORD = client_config.ARASTPASSWORD
 
 
 # arg type checking
@@ -74,7 +66,7 @@ p_run.add_argument("-m", "--message", action="store",
                   help="Attach a description to job")
 
 
-# filetype, special flags, config file, -m 'description'
+# filetype, special flags, config file
 # global, -k=31, -cov
 # velvet
 
@@ -99,36 +91,6 @@ def post(url, files):
         res = json.loads(r.text)
 	return res
 
-
-def printNodeTable(n):
-	t = pt.PrettyTable(["name", "key/value", "value"])
-	t.set_field_align("name", "l")
-	t.set_field_align("key/value", "l")
-	t.set_field_align("value", "l")		
-	t.add_row(["id",n["id"],""])
-	t.add_row(["file","",""])
-	for k,v in n["file"].iteritems():
-		t.add_row(["",k,json.dumps(v)])
-	t.add_row(["indexes",json.dumps(n["indexes"]),""])		
-	if n["attributes"] != None:
-		t.add_row(["attributes","",""])
-		for k,v in n["attributes"].iteritems():
-			value = json.dumps(v, sort_keys=True, indent=4)
-			split = value.split('\n')
-			if len(split) > 1:
-				t.add_row(["",k,split[0]])
-				for attr in value.split('\n')[1:]:
-					for r in fmtText(attr):
-						t.add_row(["","",r])
-			else:
-				t.add_row(["",k,split[0]])
-	else:
-		t.add_row(["attributes","{}",""])
-	t.add_row(["acls","",""])
-	for k,v in n["acl"].iteritems():
-		val = json.dumps(v) if v != None else "[]"
-		t.add_row(["",k,val])		
-	print t
 
 # upload all files in list, return list of ids
 def upload(url, files):
@@ -157,6 +119,8 @@ def main():
 	opt = parser.parse_args()
         options = vars(args)
 
+	
+
 	# overwrite env vars in args
 	if args.ARASTUSER:
 		ARASTUSER = args.ARASTUSER				
@@ -178,16 +142,22 @@ def main():
 	if args.command == "run":
             if args.directory or args.filename:
                 url += "/node"
+		files = args.filename
             if args.filename:
-                res_ids = upload(url, args.filename)
-                base_files = [os.path.basename(f) for f in args.filename]
-                del options['filename']
-                options['filename'] = base_files
+		    if args.config:
+			    files.append(args.config)
+		    res_ids = upload(url, files)
+		    base_files = [os.path.basename(f) for files]
+		    del options['filename']
+		    options['filename'] = base_files
             elif args.directory:
-                ls_files = os.listdir(args.directory)
-                fullpaths = [str(args.directory + file) for file in ls_files]
-                res_ids = upload(url, fullpaths)
-                options['filename'] = ls_files
+		    ls_files = os.listdir(args.directory)
+		    fullpaths = [str(args.directory + file) for file in ls_files]
+		    if args.config:
+			    ls_files.append(os.path.basename(args.config))
+			    fullpaths.append(args.config)
+		    res_ids = upload(url, fullpaths)
+		    options['filename'] = ls_files
 
            # Send message to RPC Server
             options['ARASTUSER'] = ARASTUSER
@@ -269,7 +239,9 @@ class RpcClient:
         return self.response
 
 
-
+global ARASTUSER, ARASTPASSWORD
 cparser = SafeConfigParser()
 cparser.read('settings.conf')
+ARASTUSER = cparser.get('arast', 'user')
+ARASTPASSWORD = cparser.get('arast', 'password')
 main()

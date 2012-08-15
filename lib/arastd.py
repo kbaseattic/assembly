@@ -32,8 +32,8 @@ def start():
     
     # Check MongoDB status
     try:
-        connection = pymongo.Connection(cparser.get('meta','mongo.host'),
-                                    int(cparser.get('meta','mongo.port')))
+        connection = pymongo.Connection('localhost'),
+                      
         logging.info("MongoDB Info: %s" % connection.server_info())
     except:
         logging.error("MongoDB connection error!")
