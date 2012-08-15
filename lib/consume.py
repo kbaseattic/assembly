@@ -44,12 +44,15 @@ def compute(body):
     # Run assemblies
     download_ids = {}
     for a in params['assemblers']:
-        result_tar = asm.run(a, datapath, job_id)
-        #send to shock
-        url += '/node'
-        res = upload(url, result_tar, job_id, a)
-        # Get location
-        download_ids[a] = res['D']['id']
+        if asm.is_available(a):
+            result_tar = asm.run(a, datapath, job_id)
+            # send to shock
+            url += '/node'
+            res = upload(url, result_tar, job_id, a)
+            # Get location
+            download_ids[a] = res['D']['id']
+        else:
+            logging.info("%s failed to finish" % a)
     metadata.update_job(job_id, 'result_data', download_ids)
     metadata.update_job(job_id, 'status', 'complete')
 
@@ -113,7 +116,7 @@ def main():
 
 parser = SafeConfigParser()
 parser.read('arast.conf')
-
+logging.basicConfig(level=logging.DEBUG)
 # Set up environment
 ARASTURL = parser.get('shock','host')
 
