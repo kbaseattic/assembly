@@ -9,31 +9,47 @@ The Arast daemon runs on the control node.
 #! /usr/bin/python
 import sys
 import daemon
+import logging
 import pymongo
 import pika
 import router
 from ConfigParser import SafeConfigParser
 
-context = daemon.DaemonContext(stdout=sys.stdout) #temp print to stdout
+import shock
+
+#context = daemon.DaemonContext(stdout=sys.stdout) #temp print to stdout
 #TODO change to log file
 
-with context:
+#with context:
+
+def start():
     # Read config file
     cparser = SafeConfigParser()
     cparser.read('arast.conf')
-    print "Starting arastd"
+    print " [.] Starting Assembly Service Control Server"
+    print " [.] MongoDB port: %s" % cparser.get('meta','mongo.port')
+    print " [.] RabbitMQ port: %s" % cparser.get('rabbitmq','port')
     
-
     # Check MongoDB status
     try:
-        connection = pymongo.Connection(cparser.get('meta','mongodb.host'),
-                                    cparser.get('meta','mongodb.port'))
-        logging.info("MongoDB Info: %s" % connection.serverinfo())
+        connection = pymongo.Connection(cparser.get('meta','mongo.host'),
+                                    int(cparser.get('meta','mongo.port')))
+        logging.info("MongoDB Info: %s" % connection.server_info())
     except:
         logging.error("MongoDB connection error!")
-    
+        sys.exit()
+    print " [x] MongoDB connection successful."
     # Check RabbitMQ status
         #TODO
         
+    print " [.] Connecting to Shock server..."
+    url = "http://%s" % cparser.get('shock', 'host')
+    res = shock.get(url, cparser.get('shock','admin_user'),
+              cparser.get('shock','admin_pass'))
+    
+    if res is not None:
+        print " [x] Shock connection successful"
     # Start RPC server
     router.start()
+
+start()
