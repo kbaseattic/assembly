@@ -57,19 +57,19 @@ def on_request(ch, method, props, body):
 
     # if 'stat'
     if params['command'] == 'stat':
-        pt = PrettyTable(["Job ID", "Status"])
+        pt = PrettyTable(["Job ID", "Status", "Description"])
         docs = metadata.list_jobs(params['ARASTUSER'])
-        msg = []
-        for doc in docs[-15:-1]:
-            print doc
+        for doc in docs[-15:]:
+            row = [doc['_id'], doc['status']]
             try:
-                msg.append([str(doc['_id']), str(doc['status'])])
-                pt.add_row([str(doc['_id']), str(doc['status'])])
-                if doc['status'] == 'complete':
-                    msg.append(doc['result_data'])
+                row.append(str(doc['message']))
             except:
-                msg.append("MALFORMED JOB RECORD")
-        #ack = pprint.pformat(msg)
+                row.append('')
+            try:
+                pt.add_row(row)
+                #pt.add_row([str(doc['_id']), str(doc['status'])])
+            except:
+                pt.add_row(doc['_id'], "error")
         ack = pt.get_string()
 
     # if 'run'

@@ -14,6 +14,7 @@ import logging
 import requests
 import prettytable as pt
 import uuid
+import time
 from progressbar import Counter, ProgressBar, Timer
 from ConfigParser import SafeConfigParser
 
@@ -65,12 +66,12 @@ p_run.add_argument("-d", "--directory", action="store",
 p_run.add_argument("-c", "--config", action="store",
                   dest="config",
                   help="specify parameter configuration file")
-p_run.add_argument("-m", "--message", action="store",
-                  dest="msg",
-                  help="specify a description or message to attach to job")
 p_run.add_argument("-p", "--params", action="store",
                   dest="params", nargs='*',
                   help="specify global assembly parameters")
+p_run.add_argument("-m", "--message", action="store",
+                  dest="message",
+                  help="Attach a description to job")
 
 
 # filetype, special flags, config file, -m 'description'
@@ -201,13 +202,17 @@ def main():
 
         # Stat
         elif args.command == 'stat':
-		options['ARASTUSER'] = ARASTUSER
-		rpc_body = json.dumps(options, sort_keys=True)
-		arast_rpc = RpcClient()
-		logging.debug(" [x] Sending message: %r" % (rpc_body))
-		response = arast_rpc.call(rpc_body)
-		logging.debug(" [.] Response: %s" % (response))
-		print response
+		while True:
+			os.system('clear')
+			options['ARASTUSER'] = ARASTUSER
+			rpc_body = json.dumps(options, sort_keys=True)
+			arast_rpc = RpcClient()
+			logging.debug(" [x] Sending message: %r" % (rpc_body))
+			response = arast_rpc.call(rpc_body)
+			logging.debug(" [.] Response: %s" % (response))
+			print response
+			time.sleep(2)
+			
 
 	elif args.command == 'get':
 		job = ''
