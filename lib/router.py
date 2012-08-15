@@ -9,6 +9,7 @@ import sys
 import json
 from bson import json_util
 from ConfigParser import SafeConfigParser
+from prettytable import PrettyTable
 
 import metadata
 
@@ -56,18 +57,20 @@ def on_request(ch, method, props, body):
 
     # if 'stat'
     if params['command'] == 'stat':
+        pt = PrettyTable(["Job ID", "Status"])
         docs = metadata.list_jobs(params['ARASTUSER'])
-        msg = str(docs)
-
         msg = []
-        for doc in docs:
+        for doc in docs[-15:-1]:
+            print doc
             try:
                 msg.append([str(doc['_id']), str(doc['status'])])
+                pt.add_row([str(doc['_id']), str(doc['status'])])
                 if doc['status'] == 'complete':
                     msg.append(doc['result_data'])
             except:
                 msg.append("MALFORMED JOB RECORD")
-        ack = pprint.pformat(msg)
+        #ack = pprint.pformat(msg)
+        ack = pt.get_string()
 
     # if 'run'
     elif params['command'] == 'run':
@@ -82,9 +85,11 @@ def on_request(ch, method, props, body):
         
         # Get latest
         doc = docs[-1]
-        result_data = doc['result_data']
-        ack = json.dumps(result_data)
-
+        try:
+            result_data = doc['result_data']
+            ack = json.dumps(result_data)
+        except:
+            ack = "Error getting results"
 
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,

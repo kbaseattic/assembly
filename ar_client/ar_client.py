@@ -10,6 +10,7 @@ A lot of code taken from Jared Wilkening / ShockClient
 import os, sys, json, shutil
 import pika
 import argparse
+import logging
 import requests
 import prettytable as pt
 import uuid
@@ -95,7 +96,6 @@ def post(url, files):
             r = requests.post(url, files=files)
 
         res = json.loads(r.text)
-        print r.text
 	return res
 
 
@@ -134,7 +134,7 @@ def upload(url, files):
     ids = []
     for f in files:
         files = {}
-        print "Uploading: %s" % f
+        print "Uploading: %s" % os.path.basename(f)
         files["file"] = (os.path.basename(f), open(f, 'rb'))
         res = post(url, files)
         ids.append(res['D']['id'])
@@ -143,7 +143,7 @@ def upload(url, files):
         if res["E"] is None:
         # Prettytable 0.6 breaks this
                     #printNodeTable(res["D"])
-            print "File(s) uploaded"
+		pass
         else:
             print "shock: err from server: %s" % res["E"][0]
     return ids
@@ -188,26 +188,26 @@ def main():
                 res_ids = upload(url, fullpaths)
                 options['filename'] = ls_files
 
-        # Send message to RPC Server
+           # Send message to RPC Server
             options['ARASTUSER'] = ARASTUSER
             options['ids'] = res_ids
             del options['ARASTPASSWORD']
             del options['ARASTURL']
-            print options
             rpc_body = json.dumps(options, sort_keys=True)
             arast_rpc = RpcClient()
-            print " [x] Sending message: %r" % (rpc_body)
+            logging.debug(" [x] Sending message: %r" % (rpc_body))
             response = arast_rpc.call(rpc_body)
-            print " [.] Response: %r" % (response)
+            logging.debug(" [.] Response: %r" % (response))
 
         # Stat
         elif args.command == 'stat':
 		options['ARASTUSER'] = ARASTUSER
 		rpc_body = json.dumps(options, sort_keys=True)
 		arast_rpc = RpcClient()
-		print " [x] Sending message: %r" % (rpc_body)
+		logging.debug(" [x] Sending message: %r" % (rpc_body))
 		response = arast_rpc.call(rpc_body)
-		print " [.] Response: %s" % (response)
+		logging.debug(" [.] Response: %s" % (response))
+		print response
 
 	elif args.command == 'get':
 		job = ''
@@ -218,12 +218,15 @@ def main():
 		options['ARASTUSER'] = ARASTUSER
 		rpc_body = json.dumps(options, sort_keys=True)
 		arast_rpc = RpcClient()
-		print " [x] Sending message: %r" % (rpc_body)
+	        logging.debug(" [x] Sending message: %r" % (rpc_body))
 		response = arast_rpc.call(rpc_body)
-		print " [.] Response: %s" % (response)
-		params = json.loads(response)
-		for id in params.values():
-			shock.download(url, id, '', ARASTUSER, ARASTPASSWORD)
+		logging.debug(" [.] Response: %s" % (response))
+		try:
+			params = json.loads(response)
+			for id in params.values():
+				shock.download(url, id, '', ARASTUSER, ARASTPASSWORD)
+		except:
+			print "Error getting results"
 			
 
 
