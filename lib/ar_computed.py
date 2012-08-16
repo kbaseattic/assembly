@@ -32,7 +32,7 @@ def start(arast_server):
     shockpass = cparser.get('shock','admin_pass')
     arasturl =  cparser.get('meta','mongo.remote.host')
     mongo_port = int(cparser.get('meta','mongo.port'))
-    if arast_server is not None:
+    if arast_server != '':
         arasturl = arast_server
     print " [.] Starting Assembly Service Compute Node"
     print " [.] AssemblyRAST host: %s" % arasturl
@@ -74,6 +74,7 @@ parser.add_argument("-s", "--server", help="specify AssemblyRAST server",
 args = parser.parse_args()
 if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
+arasturl = ''
 if args.server:
     arasturl = args.server
 start(arasturl)
