@@ -17,7 +17,7 @@ def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=parser.get('rabbitmq','host')))
+            host='localhost'))
     channel = connection.channel()
     channel.basic_publish(exchange = '',
                           routing_key=routingKey,
@@ -108,7 +108,7 @@ def start():
     parser.read('arast.conf')
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=parser.get('rabbitmq','host')))
+            host='localhost'))
     channel = connection.channel()
     channel.queue_declare(queue='rpc_queue')
     channel.basic_qos(prefetch_count=1)

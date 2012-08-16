@@ -5,8 +5,7 @@ Arast Daemon
 The Arast daemon runs on the control node.
 
 """
-
-#! /usr/bin/python
+import argparse
 import sys
 import daemon
 import logging
