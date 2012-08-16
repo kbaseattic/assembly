@@ -147,7 +147,7 @@ def main():
 		    if args.config:
 			    files.append(args.config)
 		    res_ids = upload(url, files)
-		    base_files = [os.path.basename(f) for files]
+		    base_files = [os.path.basename(f) for f in files]
 		    del options['filename']
 		    options['filename'] = base_files
             elif args.directory:
@@ -210,7 +210,7 @@ def main():
 class RpcClient:
     def __init__(self):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host=client_config.ARASTCONTROLHOST))
+                host=ARASTURL), timeout=10)
 
         self.channel = self.connection.channel()
 
@@ -244,4 +244,5 @@ cparser = SafeConfigParser()
 cparser.read('settings.conf')
 ARASTUSER = cparser.get('arast', 'user')
 ARASTPASSWORD = cparser.get('arast', 'password')
+ARASTURL = cparser.get('arast', 'url')
 main()
