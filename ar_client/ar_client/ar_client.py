@@ -41,7 +41,7 @@ parser.add_argument('--ARASTURL', help='Overrules env ARASTURL')
 parser.add_argument('--ARASTUSER', help='Overrules env ARASTUSER')
 parser.add_argument('--ARASTPASSWORD', help='Overrules env ARASTPASSWORD')
 parser.add_argument("-c", "--config", action="store",
-                  dest="config", required=True, help="specify parameter configuration file")
+                  dest="config", help="specify parameter configuration file")
 
 subparsers = parser.add_subparsers(dest='command', title='The commands are')
 
@@ -118,13 +118,18 @@ def main():
         options = vars(args)
 	
 	cparser = SafeConfigParser()
-	config_file = args.config
+	if args.config:
+		config_file = args.config
+	else:
+		config_file = "settings.conf"
 	cparser.read(config_file)
 
-	ARASTUSER = cparser.get('arast', 'user')
-	ARASTPASSWORD = cparser.get('arast', 'password')
-	ARASTURL = cparser.get('arast', 'url')
-
+	try:
+		ARASTUSER = cparser.get('arast', 'user')
+		ARASTPASSWORD = cparser.get('arast', 'password')
+		ARASTURL = cparser.get('arast', 'url')
+	except:
+		logging.error("Invalid config file")
 
 	# overwrite env vars in args
 	if args.ARASTUSER:
