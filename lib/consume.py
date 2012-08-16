@@ -25,6 +25,7 @@ class ArastConsumer:
         self.arasturl = arasturl
         self.shockuser = self.parser.get('shock','admin_user')
         self.shockpass = self.parser.get('shock','admin_pass')
+        self.datapath = self.parser.get('compute','datapath')
         self.metadata = meta.MetadataConnection(arasturl)
 
     def compute(self, body):
@@ -35,7 +36,7 @@ class ArastConsumer:
         ids = params['ids']
         job_id = params['_id']
 
-        filename = '/mnt/data/'
+        filename = self.datapath
         filename += job_id
         datapath = filename
         filename += "/raw/"
