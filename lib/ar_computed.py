@@ -21,12 +21,12 @@ import shock
 
 #with context:
 
-def start(arast_server):
+def start(arast_server, config):
     # Read config file
     
     print "Reading from config file"
     cparser = SafeConfigParser()
-    cparser.read('arast.conf')
+    cparser.read(config)
     shockurl = cparser.get('shock', 'host')
     shockuser = cparser.get('shock','admin_user')
     shockpass = cparser.get('shock','admin_pass')
@@ -59,7 +59,7 @@ def start(arast_server):
     if res is not None:
         print " [x] Shock connection successful"
     # Start RPC server
-    compute = consume.ArastConsumer(shockurl, arasturl)
+    compute = consume.ArastConsumer(shockurl, arasturl, config)
     compute.start()
 
 
@@ -67,9 +67,10 @@ parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command 
 
 parser.add_argument("-v", "--verbose", help="increase output verbosity",
                     action="store_true")
-
 parser.add_argument("-s", "--server", help="specify AssemblyRAST server",
                     action="store")
+parser.add_argument("-c", "--config", help="specify configuration file",
+                    action="store", required=True)
 
 args = parser.parse_args()
 if args.verbose:
@@ -77,4 +78,4 @@ if args.verbose:
 arasturl = ''
 if args.server:
     arasturl = args.server
-start(arasturl)
+start(arasturl, args.config)

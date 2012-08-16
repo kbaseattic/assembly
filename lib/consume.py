@@ -16,17 +16,17 @@ import metadata as meta
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, arasturl):
+    def __init__(self, shockurl, arasturl, config):
         self.parser = SafeConfigParser()
-        self.parser.read('arast.conf')
-        logging.basicConfig(level=logging.DEBUG)
+        self.parser.read(config)
+
     # Set up environment
         self.shockurl = shockurl
         self.arasturl = arasturl
         self.shockuser = self.parser.get('shock','admin_user')
         self.shockpass = self.parser.get('shock','admin_pass')
         self.datapath = self.parser.get('compute','datapath')
-        self.metadata = meta.MetadataConnection(arasturl)
+        self.metadata = meta.MetadataConnection(arasturl, config)
 
     def compute(self, body):
         params = json.loads(body)
