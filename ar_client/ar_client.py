@@ -15,7 +15,6 @@ import requests
 import prettytable as pt
 import uuid
 import time
-from progressbar import Counter, ProgressBar, Timer
 from ConfigParser import SafeConfigParser
 
 import shock
