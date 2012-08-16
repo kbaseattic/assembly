@@ -107,7 +107,7 @@ def start(config_file):
     parser = SafeConfigParser()
     parser.read(config_file)
 
-    metadata = meta.MetadataConnection(parser.get('meta','mongo.control.host'))
+    metadata = meta.MetadataConnection(parser.get('meta','mongo.control.host'), config_file)
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host='localhost'))

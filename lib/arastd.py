@@ -83,5 +83,5 @@ if args.verbose:
 #    start()
 ##############
 
-
+print args.config
 start(args.config)

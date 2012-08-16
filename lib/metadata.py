@@ -9,9 +9,9 @@ import uuid
 from ConfigParser import SafeConfigParser
 
 class MetadataConnection:
-    def __init__(self, host):
+    def __init__(self, host, config):
         self.parser = SafeConfigParser()
-        self.parser.read('arast.conf')    
+        self.parser.read(config)    
         self.host = host
         self.port = int(self.parser.get('meta', 'mongo.port'))
         self.db = self.parser.get('meta', 'mongo.db')
