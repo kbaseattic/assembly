@@ -131,6 +131,8 @@ def main():
 		ARASTUSER = args.ARASTUSER				
 	if args.ARASTPASSWORD:
 		ARASTPASSWORD = args.ARASTPASSWORD				
+	if args.ARASTURL:
+		ARASTURL = args.ARASTURL
 	if not ARASTURL:
 		print parser.print_usage()
 		print "arast: err: ARASTURL not set"
@@ -178,7 +180,8 @@ def main():
         # Stat
         elif args.command == 'stat':
 		while True:
-			os.system('clear')
+			if args.watch:
+				os.system('clear')
 			options['ARASTUSER'] = ARASTUSER
 			rpc_body = json.dumps(options, sort_keys=True)
 			arast_rpc = RpcClient()
