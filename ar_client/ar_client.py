@@ -71,6 +71,7 @@ p_run.add_argument("-m", "--message", action="store",
 
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
+p_stat.add_argument("-w", "--watch", action="store_true")
 
 # get
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
@@ -180,8 +181,9 @@ def main():
 			response = arast_rpc.call(rpc_body)
 			logging.debug(" [.] Response: %s" % (response))
 			print response
-			time.sleep(2)
-			
+			if not args.watch:
+				break
+			time.sleep(2)			
 
 	elif args.command == 'get':
 		job = ''

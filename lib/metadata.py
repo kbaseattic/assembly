@@ -25,7 +25,7 @@ class MetadataConnection:
         return jobs
 
     def insert_job(self, data):
-        jobs = get_jobs()
+        jobs = self.get_jobs()
         my_id = str(uuid.uuid4())
         data['_id'] = my_id
         job_id = jobs.insert(data)
@@ -39,7 +39,7 @@ class MetadataConnection:
 
     def update_job(self, job_id, field, value):
         logging.info("Updating metadata job %s" % job_id)
-        jobs = get_jobs()
+        jobs = self.get_jobs()
         jobs.update({'_id' : job_id},
                     {'$set' : {field : value}})
         if jobs.find_one({'_id' : job_id}) is not None:
@@ -49,7 +49,7 @@ class MetadataConnection:
 
     def list_jobs(self, user):
         r = []
-        jobs = get_jobs()
+        jobs = self.get_jobs()
         for j in jobs.find({'ARASTUSER':user}):
             r.append(j)
         return r
