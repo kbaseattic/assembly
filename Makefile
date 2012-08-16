@@ -16,12 +16,14 @@ ERR_LOG_FILE = $(SERVICE_DIR)/log/error.log
 
 all:
 
-deploy: deploy-services
+deploy: install-dep create-scripts deploy-mongo
 
-redeploy: clean deploy-services
+redeploy: clean install-dep create-scripts deploy-mongo
 
+install-dep:
+	sh ./scripts/install_dependencies.sh
 
-deploy-services:
+create-scripts:
 	echo '#!/bin/sh' > ./start_service
 	echo "echo starting $(SERVICE) services." >> ./start_service
 	echo "export PYTHONPATH=$(SERVICE_DIR)/lib/" >> ./start_service
@@ -41,6 +43,10 @@ deploy-services:
 	mkdir -p $(SERVICE_DIR)/log
 	cp -rv . $(SERVICE_DIR)/
 	echo "OK ... Done deploying $(SERVICE) services."
+
+deploy-mongo:
+	mkdir -p /data/db
+	service mongodb restart
 
 clean:
 	rm -rfv $(SERVICE_DIR)
