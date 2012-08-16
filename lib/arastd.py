@@ -31,7 +31,7 @@ def start():
     
     # Check MongoDB status
     try:
-        connection = pymongo.Connection('localhost')
+        connection = pymongo.Connection(cparser.get('meta','mongo.control.host'))
                       
         logging.info("MongoDB Info: %s" % connection.server_info())
     except:
@@ -51,4 +51,18 @@ def start():
     # Start RPC server
     router.start()
 
+
+parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
+
+parser.add_argument("-v", "--verbose", help="increase output verbosity",
+                    action="store_true")
+
+parser.add_argument("-s", "--shock", help="increase output verbosity",
+                    action="store_true")
+
+args = parser.parse_args()
+if args.verbose:
+    logging.basicConfig(level=logging.DEBUG)
+#if args.shock:
+#    shockurl = args.shock
 start()

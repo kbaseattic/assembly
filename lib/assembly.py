@@ -9,12 +9,13 @@ Assembler defaults are set in the 'arast.conf' file
 
 """
 import logging
-import metadata
 import os
 import re
 import subprocess
 import tarfile
 import glob
+
+import metadata as meta
 
 from ConfigParser import SafeConfigParser
 
@@ -215,4 +216,5 @@ def get_quala(directory):
 
 parser = SafeConfigParser()
 parser.read('arast.conf')
-basepath = get_default('basepath')
+#basepath = get_default('basepath')
+metadata = meta.MetadataConnection(parser.get('meta','mongo.remote.host'))

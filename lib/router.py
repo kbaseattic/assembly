@@ -11,7 +11,7 @@ from bson import json_util
 from ConfigParser import SafeConfigParser
 from prettytable import PrettyTable
 
-import metadata
+import metadata as meta
 
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
@@ -101,11 +101,13 @@ def on_request(ch, method, props, body):
 
 
 def start():
-    global parser
+    global parser, metadata
     logging.basicConfig(level=logging.DEBUG)
 
     parser = SafeConfigParser()
     parser.read('arast.conf')
+
+    metadata = meta.MetadataConnection(parser.get('meta','mongo.control.host'))
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host='localhost'))
