@@ -209,7 +209,7 @@ def main():
 class RpcClient:
     def __init__(self):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host=ARASTURL), timeout=10)
+                host=ARASTURL))
 
         self.channel = self.connection.channel()
 

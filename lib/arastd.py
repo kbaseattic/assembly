@@ -32,7 +32,7 @@ def start():
     
     # Check MongoDB status
     try:
-        connection = pymongo.Connection('localhost'),
+        connection = pymongo.Connection('localhost')
                       
         logging.info("MongoDB Info: %s" % connection.server_info())
     except:
