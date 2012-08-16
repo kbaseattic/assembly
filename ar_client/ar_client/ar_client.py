@@ -12,7 +12,6 @@ import pika
 import argparse
 import logging
 import requests
-import prettytable as pt
 import uuid
 import time
 from ConfigParser import SafeConfigParser
@@ -41,6 +40,9 @@ parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" fo
 parser.add_argument('--ARASTURL', help='Overrules env ARASTURL')
 parser.add_argument('--ARASTUSER', help='Overrules env ARASTUSER')
 parser.add_argument('--ARASTPASSWORD', help='Overrules env ARASTPASSWORD')
+parser.add_argument("-c", "--config", action="store",
+                  dest="config", required=True, help="specify parameter configuration file")
+
 subparsers = parser.add_subparsers(dest='command', title='The commands are')
 
 # run -h
@@ -49,20 +51,16 @@ p_run.add_argument("-f", "--file", action="store", dest="filename",
                    nargs='*', help="specify sequence file(s)")
 p_run.add_argument("-a", "--assemblers", action="store",
                   dest="assemblers", nargs='*')
-p_run.add_argument("-s", "--size", action="store", dest="size",
-                  help="size of data in GB")
 p_run.add_argument("-d", "--directory", action="store",
                   dest="directory",
                   help="specify input directory")
-p_run.add_argument("-c", "--config", action="store",
-                  dest="config",
-                  help="specify parameter configuration file")
 p_run.add_argument("-p", "--params", action="store",
                   dest="params", nargs='*',
                   help="specify global assembly parameters")
 p_run.add_argument("-m", "--message", action="store",
                   dest="message",
                   help="Attach a description to job")
+
 
 
 # filetype, special flags, config file
@@ -114,12 +112,19 @@ def upload(url, files):
 
 def main():
 	global ARASTURL, ARASTUSER, ARASTPASSWORD
-	
+
 	args = parser.parse_args()
 	opt = parser.parse_args()
         options = vars(args)
-
 	
+	cparser = SafeConfigParser()
+	config_file = args.config
+	cparser.read(config_file)
+
+	ARASTUSER = cparser.get('arast', 'user')
+	ARASTPASSWORD = cparser.get('arast', 'password')
+	ARASTURL = cparser.get('arast', 'url')
+
 
 	# overwrite env vars in args
 	if args.ARASTUSER:
@@ -241,9 +246,4 @@ class RpcClient:
 
 
 global ARASTUSER, ARASTPASSWORD
-cparser = SafeConfigParser()
-cparser.read('settings.conf')
-ARASTUSER = cparser.get('arast', 'user')
-ARASTPASSWORD = cparser.get('arast', 'password')
-ARASTURL = cparser.get('arast', 'url')
 main()
