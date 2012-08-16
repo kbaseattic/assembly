@@ -18,12 +18,10 @@ from ConfigParser import SafeConfigParser
 
 import shock
 
-def start():
+def start(config_file):
     # Read config file
     cparser = SafeConfigParser()
-    cparser.read('arast.conf')
-    print " [.] Starting Assembly Service Control Server"
-    print " [.] Starting Assembly Service Control Server"
+    cparser.read(config_file)
     print " [.] Starting Assembly Service Control Server"
     print " [.] MongoDB port: %s" % cparser.get('meta','mongo.port')
     print " [.] RabbitMQ port: %s" % cparser.get('rabbitmq','port')
@@ -48,7 +46,7 @@ def start():
     if res is not None:
         print " [x] Shock connection successful"
     # Start RPC server
-    router.start()
+    router.start(config_file)
 
 def tear_down():
     print "Tear down"
@@ -62,6 +60,8 @@ parser.add_argument("-p", "--pidfile", help="Process ID file",
                     action="store")
 parser.add_argument("-s", "--shock", help="specify the shock server url",
                     action="store_true")
+parser.add_argument("-c", "--config", help="specify the config file",
+                    action="store", required=True)
 
 args = parser.parse_args()
 if args.verbose:
@@ -84,4 +84,4 @@ if args.verbose:
 ##############
 
 
-start()
+start(args.config)

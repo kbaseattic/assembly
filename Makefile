@@ -24,8 +24,8 @@ redeploy: clean deploy-services
 deploy-services:
 	echo '#!/bin/sh' > ./start_service
 	echo "echo starting $(SERVICE) services." >> ./start_service
-	echo 'export PERL5LIB=$$PERL5LIB:$(SERVICE_DIR)/lib:$(TARGET)/lib' >> ./start_service
-	echo "$(DEPLOY_RUNTIME)/bin/python $(SERVICE_DIR)/lib/$(SERVICE_EXEC) -p $(PID_FILE)>> ./start_service
+	echo "export PYTHONPATH=$(SERVICE_DIR)/lib/" >> ./start_service
+	echo "$(DEPLOY_RUNTIME)/bin/python $(SERVICE_DIR)/lib/$(SERVICE_EXEC) -p $(PID_FILE) -c $(SERVICE_DIR)/lib/arast.conf" >> ./start_service
 	echo "echo $(SERVICE) service is listening on port $(SERVICE_PORT).\n" >> ./start_service
 
 	echo '#!/bin/sh' > ./stop_service

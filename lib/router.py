@@ -100,12 +100,12 @@ def on_request(ch, method, props, body):
 
 
 
-def start():
+def start(config_file):
     global parser, metadata
     logging.basicConfig(level=logging.DEBUG)
 
     parser = SafeConfigParser()
-    parser.read('arast.conf')
+    parser.read(config_file)
 
     metadata = meta.MetadataConnection(parser.get('meta','mongo.control.host'))
 
