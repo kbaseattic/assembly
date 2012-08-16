@@ -11,7 +11,7 @@ import os
 
 import config
 import assembly as asm
-import metadata
+import metadata as meta
 
 from ConfigParser import SafeConfigParser
 
@@ -23,10 +23,9 @@ class ArastConsumer:
     # Set up environment
         self.shockurl = shockurl
         self.arasturl = arasturl
-
-    # TODO remove default user
-        ARASTUSER = config.ARASTUSER
-        ARASTPASSWORD = config.ARASTPASSWORD
+        self.shockuser = self.parser.get('shock','admin_user')
+        self.shockpass = self.parser.get('shock','admin_pass')
+        self.metadata = meta.MetadataConnection(arasturl)
 
     def compute(self, body):
         params = json.loads(body)
@@ -42,7 +41,7 @@ class ArastConsumer:
         filename += "/raw/"
         os.makedirs(filename)
 
-        url = "http://%s" % (ARASTURL)
+        url = "http://%s" % (self.shockurl)
         for i in range(len(files)):
             file = files[i]
             id = ids[i]
@@ -58,6 +57,7 @@ class ArastConsumer:
         download_ids = {}
         for a in params['assemblers']:
             if asm.is_available(a):
+                self.metadata.update_job(job_id, 'status', "running: %s" % a)
                 result_tar = asm.run(a, datapath, job_id)
                 # send to shock
                 url += '/node'
@@ -66,8 +66,8 @@ class ArastConsumer:
                 download_ids[a] = res['D']['id']
             else:
                 logging.info("%s failed to finish" % a)
-        metadata.update_job(job_id, 'result_data', download_ids)
-        metadata.update_job(job_id, 'status', 'complete')
+        self.metadata.update_job(job_id, 'result_data', download_ids)
+        self.metadata.update_job(job_id, 'status', 'complete')
 
     def upload(self, url, file, job_id, assembler):
         files = {}
@@ -78,23 +78,15 @@ class ArastConsumer:
 
     # TODO move this to shock.py
     def post(self, url, files):
-            global ARASTUSER, ARASTPASSWORD
             r = None
-            if ARASTUSER and ARASTPASSWORD:
-                r = requests.post(url, auth=(ARASTUSER, ARASTPASSWORD), files=files)
-            else:
-                r = requests.post(url, files=files)
+            r = requests.post(url, auth=(self.shockuser, self.shockpass), files=files)
 
             res = json.loads(r.text)
             return res
 
     def get(self, url):     
-        global ARASTUSER, ARASTPASSWORD
         r = None
-        if ARASTUSER and ARASTPASSWORD:  
-            r = requests.get(url, auth=(ARASTUSER, ARASTPASSWORD))       
-        else:
-            r = requests.get(url)
+        r = requests.get(url, auth=(self.shockuser, self.shockpass))       
             #res = json.loads(r.text)
         return r
 

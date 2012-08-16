@@ -34,12 +34,12 @@ def is_available(assembler):
 
 def run(assembler, datapath, job_id):
     logging.info("Running assembler: %s" % assembler)
-    metadata.update_job(job_id, 'status', 'running:')
+#    metadata.update_job(job_id, 'status', 'running:')
     if assembler == 'kiki':
-        metadata.update_job(job_id, 'status', 'running: kiki')
+#        metadata.update_job(job_id, 'status', 'running: kiki')
         result_tar = run_kiki(datapath)
     elif assembler == 'velvet':
-        metadata.update_job(job_id, 'status', 'running: velvet')
+#        metadata.update_job(job_id, 'status', 'running: velvet')
         result_tar = run_velvet(datapath)
     return result_tar
 
@@ -213,8 +213,7 @@ def get_quala(directory):
                    if re.search(r'.qa$|.quala$', file, re.IGNORECASE) is not None]
     return fastq_files
 
-
 parser = SafeConfigParser()
 parser.read('arast.conf')
-#basepath = get_default('basepath')
-metadata = meta.MetadataConnection(parser.get('meta','mongo.remote.host'))
+basepath = get_default('basepath')
+#metadata = meta.MetadataConnection(parser.get('meta','mongo.remote.host'))
