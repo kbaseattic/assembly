@@ -22,9 +22,9 @@ Deploying on KBase infrastructure
 * enter the following commands:
 
 cd /kb
-git clone kbase@git.kbase.us/dev_container
+git clone ssh://kbase@git.kbase.us/dev_container
 cd /kb/dev_container/modules
-git clone kbase@git.kbase.us/assembly
+git clone ssh://kbase@git.kbase.us/assembly
 cd /kb/dev_container
 ./bootstrap /kb/runtime
 source user-env.sh
