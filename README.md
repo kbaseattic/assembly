@@ -3,7 +3,7 @@ Assembly Services
 
 Overview
 ----------
-Services to assemble genomes and metagenomes with user's choice of assembler. 
+Services to assemble genomes and metagenomes with user's choice of assembly algorithm. 
 Currently supports single microbial genome assembly using velvet and/or kiki.
 More to come...
 
