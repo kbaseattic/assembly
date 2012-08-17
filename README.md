@@ -41,3 +41,11 @@ Starting/Stopping the service
 
 
 
+TODO
+---------------------------
+Client deployment
+Testing
+Support for more assemblers
+Support for large eukaryotic genome assembly
+Support for metagenome assembly on supercomputer
+...
