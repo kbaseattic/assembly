@@ -22,5 +22,3 @@ cd bin
 sudo cmake ..
 sudo make ki
 cp ki /usr/bin
-
-popd
