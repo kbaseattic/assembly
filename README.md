@@ -10,7 +10,9 @@ More to come...
 
 Dependencies
 ----------
-See scripts/install_dependencies.sh 
+The current deployment first invokes scripts/install_dependencies.sh.
+This will be no longer necessary once a kbase image is built with these dependencies.
+
 
 
 Deploying on KBase infrastructure
