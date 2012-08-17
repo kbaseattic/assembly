@@ -31,6 +31,7 @@ source user-env.sh
 make deploy
 
 
+
 Starting/Stopping the service
 ---------------------------
 * the assembly service includes one control server and at least one computer server
