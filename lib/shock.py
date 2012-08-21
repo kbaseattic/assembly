@@ -13,7 +13,10 @@ def download(url, node_id, outdir, user=False, password=False):
     res = json.loads(r.text)
     filename = res['D']['file']['name']
     durl = url + "/node/%s?download" % node_id
-    os.makedirs(outdir)
+    try:
+        os.makedirs(outdir)
+    except:
+        pass
     dfile = outdir + filename
     if user and password:
         r = get(durl, user, password)
