@@ -11,6 +11,7 @@ from bson import json_util
 from ConfigParser import SafeConfigParser
 from prettytable import PrettyTable
 
+import shock
 import metadata as meta
 
 def send_message(body, routingKey):
@@ -32,6 +33,7 @@ def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
     return parser.get('rabbitmq','default_routing_key')
 
+
 def get_upload_url():
     global parser
     return parser.get('shock', 'host')
@@ -51,6 +53,7 @@ def route_job(body):
 
 # One RPC receive 
 def on_request(ch, method, props, body):
+    global parser
     logging.info(" [.] Incoming request:  %r" % (body))
     params = json.loads(body)
     ack = ''
@@ -74,6 +77,14 @@ def on_request(ch, method, props, body):
 
     # if 'run'
     elif params['command'] == 'run':
+        if params['config']:
+            logging.info("Config file submitted")
+            #Download config file
+            shock.download("http://" + parser.get('shock','host'),
+                           params['config_id'][0],
+                           'temp/',
+                           parser.get('shock','admin_user'),
+                           parser.get('shock','admin_pass'))
         ack = str(route_job(body))
     
     # if 'get_url'
