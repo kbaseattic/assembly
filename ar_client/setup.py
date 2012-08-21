@@ -10,16 +10,15 @@ setup(
     version = "0.0.1",
     author = "Chris Bun",
     author_email = "chrisbun@gmail.com",
-    description = ("The control daemon for the Assembly Service"),
+    description = ("A commandline client for the KBASE Assembly Service"),
     url = "http://www.kbase.us/services/assembly",
-    packages=find_packages(),
-    install_requires=['pika>=0.9.5',
-                      'pymongo>=2.2.1',
-                      'requests>=0.13.6']
-    include_package_data=True,
+    packages = find_packages(),
+    install_requires = ['pika>=0.9.5',
+                        'pymongo>=2.2.1',
+                        'requests>=0.13.6']
+    include_package_data = True,
     long_description=read('README.md'),
     entry_points={'console_scripts':[
-            'arast-server = lib.arastd',
-            'arast-compute = lib.ar_computed']},
+            'arast = ar_client.ar_client:main']},
     package_data = {'':['*.conf']},
 )

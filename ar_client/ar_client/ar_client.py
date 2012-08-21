@@ -155,19 +155,21 @@ def main():
             if args.directory or args.filename:
                 url += "/node"
 		files = args.filename
-            if args.filename:
-		    if args.config:
-			    files.append(args.config)
+		if args.config:
+			options['config_id'] = upload(url, [args.config])
+	    if args.filename:
 		    res_ids = upload(url, files)
 		    base_files = [os.path.basename(f) for f in files]
 		    del options['filename']
 		    options['filename'] = base_files
-            elif args.directory:
+	    elif args.directory:
 		    ls_files = os.listdir(args.directory)
-		    fullpaths = [str(args.directory + file) for file in ls_files]
+		    #Remove config from upload list
 		    if args.config:
-			    ls_files.append(os.path.basename(args.config))
-			    fullpaths.append(args.config)
+			    cfile = os.path.basename(args.config)
+			    if cfile in ls_files:
+				    ls_files.remove(cfile)
+		    fullpaths = [str(args.directory + file) for file in ls_files]
 		    res_ids = upload(url, fullpaths)
 		    options['filename'] = ls_files
 
