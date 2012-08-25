@@ -15,6 +15,7 @@ import requests
 import uuid
 import time
 from ConfigParser import SafeConfigParser
+from pkg_resources import resource_filename
 
 import shock
 
@@ -42,6 +43,8 @@ parser.add_argument('--ARASTUSER', help='Overrules env ARASTUSER')
 parser.add_argument('--ARASTPASSWORD', help='Overrules env ARASTPASSWORD')
 parser.add_argument("-c", "--config", action="store",
                   dest="config", help="specify parameter configuration file")
+parser.add_argument("-v", "--verbose", action="store_true",
+                   help="Verbose")
 
 subparsers = parser.add_subparsers(dest='command', title='The commands are')
 
@@ -118,10 +121,14 @@ def main():
         options = vars(args)
 	
 	cparser = SafeConfigParser()
+	if args.verbose:
+		logging.basicConfig(level=logging.DEBUG)
 	if args.config:
 		config_file = args.config
 	else:
-		config_file = "settings.conf"
+		#config_file = "settings.conf"
+		config_file = resource_filename(__name__, 'settings.conf')
+		logging.info("Reading config file: %s" % config_file)
 	cparser.read(config_file)
 
 	try:
@@ -256,4 +263,4 @@ class RpcClient:
 
 
 global ARASTUSER, ARASTPASSWORD
-main()
+
