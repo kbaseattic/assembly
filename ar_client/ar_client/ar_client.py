@@ -271,4 +271,4 @@ class RpcClient:
 
 global ARASTUSER, ARASTPASSWORD
 
-main()
+
