@@ -216,9 +216,7 @@ def main():
 		job = args.job_id[0]
 		if args.assemblers:
 			pass
-#		if args.job_id:
-#			pass
-		print "get %s" % (job)
+		logging.info("get %s" % (job))
 		options['ARASTUSER'] = ARASTUSER
 		options['job_id'] = job
 		rpc_body = json.dumps(options, sort_keys=True)
