@@ -213,7 +213,10 @@ def main():
 			time.sleep(2)			
 
 	elif args.command == 'get':
-		job = args.job_id[0]
+		if not args.job_id:
+			job = -1
+		else:
+			job = args.job_id[0]
 		if args.assemblers:
 			pass
 		logging.info("get %s" % (job))
