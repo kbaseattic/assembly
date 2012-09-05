@@ -213,7 +213,14 @@ def get_quala(directory):
                    if re.search(r'.qa$|.quala$', file, re.IGNORECASE) is not None]
     return fastq_files
 
+def read_config():
+    pass
+
+
+
+
 parser = SafeConfigParser()
 parser.read('arast.conf')
 basepath = get_default('basepath')
 #metadata = meta.MetadataConnection(parser.get('meta','mongo.remote.host'))
+

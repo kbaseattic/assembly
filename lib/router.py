@@ -41,10 +41,11 @@ def get_upload_url():
 
 def route_job(body):
     client_params = json.loads(body) #dict of params
-    
     routing_key = determine_routing_key (1, body)
-    job_id =  metadata.insert_job(client_params)
-    metadata.update_job(job_id, 'status', 'queued')
+    job_id = metadata.get_next_id(client_params['ARASTUSER'])
+    client_params['job_id'] = job_id
+    uid = metadata.insert_job(client_params)
+    metadata.update_job(uid, 'status', 'queued')
     p = dict(client_params)
     msg = json.dumps(p)
     send_message(msg, routing_key)
@@ -63,7 +64,10 @@ def on_request(ch, method, props, body):
         pt = PrettyTable(["Job ID", "Status", "Description"])
         docs = metadata.list_jobs(params['ARASTUSER'])
         for doc in docs[-15:]:
-            row = [doc['_id'], doc['status']]
+            try:
+                row = [doc['job_id'], doc['status']]
+            except:
+                row = [doc['_id'], doc['status']]
             try:
                 row.append(str(doc['message']))
             except:
@@ -72,7 +76,7 @@ def on_request(ch, method, props, body):
                 pt.add_row(row)
                 #pt.add_row([str(doc['_id']), str(doc['status'])])
             except:
-                pt.add_row(doc['_id'], "error")
+                pt.add_row(doc['job_id'], "error")
         ack = pt.get_string()
 
     # if 'run'

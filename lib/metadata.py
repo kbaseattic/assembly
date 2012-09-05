@@ -35,7 +35,15 @@ class MetadataConnection:
         connection = pymongo.Connection(self.host, self.port)
         database = connection[self.db]
         ids = database['ids']
-        # TODO finish this
+        next_id = 1
+        if ids.find_one({'user' : user}) is None:
+            ids.insert({'user' : user, 'c' : 1})
+        else:
+            doc = ids.find_and_modify(query={'user' : user}, update={'$inc': {'c' : 1}})
+            next_id = doc['c']
+        return next_id
+
+    
 
     def update_job(self, job_id, field, value):
         logging.info("Updating metadata job %s" % job_id)

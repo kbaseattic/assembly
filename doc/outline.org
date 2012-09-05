@@ -4,47 +4,40 @@
 ## System Modules ##
 
 * Client
-** TODO Remove dependency on RabbitMQ
 ** arast-run
+*** TODO assembler-specific commandline parameters
 ** arast-stat
-
+*** DONE get all info
+*** TODO get info for job id
+*** TODO get specific data
+** arast-get
+*** get specific data
+   
 * Decision Engine
 Based on QC preprocessing, implicit and explicit user parameters, routes jobs to specific work queues
 ** TODO Decide what assemblers
-** STARTED Write metadata
-** TODO Get storage location
+** DONE STARTED Write metadata
+** DONE Get storage location (shock)
 
 * Queueing Manager
 Manages variable types of queues via RabbitMQ
-** Recieve RPC call and add job to queue
-
-* TODO Metadata
+** DONE Recieve RPC call and add job to queue
+* Metadata
 A MongoDB server to store all job metadata
-* API
-** connect()
-** update_record(id, field, value)
 
-* TODO Volume Manager
-** Ceph?
+* Volume Manager
+** TODO ZFS
 
-** Multiple volumes
-
-** Dirty Volume Manager
-*** VM image
-*** 
-
-
-* TODO Compute Node Monitor
+* Compute Node Monitor
 Monitors compute instances, building and tearing down VMs as needed
-
-* arastd
+** DONE arastd
 Runs on compute instances.  Monitors job queues, runs pending, configuration-specific, jobs.
-** Startup
-*** Check Mongodb connection
+** DONE Startup
+*** DONE Check Mongodb connection
 ** Consume pending job
- * TODO Keep a assembler queue (python module, or rabbitmq?)
-** TODO Run assemblies
-** Update metadata for progress
+*** TODO Keep a assembler queue (python module, or rabbitmq?)
+*** DONE Run assemblies
+*** DONE Update metadata for progress
 
 ## Auxillary ##
 * TODO Start-up script
