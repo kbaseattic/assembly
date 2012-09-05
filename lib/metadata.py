@@ -43,8 +43,6 @@ class MetadataConnection:
             next_id = doc['c']
         return next_id
 
-    
-
     def update_job(self, job_id, field, value):
         logging.info("Updating metadata job %s" % job_id)
         jobs = self.get_jobs()
@@ -61,4 +59,12 @@ class MetadataConnection:
         for j in jobs.find({'ARASTUSER':user}):
             r.append(j)
         return r
+
+    def get_job(self, user, job_id):
+        try:
+            job = self.get_jobs().find({'ARASTUSER':user, 'job_id':int(job_id)})[0]
+        except:
+            job = None
+            logging.error("Job %s does not exist" % job_id)
+        return job
 

@@ -20,6 +20,7 @@ from pkg_resources import resource_filename
 import shock
 
 
+
 # arg type checking
 def file_type(f):
 	if not os.path.isfile(f):
@@ -76,6 +77,10 @@ p_stat.add_argument("-w", "--watch", action="store_true")
 
 # get
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
+p_get.add_argument("-j", "--job", action="store",
+                  dest="job_id", nargs=1,
+                  help="specify which job data to get")
+
 p_get.add_argument("-a", "--assemblers", action="store",
                   dest="assemblers", nargs='*',
                   help="specify which assembly data to get")
@@ -208,12 +213,14 @@ def main():
 			time.sleep(2)			
 
 	elif args.command == 'get':
-		job = ''
+		job = args.job_id[0]
 		if args.assemblers:
 			pass
 #		if args.job_id:
 #			pass
+		print "get %s" % (job)
 		options['ARASTUSER'] = ARASTUSER
+		options['job_id'] = job
 		rpc_body = json.dumps(options, sort_keys=True)
 		arast_rpc = RpcClient()
 	        logging.debug(" [x] Sending message: %r" % (rpc_body))
@@ -264,3 +271,4 @@ class RpcClient:
 
 global ARASTUSER, ARASTPASSWORD
 
+main()

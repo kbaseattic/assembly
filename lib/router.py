@@ -96,10 +96,8 @@ def on_request(ch, method, props, body):
         ack = get_upload_url()
 
     elif params['command'] == 'get':
-        docs = metadata.list_jobs(params['ARASTUSER'])
-        
-        # Get latest
-        doc = docs[-1]
+        # NEXT get specific job
+        doc = metadata.get_job(params['ARASTUSER'], params['job_id'])
         try:
             result_data = doc['result_data']
             ack = json.dumps(result_data)
