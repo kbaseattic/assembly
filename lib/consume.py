@@ -8,6 +8,7 @@ import sys
 import json
 import requests
 import os
+import shutil
 
 import config
 import assembly as asm
@@ -73,6 +74,7 @@ class ArastConsumer:
                 download_ids[a] = res['D']['id']
             else:
                 logging.info("%s failed to finish" % a)
+        shutil.rmtree(datapath, ignore_errors=True)
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'status', 'complete')
 
