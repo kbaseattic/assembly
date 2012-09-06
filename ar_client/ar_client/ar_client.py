@@ -64,6 +64,15 @@ p_run.add_argument("-p", "--params", action="store",
 p_run.add_argument("-m", "--message", action="store",
                   dest="message",
                   help="Attach a description to job")
+p_run.add_argument("--data_id", action="store",
+                  dest="data_id",
+                  help="Attach a description to job")
+
+## Assembler flags ##
+
+#TODO subparsers help print out
+v = p_run.add_argument_group('Velvet parameters')
+v.add_argument('--lib1', nargs = '+', help= "paired ends")
 
 
 
