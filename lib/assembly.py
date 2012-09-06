@@ -32,14 +32,14 @@ def is_available(assembler):
     else:
         return False
 
-def run(assembler, datapath, job_id):
+def run(assembler, datapath, uid):
     logging.info("Running assembler: %s" % assembler)
-#    metadata.update_job(job_id, 'status', 'running:')
+#    metadata.update_job(uid, 'status', 'running:')
     if assembler == 'kiki':
-#        metadata.update_job(job_id, 'status', 'running: kiki')
+#        metadata.update_job(uid, 'status', 'running: kiki')
         result_tar = run_kiki(datapath)
     elif assembler == 'velvet':
-#        metadata.update_job(job_id, 'status', 'running: velvet')
+#        metadata.update_job(uid, 'status', 'running: velvet')
         result_tar = run_velvet(datapath)
     return result_tar
 
@@ -128,6 +128,14 @@ def run_velvet(datapath):
 
     tarfile = tar_list(datapath, vfiles, 'velvet_data.tar.gz')
     return tarfile
+
+def get_tar_name(job_id, suffix):
+    name = 'job' + str(job_id)
+    name += '_'
+    name += suffix
+    name += '.tar.gz'
+    return name
+    
 
 def run_soapdenovo():
     return 2
