@@ -34,7 +34,7 @@ class ArastConsumer:
         # Download data
 #        files = params['filename']
  #       ids = params['ids']
-        data_doc = metadata.get_doc_by_data_id(params['data_id'])
+        data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
         files = data_doc['filename']
 
         ids = data_doc['ids']
