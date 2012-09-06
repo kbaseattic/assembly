@@ -31,10 +31,10 @@ class MetadataConnection:
         job_id = jobs.insert(data)
         return job_id
 
-    def get_next_id(self, user):
+    def get_next_id(self, user, category):
         connection = pymongo.Connection(self.host, self.port)
         database = connection[self.db]
-        ids = database['ids']
+        ids = database[category]
         next_id = 1
         if ids.find_one({'user' : user}) is None:
             ids.insert({'user' : user, 'c' : 1})
@@ -42,6 +42,21 @@ class MetadataConnection:
             doc = ids.find_and_modify(query={'user' : user}, update={'$inc': {'c' : 1}})
             next_id = doc['c']
         return next_id
+    
+    def get_next_job_id(self, user):
+        return self.get_next_id(user, 'ids')
+
+    def get_next_data_id(self, user):
+        return self.get_next_id(user, 'data')
+
+    def get_doc_by_data_id(self, data_id):
+        try:
+            job = self.get_jobs().find({'job_id':int(data_id)})[0]
+        except:
+            job = None
+            logging.error("Job %s does not exist" % data_id)
+        return job
+
 
     def update_job(self, job_id, field, value):
         logging.info("Updating metadata job %s" % job_id)

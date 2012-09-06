@@ -42,7 +42,18 @@ def get_upload_url():
 def route_job(body):
     client_params = json.loads(body) #dict of params
     routing_key = determine_routing_key (1, body)
-    job_id = metadata.get_next_id(client_params['ARASTUSER'])
+    job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
+#    try:
+#        data_id = client_params['data_id']
+#    except:
+#        print "none"
+#        data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
+#        client_params['data_id'] = data_id
+
+    if not client_params['data_id']:
+        data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
+        client_params['data_id'] = data_id
+        
     client_params['job_id'] = job_id
     uid = metadata.insert_job(client_params)
     metadata.update_job(uid, 'status', 'queued')
@@ -61,13 +72,21 @@ def on_request(ch, method, props, body):
 
     # if 'stat'
     if params['command'] == 'stat':
-        pt = PrettyTable(["Job ID", "Status", "Description"])
+        pt = PrettyTable(["Job ID", "Data ID", "Status", "Description"])
         docs = metadata.list_jobs(params['ARASTUSER'])
         for doc in docs[-15:]:
             try:
-                row = [doc['job_id'], doc['status']]
+                row = [doc['job_id']]
             except:
-                row = [doc['_id'], doc['status']]
+                row = [doc['_id']]
+            try:
+                row.append(str(doc['data_id']))
+            except:
+                row.append('')
+            try:
+                row.append(str(doc['status']))
+            except:
+                row.append('')
             try:
                 row.append(str(doc['message']))
             except:
