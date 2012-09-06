@@ -32,8 +32,12 @@ class ArastConsumer:
         params = json.loads(body)
 
         # Download data
-        files = params['filename']
-        ids = params['ids']
+#        files = params['filename']
+ #       ids = params['ids']
+        data_doc = metadata.get_doc_by_data_id(params['data_id'])
+        files = data_doc['filename']
+
+        ids = data_doc['ids']
         job_id = params['_id']
 
         filename = self.datapath
