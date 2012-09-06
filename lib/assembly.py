@@ -159,7 +159,11 @@ def tar_list(outpath, file_list, tarname):
     outfile += tarname
     targs = ['tar', '-czvf', outfile]
     for file in file_list:
-        targs.append(file)
+        f = './' + os.path.basename(file)
+        targs.append('-C')
+        targs.append(os.path.split(file)[0])
+        targs.append(f)
+    logging.debug("Tar command: %s: " % targs)
     t = subprocess.Popen(targs)
     t.wait()
     return outfile
