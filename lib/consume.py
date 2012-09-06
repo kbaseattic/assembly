@@ -8,6 +8,7 @@ import sys
 import json
 import requests
 import os
+import shutil
 
 import config
 import assembly as asm
@@ -32,16 +33,15 @@ class ArastConsumer:
         params = json.loads(body)
 
         # Download data
-#        files = params['filename']
- #       ids = params['ids']
         data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
         files = data_doc['filename']
 
         ids = data_doc['ids']
-        job_id = params['_id']
+        job_id = params['job_id']
+        uid = params['_id']
 
         filename = self.datapath
-        filename += job_id
+        filename += str(job_id)
         datapath = filename
         filename += "/raw/"
         os.makedirs(filename)
@@ -62,19 +62,23 @@ class ArastConsumer:
         download_ids = {}
         for a in params['assemblers']:
             if asm.is_available(a):
-                self.metadata.update_job(job_id, 'status', "running: %s" % a)
-                result_tar = asm.run(a, datapath, job_id)
+                self.metadata.update_job(uid, 'status', "running: %s" % a)
+                result_tar = asm.run(a, datapath, uid)
+                renamed = os.path.split(result_tar)[0] + '/'
+                renamed += asm.get_tar_name(job_id, a)
+                os.rename(result_tar, renamed)
                 # send to shock
                 url += '/node'
-                res = self.upload(url, result_tar, job_id, a)
+                res = self.upload(url, renamed, a)
                 # Get location
                 download_ids[a] = res['D']['id']
             else:
                 logging.info("%s failed to finish" % a)
-        self.metadata.update_job(job_id, 'result_data', download_ids)
-        self.metadata.update_job(job_id, 'status', 'complete')
+        shutil.rmtree(datapath, ignore_errors=True)
+        self.metadata.update_job(uid, 'result_data', download_ids)
+        self.metadata.update_job(uid, 'status', 'complete')
 
-    def upload(self, url, file, job_id, assembler):
+    def upload(self, url, file, assembler):
         files = {}
         files["file"] = (os.path.basename(file), open(file, 'rb'))
         logging.debug("Message sent to shock on upload: %s" % files)
