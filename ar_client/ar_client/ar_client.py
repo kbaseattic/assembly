@@ -179,10 +179,13 @@ def main():
 
         # Upload file(s) to Shock
         res_ids = []
+	file_sizes = []
+	file_list = []
 	if args.command == "run":
             if args.directory or args.filename:
                 url += "/node"
 		files = args.filename
+		file_list = args.filename
 		if args.config:
 			options['config_id'] = upload(url, [args.config])
 	    if args.filename:
@@ -198,12 +201,18 @@ def main():
 			    if cfile in ls_files:
 				    ls_files.remove(cfile)
 		    fullpaths = [str(args.directory + file) for file in ls_files]
+		    file_list = fullpaths
 		    res_ids = upload(url, fullpaths)
 		    options['filename'] = ls_files
+	    if args.directory or args.filename:
+		    for f in file_list:
+			    file_sizes.append(os.path.getsize(f))
+			    
 
            # Send message to RPC Server
             options['ARASTUSER'] = ARASTUSER
             options['ids'] = res_ids
+	    options['file_sizes'] = file_sizes
             del options['ARASTPASSWORD']
             del options['ARASTURL']
             rpc_body = json.dumps(options, sort_keys=True)

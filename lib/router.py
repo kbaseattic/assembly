@@ -70,7 +70,7 @@ def on_request(ch, method, props, body):
     logging.info(" [.] Incoming request:  %r" % (body))
     params = json.loads(body)
     ack = ''
-
+    pt = PrettyTable(["Error"])
     # if 'stat'
     if params['command'] == 'stat':
 
@@ -79,13 +79,17 @@ def on_request(ch, method, props, body):
                 ack = 'list all data not implemented'
                 pass
             else:
-                pt = PrettyTable(['#', "File"])
+                pt = PrettyTable(['#', "File", "Size"])
                 data_id = params['files']
-                doc = metadata.get_doc_by_data_id(data_id)
-                files = doc['filename']
-                for i in range(len(files)):
-                    row = [i+1, os.path.basename(files[i])]
-                    pt.add_row(row)
+                try:
+                    doc = metadata.get_doc_by_data_id(data_id)
+                    files = doc['filename']
+                    fsizes = doc['file_sizes']
+                    for i in range(len(files)):
+                        row = [i+1, os.path.basename(files[i]), fsizes[i]]
+                        pt.add_row(row)
+                except:
+                    pass
     
         ######  Stat Jobs #######
         else:
