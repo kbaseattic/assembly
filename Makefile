@@ -20,6 +20,8 @@ deploy: install-dep create-scripts deploy-mongo
 
 redeploy: clean install-dep create-scripts deploy-mongo
 
+deploy-compute: install-dep
+
 install-dep:
 	sh ./scripts/install_dependencies.sh
 
