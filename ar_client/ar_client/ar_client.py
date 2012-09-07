@@ -70,9 +70,11 @@ p_run.add_argument("--data", action="store",
 
 ## Assembler flags ##
 
-#TODO subparsers help print out
+# Velvet
 v = p_run.add_argument_group('Velvet parameters')
-v.add_argument('--lib1', nargs = '+', help= "paired ends")
+v.add_argument('--velvet-lib1', nargs = '+', help= "paired ends")
+v.add_argument('--velvet-lib2', nargs = '+', help= "paired ends")
+
 
 
 
@@ -86,7 +88,7 @@ p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realt
 #p_stat.add_argument("-a", "--all", action="store_true", dest="stat_all", help="show all statistics")
 
 
-p_stat.add_argument("--files", action="store", nargs='?', const=-1, help="list all or data-id specific files")
+p_stat.add_argument("--data", dest="files", action="store", nargs='?', const=-1, help="list all or data-id specific files")
 
 
 
@@ -182,6 +184,11 @@ def main():
 	file_sizes = []
 	file_list = []
 	if args.command == "run":
+            if not (args.assemblers and (args.filename or args.directory or args.data_id)):
+		    parser.print_usage()
+		    sys.exit()
+			    
+
             if args.directory or args.filename:
                 url += "/node"
 		files = args.filename
