@@ -31,9 +31,26 @@ class ArastConsumer:
         self.datapath = self.parser.get('compute','datapath')
         self.metadata = meta.MetadataConnection(arasturl, config)
 
+    def garbage_collect(self, datapath, required_space):
+        """ Monitor space of disk containing DATAPATH and delete files if necessary."""
+        s = os.statvfs(datapath)
+        free_space = float(s.f_bsize * s.f_bavail)
+        logging.debug("Free space in bytes: %s" % free_space)
+        while (free_space < required_space):
+            #Delete old data
+            dirs = os.listdir(datapath)
+            times = []
+            for dir in dirs:
+                times.append(os.path.getmtime(datapath + dir))
+            old_dir = datapath + dirs[times.index(min(times))]
+            shutil.rmtree(old_dir, ignore_errors=True)
+            logging.info("Space required.  %s removed." % old_dir)
+        
+
     def get_data(self, body):
         """Get data from cache or Shock server."""
         params = json.loads(body)
+
 
         # Download data
 
@@ -43,6 +60,7 @@ class ArastConsumer:
         datapath = filename
         if os.path.isdir(datapath):
             logging.info("Requested data exists on node")
+            touch(datapath)
         else:
             data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
             files = data_doc['filename']
@@ -53,6 +71,12 @@ class ArastConsumer:
 
             filename += "/raw/"
             os.makedirs(filename)
+
+            # Get required space and garbage collect
+            req_space = 0
+            for file_size in data_doc['file_sizes']:
+                req_space += file_size
+            self.garbage_collect(self.datapath, req_space)
 
             url = "http://%s" % (self.shockurl)
             for i in range(len(files)):
@@ -151,3 +175,15 @@ class ArastConsumer:
         self.fetch_job(self.parser.get('rabbitmq','job.medium'))
 
 
+def touch(path):
+    now = time.time()
+    try:
+        # assume it's there
+        os.utime(path, (now, now))
+    except os.error:
+        # if it isn't, try creating the directory,
+        # a file with that name
+        os.makedirs(os.path.dirname(path))
+        open(path, "w").close()
+        os.utime(path, (now, now))
+    
