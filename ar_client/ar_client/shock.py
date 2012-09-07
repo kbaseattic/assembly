@@ -3,16 +3,20 @@
 import logging
 import requests
 import json
+import os
 
 def download(url, node_id, outdir, user=False, password=False):
+    logging.info("Downloading id: %s" % node_id)
     u = url
-
     u += "/node/%s" % node_id
     r = get(u, user, password)
     res = json.loads(r.text)
     filename = res['D']['file']['name']
-    print filename
     durl = url + "/node/%s?download" % node_id
+    try:
+        os.makedirs(outdir)
+    except:
+        pass
     dfile = outdir + filename
     if user and password:
         r = get(durl, user, password)
@@ -31,7 +35,7 @@ def post(url, files, user, password):
             r = requests.post(url, files=files)
 
         res = json.loads(r.text)
-        print r.text
+        logging.info(r.text)
 	return res
 
 

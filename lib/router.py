@@ -7,6 +7,7 @@ import pika
 import pprint
 import sys
 import json
+import os
 from bson import json_util
 from ConfigParser import SafeConfigParser
 from prettytable import PrettyTable
@@ -72,30 +73,47 @@ def on_request(ch, method, props, body):
 
     # if 'stat'
     if params['command'] == 'stat':
-        pt = PrettyTable(["Job ID", "Data ID", "Status", "Description"])
-        docs = metadata.list_jobs(params['ARASTUSER'])
-        for doc in docs[-15:]:
-            try:
-                row = [doc['job_id']]
-            except:
-                row = [doc['_id']]
-            try:
-                row.append(str(doc['data_id']))
-            except:
-                row.append('')
-            try:
-                row.append(str(doc['status']))
-            except:
-                row.append('')
-            try:
-                row.append(str(doc['message']))
-            except:
-                row.append('')
-            try:
-                pt.add_row(row)
-                #pt.add_row([str(doc['_id']), str(doc['status'])])
-            except:
-                pt.add_row(doc['job_id'], "error")
+
+        if params['files']:
+            if params['files'] == -1:
+                ack = 'list all data not implemented'
+                pass
+            else:
+                pt = PrettyTable(['#', "File"])
+                data_id = params['files']
+                doc = metadata.get_doc_by_data_id(data_id)
+                files = doc['filename']
+                for i in range(len(files)):
+                    row = [i+1, os.path.basename(files[i])]
+                    pt.add_row(row)
+    
+        ######  Stat Jobs #######
+        else:
+            pt = PrettyTable(["Job ID", "Data ID", "Status", "Description"])
+            docs = metadata.list_jobs(params['ARASTUSER'])
+            for doc in docs[-15:]:
+                try:
+                    row = [doc['job_id']]
+                except:
+                    row = [doc['_id']]
+                try:
+                    row.append(str(doc['data_id']))
+                except:
+                    row.append('')
+                try:
+                    row.append(str(doc['status']))
+                except:
+                    row.append('')
+                try:
+                    row.append(str(doc['message']))
+                except:
+                    row.append('')
+                try:
+                    pt.add_row(row)
+                except:
+                    pt.add_row(doc['job_id'], "error")
+
+        
         ack = pt.get_string()
 
     # if 'run'

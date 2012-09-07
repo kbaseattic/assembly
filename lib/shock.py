@@ -35,7 +35,7 @@ def post(url, files, user, password):
             r = requests.post(url, files=files)
 
         res = json.loads(r.text)
-        print r.text
+        logging.info(r.text)
 	return res
 
 

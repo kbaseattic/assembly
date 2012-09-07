@@ -64,9 +64,9 @@ p_run.add_argument("-p", "--params", action="store",
 p_run.add_argument("-m", "--message", action="store",
                   dest="message",
                   help="Attach a description to job")
-p_run.add_argument("--data_id", action="store",
+p_run.add_argument("--data", action="store",
                   dest="data_id",
-                  help="Attach a description to job")
+                  help="Reuse uploaded data")
 
 ## Assembler flags ##
 
@@ -82,7 +82,13 @@ v.add_argument('--lib1', nargs = '+', help= "paired ends")
 
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
-p_stat.add_argument("-w", "--watch", action="store_true")
+p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
+#p_stat.add_argument("-a", "--all", action="store_true", dest="stat_all", help="show all statistics")
+
+
+p_stat.add_argument("--files", action="store", nargs='?', const=-1, help="list all or data-id specific files")
+
+
 
 # get
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
@@ -94,6 +100,7 @@ p_get.add_argument("-a", "--assemblers", action="store",
                   dest="assemblers", nargs='*',
                   help="specify which assembly data to get")
 
+p_prep = subparsers.add_parser('prep', description='Prepare a parameter file', help='prepare job submission')
 
 def post(url, files):
 	global ARASTUSER, ARASTPASSWORD
