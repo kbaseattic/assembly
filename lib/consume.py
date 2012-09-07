@@ -63,68 +63,78 @@ class ArastConsumer:
             touch(datapath)
         else:
             data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
-            files = data_doc['filename']
+            if data_doc:
+                files = data_doc['filename']
 
-            ids = data_doc['ids']
-            job_id = params['job_id']
-            uid = params['_id']
+                ids = data_doc['ids']
+                job_id = params['job_id']
+                uid = params['_id']
 
-            filename += "/raw/"
-            os.makedirs(filename)
+                filename += "/raw/"
+                os.makedirs(filename)
 
-            # Get required space and garbage collect
-            req_space = 0
-            for file_size in data_doc['file_sizes']:
-                req_space += file_size
-            self.garbage_collect(self.datapath, req_space)
+                # Get required space and garbage collect
+                req_space = 0
+                for file_size in data_doc['file_sizes']:
+                    req_space += file_size
+                self.garbage_collect(self.datapath, req_space)
 
-            url = "http://%s" % (self.shockurl)
-            for i in range(len(files)):
-                file = files[i]
-                id = ids[i]
-                temp_url = url
-                temp_url += "/node/%s" % (id)
-                temp_url += "?download" 
-                r = self.get(temp_url)
-                cur_file = filename
-                cur_file += file
-                with open(cur_file, "wb") as code:
-                    code.write(r.content)
+                url = "http://%s" % (self.shockurl)
+                for i in range(len(files)):
+                    file = files[i]
+                    id = ids[i]
+                    temp_url = url
+                    temp_url += "/node/%s" % (id)
+                    temp_url += "?download" 
+                    r = self.get(temp_url)
+                    cur_file = filename
+                    cur_file += file
+                    with open(cur_file, "wb") as code:
+                        code.write(r.content)
+            else:
+                datapath = None
         return datapath
 
 
     def compute(self, body):
+        error = False
         params = json.loads(body)
 
         # Download files (if necessary)
         datapath = self.get_data(body)
+        if not datapath:
+            error = True
+            logging.error("Data does not exist!")
+        
         job_id = params['job_id']
         uid = params['_id']
 
         # Run assemblies
-        
-        start_time = time.time()
-        download_ids = {}
-        for a in params['assemblers']:
-            if asm.is_available(a):
-                self.metadata.update_job(uid, 'status', "running: %s" % a)
-                result_tar = asm.run(a, datapath, uid)
-                renamed = os.path.split(result_tar)[0] + '/'
-                renamed += asm.get_tar_name(job_id, a)
-                os.rename(result_tar, renamed)
-                # send to shock
-                url = "http://%s" % (self.shockurl)
-                url += '/node'
-                res = self.upload(url, renamed, a)
-                # Get location
-                download_ids[a] = res['D']['id']
-            else:
-                logging.info("%s failed to finish" % a)
-        elapsed_time = time.time() - start_time
-        ftime = str(datetime.timedelta(seconds=elapsed_time))
-        self.metadata.update_job(uid, 'result_data', download_ids)
-        self.metadata.update_job(uid, 'status', 'complete')
-        self.metadata.update_job(uid, 'computation_time', ftime)
+        if not error:
+            start_time = time.time()
+            download_ids = {}
+            for a in params['assemblers']:
+                if asm.is_available(a):
+                    self.metadata.update_job(uid, 'status', "running: %s" % a)
+                    result_tar = asm.run(a, datapath, uid)
+                    renamed = os.path.split(result_tar)[0] + '/'
+                    renamed += asm.get_tar_name(job_id, a)
+                    os.rename(result_tar, renamed)
+                    # send to shock
+                    url = "http://%s" % (self.shockurl)
+                    url += '/node'
+                    res = self.upload(url, renamed, a)
+                    # Get location
+                    download_ids[a] = res['D']['id']
+                else:
+                    logging.info("%s failed to finish" % a)
+            elapsed_time = time.time() - start_time
+            ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
+            self.metadata.update_job(uid, 'result_data', download_ids)
+            self.metadata.update_job(uid, 'status', 'complete')
+            self.metadata.update_job(uid, 'computation_time', ftime)
+        else:
+            self.metadata.update_job(uid, 'status', 'Data error')
 
     def upload(self, url, file, assembler):
         files = {}
