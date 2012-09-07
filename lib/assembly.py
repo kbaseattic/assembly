@@ -44,14 +44,15 @@ def run(assembler, datapath, uid):
     return result_tar
 
 def run_kiki(datapath):
-
+    """ Runs kiki assembler on ONLY FASTA files. """
     ki_exec = basepath + get_default('kiki.path')
     ki_exec += get_default('kiki.exec')
     raw_path = datapath + '/raw/'
 
 
     args = [ki_exec, '-k', '29', '-i']
-    for file in os.listdir(raw_path):
+    fasta_files = get_fasta(raw_path)
+    for file in fasta_files:
         readfile = raw_path + file
         print readfile
         args.append(readfile)
@@ -65,7 +66,7 @@ def run_kiki(datapath):
 
     contigfile = raw_path + '*.contig'
     contigs = glob.glob(contigfile)
-    
+    logging.debug("Contigs: %s" % contigs)
     tarfile = tar_list(datapath, contigs, 'ki_data.tar.gz')
     # Return location of finished data
     return tarfile
