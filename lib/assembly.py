@@ -40,7 +40,7 @@ def run(assembler, datapath, uid):
         result_tar = run_kiki(datapath)
     elif assembler == 'velvet':
 #        metadata.update_job(uid, 'status', 'running: velvet')
-        result_tar = run_velvet(datapath)
+        result_tar = run_velvet(datapath, uid)
     return result_tar
 
 def run_kiki(datapath):
@@ -72,10 +72,12 @@ def run_kiki(datapath):
     return tarfile
 
 
-def run_velvet(datapath):
+def run_velvet(datapath, uid):
 
     velvet_data = datapath 
-    velvet_data += '/velvet/'
+    velvet_data += '/'
+    velvet_data += uid
+    velvet_data += '/'
     os.makedirs(velvet_data)
 
     # Set up parameters
