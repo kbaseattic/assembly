@@ -10,7 +10,7 @@ sudo pip install --upgrade python-novaclient
 pushd /tmp/
 sudo git clone git://github.com/dzerbino/velvet.git
 cd velvet
-sudo make ’CATEGORIES=9’ ’MAXKMERLENGTH=99’ ’LONGSEQUENCES=1’ ’OPENMP=1’
+sudo make 'CATEGORIES=9' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1'
 sudo cp velveth /usr/bin
 sudo cp velvetg /usr/bin
 
