@@ -9,6 +9,8 @@ import json
 import requests
 import os
 import shutil
+import time
+import datetime 
 
 import config
 import assembly as asm
@@ -76,6 +78,8 @@ class ArastConsumer:
         uid = params['_id']
 
         # Run assemblies
+        
+        start_time = time.time()
         download_ids = {}
         for a in params['assemblers']:
             if asm.is_available(a):
@@ -92,10 +96,11 @@ class ArastConsumer:
                 download_ids[a] = res['D']['id']
             else:
                 logging.info("%s failed to finish" % a)
-##        shutil.rmtree(datapath, ignore_errors=True)
-        # TODO garbage collection on data
+        elapsed_time = time.time() - start_time
+        ftime = str(datetime.timedelta(seconds=elapsed_time))
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'status', 'complete')
+        self.metadata.update_job(uid, 'computation_time', ftime)
 
     def upload(self, url, file, assembler):
         files = {}

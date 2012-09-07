@@ -93,7 +93,7 @@ def on_request(ch, method, props, body):
     
         ######  Stat Jobs #######
         else:
-            pt = PrettyTable(["Job ID", "Data ID", "Status", "Description"])
+            pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
             docs = metadata.list_jobs(params['ARASTUSER'])
             for doc in docs[-15:]:
                 try:
@@ -106,6 +106,10 @@ def on_request(ch, method, props, body):
                     row.append('')
                 try:
                     row.append(str(doc['status']))
+                except:
+                    row.append('')
+                try:
+                    row.append(str(doc['computation_time']))
                 except:
                     row.append('')
                 try:
