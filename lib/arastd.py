@@ -14,6 +14,7 @@ import lockfile
 import pymongo
 import pika
 import router
+#import router2 as router
 from ConfigParser import SafeConfigParser
 
 import shock

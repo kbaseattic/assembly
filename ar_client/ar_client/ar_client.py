@@ -90,7 +90,9 @@ p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realt
 
 p_stat.add_argument("--data", dest="files", action="store", nargs='?', const=-1, help="list latest or data-id specific files")
 
-p_stat.add_argument("--job", dest="stat_job", action="store", nargs=1, const=-1, help="list latest or id specific job status")
+p_stat.add_argument("--job", dest="stat_job", action="store", nargs=1, default=-1, help="list latest or id specific job status")
+p_stat.add_argument("-n", dest="stat_n", action="store", nargs=1, default=15, type=int, help="specify number ofrecords to show")
+
 
 
 # get
