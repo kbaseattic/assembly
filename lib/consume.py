@@ -36,7 +36,7 @@ class ArastConsumer:
         s = os.statvfs(datapath)
         free_space = float(s.f_bsize * s.f_bavail)
         logging.debug("Free space in bytes: %s" % free_space)
-        while (free_space < required_space):
+        while ((free_space - 2000000) < required_space):
             #Delete old data
             dirs = os.listdir(datapath)
             times = []
