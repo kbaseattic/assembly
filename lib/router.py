@@ -22,6 +22,7 @@ def send_message(body, routingKey):
             host='localhost'))
     channel = connection.channel()
     channel.queue_declare(queue=routingKey, durable=True)
+    channel.basic_qos(prefetch_count=1)
     channel.basic_publish(exchange = '',
                           routing_key=routingKey,
                           body=body,

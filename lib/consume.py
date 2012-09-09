@@ -162,7 +162,7 @@ class ArastConsumer:
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host = self.arasturl))
         channel = connection.channel()
-
+        channel.basic_qos(prefetch_count=1)
         result = channel.queue_declare(queue=queue,
                                        exclusive=False,
                                        auto_delete=False,
