@@ -22,3 +22,9 @@ cd bin
 sudo cmake ..
 sudo make ki
 cp ki /usr/bin
+
+cd ..
+sudo git clone git://github.com/lh3/bwa.git bwa
+cd bwa
+sudo make
+sudo cp bwa /usr/bin
