@@ -80,10 +80,13 @@ class ArastConsumer:
                 os.makedirs(filename)
 
                 # Get required space and garbage collect
-                req_space = 0
-                for file_size in data_doc['file_sizes']:
-                    req_space += file_size
-                self.garbage_collect(self.datapath, req_space)
+                try:
+                    req_space = 0
+                    for file_size in data_doc['file_sizes']:
+                        req_space += file_size
+                    self.garbage_collect(self.datapath, req_space)
+                except:
+                    pass
 
                 url = "http://%s" % (self.shockurl)
                 for i in range(len(files)):
