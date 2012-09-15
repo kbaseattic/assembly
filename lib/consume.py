@@ -37,15 +37,20 @@ class ArastConsumer:
         free_space = float(s.f_bsize * s.f_bavail)
         logging.debug("Free space in bytes: %s" % free_space)
         logging.debug("Required space in bytes: %s" % required_space)
-        while ((free_space - 2000000) < required_space):
+        while ((free_space - 2000000000) < required_space):
             #Delete old data
             dirs = os.listdir(datapath)
             times = []
             for dir in dirs:
                 times.append(os.path.getmtime(datapath + dir))
-            old_dir = datapath + dirs[times.index(min(times))]
-            shutil.rmtree(old_dir, ignore_errors=True)
+            if len(dirs) > 0:
+                old_dir = datapath + dirs[times.index(min(times))]
+                shutil.rmtree(old_dir, ignore_errors=True)
+            else:
+                logging.error("No more directories to remove")
+                break
             logging.info("Space required.  %s removed." % old_dir)
+            logging.debug("Free space in bytes: %s" % free_space)
         
 
     def get_data(self, body):
@@ -75,10 +80,13 @@ class ArastConsumer:
                 os.makedirs(filename)
 
                 # Get required space and garbage collect
-                req_space = 0
-                for file_size in data_doc['file_sizes']:
-                    req_space += file_size
-                self.garbage_collect(self.datapath, req_space)
+                try:
+                    req_space = 0
+                    for file_size in data_doc['file_sizes']:
+                        req_space += file_size
+                    self.garbage_collect(self.datapath, req_space)
+                except:
+                    pass
 
                 url = "http://%s" % (self.shockurl)
                 for i in range(len(files)):
