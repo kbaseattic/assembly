@@ -46,6 +46,7 @@ parser.add_argument("-c", "--config", action="store",
                   dest="config", help="specify parameter configuration file")
 parser.add_argument("-v", "--verbose", action="store_true",
                    help="Verbose")
+parser.add_argument('--version', action='version', version='%(prog)s 0.0.5')
 
 subparsers = parser.add_subparsers(dest='command', title='The commands are')
 
