@@ -29,6 +29,7 @@ class ArastConsumer:
         self.shockuser = self.parser.get('shock','admin_user')
         self.shockpass = self.parser.get('shock','admin_pass')
         self.datapath = self.parser.get('compute','datapath')
+        self.min_free_space = float(self.parser.get('compute','min_free_space'))
         self.metadata = meta.MetadataConnection(arasturl, config)
 
     def garbage_collect(self, datapath, required_space):
@@ -37,7 +38,7 @@ class ArastConsumer:
         free_space = float(s.f_bsize * s.f_bavail)
         logging.debug("Free space in bytes: %s" % free_space)
         logging.debug("Required space in bytes: %s" % required_space)
-        while ((free_space - 2000000000) < required_space):
+        while ((free_space - self.min_free_space) < required_space):
             #Delete old data
             dirs = os.listdir(datapath)
             times = []
@@ -50,6 +51,8 @@ class ArastConsumer:
                 logging.error("No more directories to remove")
                 break
             logging.info("Space required.  %s removed." % old_dir)
+            s = os.statvfs(datapath)
+            free_space = float(s.f_bsize * s.f_bavail)
             logging.debug("Free space in bytes: %s" % free_space)
         
 
@@ -129,6 +132,7 @@ class ArastConsumer:
             download_ids = {}
             for a in params['assemblers']:
                 if asm.is_available(a):
+                    self.garbage_collect(self.datapath, 0)
                     self.metadata.update_job(uid, 'status', "running: %s" % a)
                     result_tar = asm.run(a, datapath, uid, bwa)
                     renamed = os.path.split(result_tar)[0] + '/'

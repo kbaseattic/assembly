@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import subprocess
+import shutil
 import tarfile
 import glob
 
@@ -53,6 +54,7 @@ def run_kiki(datapath, bwa):
     args = [ki_exec, '-k', '29', '-i']
     fasta_files = get_fasta(raw_path)
     readfiles = []
+    tmp_files = []
     for file in fasta_files:
         readfile = raw_path + file
         print readfile
@@ -68,13 +70,15 @@ def run_kiki(datapath, bwa):
 
     contigfile = raw_path + '*.contig'
     contigs = glob.glob(contigfile)
+    tmp_files += contigs
     logging.debug("Contigs: %s" % contigs)
 
     fa_contigs = []
     for contig in contigs:
-        outfile = contig + '.fa'
+        outfile = contig + '.kifa'
         tab_to_fasta(contig, outfile, threshold)
         fa_contigs.append(outfile)
+        tmp_files.append(outfile)
 
     if len(fa_contigs) < 1:
         pass #TODO concat
@@ -82,9 +86,22 @@ def run_kiki(datapath, bwa):
         ref_contig = os.path.basename(fa_contigs[0])
 
     if bwa:
-        contigs.append(run_bwa(raw_path, ref_contig, readfiles, 'kiki'))
+        bwa_bam = run_bwa(raw_path, ref_contig, readfiles, 'kiki')
+        contigs.append(bwa_bam)
+        tmp_files.append(bwa_bam)
 
     tarfile = tar_list(datapath, contigs, 'ki_data.tar.gz')
+
+    # Remove intermediate files
+    contigfile = raw_path + '*.contig.*'
+    tmp_files += glob.glob(contigfile)
+    for temp in tmp_files:
+        try:
+            os.remove(temp)
+            logging.info("Removed %s" % temp)
+        except:
+            logging.info("Could not remove %s" % temp)
+
     # Return location of finished data
     return tarfile
 
@@ -130,7 +147,10 @@ def run_velvet(datapath, uid, bwa):
             args.append(str(raw_path + paired_reads[i][1]))
 
     else:
-        for file in os.listdir(raw_path):
+        # TODO handle more than just fasta files
+        valid_files = get_fasta(raw_path)
+        valid_files += get_fastq(raw_path)
+        for file in valid_files:
             readfile = raw_path + file
             args.append(readfile)
             read_files.append(readfile)
@@ -233,7 +253,7 @@ def get_fasta(directory):
     """
     files = os.listdir(directory)
     fasta_files = [file for file in files 
-                   if re.search(r'.fa$|.fasta$', file, re.IGNORECASE) is not None]
+                   if re.search(r'\.fa$|\.fasta$', file, re.IGNORECASE) is not None]
     return fasta_files
 
 def get_fastq(directory):
@@ -241,7 +261,7 @@ def get_fastq(directory):
     """
     files = os.listdir(directory)
     fastq_files = [file for file in files 
-                   if re.search(r'.fq$|.fastq$', file, re.IGNORECASE) is not None]
+                   if re.search(r'\.fq$|\.fastq$', file, re.IGNORECASE) is not None]
     return fastq_files
     
 def get_quala(directory):
@@ -249,7 +269,7 @@ def get_quala(directory):
     """
     files = os.listdir(directory)
     quala_files = [file for file in files 
-                   if re.search(r'.qa$|.quala$', file, re.IGNORECASE) is not None]
+                   if re.search(r'\.qa$|\.quala$', file, re.IGNORECASE) is not None]
     return fastq_files
 
 def read_config():
@@ -259,6 +279,7 @@ def run_bwa(data_dir, ref_name, read_files, prefix):
     """ Ex: run_bwa(velvet_data, 'contigs.fa', reads_list, 'velvet') """
     bwa_exec = 'bwa'
     samtools_exec = 'samtools'
+    tmp_files = []
 
     ref_file = data_dir + ref_name
 
@@ -281,14 +302,16 @@ def run_bwa(data_dir, ref_name, read_files, prefix):
             logging.info("Concatenating read file: %s", rf)
             shutil.copyfileobj(open(rf,'rb'), destination)
         destination.close()
+        tmp_files.append(reads)
     else:
         reads = read_files[0]
     bwa_args.append(reads)
-
+    
 
     aln_out = data_dir + prefix
     aln_out += '_aln.sai'
     aln_outbuffer = open(aln_out, 'wb')
+    tmp_files.append(aln_out)
     bwa_args.append(aln_out)
     logging.info(bwa_args)
     p_aln = subprocess.Popen(bwa_args, stdout=aln_outbuffer)
@@ -301,6 +324,7 @@ def run_bwa(data_dir, ref_name, read_files, prefix):
     sam_out = data_dir + prefix
     sam_out += '_aln.sam'
     sam_outbuffer = open(sam_out, 'wb')
+    tmp_files.append(sam_out)
     bwa_args.append(sam_out)
     logging.info(bwa_args)
     p_sam = subprocess.Popen(bwa_args, stdout=sam_outbuffer)
@@ -315,17 +339,25 @@ def run_bwa(data_dir, ref_name, read_files, prefix):
     bam_outbuffer = open(bam_out, 'wb')
     samtools_args.append(bam_out)
     samtools_args.append(sam_out)
+
     logging.info(samtools_args)
     p_bam = subprocess.Popen(samtools_args, stdout=bam_outbuffer)
     p_bam.wait()
     bam_outbuffer.close()
-    
+
+    for temp in tmp_files:
+        try:
+            os.remove(temp)
+        except:
+            logging.info("Could not remove %s" % temp)
+
     return bam_out
 
 def tab_to_fasta(tabbed_file, outfile, threshold):
     tabbed = open(tabbed_file, 'r')
     fasta = open(outfile, 'w')
-    prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', ' seed_', '\n']
+    prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', '\n']
+    #prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', ' seed_', '\n']
     for line in tabbed:
         l = line.split('\t')
         if int(l[1]) <= threshold:
