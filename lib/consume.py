@@ -118,6 +118,11 @@ class ArastConsumer:
         job_id = params['job_id']
         uid = params['_id']
 
+        try:
+            bwa = params['bwa']
+        except:
+            bwa = false
+
         # Run assemblies
         if not error:
             start_time = time.time()
@@ -125,7 +130,7 @@ class ArastConsumer:
             for a in params['assemblers']:
                 if asm.is_available(a):
                     self.metadata.update_job(uid, 'status', "running: %s" % a)
-                    result_tar = asm.run(a, datapath, uid)
+                    result_tar = asm.run(a, datapath, uid, bwa)
                     renamed = os.path.split(result_tar)[0] + '/'
                     renamed += asm.get_tar_name(job_id, a)
                     os.rename(result_tar, renamed)
