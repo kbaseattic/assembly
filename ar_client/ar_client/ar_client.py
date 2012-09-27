@@ -68,6 +68,8 @@ p_run.add_argument("-m", "--message", action="store",
 p_run.add_argument("--data", action="store",
                   dest="data_id",
                   help="Reuse uploaded data")
+p_run.add_argument("--bwa", action="store_true", dest="bwa",
+                   help="enable bwa alignment")
 
 ## Assembler flags ##
 
