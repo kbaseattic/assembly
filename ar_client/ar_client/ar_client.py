@@ -25,7 +25,7 @@ my_version = '0.0.6'
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
 parser.add_argument('-u', '--ARASTUSER', help='Overrules env ARASTUSER')
-parser.add_argument('p', '--ARASTPASSWORD', help='Overrules env ARASTPASSWORD')
+parser.add_argument('-p', '--ARASTPASSWORD', help='Overrules env ARASTPASSWORD')
 parser.add_argument("-c", "--config", action="store",
                   dest="config", help="specify parameter configuration file")
 parser.add_argument("-v", "--verbose", action="store_true",
