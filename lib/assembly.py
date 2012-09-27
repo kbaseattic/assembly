@@ -73,19 +73,20 @@ def run_kiki(datapath, bwa):
     tmp_files += contigs
     logging.debug("Contigs: %s" % contigs)
 
-    fa_contigs = []
-    for contig in contigs:
-        outfile = contig + '.kifa'
-        tab_to_fasta(contig, outfile, threshold)
-        fa_contigs.append(outfile)
-        tmp_files.append(outfile)
-
-    if len(fa_contigs) < 1:
-        pass #TODO concat
-    else:
-        ref_contig = os.path.basename(fa_contigs[0])
-
     if bwa:
+
+        fa_contigs = []
+        for contig in contigs:
+            outfile = contig + '.kifa'
+            tab_to_fasta(contig, outfile, threshold)
+            fa_contigs.append(outfile)
+            tmp_files.append(outfile)
+
+        if len(fa_contigs) < 1:
+            pass #TODO concat
+        else:
+            ref_contig = os.path.basename(fa_contigs[0])
+
         bwa_bam = run_bwa(raw_path, ref_contig, readfiles, 'kiki')
         contigs.append(bwa_bam)
         tmp_files.append(bwa_bam)
@@ -95,6 +96,7 @@ def run_kiki(datapath, bwa):
     # Remove intermediate files
     contigfile = raw_path + '*.contig.*'
     tmp_files += glob.glob(contigfile)
+
     for temp in tmp_files:
         try:
             os.remove(temp)
@@ -356,8 +358,8 @@ def run_bwa(data_dir, ref_name, read_files, prefix):
 def tab_to_fasta(tabbed_file, outfile, threshold):
     tabbed = open(tabbed_file, 'r')
     fasta = open(outfile, 'w')
-    prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', '\n']
-    #prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', ' seed_', '\n']
+    #prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', '\n']
+    prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', ' seed_', '\n']
     for line in tabbed:
         l = line.split('\t')
         if int(l[1]) <= threshold:
