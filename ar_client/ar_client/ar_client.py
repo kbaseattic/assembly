@@ -20,23 +20,7 @@ from pkg_resources import resource_filename
 import shock
 
 
-
-# arg type checking
-def file_type(f):
-	if not os.path.isfile(f):
-		msg = "%s is not a file" % f
-		raise argparse.ArgumentTypeError(msg)
-	else:
-		return f
-
-def dir_type(d):
-	if not os.path.isdir(d):
-		msg = "%s is not a directory" % d
-		raise argparse.ArgumentTypeError(msg)
-	else:
-		return d
-
-
+my_version = '0.0.6'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('--ARASTURL', help='Overrules env ARASTURL')
@@ -46,7 +30,7 @@ parser.add_argument("-c", "--config", action="store",
                   dest="config", help="specify parameter configuration file")
 parser.add_argument("-v", "--verbose", action="store_true",
                    help="Verbose")
-parser.add_argument('--version', action='version', version='%(prog)s 0.0.5')
+parser.add_argument('--version', action='version', version='%(prog)s ' + my_version)
 
 subparsers = parser.add_subparsers(dest='command', title='The commands are')
 
@@ -148,7 +132,8 @@ def main():
 	args = parser.parse_args()
 	opt = parser.parse_args()
         options = vars(args)
-	
+
+	options['version'] = my_version
 	cparser = SafeConfigParser()
 	if args.verbose:
 		logging.basicConfig(level=logging.DEBUG)
