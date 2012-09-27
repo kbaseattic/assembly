@@ -3,7 +3,7 @@ Assembly Service Commandline Client
 
 Installation
 ------------
-`sudo easy install EGG_FILE`
+`sudo easy_install EGG_FILE`
 
 
 Statistics
