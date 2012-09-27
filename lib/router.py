@@ -174,10 +174,11 @@ def on_request(ch, method, props, body):
 
     # Check client version
     try:
-        if StrictVersion(params['version']) < StrictVersion('0.0.6'):
+        if StrictVersion(params['version']) < StrictVersion('0.0.6') && params['command'] == 'run':
             ack += "\nNew version of client available.  Please update"
     except:
-        ack += "\nNew version of client available.  Please update."
+        if params['command'] == 'run':
+            ack += "\nNew version of client available.  Please update."
 
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
