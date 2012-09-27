@@ -8,6 +8,7 @@ import pprint
 import sys
 import json
 import os
+from distutils.version import StrictVersion
 from bson import json_util
 from ConfigParser import SafeConfigParser
 from prettytable import PrettyTable
@@ -73,6 +74,8 @@ def on_request(ch, method, props, body):
     params = json.loads(body)
     ack = ''
     pt = PrettyTable(["Error"])
+
+
     # if 'stat'
     try:
         if params['command'] == 'stat':
@@ -168,6 +171,15 @@ def on_request(ch, method, props, body):
                 
     except:
         ack = "Error: Malformed message. Using latest version?"
+
+    # Check client version
+    try:
+        if StrictVersion(params['version']) < StrictVersion('0.0.6') && params['command'] == 'run':
+            ack += "\nNew version of client available.  Please update"
+    except:
+        if params['command'] == 'run':
+            ack += "\nNew version of client available.  Please update."
+
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
                      properties=pika.BasicProperties(
