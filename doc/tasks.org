@@ -1,0 +1,116 @@
+#+TAGS: @ff @chris
+
+
+* Release Engineering
+** self update
+** control server that launches new compute instances
+*** server launches a new compute node when it gets the first assembly job
+    DEADLINE: <2012-10-01 Mon>
+    nova commands
+*** server tears down all compute instances on "stop_service"
+    DEADLINE: <2012-10-02 Tue>
+    bookkeeping required
+
+** development / production instances
+** documentation
+   DEADLINE: <2012-10-02 Tue>
+** test
+   DEADLINE: <2012-10-02 Tue>
+*** install client and server on different machines
+*** arast run, arast stat, arast get ...
+*** arast compute stat
+** test datasets						   :ff:
+   DEADLINE: <2012-10-02 Tue>
+*** tiny dataset
+*** synthetic metagenomic dataset
+    smg.fa
+*** small prokaryote genome
+    possibly an SRA
+
+* Client
+** Comand-line options
+*** predefined URLs	
+    -dev or -url dev ??
+*** option order
+*** paired-end library						   :ff:
+*** predefined libraries
+*** configure file
+*** fine-grained control for parameters for individual assembly kernels
+** input data
+*** compressed files
+*** infer paired library combinations
+*** input from URLs						   :ff:
+    DEADLINE: <2012-10-02 Tue>
+*** input form SRA id
+*** progress bar for data upload
+    arast status shows "downloading"
+** job management
+*** Run time
+    show time (*) for jobs that are still running
+
+* Preprocessing
+** integarte with MG-RAST's QC service
+   ask Andreas/Travis for QC API
+
+* Assembler Kernels
+** A5 pipeline							   :ff:
+   need to qualify A5 bwa/samtools/... binaries
+** newbler
+** mira
+   support for hybrid assembly: 454 & Solexa
+** AllPaths-LG
+** ray
+
+* Decision Engine
+** assemblers
+** parameters
+** QC steps
+
+* Postprocessing
+** mapping reads to contigs
+   bwa
+** binning
+   raiphy
+** quality metric
+** visualization
+
+* Metadata
+
+* Cluster Service
+** integrate with kiki on hopper
+** implement single genome assembly on hopper
+   velvet, newbler, etc
+   maybe use Shane's taskfarmer
+
+* Storage and Transfer 
+** volume manager
+*** ZFS
+** globus online endpoints
+*** NERSC
+*** JGI
+*** Beagle
+
+* Reliability
+** error handling
+   feedback
+** logging
+** whole system monitoring
+   something like http://theseed.org/daily/
+   volume/space monitoring
+** garbage collection
+   passive GC
+ 
+* Production Runs
+** Paramvir's data set
+** Dylan's rice data set
+** Rob Edward's hybrid dataset
+** Rick's contact has 40K genomes
+** Zifeng's euk data sets
+
+* Web Frontend
+
+* Authentification
+
+
+* Miscellaneous
+** keep a global job counter
