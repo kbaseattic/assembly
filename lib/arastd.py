@@ -100,6 +100,7 @@ except:
 
 monitor = cloud.CloudMonitor(os_user, os_password, os_tenant, 
                        os_auth_url, args.config)
-monitor.list_ids()
-print monitor.launch_node()
+#monitor.list_ids()
+#print monitor.launch_node()
+
 start(args.config)
