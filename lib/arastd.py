@@ -11,6 +11,7 @@ import signal
 import daemon
 import logging
 import lockfile
+import os
 import pymongo
 import pika
 import router
@@ -18,6 +19,7 @@ import router
 from ConfigParser import SafeConfigParser
 
 import shock
+import cloud 
 
 def start(config_file):
     # Read config file
@@ -29,7 +31,7 @@ def start(config_file):
     
     # Check MongoDB status
     try:
-        connection = pymongo.Connection(cparser.get('meta','mongo.control.host'))
+        connection = pymongo.Connection(cparser.get('meta','mongo.host'))
                       
         logging.info("MongoDB Info: %s" % connection.server_info())
     except:
@@ -68,6 +70,18 @@ args = parser.parse_args()
 if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
 
+try:
+    os_user = os.environ.get('OS_USERNAME')
+    os_password = os.environ.get('OS_PASSWORD')
+    os_tenant = os.environ.get('OS_TENANT_NAME')
+    os_auth_url = os.environ.get('OS_AUTH_URL')
+    cloud_control = True
+except:
+    print " [!] WARNING: Openstack environmental variables not set!  Disabling cloud monitor."
+    cloud_control = False
+
+
+
 ########### DAEMON STUFF
 #if args.shock:
 #    shockurl = args.shock
@@ -84,5 +98,8 @@ if args.verbose:
 #    start()
 ##############
 
-print args.config
+monitor = cloud.CloudMonitor(os_user, os_password, os_tenant, 
+                       os_auth_url, args.config)
+monitor.list_ids()
+print monitor.launch_node()
 start(args.config)

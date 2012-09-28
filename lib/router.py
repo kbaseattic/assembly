@@ -47,12 +47,6 @@ def route_job(body):
     client_params = json.loads(body) #dict of params
     routing_key = determine_routing_key (1, body)
     job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
-#    try:
-#        data_id = client_params['data_id']
-#    except:
-#        print "none"
-#        data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
-#        client_params['data_id'] = data_id
 
     if not client_params['data_id']:
         data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
@@ -172,7 +166,7 @@ def on_request(ch, method, props, body):
     except:
         ack = "Error: Malformed message. Using latest version?"
 
-    # Check client version
+    # Check client version TODO:handle all cases
     try:
         if StrictVersion(params['version']) < StrictVersion('0.0.6') and params['command'] == 'run':
             ack += "\nNew version of client available.  Please update"
@@ -196,7 +190,7 @@ def start(config_file):
     parser = SafeConfigParser()
     parser.read(config_file)
 
-    metadata = meta.MetadataConnection(parser.get('meta','mongo.control.host'), config_file)
+    metadata = meta.MetadataConnection(config_file)
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host='localhost'))
