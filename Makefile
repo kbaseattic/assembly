@@ -23,7 +23,7 @@ redeploy: clean install-dep create-scripts deploy-mongo
 deploy-compute: install-dep
 
 install-dep:
-	sh ./scripts/install_dependencies.sh
+	sh ./scripts/install_server_dependencies.sh
 
 create-scripts:
 	echo '#!/bin/sh' > ./start_service
