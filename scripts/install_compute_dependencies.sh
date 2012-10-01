@@ -28,3 +28,9 @@ sudo git clone git://github.com/lh3/bwa.git bwa
 cd bwa
 sudo make
 sudo cp bwa /usr/bin
+
+sudo mkdir /mnt/data
+
+cd ..
+sudo git clone kbase@git.kbase.us:assembly.git
+cd assembly/lib/

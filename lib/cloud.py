@@ -1,5 +1,8 @@
 import socket
+import shutil
 import uuid
+import logging
+import os
 
 import metadata
 from novaclient.v1_1 import client
@@ -10,12 +13,15 @@ class CloudMonitor(client.Client):
                  config_file):
         super(CloudMonitor, self).__init__(os_user, os_pass, os_tenant, 
                                            os_auth_url, service_type='compute', insecure=True)
-        self.metadata = metadata.MetadataConnection(config_file)
+
         p = SafeConfigParser()
         p.read(config_file)
         self.default_flavor = p.get('cloud', 'flavor.default')
         self.default_keypair = p.get('cloud', 'keypair.default')
-        self.default_image = p.get('cloud', 'image.default')
+        self.default_image = p.get('cloud', 'image.kbase_compute')
+        self.compute_init = p.get('cloud', 'compute_init')
+        self.mongo = p.get('meta', 'mongo.port')
+        self.metadata = metadata.MetadataConnection(config_file, self.mongo)
 
     def list_ids(self):
         servers = self.servers.list()
@@ -48,8 +54,19 @@ class CloudMonitor(client.Client):
 
         # Pass data to node
         control_ip = socket.gethostbyname(socket.gethostname())
+        logging.info("My IP: %s" % control_ip)
+        tmp_script = "tmp.sh"
+        shutil.copyfile(self.compute_init, tmp_script)
+        startup_script = open(tmp_script, 'a')
+        startup_script.write("\npython ar_computed.py -c ar_compute.conf -s %s\n" %
+                             control_ip)
+        startup_script.close()
+        startup_script = open(tmp_script, 'r')
+        
+        node = self.servers.create('assembly_' + str(uuid.uuid4()), image_id, 
+                                   flavor_id, key_name=keypair, userdata=startup_script)
+        node.add_security_group(self.secgroup)
 
-        node = self.servers.create(str(uuid.uuid4()), image_id, flavor_id, key_name=keypair)
         return node
 
     def add_node_to_pool():

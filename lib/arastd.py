@@ -71,16 +71,21 @@ if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
 
 try:
-    os_user = os.environ.get('OS_USERNAME')
-    os_password = os.environ.get('OS_PASSWORD')
-    os_tenant = os.environ.get('OS_TENANT_NAME')
+    os_user = os.environ.get('OS_AUTH_USER')
+    os_password = os.environ.get('OS_AUTH_KEY')
+    os_tenant = os.environ.get('OS_AUTH_TENANT')
     os_auth_url = os.environ.get('OS_AUTH_URL')
     cloud_control = True
 except:
     print " [!] WARNING: Openstack environmental variables not set!  Disabling cloud monitor."
     cloud_control = False
 
+if not os_user:
+    print " [!] WARNING: Openstack environmental variables not set!  Disabling cloud monitor."
+    cloud_control = False
 
+logging.info("OS_USER: %s" % os_user)
+logging.info("OS_TENANT: %s" % os_tenant)
 
 ########### DAEMON STUFF
 #if args.shock:
@@ -98,9 +103,10 @@ except:
 #    start()
 ##############
 
-#if cloud_control:
-#    monitor = cloud.CloudMonitor(os_user, os_password, os_tenant, 
-#                                 os_auth_url, args.config)
-#monitor.list_ids()
-#monitor.launch_node()
+if cloud_control:    
+    monitor = cloud.CloudMonitor(os_user, os_password, os_tenant, 
+                                 os_auth_url, args.config)
+    monitor.list_ids()
+#    monitor.launch_node()
+
 start(args.config)
