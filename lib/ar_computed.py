@@ -30,7 +30,7 @@ def start(arast_server, config):
     shockurl = cparser.get('shock', 'host')
     shockuser = cparser.get('shock','admin_user')
     shockpass = cparser.get('shock','admin_pass')
-    arasturl =  cparser.get('meta','mongo.remote.host')
+    arasturl =  cparser.get('meta','mongo.host')
     mongo_port = int(cparser.get('meta','mongo.port'))
     if arast_server != '':
         arasturl = arast_server
