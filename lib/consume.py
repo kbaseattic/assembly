@@ -30,7 +30,7 @@ class ArastConsumer:
         self.shockpass = self.parser.get('shock','admin_pass')
         self.datapath = self.parser.get('compute','datapath')
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
-        self.metadata = meta.MetadataConnection(config)
+        self.metadata = meta.MetadataConnection(config, arasturl)
 
     def garbage_collect(self, datapath, required_space):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""

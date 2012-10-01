@@ -58,6 +58,8 @@ def start(arast_server, config):
     
     if res is not None:
         print " [x] Shock connection successful"
+
+
     # Start RPC server
     compute = consume.ArastConsumer(shockurl, arasturl, config)
     compute.start()
