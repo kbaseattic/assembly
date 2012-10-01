@@ -98,9 +98,10 @@ except:
 #    start()
 ##############
 
-monitor = cloud.CloudMonitor(os_user, os_password, os_tenant, 
-                       os_auth_url, args.config)
+if cloud_control:
+    monitor = cloud.CloudMonitor(os_user, os_password, os_tenant, 
+                                 os_auth_url, args.config)
 #monitor.list_ids()
-#print monitor.launch_node()
+    monitor.launch_node()
 
 start(args.config)
