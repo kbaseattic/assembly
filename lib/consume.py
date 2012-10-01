@@ -124,7 +124,7 @@ class ArastConsumer:
         try:
             bwa = params['bwa']
         except:
-            bwa = false
+            bwa = False
 
         # Run assemblies
         if not error:
