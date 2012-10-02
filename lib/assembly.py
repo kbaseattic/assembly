@@ -52,10 +52,12 @@ def run_kiki(datapath, bwa):
     raw_path = datapath + '/raw/'
     
     args = [ki_exec, '-k', '29', '-i']
-    fasta_files = get_fasta(raw_path)
+    valid_files  = get_fasta(raw_path)
+    valid_files += get_fastq(raw_path)
+
     readfiles = []
     tmp_files = []
-    for file in fasta_files:
+    for file in valid_files:
         readfile = raw_path + file
         print readfile
         args.append(readfile)

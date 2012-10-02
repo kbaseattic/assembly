@@ -9,7 +9,7 @@ import uuid
 from ConfigParser import SafeConfigParser
 
 class MetadataConnection:
-    def __init__(self, host, config):
+    def __init__(self, config, host):
         self.parser = SafeConfigParser()
         self.parser.read(config)    
         self.host = host
