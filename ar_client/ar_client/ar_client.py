@@ -13,6 +13,7 @@ import argparse
 import logging
 import requests
 import uuid
+import subprocess
 import time
 from ConfigParser import SafeConfigParser
 from pkg_resources import resource_filename
@@ -91,6 +92,39 @@ def post(url, files):
 def upload(url, files):
     ids = []
     for f in files:
+        # check if file exists
+        if not os.path.exists(f):
+            logging.error("File does not exist: '%s'" % (f))
+            continue
+
+        print "Uploading: %s" % os.path.basename(f)
+        res = curl_post_file(url, f)
+        ids.append(res['D']['id'])
+        
+        #Error check
+        if res["E"] is None:
+        # Prettytable 0.6 breaks this
+                    #printNodeTable(res["D"])
+            pass
+        else:
+            print "shock: err from server: %s" % res["E"][0]
+    return ids
+
+def curl_post_file(url, filename):
+    global ARASTUSER, ARASTPASSWORD
+    if ARASTUSER and ARASTPASSWORD:
+        cmd = " --user " + ARASTUSER + ":" + ARASTPASSWORD
+
+    cmd = "curl -X POST -F 'upload=@" + filename + cmd + " " + url
+    ret = subprocess.check_output(cmd.split())
+    res = json.loads(ret)
+
+    return res
+            
+
+def upload_urllib3(url, files):
+    ids = []
+    for f in files:
         files = {}
         print "Uploading: %s" % os.path.basename(f)
         files["file"] = (os.path.basename(f), open(f, 'rb'))
@@ -105,7 +139,6 @@ def upload(url, files):
         else:
             print "shock: err from server: %s" % res["E"][0]
     return ids
-
 
 def process_file_args(filename, options):
     options["processed"] = "yes"
