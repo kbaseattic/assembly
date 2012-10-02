@@ -198,7 +198,7 @@ def main():
 			    cfile = os.path.basename(args.config)
 			    if cfile in ls_files:
 				    ls_files.remove(cfile)
-		    fullpaths = [str(args.directory + file) for file in ls_files]
+		    fullpaths = [str(args.directory + "/"+ file) for file in ls_files]
 		    file_list = fullpaths
 		    res_ids = upload(url, fullpaths)
 		    options['filename'] = ls_files
