@@ -101,13 +101,9 @@ def upload(url, files):
         res = curl_post_file(url, f)
         ids.append(res['D']['id'])
         
-        #Error check
-        if res["E"] is None:
-        # Prettytable 0.6 breaks this
-                    #printNodeTable(res["D"])
-            pass
-        else:
-            print "shock: err from server: %s" % res["E"][0]
+        if res["E"] is not None:
+            print "Shock: err from server: %s" % res["E"][0]
+
     return ids
 
 def curl_post_file(url, filename):
@@ -115,7 +111,7 @@ def curl_post_file(url, filename):
     if ARASTUSER and ARASTPASSWORD:
         cmd = " --user " + ARASTUSER + ":" + ARASTPASSWORD
 
-    cmd = "curl -X POST -F 'upload=@" + filename + cmd + " " + url
+    cmd = "curl -X POST -F upload=@" + filename + cmd + " " + url
     ret = subprocess.check_output(cmd.split())
     res = json.loads(ret)
 
