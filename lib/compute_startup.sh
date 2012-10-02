@@ -3,4 +3,5 @@
 
 sudo su
 cd /home/ubuntu/assembly/lib/
+git pull
 

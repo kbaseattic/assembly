@@ -11,6 +11,7 @@ import os
 import shutil
 import time
 import datetime 
+import socket
 
 import config
 import assembly as asm
@@ -31,6 +32,8 @@ class ArastConsumer:
         self.datapath = self.parser.get('compute','datapath')
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
         self.metadata = meta.MetadataConnection(config, arasturl)
+        self.metadata.update_doc('active_nodes', 'server_name', socket.gethostname(),
+                                 'status', 'running')
 
     def garbage_collect(self, datapath, required_space):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""

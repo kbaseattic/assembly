@@ -31,8 +31,41 @@ class MetadataConnection:
         job_id = jobs.insert(data)
         return job_id
 
-    def get_next_id(self, user, category):
+    def insert_doc(self, collection, data):
         connection = pymongo.Connection(self.host, self.port)
+        database = connection[self.db]
+        col = database[collection]
+        col.insert(data)
+
+    def list (self, collection):
+        connection = pymongo.Connection(self.host, self.port)
+        database = connection[self.db]
+        col = database[collection]
+        for r in col.find({}):
+            print r
+        return col.find({})
+        
+    def remove_doc(self, collection, key, value):
+        connection = pymongo.Connection(self.host, self.port)
+        database = connection[self.db]
+        col = database[collection]
+        col.remove({key:value})
+
+    def update_doc(self, collection, query_key, query_value, key, value):
+        connection = pymongo.Connection(self.host, self.port)
+        database = connection[self.db]
+        col = database[collection]
+
+        col.update({query_key : query_value},
+                    {'$set' : {key : value}})
+        if col.find_one({query_key : query_value}) is not None:
+            logging.info("Doc updated: %s:%s:%s" % (query_value, key, value))
+        else:
+            logging.warning("Doc %s not updated!" % query_value)
+
+        
+    def get_next_id(self, user, category):
+        connection = pymongo.Connection(self.host, self.port)l
         database = connection[self.db]
         ids = database[category]
         next_id = 1
@@ -75,6 +108,9 @@ class MetadataConnection:
             r.append(j)
         return r
 
+
+        
+
     def get_job(self, user, job_id):
         try:
             job = self.get_jobs().find({'ARASTUSER':user, 'job_id':int(job_id)})[0]
@@ -82,4 +118,3 @@ class MetadataConnection:
             job = None
             logging.error("Job %s does not exist" % job_id)
         return job
-

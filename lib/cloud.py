@@ -20,7 +20,10 @@ class CloudMonitor(client.Client):
         self.default_keypair = p.get('cloud', 'keypair.default')
         self.default_image = p.get('cloud', 'image.kbase_compute')
         self.compute_init = p.get('cloud', 'compute_init')
-        self.mongo = p.get('meta', 'mongo.port')
+        self.secgroup = p.get('cloud', 'sec_group')
+        self.active_nodes = p.get('cloud', 'active.collection')
+        self.all_nodes = p.get('cloud', 'history.collection')
+        self.mongo = p.get('meta', 'mongo.host')
         self.metadata = metadata.MetadataConnection(config_file, self.mongo)
 
     def list_ids(self):
@@ -65,16 +68,37 @@ class CloudMonitor(client.Client):
         
         node = self.servers.create('assembly_' + str(uuid.uuid4()), image_id, 
                                    flavor_id, key_name=keypair, userdata=startup_script)
-        node.add_security_group(self.secgroup)
+        #node.add_security_group(self.secgroup)
+        
+
+        logging.info("Launching compute node: %s" % node.id)
+        data = {}
+        data['server_id'] = node.id
+        data['server_name'] = node.name
+
+        self.metadata.insert_doc(self.active_nodes, data)
 
         return node
 
     def add_node_to_pool():
         pass
 
-    
+    def list_nodes(self):
+        nodes =  self.metadata.list(self.active_nodes)
+        return nodes
 
-    
+    def terminate_all_nodes(self):
+        for node in self.list_nodes():
+            sid = node['server_id']
+            try:
+                id = self.servers.get(node['server_id'])
+                logging.info("Terminating server %s" % id)
+                self.servers.delete(id)
+                self.metadata.remove_doc(self.active_nodes, 'server_id', sid)
+            except:
+                print ("Unable to find node %s. Removing from db." % sid)
+                self.metadata.remove_doc(self.active_nodes, 'server_id', sid)
+        
 
     
 
