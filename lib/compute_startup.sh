@@ -3,5 +3,7 @@
 
 sudo su
 cd /home/ubuntu/assembly/lib/
-git pull
+git checkout cbun_dev
+git pull origin cbun_dev
+
 

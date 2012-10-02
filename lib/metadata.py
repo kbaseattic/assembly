@@ -65,7 +65,7 @@ class MetadataConnection:
 
         
     def get_next_id(self, user, category):
-        connection = pymongo.Connection(self.host, self.port)l
+        connection = pymongo.Connection(self.host, self.port)
         database = connection[self.db]
         ids = database[category]
         next_id = 1
