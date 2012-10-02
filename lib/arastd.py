@@ -107,8 +107,9 @@ if cloud_control:
     monitor = cloud.CloudMonitor(os_user, os_password, os_tenant, 
                                  os_auth_url, args.config)
     #monitor.list_ids()
-    #monitor.launch_node()
+    monitor.terminate_all_nodes()
+    monitor.launch_node()
     monitor.list_nodes()
-    #monitor.terminate_all_nodes()
 
-#start(args.config)
+
+start(args.config)

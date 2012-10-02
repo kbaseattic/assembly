@@ -56,16 +56,20 @@ class CloudMonitor(client.Client):
             keypair = self.default_keypair
 
         # Pass data to node
-        control_ip = socket.gethostbyname(socket.gethostname())
+            #control_ip = socket.gethostbyname(socket.gethostname())
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('google.com', 0))
+        control_ip = s.getsockname()[0]
         logging.info("My IP: %s" % control_ip)
         tmp_script = "tmp.sh"
         shutil.copyfile(self.compute_init, tmp_script)
         startup_script = open(tmp_script, 'a')
         startup_script.write("\npython ar_computed.py -c ar_compute.conf -s %s\n" %
                              control_ip)
+        startup_script.write("\nend script")
         startup_script.close()
         startup_script = open(tmp_script, 'r')
-        
+
         node = self.servers.create('assembly_' + str(uuid.uuid4()), image_id, 
                                    flavor_id, key_name=keypair, userdata=startup_script)
         #node.add_security_group(self.secgroup)
