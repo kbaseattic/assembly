@@ -27,9 +27,9 @@ parser.add_argument('-s', dest='ARASTURL', help='arast server url')
 parser.add_argument('-u', '--ARASTUSER', help='Overrules env ARASTUSER')
 parser.add_argument('-p', '--ARASTPASSWORD', help='Overrules env ARASTPASSWORD')
 parser.add_argument("-c", "--config", action="store",
-                  dest="config", help="specify parameter configuration file")
+                    dest="config", help="specify parameter configuration file")
 parser.add_argument("-v", "--verbose", action="store_true",
-                   help="Verbose")
+                    help="Verbose")
 parser.add_argument('--version', action='version', version='%(prog)s ' + my_version)
 
 subparsers = parser.add_subparsers(dest='command', title='The commands are')
@@ -39,19 +39,19 @@ p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', hel
 p_run.add_argument("-f", "--file", action="store", dest="filename",
                    nargs='*', help="specify sequence file(s)")
 p_run.add_argument("-a", "--assemblers", action="store",
-                  dest="assemblers", nargs='*')
+                   dest="assemblers", nargs='*')
 p_run.add_argument("-d", "--directory", action="store",
-                  dest="directory",
-                  help="specify input directory")
+                   dest="directory",
+                   help="specify input directory")
 p_run.add_argument("-p", "--params", action="store",
-                  dest="params", nargs='*',
-                  help="specify global assembly parameters")
+                   dest="params", nargs='*',
+                   help="specify global assembly parameters")
 p_run.add_argument("-m", "--message", action="store",
-                  dest="message",
-                  help="Attach a description to job")
+                   dest="message",
+                   help="Attach a description to job")
 p_run.add_argument("--data", action="store",
-                  dest="data_id",
-                  help="Reuse uploaded data")
+                   dest="data_id",
+                   help="Reuse uploaded data")
 p_run.add_argument("--bwa", action="store_true", dest="bwa",
                    help="enable bwa alignment")
 
@@ -85,25 +85,25 @@ p_stat.add_argument("-n", dest="stat_n", action="store", nargs=1, default=15, ty
 # get
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
 p_get.add_argument("-j", "--job", action="store",
-                  dest="job_id", nargs=1,
-                  help="specify which job data to get")
+                   dest="job_id", nargs=1,
+                   help="specify which job data to get")
 
 p_get.add_argument("-a", "--assemblers", action="store",
-                  dest="assemblers", nargs='*',
-                  help="specify which assembly data to get")
+                   dest="assemblers", nargs='*',
+                   help="specify which assembly data to get")
 
 p_prep = subparsers.add_parser('prep', description='Prepare a parameter file', help='prepare job submission')
 
 def post(url, files):
-	global ARASTUSER, ARASTPASSWORD
-	r = None
-	if ARASTUSER and ARASTPASSWORD:
+        global ARASTUSER, ARASTPASSWORD
+        r = None
+        if ARASTUSER and ARASTPASSWORD:
             r = requests.post(url, auth=(ARASTUSER, ARASTPASSWORD), files=files)
-	else:
+        else:
             r = requests.post(url, files=files)
 
         res = json.loads(r.text)
-	return res
+        return res
 
 
 # upload all files in list, return list of ids
@@ -120,65 +120,69 @@ def upload(url, files):
         if res["E"] is None:
         # Prettytable 0.6 breaks this
                     #printNodeTable(res["D"])
-		pass
+                pass
         else:
             print "shock: err from server: %s" % res["E"][0]
     return ids
 
 
-def main():
-	global ARASTURL, ARASTUSER, ARASTPASSWORD
+def process_file_args(filename, options):
+    options["processed"] = "yes"
+    return filename
 
-	args = parser.parse_args()
-	opt = parser.parse_args()
+def main():
+        global ARASTURL, ARASTUSER, ARASTPASSWORD
+
+        args = parser.parse_args()
+        opt = parser.parse_args()
         options = vars(args)
 
-	options['version'] = my_version
-	cparser = SafeConfigParser()
-	if args.verbose:
-		logging.basicConfig(level=logging.DEBUG)
-	if args.config:
-		config_file = args.config
-	else:
-		#config_file = "settings.conf"
-		config_file = resource_filename(__name__, 'settings.conf')
-		logging.info("Reading config file: %s" % config_file)
-	cparser.read(config_file)
+        options['version'] = my_version
+        cparser = SafeConfigParser()
+        if args.verbose:
+                logging.basicConfig(level=logging.DEBUG)
+        if args.config:
+                config_file = args.config
+        else:
+                #config_file = "settings.conf"
+                config_file = resource_filename(__name__, 'settings.conf')
+                logging.info("Reading config file: %s" % config_file)
+        cparser.read(config_file)
 
-	try:
-		ARASTUSER = cparser.get('arast', 'user')
-		ARASTPASSWORD = cparser.get('arast', 'password')
-		ARASTURL = cparser.get('arast', 'url')
-	except:
-		logging.error("Invalid config file")
+        try:
+                ARASTUSER = cparser.get('arast', 'user')
+                ARASTPASSWORD = cparser.get('arast', 'password')
+                ARASTURL = cparser.get('arast', 'url')
+        except:
+                logging.error("Invalid config file")
 
-	# overwrite env vars in args
-	if args.ARASTUSER:
-		ARASTUSER = args.ARASTUSER				
-	if args.ARASTPASSWORD:
-		ARASTPASSWORD = args.ARASTPASSWORD				
-	if args.ARASTURL:
-		ARASTURL = args.ARASTURL
-	if not ARASTURL:
-		print parser.print_usage()
-		print "arast: err: ARASTURL not set"
-		sys.exit()
+        # overwrite env vars in args
+        if args.ARASTUSER:
+                ARASTUSER = args.ARASTUSER                              
+        if args.ARASTPASSWORD:
+                ARASTPASSWORD = args.ARASTPASSWORD                              
+        if args.ARASTURL:
+                ARASTURL = args.ARASTURL
+        if not ARASTURL:
+                print parser.print_usage()
+                print "arast: err: ARASTURL not set"
+                sys.exit()
 
         # Request Shock URL
         url_req = {}
         url_req['command'] = 'get_url'
         url_rpc = RpcClient()
-	url = "http://%s" % url_rpc.call(json.dumps(url_req))
+        url = "http://%s" % url_rpc.call(json.dumps(url_req))
 
         # Upload file(s) to Shock
         res_ids = []
-	file_sizes = []
-	file_list = []
-	if args.command == "run":
+        file_sizes = []
+        file_list = []
+        if args.command == "run":
             if not (args.assemblers and (args.filename or args.directory or args.data_id)):
-		    parser.print_usage()
-		    sys.exit()
-			    
+                    parser.print_usage()
+                    sys.exit()
+                            
 
             if args.directory or args.filename:
                 url += "/node"
@@ -186,6 +190,7 @@ def main():
 		file_list = args.filename
 		if args.config:
 			options['config_id'] = upload(url, [args.config])
+
 	    if args.filename:
 		    res_ids = upload(url, files)
 		    base_files = [os.path.basename(f) for f in files]
