@@ -61,7 +61,7 @@ class CloudMonitor(client.Client):
         s.connect(('google.com', 0))
         control_ip = s.getsockname()[0]
         logging.info("My IP: %s" % control_ip)
-        tmp_script = "tmp.sh"
+        tmp_script = "tmp.txt"
         shutil.copyfile(self.compute_init, tmp_script)
         startup_script = open(tmp_script, 'a')
         startup_script.write("\npython ar_computed.py -c ar_compute.conf -s %s\n" %
