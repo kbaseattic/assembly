@@ -67,11 +67,9 @@ p_stat.add_argument("--job", dest="stat_job", action="store", nargs=1, default=-
 p_stat.add_argument("-n", dest="stat_n", action="store", nargs=1, default=15, type=int, help="specify number ofrecords to show")
 
 
-
 # get
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
 p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, help="specify which job data to get")
-
 p_get.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify which assembly data to get")
 
 p_prep = subparsers.add_parser('prep', description='Prepare a parameter file', help='prepare job submission')
@@ -108,6 +106,7 @@ def upload(url, files):
 
 def curl_post_file(url, filename):
     global ARASTUSER, ARASTPASSWORD
+
     if ARASTUSER and ARASTPASSWORD:
         cmd = " --user " + ARASTUSER + ":" + ARASTPASSWORD
 
