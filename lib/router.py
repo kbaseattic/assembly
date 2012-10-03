@@ -168,7 +168,7 @@ def on_request(ch, method, props, body):
 
     # Check client version TODO:handle all cases
     try:
-        if StrictVersion(params['version']) < StrictVersion('0.0.6') and params['command'] == 'run':
+        if StrictVersion(params['version']) < StrictVersion('0.0.7') and params['command'] == 'run':
             ack += "\nNew version of client available.  Please update"
     except:
         if params['command'] == 'run':

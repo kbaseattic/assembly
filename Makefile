@@ -16,14 +16,19 @@ ERR_LOG_FILE = $(SERVICE_DIR)/log/error.log
 
 all:
 
-deploy: install-dep create-scripts deploy-mongo
+deploy: deploy-client
+deploy-service: install-dep create-scripts deploy-mongo
+deploy-client: install-client-dep install-client
 
-redeploy: clean install-dep create-scripts deploy-mongo
+redeploy-service: clean install-dep create-scripts deploy-mongo
 
 deploy-compute: install-dep
 
 install-dep:
 	sh ./scripts/install_server_dependencies.sh
+
+install-client-dep:
+	sh ./scripts/install_client_dependencies.sh
 
 create-scripts:
 	echo '#!/bin/sh' > ./start_service
@@ -51,7 +56,11 @@ deploy-mongo:
 	sed -i "s/bind_ip = 127.0.0.1/bind_ip = 0.0.0.0/" /etc/mongodb.conf
 	service mongodb restart
 
+install-client:
+	echo "Generating python egg..."
+
 clean:
 	rm -rfv $(SERVICE_DIR)
 	rm -f start_service stop_service
 	echo "OK ... Removed all deployed files."
+
