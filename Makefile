@@ -64,7 +64,7 @@ deploy-mongo:
 	service mongodb restart
 
 install-client:
-	env PYTHONPATH=$(LIB_PYTHON) python ar_client/setup.py --prefix $(MODULE_DIR) install
+	env PYTHONPATH=$(LIB_PYTHON) python ar_client/setup.py install --prefix $(MODULE_DIR)
 # 	echo  > ./start_service
 
 # 	#!/bin/sh
