@@ -58,6 +58,8 @@ deploy-mongo:
 
 install-client:
 	echo "Generating python egg..."
+	cd ar_client/ar_client
+	python setup.py bdist_egg
 
 clean:
 	rm -rfv $(SERVICE_DIR)
