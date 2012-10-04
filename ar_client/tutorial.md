@@ -5,7 +5,7 @@ Introduction
 ------------
 The DOE KBase features an Assembly Service with tools that allow users to submit a variety of sequence datasets to be processed, assembled, and analyzed.  This tutorial will introduce you to the current capabilities of the service as well as give some command-line recipes.
 
-Currently at an early phase, the Assembly Service has the following computation capabilities capabilities:
+Currently at an early phase, the Assembly Service has the following computation capabilities:
 
 * Velvet assembly
 * Kiki assembly
