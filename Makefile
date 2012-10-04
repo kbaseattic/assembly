@@ -7,6 +7,10 @@ SERVICE_EXEC = arastd.py
 TARGET ?= /kb/deployment
 DEPLOY_RUNTIME ?= /kb/runtime
 
+MODULE_DIR = $(TARGET)/modules/assembly
+LIB_PYTHON = $(MODULE_DIR)/lib/python2.7/site-packages
+CLIENT_DIR = $(TARGET)
+
 #do not make changes below this line
 TOP_DIR = ../..
 include $(TOP_DIR)/tools/Makefile.common
@@ -18,11 +22,14 @@ all:
 
 deploy: deploy-client
 deploy-service: install-dep create-scripts deploy-mongo
-deploy-client: install-client-dep install-client
+deploy-client: deploy-dir install-client-dep install-client
 
 redeploy-service: clean install-dep create-scripts deploy-mongo
 
 deploy-compute: install-dep
+
+deploy-dir:
+	if [ ! -d $(LIB_PYTHON) ] ; then mkdir -p $(LIB_PYTHON) ; fi
 
 install-dep:
 	sh ./scripts/install_server_dependencies.sh
@@ -57,9 +64,18 @@ deploy-mongo:
 	service mongodb restart
 
 install-client:
-	echo "Generating python egg..."
-	cd ar_client; python setup.py bdist_egg
-	env PYTHONPATH=/kb/deployment/lib/python2.7/site-packages mkdir -p $PYTHONPATH; easy_install --prefix /kb/deployment ar_client-0.0.7-py2.7.egg
+	env PYTHONPATH=$(LIB_PYTHON) python ar_client/setup.py --prefix $(MODULE_DIR) install
+# 	echo  > ./start_service
+
+# 	#!/bin/sh
+# export KB_TOP=/kb/dev_container
+# export KB_RUNTIME=/kb/runtime
+# export PATH=/kb/runtime/bin:/kb/dev_container/bin:$PATH
+# export PERL5LIB=/kb/dev_container/modules/assembly/lib:/kb/dev_container/modules/kb_seed/lib
+# /kb/runtime/bin/perl $KB_TOP/modules/kb_seed/scripts/tree_to_html.pl "$@"
+
+# 	cd ar_client; python setup.py bdist_egg
+# 	env PYTHONPATH=/kb/deployment/lib/python2.7/site-packages mkdir -p $PYTHONPATH; easy_install --prefix /kb/deployment ar_client-0.0.7-py2.7.egg
 
 clean:
 	rm -rfv $(SERVICE_DIR)
