@@ -1,0 +1,43 @@
+<h1>Assembly Service Commandline Client</h1>
+
+<h2>Installation</h2>
+
+<p><code>sudo easy_install EGG_FILE</code></p>
+
+<h2>Statistics</h2>
+
+<p>View jobs list</p>
+
+<p><code>arast stat</code></p>
+
+<p>Monitor jobs list in realtime</p>
+
+<p><code>arast stat -w</code></p>
+
+<p>View files of known data id</p>
+
+<p><code>arast stat --files 39</code></p>
+
+<h2>Running jobs</h2>
+
+<p>Run assemblies on specific files</p>
+
+<p><code>arast run -f reads1.fa reads2.fa -a kiki velvet -m "My job description"</code></p>
+
+<p>Run assemblies on all files in directory</p>
+
+<p><code>arast run -d dir_of_reads/ -a kiki velvet -m "My job description"</code></p>
+
+<p>Run assemblies on previously uploaded data</p>
+
+<p><code>arast run --data 42 -a kiki velvet -m "My job description"</code></p>
+
+<h2>Downloading results</h2>
+
+<p>Download latest job results</p>
+
+<p><code>arast get</code></p>
+
+<p>Download JOB_ID results</p>
+
+<p><code>arast get -j 42</code></p>
