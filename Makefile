@@ -71,7 +71,7 @@ install-client:
 #	echo "export KB_TOP=/kb/dev_container" >> $(CLIENT_EXE)
 #	echo "export KB_RUNTIME=/kb/runtime"  >> $(CLIENT_EXE)
 #	echo "export PATH=/kb/runtime/bin:/kb/dev_container/bin:$PATH" >> $(CLIENT_EXE)
-	echo "python /kb/dev_container/modules/assembly/bin/arast" '"\$@"' >> $(CLIENT_EXE)
+	echo "python /kb/dev_container/modules/assembly/bin/arast" '"\$\@"' >> $(CLIENT_EXE)
 
 	chmod a+x $(CLIENT_EXE)
 # 	env PYTHONPATH=/kb/deployment/lib/python2.7/site-packages mkdir -p $PYTHONPATH; easy_install --prefix /kb/deployment ar_client-0.0.7-py2.7.egg
