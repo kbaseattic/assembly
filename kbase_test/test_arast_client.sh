@@ -28,6 +28,7 @@ message "Check queue status"
 arast -s $ARASTURL stat
 
 message "Download synthetic metagenome (200MB)"
+rm -f smg.fa
 # curl -OL http://www.mcs.anl.gov/~fangfang/test/smg.fa
 wget http://www.mcs.anl.gov/~fangfang/test/smg.fa
 
