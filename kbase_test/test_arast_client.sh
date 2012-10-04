@@ -25,6 +25,6 @@ function message {
 
 
 message "Check queue status"
-arast stat
+arast -s $ARASTURL stat
 
 message "Tests Complete: PASSED"
