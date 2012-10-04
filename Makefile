@@ -77,7 +77,7 @@ install-client:
 	chmod a+x $(CLIENT_EXE)
 
 test:
-	cd kbase-test && ./test_arast_client.sh
+	cd kbase_test && ./test_arast_client.sh
 
 clean:
 	rm -rfv $(SERVICE_DIR)
