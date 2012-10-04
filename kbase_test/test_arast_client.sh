@@ -36,14 +36,15 @@ message "Submit synthetic  metagenome for kiki assembly and bwa mapping validati
 arast -s $ARASTURL run -a kiki -f smg.fa --bwa
 
 message "Check job status"
-sleep 5
+sleep 2
 arast -s $ARASTURL stat
+sleep 5
 
 message "Check random data status"
-sleep 5
 arast -s $ARASTURL stat --data 1
+sleep 5
 
-message "Wait for job to finish and download results"
+message "Wait 60s for job to finish and download results"
 sleep 60
 arast -s $ARASTURL get
 
