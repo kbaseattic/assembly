@@ -8,14 +8,24 @@ Currently supports single microbial genome assembly using velvet and/or kiki.
 More to come...
 
 
-Dependencies
+Deploying and Testing AssembyRAST client on KBase infrastructure
 ----------
-The current deployment first invokes scripts/install_dependencies.sh.
-This will be no longer necessary once a kbase image is built with these dependencies.
+* start with a fresh KBase image (last tested on v15) with security group 'default' or 'assembly-rast-group' 
+* log in as ubuntu and get root access with 'sudo su'
+* enter the following commands:
+
+cd /kb
+git clone ssh://kbase@git.kbase.us/dev_container
+cd /kb/dev_container/modules
+git clone ssh://kbase@git.kbase.us/assembly
+cd /kb/dev_container
+./bootstrap /kb/runtime
+source user-env.sh
+make deploy-client
+make test
 
 
-
-Deploying on KBase infrastructure
+Deploying AssembyRAST server on KBase infrastructure
 ----------
 * start with a fresh KBase image (last tested on v14) with security group 'assembly-rast-group'
 * log in as ubuntu and get root access with 'sudo su'
@@ -28,7 +38,13 @@ git clone ssh://kbase@git.kbase.us/assembly
 cd /kb/dev_container
 ./bootstrap /kb/runtime
 source user-env.sh
-make deploy
+make deploy-service
+
+
+Dependencies
+----------
+The current deployment first invokes scripts/install_dependencies.sh.
+This will be no longer necessary once a kbase image is built with these dependencies.
 
 
 
