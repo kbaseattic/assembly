@@ -101,11 +101,12 @@
 
 <p>The returned output gives the user information about submitted jobs:</p>
 
-<p><code>+--------+---------+----------+----------+-------------+</code>
-<code>| Job ID | Data ID |  Status  | Run time | Description |</code>
-<code>+--------+---------+----------+----------+-------------+</code>
-<code>|   42   |    17   | complete | 0:00:16  |    test3    |</code>
-<code>+--------+---------+----------+----------+-------------+</code></p>
+<pre><code>+--------+---------+----------+----------+-------------+
+| Job ID | Data ID |  Status  | Run time | Description |
++--------+---------+----------+----------+-------------+
+|   42   |    17   | complete | 0:00:16  |    test3    |
++--------+---------+----------+----------+-------------+
+</code></pre>
 
 <p>Here, we can see the "Data ID" of the specific dataset.  With this, we can attain information about it:</p>
 
@@ -113,12 +114,13 @@
 
 <p>which will output</p>
 
-<p><code>+---+--------+-----------+</code>
-<code>| # |  File  |    Size   |</code>
-<code>+---+--------+-----------+</code>
-<code>| 1 | sm1.fa | 203372422 |</code>
-<code>| 2 | sm2.fa | 534524543 |</code>
-<code>+---+--------+-----------+</code></p>
+<pre><code>  +---+--------+-----------+
+  | # |  File  |    Size   |
+  +---+--------+-----------+
+  | 1 | sm1.fa | 203372422 |
+  | 2 | sm2.fa | 534524543 |
+  +---+--------+-----------+
+</code></pre>
 
 <h2>Retrieving Results</h2>
 

@@ -90,11 +90,11 @@ or the status of any number of previous jobs:
 
 The returned output gives the user information about submitted jobs:
 
-`+--------+---------+----------+----------+-------------+`
-`| Job ID | Data ID |  Status  | Run time | Description |`
-`+--------+---------+----------+----------+-------------+`
-`|   42   |    17   | complete | 0:00:16  |    test3    |`
-`+--------+---------+----------+----------+-------------+`
+    +--------+---------+----------+----------+-------------+
+    | Job ID | Data ID |  Status  | Run time | Description |
+    +--------+---------+----------+----------+-------------+
+    |   42   |    17   | complete | 0:00:16  |    test3    |
+    +--------+---------+----------+----------+-------------+
 
 Here, we can see the "Data ID" of the specific dataset.  With this, we can attain information about it:
 
@@ -102,12 +102,12 @@ Here, we can see the "Data ID" of the specific dataset.  With this, we can attai
 
 which will output
 
-`+---+--------+-----------+`
-`| # |  File  |    Size   |`
-`+---+--------+-----------+`
-`| 1 | sm1.fa | 203372422 |`
-`| 2 | sm2.fa | 534524543 |`
-`+---+--------+-----------+`
+      +---+--------+-----------+
+      | # |  File  |    Size   |
+      +---+--------+-----------+
+      | 1 | sm1.fa | 203372422 |
+      | 2 | sm2.fa | 534524543 |
+      +---+--------+-----------+
 
 Retrieving Results
 ------------------
