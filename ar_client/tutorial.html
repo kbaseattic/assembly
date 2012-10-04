@@ -4,10 +4,13 @@
 
 <p>The DOE KBase features an Assembly Service with tools that allow users to submit a variety of sequence datasets to be processed, assembled, and analyzed.  This tutorial will introduce you to the current capabilities of the service as well as give some command-line recipes.</p>
 
-<p>Currently at an early phase, the Assembly Service has the following computation capabilities capabilities:
-* Velvet assembly
-* Kiki assembly
-* BWA alignment</p>
+<p>Currently at an early phase, the Assembly Service has the following computation capabilities capabilities:</p>
+
+<ul>
+<li>Velvet assembly</li>
+<li>Kiki assembly</li>
+<li>BWA alignment</li>
+</ul>
 
 <h2>Installation</h2>
 
@@ -35,15 +38,15 @@
 
 <h4>Separate files: <code>-f</code></h4>
 
-<p>`arast run -f SEQUENCE_1.fa SEQUENCE_2.fa ...</p>
+<p><code>arast run -f SEQUENCE\_1.fa SEQUENCE\_2.fa ...</code></p>
 
-<h4>Whole directories: '-d'</h4>
+<h4>Whole directories: <code>-d</code></h4>
 
 <p><code>arast run -d /path/to/sequences/ ...</code></p>
 
 <h4>Previously submitted datasets: <code>--data</code></h4>
 
-<p>`arast run --data DATAID ...'</p>
+<p><code>arast run --data DATAID ...</code></p>
 
 <p>(We will explain DATAID later in the tutorial)</p>
 
@@ -80,7 +83,7 @@
 
 <p>The user can submit a description with the job for personal bookkeeping:</p>
 
-<p>`arast run -f SEQUENCES.fa -a kiki -m "My description"</p>
+<p><code>arast run -f SEQUENCES.fa -a kiki -m "My description"</code></p>
 
 <h2>Job / Data Status</h2>
 
@@ -98,11 +101,11 @@
 
 <p>The returned output gives the user information about submitted jobs:</p>
 
-<p><code>+--------+---------+----------+----------+-------------+
-| Job ID | Data ID |  Status  | Run time | Description |
-+--------+---------+----------+----------+-------------+
-|   42   |    17   | complete | 0:00:16  |    test3    |
-+--------+---------+----------+----------+-------------+</code></p>
+<p><code>+--------+---------+----------+----------+-------------+</code>
+<code>| Job ID | Data ID |  Status  | Run time | Description |</code>
+<code>+--------+---------+----------+----------+-------------+</code>
+<code>|   42   |    17   | complete | 0:00:16  |    test3    |</code>
+<code>+--------+---------+----------+----------+-------------+</code></p>
 
 <p>Here, we can see the "Data ID" of the specific dataset.  With this, we can attain information about it:</p>
 
@@ -110,12 +113,12 @@
 
 <p>which will output</p>
 
-<p>`+---+--------+-----------+
-| # |  File  |    Size   |
-+---+--------+-----------+
-| 1 | sm1.fa | 203372422 |
-| 2 | sm2.fa | 534524543 |
-+---+--------+-----------+</p>
+<p><code>+---+--------+-----------+</code>
+<code>| # |  File  |    Size   |</code>
+<code>+---+--------+-----------+</code>
+<code>| 1 | sm1.fa | 203372422 |</code>
+<code>| 2 | sm2.fa | 534524543 |</code>
+<code>+---+--------+-----------+</code></p>
 
 <h2>Retrieving Results</h2>
 
