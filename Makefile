@@ -59,6 +59,7 @@ deploy-mongo:
 install-client:
 	echo "Generating python egg..."
 	cd ar_client; python setup.py bdist_egg
+	env PYTHONPATH=/kb/deployment/lib/python2.7/site-packages mkdir -p $PYTHONPATH; easy_install --prefix /kb/deployment ar_client-0.0.7-py2.7.egg
 
 clean:
 	rm -rfv $(SERVICE_DIR)
