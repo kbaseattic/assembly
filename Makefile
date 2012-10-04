@@ -7,9 +7,10 @@ SERVICE_EXEC = arastd.py
 TARGET ?= /kb/deployment
 DEPLOY_RUNTIME ?= /kb/runtime
 
+CLIENT_DIR = $(TARGET)
 MODULE_DIR = /kb/dev_container/modules/assembly
 LIB_PYTHON = $(MODULE_DIR)/lib/python2.7/site-packages
-CLIENT_DIR = $(TARGET)
+CLIENT_EXE = $(CLIENT_DIR)/arast
 
 #do not make changes below this line
 TOP_DIR = ../..
@@ -65,16 +66,13 @@ deploy-mongo:
 
 install-client:
 	env PYTHONPATH=$(LIB_PYTHON) python ar_client/setup.py install --prefix $(MODULE_DIR)
-# 	echo  > ./start_service
+	echo '#!/bin/sh' > $(CLIENT_EXE)
+	echo "export PYTHONPATH=$(LIB_PYTHON)" >> $(CLIENT_EXE)
+#	echo "export KB_TOP=/kb/dev_container" >> $(CLIENT_EXE)
+#	echo "export KB_RUNTIME=/kb/runtime"  >> $(CLIENT_EXE)
+#	echo "export PATH=/kb/runtime/bin:/kb/dev_container/bin:$PATH" >> $(CLIENT_EXE)
+	echo "python \$KB_TOP/modules/assembly/bin/arast" '"$@"' >> $(CLIENT_EXE)
 
-# 	#!/bin/sh
-# export KB_TOP=/kb/dev_container
-# export KB_RUNTIME=/kb/runtime
-# export PATH=/kb/runtime/bin:/kb/dev_container/bin:$PATH
-# export PERL5LIB=/kb/dev_container/modules/assembly/lib:/kb/dev_container/modules/kb_seed/lib
-# /kb/runtime/bin/perl $KB_TOP/modules/kb_seed/scripts/tree_to_html.pl "$@"
-
-# 	cd ar_client; python setup.py bdist_egg
 # 	env PYTHONPATH=/kb/deployment/lib/python2.7/site-packages mkdir -p $PYTHONPATH; easy_install --prefix /kb/deployment ar_client-0.0.7-py2.7.egg
 
 clean:
