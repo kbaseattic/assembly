@@ -1,0 +1,44 @@
+<h1>Using the Assembly Service Command-Line Client</h1>
+
+<h2>Introduction</h2>
+
+<p>The DOE KBase features an Assembly Service with tools that allow users to submit a variety of sequence datasets to be processed, assembled, and analyzed.  This tutorial will introduce you to the current capabilities of the service as well as give some command-line recipes.</p>
+
+<p>Currently at an early phase, the Assembly Service has the following computation capabilities capabilities:
+- Velvet assembly
+- Kiki assembly
+- BWA alignment</p>
+
+<h2>Installation</h2>
+
+<h3>Prerequisites</h3>
+
+<p>-Python easy_install module</p>
+
+<h3>Prepackaged Installation in Unix</h3>
+
+<p>The Assembly Service Client uses Python's Easy Install module to manage and install dependencies.  To install, first download the latest .egg package from the <a href="http://kbase.us/index.php/developers/downloads/">KBase Downloads page</a>.  To install:</p>
+
+<p><code>sudo easy_install ar_client-&lt;VERSION&gt;.egg</code></p>
+
+<h2>Running the Service</h2>
+
+<p>We will walk through building a command-line recipe depending on desired options.  First, running an assemblies is performed via the <code>run</code> subcommand:</p>
+
+<p><code>arast run ...</code></p>
+
+<h3>Sequence Data</h3>
+
+<p>We can submit data in multiple fashions:</p>
+
+<h4>Separate files: <code>-f</code></h4>
+
+<p>`arast run -f SEQUENCE<em>1.fa SEQUENCE</em>2.fa ...</p>
+
+<h4>Whole directories</h4>
+
+<p><code>arast run -d /path/to/sequences/ ...</code></p>
+
+<h4>Previously submitted datasets</h4>
+
+<p>`arast run --data DATAID ...</p>
