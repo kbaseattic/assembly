@@ -32,13 +32,17 @@
 
 <p><code>arast run ...</code></p>
 
+<p>NOTE: The default behavior of the client is to use the official KBase Assembly Server.  To invoke the client against an alternate server, use the <code>-s</code> flag:</p>
+
+<p><code>arast -s SERVER run ...</code></p>
+
 <h3>Sequence Data</h3>
 
 <p>We can submit data in multiple fashions:</p>
 
 <h4>Separate files: <code>-f</code></h4>
 
-<p><code>arast run -f SEQUENCE\_1.fa SEQUENCE\_2.fa ...</code></p>
+<p><code>arast run -f READS1.fa READS2.fa ...</code></p>
 
 <h4>Whole directories: <code>-d</code></h4>
 
@@ -61,11 +65,11 @@
 
 <p>Thus, to run an assembly:</p>
 
-<p><code>arast run -f SEQUENCE.fa -a kiki [...]</code></p>
+<p><code>arast run -f READS.fa -a kiki [...]</code></p>
 
 <p>or multiple assemblies:</p>
 
-<p><code>arast run -f SEQUENCE.fa -a kiki velvet [...]</code></p>
+<p><code>arast run -f READS.fa -a kiki velvet [...]</code></p>
 
 <h3>Processing / Analysis</h3>
 
@@ -75,7 +79,7 @@
 
 <p>Using this option will invoke a BWA alignment which queries the initial reads against the assembled contig(s).</p>
 
-<p><code>arast run -f SEQUENCES.fa -a kiki --bwa</code></p>
+<p><code>arast run -f READS.fa -a kiki --bwa</code></p>
 
 <h3>Other Options</h3>
 
@@ -83,7 +87,7 @@
 
 <p>The user can submit a description with the job for personal bookkeeping:</p>
 
-<p><code>arast run -f SEQUENCES.fa -a kiki -m "My description"</code></p>
+<p><code>arast run -f READS.fa -a kiki -m "My description"</code></p>
 
 <h2>Job / Data Status</h2>
 
@@ -114,12 +118,12 @@
 
 <p>which will output</p>
 
-<pre><code>  +---+--------+-----------+
-  | # |  File  |    Size   |
-  +---+--------+-----------+
-  | 1 | sm1.fa | 203372422 |
-  | 2 | sm2.fa | 534524543 |
-  +---+--------+-----------+
+<pre><code>+---+--------+-----------+
+| # |  File  |    Size   |
++---+--------+-----------+
+| 1 | sm1.fa | 203372422 |
+| 2 | sm2.fa | 534524543 |
++---+--------+-----------+
 </code></pre>
 
 <h2>Retrieving Results</h2>

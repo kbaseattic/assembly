@@ -27,12 +27,16 @@ We will walk through building a command-line recipe depending on desired options
 
 `arast run ...`
 
+NOTE: The default behavior of the client is to use the official KBase Assembly Server.  To invoke the client against an alternate server, use the `-s` flag:
+
+`arast -s SERVER run ...`
+
 ### Sequence Data ###
 We can submit data in multiple fashions:
 
 #### Separate files: `-f` ####
 
-`arast run -f SEQUENCE\_1.fa SEQUENCE\_2.fa ...`
+`arast run -f READS1.fa READS2.fa ...`
 
 #### Whole directories: `-d` ####
 
@@ -52,11 +56,11 @@ The Assembly service is designed to be flexible and extensible to offer multiple
 
 Thus, to run an assembly:
 
-`arast run -f SEQUENCE.fa -a kiki [...]`
+`arast run -f READS.fa -a kiki [...]`
 
 or multiple assemblies:
 
-`arast run -f SEQUENCE.fa -a kiki velvet [...]`
+`arast run -f READS.fa -a kiki velvet [...]`
 
 ### Processing / Analysis ###
 The Assembly service currently offers the current processing services:
@@ -65,13 +69,13 @@ The Assembly service currently offers the current processing services:
 
 Using this option will invoke a BWA alignment which queries the initial reads against the assembled contig\(s\).
 
-`arast run -f SEQUENCES.fa -a kiki --bwa`
+`arast run -f READS.fa -a kiki --bwa`
 
 ### Other Options ###
 #### User Comments/Description ####
 The user can submit a description with the job for personal bookkeeping:
 
-`arast run -f SEQUENCES.fa -a kiki -m "My description"`
+`arast run -f READS.fa -a kiki -m "My description"`
 
 Job / Data Status
 -----------------
@@ -102,12 +106,12 @@ Here, we can see the "Data ID" of the specific dataset.  With this, we can attai
 
 which will output
 
-      +---+--------+-----------+
-      | # |  File  |    Size   |
-      +---+--------+-----------+
-      | 1 | sm1.fa | 203372422 |
-      | 2 | sm2.fa | 534524543 |
-      +---+--------+-----------+
+    +---+--------+-----------+
+    | # |  File  |    Size   |
+    +---+--------+-----------+
+    | 1 | sm1.fa | 203372422 |
+    | 2 | sm2.fa | 534524543 |
+    +---+--------+-----------+
 
 Retrieving Results
 ------------------
