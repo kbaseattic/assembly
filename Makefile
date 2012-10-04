@@ -7,7 +7,7 @@ SERVICE_EXEC = arastd.py
 TARGET ?= /kb/deployment
 DEPLOY_RUNTIME ?= /kb/runtime
 
-MODULE_DIR = $(TARGET)/modules/assembly
+MODULE_DIR = /kb/dev_container/modules/assembly
 LIB_PYTHON = $(MODULE_DIR)/lib/python2.7/site-packages
 CLIENT_DIR = $(TARGET)
 
