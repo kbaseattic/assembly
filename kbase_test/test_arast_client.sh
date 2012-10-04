@@ -44,7 +44,7 @@ message "Check random data status"
 arast -s $ARASTURL stat --data 1
 sleep 5
 
-message "Wait 60s for job to finish and download results"
+message "Wait 90s for job to finish and download results"
 sleep 90
 arast -s $ARASTURL get
 
