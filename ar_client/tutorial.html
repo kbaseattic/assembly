@@ -5,15 +5,17 @@
 <p>The DOE KBase features an Assembly Service with tools that allow users to submit a variety of sequence datasets to be processed, assembled, and analyzed.  This tutorial will introduce you to the current capabilities of the service as well as give some command-line recipes.</p>
 
 <p>Currently at an early phase, the Assembly Service has the following computation capabilities capabilities:
-- Velvet assembly
-- Kiki assembly
-- BWA alignment</p>
+* Velvet assembly
+* Kiki assembly
+* BWA alignment</p>
 
 <h2>Installation</h2>
 
 <h3>Prerequisites</h3>
 
-<p>-Python easy_install module</p>
+<ul>
+<li>Python easy_install module</li>
+</ul>
 
 <h3>Prepackaged Installation in Unix</h3>
 
@@ -33,12 +35,94 @@
 
 <h4>Separate files: <code>-f</code></h4>
 
-<p>`arast run -f SEQUENCE<em>1.fa SEQUENCE</em>2.fa ...</p>
+<p>`arast run -f SEQUENCE_1.fa SEQUENCE_2.fa ...</p>
 
-<h4>Whole directories</h4>
+<h4>Whole directories: '-d'</h4>
 
 <p><code>arast run -d /path/to/sequences/ ...</code></p>
 
-<h4>Previously submitted datasets</h4>
+<h4>Previously submitted datasets: <code>--data</code></h4>
 
-<p>`arast run --data DATAID ...</p>
+<p>`arast run --data DATAID ...'</p>
+
+<p>(We will explain DATAID later in the tutorial)</p>
+
+<h3>Assemblers</h3>
+
+<p>The Assembly service is designed to be flexible and extensible to offer multiple assembler options.  Currently, the assembler choices are:</p>
+
+<ul>
+<li><code>kiki</code></li>
+<li><code>velvet</code></li>
+</ul>
+
+<p>Thus, to run an assembly:</p>
+
+<p><code>arast run -f SEQUENCE.fa -a kiki [...]</code></p>
+
+<p>or multiple assemblies:</p>
+
+<p><code>arast run -f SEQUENCE.fa -a kiki velvet [...]</code></p>
+
+<h3>Processing / Analysis</h3>
+
+<p>The Assembly service currently offers the current processing services:</p>
+
+<h4>BWA: <code>--bwa</code></h4>
+
+<p>Using this option will invoke a BWA alignment which queries the initial reads against the assembled contig(s).</p>
+
+<p><code>arast run -f SEQUENCES.fa -a kiki --bwa</code></p>
+
+<h3>Other Options</h3>
+
+<h4>User Comments/Description</h4>
+
+<p>The user can submit a description with the job for personal bookkeeping:</p>
+
+<p>`arast run -f SEQUENCES.fa -a kiki -m "My description"</p>
+
+<h2>Job / Data Status</h2>
+
+<h3>Job Status</h3>
+
+<p>Checking the status of job and data submissions is performed via the <code>stat</code> sub-command.  To check the status of the most recent jobs:</p>
+
+<p><code>arast stat [...]</code></p>
+
+<p>or the status of any number of previous jobs:</p>
+
+<p><code>arast stat -n NUM [...]</code></p>
+
+<h3>Dataset information</h3>
+
+<p>The returned output gives the user information about submitted jobs:</p>
+
+<p><code>+--------+---------+----------+----------+-------------+
+| Job ID | Data ID |  Status  | Run time | Description |
++--------+---------+----------+----------+-------------+
+|   42   |    17   | complete | 0:00:16  |    test3    |
++--------+---------+----------+----------+-------------+</code></p>
+
+<p>Here, we can see the "Data ID" of the specific dataset.  With this, we can attain information about it:</p>
+
+<p><code>arast stat --data 17</code></p>
+
+<p>which will output</p>
+
+<p>`+---+--------+-----------+
+| # |  File  |    Size   |
++---+--------+-----------+
+| 1 | sm1.fa | 203372422 |
+| 2 | sm2.fa | 534524543 |
++---+--------+-----------+</p>
+
+<h2>Retrieving Results</h2>
+
+<p>Once it is confirmed that a job's "Status" is "complete," result data can be downloaded from the server.  To download result data from the last submitted job:</p>
+
+<p><code>arast get</code></p>
+
+<p>or to download result data from a particular job:</p>
+
+<p><code>arast get -j JOB_ID</code></p>
