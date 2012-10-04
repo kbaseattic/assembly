@@ -16,12 +16,14 @@ Deploying and Testing AssembyRAST client on KBase infrastructure
 
 cd /kb
 git clone ssh://kbase@git.kbase.us/dev_container
-cd /kb/dev_container/modules
-git clone ssh://kbase@git.kbase.us/assembly
 cd /kb/dev_container
 ./bootstrap /kb/runtime
 source user-env.sh
-make deploy-client
+cd /kb/dev_container/modules
+git clone ssh://kbase@git.kbase.us/assembly
+git fetch origin
+git checkout RC
+make deploy
 make test
 
 
