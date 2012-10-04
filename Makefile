@@ -7,7 +7,7 @@ SERVICE_EXEC = arastd.py
 TARGET ?= /kb/deployment
 DEPLOY_RUNTIME ?= /kb/runtime
 
-CLIENT_DIR = $(TARGET)
+CLIENT_DIR = $(TARGET)/bin
 MODULE_DIR = /kb/dev_container/modules/assembly
 LIB_PYTHON = $(MODULE_DIR)/lib/python2.7/site-packages
 CLIENT_EXE = $(CLIENT_DIR)/arast
@@ -73,6 +73,7 @@ install-client:
 #	echo "export PATH=/kb/runtime/bin:/kb/dev_container/bin:$PATH" >> $(CLIENT_EXE)
 	echo "python \$KB_TOP/modules/assembly/bin/arast" '"$@"' >> $(CLIENT_EXE)
 
+	chmod a+x $(CLIENT_EXE)
 # 	env PYTHONPATH=/kb/deployment/lib/python2.7/site-packages mkdir -p $PYTHONPATH; easy_install --prefix /kb/deployment ar_client-0.0.7-py2.7.egg
 
 clean:
