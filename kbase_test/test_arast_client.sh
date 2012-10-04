@@ -25,6 +25,6 @@ function message {
 
 
 message "Check queue status"
-arast status
+arast stat
 
 message "Tests Complete: PASSED"
