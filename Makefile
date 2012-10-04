@@ -65,7 +65,7 @@ deploy-mongo:
 	service mongodb restart
 
 install-client:
-	env PYTHONPATH=$(LIB_PYTHON) python ar_client/setup.py install --prefix $(MODULE_DIR)
+	cd ar_client; env PYTHONPATH=$(LIB_PYTHON) python setup.py install --prefix $(MODULE_DIR)
 	echo '#!/bin/sh' > $(CLIENT_EXE)
 	echo "export PYTHONPATH=$(LIB_PYTHON)" >> $(CLIENT_EXE)
 #	echo "export KB_TOP=/kb/dev_container" >> $(CLIENT_EXE)
