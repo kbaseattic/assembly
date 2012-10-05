@@ -235,6 +235,7 @@ def main():
         logging.debug(" [x] Sending message: %r" % (rpc_body))
         response = arast_rpc.call(rpc_body)
         logging.debug(" [.] Response: %r" % (response))
+        print " [.] Server response: %r" % (response)
 
     # Stat
     elif args.command == 'stat':
@@ -279,12 +280,9 @@ def main():
 class RpcClient:
     def __init__(self):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=ARASTURL))
-
         self.channel = self.connection.channel()
-
         result = self.channel.queue_declare(exclusive=True)
         self.callback_queue = result.method.queue
-
         self.channel.basic_consume(self.on_response, no_ack=True, queue=self.callback_queue)
 
     def on_response(self, ch, method, props, body):
@@ -302,7 +300,6 @@ class RpcClient:
         while self.response is None:
             self.connection.process_data_events()
         return self.response
-
 
 global ARASTUSER, ARASTPASSWORD
 

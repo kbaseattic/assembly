@@ -58,10 +58,9 @@ def route_job(body):
     p = dict(client_params)
     msg = json.dumps(p)
     send_message(msg, routing_key)
-    return job_id
+    response = "Submitted: job_id: %s, data_id: %s" % (job_id, client_params['data_id'])
+    return response
 
-
-# One RPC receive 
 def on_request(ch, method, props, body):
     global parser
     logging.info(" [.] Incoming request:  %r" % (body))
@@ -69,11 +68,9 @@ def on_request(ch, method, props, body):
     ack = ''
     pt = PrettyTable(["Error"])
 
-
     # if 'stat'
     try:
         if params['command'] == 'stat':
-
             if params['files']:
                 if params['files'] == -1:
                     ack = 'list all data not implemented'
@@ -90,7 +87,6 @@ def on_request(ch, method, props, body):
                             pt.add_row(row)
                     except:
                         pass
-
 
             ######  Stat Jobs #######
             else:
@@ -130,8 +126,6 @@ def on_request(ch, method, props, body):
                         pt.add_row(row)
                     except:
                         pt.add_row(doc['job_id'], "error")
-
-
             ack = pt.get_string()
 
         # if 'run'
@@ -144,6 +138,7 @@ def on_request(ch, method, props, body):
                                'temp/',
                                parser.get('shock','admin_user'),
                                parser.get('shock','admin_pass'))
+                
             ack = str(route_job(body))
 
         # if 'get_url'
@@ -164,6 +159,7 @@ def on_request(ch, method, props, body):
                 ack = "Error getting results"
                 
     except:
+        logging.error("Unexpected error:", sys.exc_info()[0])
         ack = "Error: Malformed message. Using latest version?"
 
     # Check client version TODO:handle all cases
@@ -180,8 +176,6 @@ def on_request(ch, method, props, body):
             correlation_id=props.correlation_id),
                      body=ack)
     ch.basic_ack(delivery_tag=method.delivery_tag)
-
-
 
 def start(config_file):
     global parser, metadata
@@ -201,4 +195,3 @@ def start(config_file):
     print " [x] Awaiting RPC requests..."
     channel.start_consuming()
 
-#start()

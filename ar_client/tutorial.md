@@ -115,11 +115,7 @@ which will output
 
 Retrieving Results
 ------------------
-Once it is confirmed that a job's "Status" is "complete," result data can be downloaded from the server.  To download result data from the last submitted job:
-
-`arast get`
-
-or to download result data from a particular job:
+Once it is confirmed that a job's "Status" is "complete," result data can be downloaded from the server.  To download result data from a completed job:
 
 `arast get -j JOB_ID`
 
