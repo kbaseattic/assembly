@@ -23,7 +23,7 @@ all:
 
 deploy: deploy-client
 deploy-service: install-dep create-scripts deploy-mongo
-deploy-client: deploy-dir install-client-dep install-client
+deploy-client: deploy-dir install-client
 
 redeploy-service: clean install-dep create-scripts deploy-mongo
 
