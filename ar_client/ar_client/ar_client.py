@@ -19,7 +19,7 @@ from pkg_resources import resource_filename
 import shock
 
 
-my_version = '0.0.7'
+my_version = '0.0.8'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -34,8 +34,7 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 # run -h
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
 p_run.add_argument("-f", "--file", action="store", dest="filename", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*')
-p_run.add_argument("-d", "--directory", action="store", dest="directory", help="specify input directory")
+p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', required=True)
 p_run.add_argument("-p", "--params", action="store", dest="params", nargs='*', help="specify global assembly parameters")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
@@ -186,34 +185,40 @@ def main():
             parser.print_usage()
             sys.exit()
 
-        if args.directory or args.filename:
+        if args.filename:
             url += "/node"
             files = args.filename
             file_list = args.filename
             if args.config:
                 options['config_id'] = upload(url, [args.config])
 
-	    if args.filename:
-		    res_ids = upload(url, files)
-		    base_files = [os.path.basename(f) for f in files]
-		    del options['filename']
-		    options['filename'] = base_files
-	    elif args.directory:
-		    ls_files = os.listdir(args.directory)
-		    #Remove config from upload list
-		    if args.config:
-			    cfile = os.path.basename(args.config)
-			    if cfile in ls_files:
-				    ls_files.remove(cfile)
-		    fullpaths = [str(args.directory + "/"+ file) for file in ls_files]
-		    file_list = fullpaths
-		    res_ids = upload(url, fullpaths)
-		    options['filename'] = ls_files
+            base_files = []
+            file_sizes = []
+            del options['filename']
+            res_ids = []
+            for f in files:
+                #Check file or dir
+                if os.path.isfile(f):
+                    res_ids += upload(url, [f,])
+                    file_sizes.append(os.path.getsize(f))
+                    base_files.append(os.path.basename(f))
+                elif os.path.isdir(f):
+                    ls_files = os.listdir(f)
 
-	    if args.directory or args.filename:
-		    for f in file_list:
-			    file_sizes.append(os.path.getsize(f))
-			    
+                    #Remove config from upload list
+                    if args.config:
+                        cfile = os.path.basename(args.config)
+                        if cfile in ls_files:
+                            ls_files.remove(cfile)
+
+                    fullpaths = [str(f + "/"+ file) for file in ls_files]
+                    file_list = fullpaths # ???
+                    res_ids += upload(url, fullpaths)
+                    for path in fullpaths:
+                        file_sizes.append(os.path.getsize(path))
+                    base_files += ls_files
+
+            options['filename'] = base_files
 
         # Send message to RPC Server
         options['ARASTUSER'] = ARASTUSER
@@ -295,4 +300,4 @@ class RpcClient:
 global ARASTUSER, ARASTPASSWORD
 
 
-# main()
+#main()

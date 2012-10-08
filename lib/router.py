@@ -54,6 +54,7 @@ def route_job(body):
         
     client_params['job_id'] = job_id
     uid = metadata.insert_job(client_params)
+    logging.info("Inserting job record: %s" % client_params)
     metadata.update_job(uid, 'status', 'queued')
     p = dict(client_params)
     msg = json.dumps(p)
