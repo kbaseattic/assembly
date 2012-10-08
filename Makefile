@@ -72,7 +72,7 @@ install-client:
 #	echo "export KB_TOP=/kb/dev_container" >> $(CLIENT_EXE)
 #	echo "export KB_RUNTIME=/kb/runtime"  >> $(CLIENT_EXE)
 #	echo "export PATH=/kb/runtime/bin:/kb/dev_container/bin:$PATH" >> $(CLIENT_EXE)
-	echo "python /kb/dev_container/modules/assembly/bin/arast" '"$$@"' >> $(CLIENT_EXE)
+	echo "python -W ignore::UserWarning /kb/dev_container/modules/assembly/bin/arast" '"$$@"' >> $(CLIENT_EXE)
 
 	chmod a+x $(CLIENT_EXE)
 
