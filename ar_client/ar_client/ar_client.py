@@ -2,8 +2,6 @@
 """
 arast-client -- commandline client for Assembly RAST
 
-A lot of code taken from Jared Wilkening / ShockClient
-
 """
 
 
@@ -50,13 +48,6 @@ v = p_run.add_argument_group('Velvet parameters')
 v.add_argument('--velvet-lib1', nargs = '+', help= "paired ends")
 v.add_argument('--velvet-lib2', nargs = '+', help= "paired ends")
 
-
-
-
-# filetype, special flags, config file
-# global, -k=31, -cov
-# velvet
-
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
 p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
@@ -69,7 +60,7 @@ p_stat.add_argument("-n", dest="stat_n", action="store", nargs=1, default=15, ty
 
 # get
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
-p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, help="specify which job data to get")
+p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, required=True, help="specify which job data to get")
 p_get.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify which assembly data to get")
 
 p_prep = subparsers.add_parser('prep', description='Prepare a parameter file', help='prepare job submission')
