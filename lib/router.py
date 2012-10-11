@@ -101,7 +101,12 @@ def on_request(ch, method, props, body):
                 
                 pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
                 if job_stat:
-                    docs = [metadata.get_job(params['ARASTUSER'], job_stat)]
+                    doc = metadata.get_job(params['ARASTUSER'], job_stat)
+
+                    if doc:
+                        docs = [doc]
+                    else:
+                        docs = None
                     n = -1
                 else:
                     try:
@@ -114,21 +119,24 @@ def on_request(ch, method, props, body):
                     n = record_count * -1
                     docs = metadata.list_jobs(params['ARASTUSER'])
 
-                for doc in docs[n:]:
-                    row = [doc['job_id'], str(doc['data_id']), doc['status'],]
+                if docs:
+                    for doc in docs[n:]:
+                        row = [doc['job_id'], str(doc['data_id']), doc['status'],]
 
-                    try:
-                        row.append(str(doc['computation_time']))
-                    except:
-                        row.append('')
-                    row.append(str(doc['message']))
+                        try:
+                            row.append(str(doc['computation_time']))
+                        except:
+                            row.append('')
+                        row.append(str(doc['message']))
 
-                    try:
-                        pt.add_row(row)
-                    except:
-                        pt.add_row(doc['job_id'], "error")
+                        try:
+                            pt.add_row(row)
+                        except:
+                            pt.add_row(doc['job_id'], "error")
 
-                ack = pt.get_string()
+                    ack = pt.get_string()
+                else:
+                    ack = "Error: Job %s does not exist" % job_stat
 
         # if 'run'
         elif params['command'] == 'run':
