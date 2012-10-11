@@ -90,7 +90,7 @@ def upload(url, files):
         if os.path.isdir(f):
             logging.info("%s is a directory.  Skipping." % f)
         else:
-            print "Uploading: %s" % os.path.basename(f)
+            sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
             res = curl_post_file(url, f)
             ids.append(res['D']['id'])
 
