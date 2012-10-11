@@ -44,6 +44,16 @@ sub get {
         ok($? == 0, (caller(0))[3] . " jobid: $jobid");
         diag("unable to run $command") if $@;
 	$jobid = $1 if $jobid =~ /\'(\d+)\'/;
+
+        my $done;
+        print "Waiting for job to complete.";
+        while (!$done) {
+            my $stat = `arast -s $ENV{ARASTURL} get -j $jobid`;
+            $done = 1 if $stat =~ /complete/;
+            print ".";
+            sleep 10;
+        }
+        print " [done]\n";
 	
 	$command = "arast -s $ENV{ARASTURL} get -j $jobid";
         eval {!system($command) or die $!;};
