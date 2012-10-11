@@ -87,14 +87,15 @@ def upload(url, files):
         if not os.path.exists(f):
             logging.error("File does not exist: '%s'" % (f))
             continue
+        if os.path.isdir(f):
+            logging.info("%s is a directory.  Skipping." % f)
+        else:
+            print "Uploading: %s" % os.path.basename(f)
+            res = curl_post_file(url, f)
+            ids.append(res['D']['id'])
 
-        print "Uploading: %s" % os.path.basename(f)
-        res = curl_post_file(url, f)
-        ids.append(res['D']['id'])
-        
-        if res["E"] is not None:
-            print "Shock: err from server: %s" % res["E"][0]
-
+            if res["E"] is not None:
+                sys.exit("Shock: err from server: %s" % res["E"][0])
     return ids
 
 def curl_post_file(url, filename):
