@@ -33,9 +33,10 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 
 # run -h
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
+
 p_run.add_argument("-f", "--file", action="store", dest="filename", nargs='*', help="specify sequence file(s)")
 p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', required=True)
-p_run.add_argument("-p", "--params", action="store", dest="params", nargs='*', help="specify global assembly parameters")
+#p_run.add_argument("-p", "--params", action="store", dest="params", nargs='*', help="specify global assembly parameters")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--bwa", action="store_true", dest="bwa", help="enable bwa alignment")
@@ -43,17 +44,19 @@ p_run.add_argument("--bwa", action="store_true", dest="bwa", help="enable bwa al
 ## Assembler flags ##
 
 # Velvet
-v = p_run.add_argument_group('Velvet parameters')
-v.add_argument('--velvet-lib1', nargs = '+', help= "paired ends")
-v.add_argument('--velvet-lib2', nargs = '+', help= "paired ends")
+#v = p_run.add_argument_group('Velvet parameters')
+#v.add_argument('--velvet-lib1', nargs = '+', help= "paired ends")
+#v.add_argument('--velvet-lib2', nargs = '+', help= "paired ends")
 
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
+stat_group = p_stat.add_mutually_exclusive_group()
 p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
 #p_stat.add_argument("-a", "--all", action="store_true", dest="stat_all", help="show all statistics")
 
-p_stat.add_argument("--data", dest="files", action="store", nargs='?', const=-1, help="list latest or data-id specific files")
-p_stat.add_argument("--job", dest="stat_job", action="store", nargs=1, default=-1, help="list latest or id specific job status")
+stat_group.add_argument("-d", "--data", dest="files", action="store", nargs='?', const=-1, help="list latest or data-id specific files")
+
+stat_group.add_argument("-j", "--job", dest="stat_job", action="store", nargs=1, help="display job status")
 p_stat.add_argument("-n", dest="stat_n", action="store", nargs=1, default=15, type=int, help="specify number ofrecords to show")
 
 
@@ -231,23 +234,30 @@ def main():
         logging.debug(" [x] Sending message: %r" % (rpc_body))
         response = arast_rpc.call(rpc_body)
         logging.debug(" [.] Response: %r" % (response))
-        print response
+        if 'error' in response.lower():
+            sys.exit(response)
+        else:
+            print response
+
 
     # Stat
     elif args.command == 'stat':
-		while True:
-			if args.watch:
-				os.system('clear')
-			options['ARASTUSER'] = ARASTUSER
-			rpc_body = json.dumps(options, sort_keys=True)
-			arast_rpc = RpcClient()
-			logging.debug(" [x] Sending message: %r" % (rpc_body))
-			response = arast_rpc.call(rpc_body)
-			logging.debug(" [.] Response: %s" % (response))
-			print response
-			if not args.watch:
-				break
-			time.sleep(2)			
+        while True:
+                if args.watch:
+                        os.system('clear')
+                options['ARASTUSER'] = ARASTUSER
+                rpc_body = json.dumps(options, sort_keys=True)
+                arast_rpc = RpcClient()
+                logging.debug(" [x] Sending message: %r" % (rpc_body))
+                response = arast_rpc.call(rpc_body)
+                logging.debug(" [.] Response: %s" % (response))
+                if 'error' in response.lower():
+                    sys.exit(response)
+                else:
+                    print response
+                if not args.watch:
+                        break
+                time.sleep(2)			
 
     elif args.command == 'get':
         if not args.job_id:
@@ -269,7 +279,9 @@ def main():
             for id in params.values():
                 shock.download(url, id, '', ARASTUSER, ARASTPASSWORD)
         except:
-            print "Error getting results"
+            print response
+            sys.exit("Error getting results")
+
 			
 
 ## Send RPC call ##

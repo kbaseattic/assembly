@@ -72,6 +72,8 @@ def on_request(ch, method, props, body):
     # if 'stat'
     try:
         if params['command'] == 'stat':
+
+            #####  Stat Data #####
             if params['files']:
                 if params['files'] == -1:
                     ack = 'list all data not implemented'
@@ -86,48 +88,47 @@ def on_request(ch, method, props, body):
                         for i in range(len(files)):
                             row = [i+1, os.path.basename(files[i]), fsizes[i]]
                             pt.add_row(row)
+                        ack = pt.get_string()
                     except:
-                        pass
+                        ack = "Error: problem fetching DATA %s" % data_id
 
             ######  Stat Jobs #######
             else:
-                #stat -n
                 try:
-                    record_count = params['stat_n'][0]
-                    if not record_count:
-                        record_count = 15
+                    job_stat = params['stat_job'][0]
                 except:
-                    record_count = 15
-
+                    job_stat = None
+                
                 pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
-                docs = metadata.list_jobs(params['ARASTUSER'])
-                n = record_count * -1
+                if job_stat:
+                    docs = [metadata.get_job(params['ARASTUSER'], job_stat)]
+                    n = -1
+                else:
+                    try:
+                        record_count = params['stat_n'][0]
+                        if not record_count:
+                            record_count = 15
+                    except:
+                        record_count = 15
+
+                    n = record_count * -1
+                    docs = metadata.list_jobs(params['ARASTUSER'])
+
                 for doc in docs[n:]:
-                    try:
-                        row = [doc['job_id']]
-                    except:
-                        row = [doc['_id']]
-                    try:
-                        row.append(str(doc['data_id']))
-                    except:
-                        row.append('')
-                    try:
-                        row.append(str(doc['status']))
-                    except:
-                        row.append('')
+                    row = [doc['job_id'], str(doc['data_id']), doc['status'],]
+
                     try:
                         row.append(str(doc['computation_time']))
                     except:
                         row.append('')
-                    try:
-                        row.append(str(doc['message']))
-                    except:
-                        row.append('')
+                    row.append(str(doc['message']))
+
                     try:
                         pt.add_row(row)
                     except:
                         pt.add_row(doc['job_id'], "error")
-            ack = pt.get_string()
+
+                        ack = pt.get_string()
 
         # if 'run'
         elif params['command'] == 'run':
