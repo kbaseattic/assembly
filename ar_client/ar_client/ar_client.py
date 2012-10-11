@@ -181,7 +181,7 @@ def main():
     file_sizes = []
     file_list = []
     if args.command == "run":
-        if not (args.assemblers and (args.filename or args.directory or args.data_id)):
+        if not (args.assemblers and (args.filename or args.data_id)):
             parser.print_usage()
             sys.exit()
 
@@ -231,7 +231,7 @@ def main():
         logging.debug(" [x] Sending message: %r" % (rpc_body))
         response = arast_rpc.call(rpc_body)
         logging.debug(" [.] Response: %r" % (response))
-        print " [.] Server response: %r" % (response)
+        print response
 
     # Stat
     elif args.command == 'stat':

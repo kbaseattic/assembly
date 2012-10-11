@@ -59,7 +59,7 @@ def route_job(body):
     p = dict(client_params)
     msg = json.dumps(p)
     send_message(msg, routing_key)
-    response = "Submitted: job_id: %s, data_id: %s" % (job_id, client_params['data_id'])
+    response = str(job_id)
     return response
 
 def on_request(ch, method, props, body):
