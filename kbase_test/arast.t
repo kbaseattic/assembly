@@ -48,7 +48,7 @@ sub get {
         my $done;
         print "Waiting for job to complete.";
         while (!$done) {
-            my $stat = `arast -s $ENV{ARASTURL} get -j $jobid`;
+            my $stat = `arast -s $ENV{ARASTURL} stat -j $jobid`;
             $done = 1 if $stat =~ /complete/;
             print ".";
             sleep 10;
