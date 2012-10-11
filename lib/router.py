@@ -128,7 +128,7 @@ def on_request(ch, method, props, body):
                     except:
                         pt.add_row(doc['job_id'], "error")
 
-                        ack = pt.get_string()
+                ack = pt.get_string()
 
         # if 'run'
         elif params['command'] == 'run':
