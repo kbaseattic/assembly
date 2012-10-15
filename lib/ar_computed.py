@@ -31,6 +31,8 @@ def start(arast_server, config):
     shockuser = cparser.get('shock','admin_user')
     shockpass = cparser.get('shock','admin_pass')
     arasturl =  cparser.get('meta','mongo.host')
+    num_threads =  cparser.get('compute','threads')
+
     mongo_port = int(cparser.get('meta','mongo.port'))
     if arast_server != '':
         arasturl = arast_server
@@ -62,7 +64,7 @@ def start(arast_server, config):
 
     # Start RPC server
     compute = consume.ArastConsumer(shockurl, arasturl, config)
-    compute.start()
+    compute.start(num_threads)
 
 
 parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command -h" for more information about a command.')

@@ -12,6 +12,8 @@ import shutil
 import time
 import datetime 
 import socket
+import multiprocessing
+from multiprocessing import current_process as proc
 
 import config
 import assembly as asm
@@ -30,13 +32,17 @@ class ArastConsumer:
         self.shockuser = self.parser.get('shock','admin_user')
         self.shockpass = self.parser.get('shock','admin_pass')
         self.datapath = self.parser.get('compute','datapath')
+        self.queue = self.parser.get('rabbitmq','default_routing_key')
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
         self.metadata = meta.MetadataConnection(config, arasturl)
-        self.metadata.update_doc('active_nodes', 'server_name', socket.gethostname(),
-                                 'status', 'running')
+        self.gc_lock = multiprocessing.Lock()
+        
+        #self.metadata.update_doc('active_nodes', 'server_name', socket.gethostname(),
+         #                        'status', 'running')
 
     def garbage_collect(self, datapath, required_space):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""
+        self.gc_lock.acquire()
         s = os.statvfs(datapath)
         free_space = float(s.f_bsize * s.f_bavail)
         logging.debug("Free space in bytes: %s" % free_space)
@@ -57,7 +63,7 @@ class ArastConsumer:
             s = os.statvfs(datapath)
             free_space = float(s.f_bsize * s.f_bavail)
             logging.debug("Free space in bytes: %s" % free_space)
-        
+        self.gc_lock.release()
 
     def get_data(self, body):
         """Get data from cache or Shock server."""
@@ -178,20 +184,21 @@ class ArastConsumer:
             #res = json.loads(r.text)
         return r
 
-    def fetch_job(self, queue):
+    def fetch_job(self):
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host = self.arasturl))
         channel = connection.channel()
         channel.basic_qos(prefetch_count=1)
-        result = channel.queue_declare(queue=queue,
+        result = channel.queue_declare(queue=self.queue,
                                        exclusive=False,
                                        auto_delete=False,
                                        durable=True)
 
-        print ' [*] Fetching job...'
+        logging.basicConfig(format=("%(asctime)s %s %(levelname)-8s %(message)s",proc().name))
+        print proc().name, ' [*] Fetching job...'
 
         channel.basic_consume(self.callback,
-                              queue=queue,
+                              queue=self.queue,
                               no_ack=True) #change?
 
         channel.start_consuming()
@@ -202,9 +209,16 @@ class ArastConsumer:
 
 
     # For now, use this instead of daemon
-    def start(self):
-        self.fetch_job(self.parser.get('rabbitmq','job.medium'))
-
+    def start(self, threads):
+            workers = []
+            for i in range(int(threads)):
+                worker_name = "[Worker %s]:" % i
+                logging.info("[Master]: Starting %s" % worker_name)
+                p = multiprocessing.Process(name=worker_name, target=self.fetch_job)
+                workers.append(p)
+                p.start()
+                #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
+            workers[0].join()
 
 def touch(path):
     now = time.time()
