@@ -34,13 +34,8 @@ NOTE: The default behavior of the client is to use the official KBase Assembly S
 ### Sequence Data ###
 We can submit data in multiple fashions:
 
-#### Separate files: `-f` ####
-
 `arast run -f READS1.fa READS2.fa ...`
-
-#### Whole directories: `-d` ####
-
-`arast run -d /path/to/sequences/ ...`
+`arast run -f /path/to/sequences/ ...`
 
 #### Previously submitted datasets: `--data` ####
 
