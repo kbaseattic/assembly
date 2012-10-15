@@ -10,6 +10,7 @@ import sys
 import daemon
 import logging
 import pymongo
+import multiprocessing
 import pika
 from ConfigParser import SafeConfigParser
 
@@ -62,9 +63,20 @@ def start(arast_server, config):
         print " [x] Shock connection successful"
 
 
-    # Start RPC server
-    compute = consume.ArastConsumer(shockurl, arasturl, config)
-    compute.start(num_threads)
+    workers = []
+    for i in range(int(num_threads)):
+        worker_name = "[Worker %s]:" % i
+        compute = consume.ArastConsumer(shockurl, arasturl, config)
+        logging.info("[Master]: Starting %s" % worker_name)
+        p = multiprocessing.Process(name=worker_name, target=compute.start)
+        workers.append(p)
+        p.start()
+        #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
+    workers[0].join()
+
+        
+
+
 
 
 parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command -h" for more information about a command.')
@@ -75,6 +87,8 @@ parser.add_argument("-s", "--server", help="specify AssemblyRAST server",
                     action="store")
 parser.add_argument("-c", "--config", help="specify configuration file",
                     action="store", required=True)
+parser.add_argument("-t", "--threads", help="specify number of worker threads",
+                    action="store", required=False)
 
 args = parser.parse_args()
 if args.verbose:
