@@ -93,20 +93,20 @@ def run_kiki(datapath, uid, bwa):
 
         bwa_bam = run_bwa(kiki_data, ref_contig, readfiles, 'kiki')
         contigs.append(bwa_bam)
-        tmp_files.append(bwa_bam)
+        #tmp_files.append(bwa_bam)
 
-    tarfile = tar_list(datapath, contigs, 'ki_data.tar.gz')
+    tarfile = tar_list(kiki_data, contigs, 'ki_data.tar.gz')
 
     # Remove intermediate files
     contigfile = raw_path + '*.contig.*'
-    tmp_files += glob.glob(contigfile)
+    #tmp_files += glob.glob(contigfile)
 
-    for temp in tmp_files:
-        try:
-            os.remove(temp)
-            logging.info("Removed %s" % temp)
-        except:
-            logging.info("Could not remove %s" % temp)
+    # for temp in tmp_files:
+    #     try:
+    #         os.remove(temp)
+    #         logging.info("Removed %s" % temp)
+    #     except:
+    #         logging.info("Could not remove %s" % temp)
 
     # Return location of finished data
     return tarfile
@@ -151,7 +151,8 @@ def run_velvet(datapath, uid, bwa):
             args.append(flag)
             args.append(str(raw_path + paired_reads[i][0]))
             args.append(str(raw_path + paired_reads[i][1]))
-
+            read_files.append(str(raw_path + paired_reads[i][0]))
+            read_files.append(str(raw_path + paired_reads[i][1]))
     else:
         # TODO handle more than just fasta files
         valid_files = get_fasta(raw_path)
