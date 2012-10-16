@@ -38,19 +38,21 @@ def run(assembler, datapath, uid, bwa):
 #    metadata.update_job(uid, 'status', 'running:')
     if assembler == 'kiki':
 #        metadata.update_job(uid, 'status', 'running: kiki')
-        result_tar = run_kiki(datapath, bwa)
+        result_tar = run_kiki(datapath, uid, bwa)
     elif assembler == 'velvet':
 #        metadata.update_job(uid, 'status', 'running: velvet')
         result_tar = run_velvet(datapath, uid, bwa)
     return result_tar
 
-def run_kiki(datapath, bwa):
+def run_kiki(datapath, uid, bwa):
     """ Runs kiki assembler on ONLY FASTA files. """
     ki_exec = basepath + get_default('kiki.path')
     ki_exec += get_default('kiki.exec')
     threshold = 1000
     raw_path = datapath + '/raw/'
-    
+    kiki_data = datapath + '/kiki/' + uid + '/'
+    os.makedirs(kiki_data)
+    kiki_prefix = kiki_data + 'kiki'
     args = [ki_exec, '-k', '29', '-i']
     valid_files  = get_fasta(raw_path)
     valid_files += get_fastq(raw_path)
@@ -62,15 +64,15 @@ def run_kiki(datapath, bwa):
         print readfile
         args.append(readfile)
         readfiles.append(readfile)
-    #args.append('-o')
-    #args.append('ki/')
-    ki_data = raw_path + 'ki/'    
+    args.append('-o')
+    args.append(kiki_prefix)
+    #ki_data = raw_path + 'ki/'    
     print args
     print "Starting kiki"
     p = subprocess.Popen(args)
     p.wait()
 
-    contigfile = raw_path + '*.contig'
+    contigfile = kiki_data + '*.contig'
     contigs = glob.glob(contigfile)
     tmp_files += contigs
     logging.debug("Contigs: %s" % contigs)
@@ -89,22 +91,22 @@ def run_kiki(datapath, bwa):
         else:
             ref_contig = os.path.basename(fa_contigs[0])
 
-        bwa_bam = run_bwa(raw_path, ref_contig, readfiles, 'kiki')
+        bwa_bam = run_bwa(kiki_data, ref_contig, readfiles, 'kiki')
         contigs.append(bwa_bam)
-        tmp_files.append(bwa_bam)
+        #tmp_files.append(bwa_bam)
 
-    tarfile = tar_list(datapath, contigs, 'ki_data.tar.gz')
+    tarfile = tar_list(kiki_data, contigs, 'ki_data.tar.gz')
 
     # Remove intermediate files
     contigfile = raw_path + '*.contig.*'
-    tmp_files += glob.glob(contigfile)
+    #tmp_files += glob.glob(contigfile)
 
-    for temp in tmp_files:
-        try:
-            os.remove(temp)
-            logging.info("Removed %s" % temp)
-        except:
-            logging.info("Could not remove %s" % temp)
+    # for temp in tmp_files:
+    #     try:
+    #         os.remove(temp)
+    #         logging.info("Removed %s" % temp)
+    #     except:
+    #         logging.info("Could not remove %s" % temp)
 
     # Return location of finished data
     return tarfile
@@ -149,7 +151,8 @@ def run_velvet(datapath, uid, bwa):
             args.append(flag)
             args.append(str(raw_path + paired_reads[i][0]))
             args.append(str(raw_path + paired_reads[i][1]))
-
+            read_files.append(str(raw_path + paired_reads[i][0]))
+            read_files.append(str(raw_path + paired_reads[i][1]))
     else:
         # TODO handle more than just fasta files
         valid_files = get_fasta(raw_path)

@@ -19,7 +19,7 @@ from pkg_resources import resource_filename
 import shock
 
 
-my_version = '0.0.8'
+my_version = '0.0.9'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -87,8 +87,8 @@ def upload(url, files):
         if not os.path.exists(f):
             logging.error("File does not exist: '%s'" % (f))
             continue
-        if os.path.isdir(f):
-            logging.info("%s is a directory.  Skipping." % f)
+        #if os.path.isdir(f):
+         #   logging.info("%s is a directory.  Skipping." % f)
         else:
             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
             res = curl_post_file(url, f)
@@ -215,12 +215,15 @@ def main():
                         if cfile in ls_files:
                             ls_files.remove(cfile)
 
-                    fullpaths = [str(f + "/"+ file) for file in ls_files]
+                    fullpaths = [str(f + "/"+ file) for file in ls_files 
+                                 if not os.path.isdir(str(f + "/" +file))]
+                    print fullpaths
                     file_list = fullpaths # ???
+
                     res_ids += upload(url, fullpaths)
                     for path in fullpaths:
                         file_sizes.append(os.path.getsize(path))
-                    base_files += ls_files
+                    base_files += [os.path.basename(file) for file in fullpaths]
 
             options['filename'] = base_files
 

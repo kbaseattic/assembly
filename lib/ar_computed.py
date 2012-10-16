@@ -10,6 +10,7 @@ import sys
 import daemon
 import logging
 import pymongo
+import multiprocessing
 import pika
 from ConfigParser import SafeConfigParser
 
@@ -21,7 +22,7 @@ import shock
 
 #with context:
 
-def start(arast_server, config):
+def start(arast_server, config, num_threads):
     # Read config file
     
     print "Reading from config file"
@@ -31,6 +32,9 @@ def start(arast_server, config):
     shockuser = cparser.get('shock','admin_user')
     shockpass = cparser.get('shock','admin_pass')
     arasturl =  cparser.get('meta','mongo.host')
+    if not num_threads:
+        num_threads =  cparser.get('compute','threads')
+
     mongo_port = int(cparser.get('meta','mongo.port'))
     if arast_server != '':
         arasturl = arast_server
@@ -60,9 +64,20 @@ def start(arast_server, config):
         print " [x] Shock connection successful"
 
 
-    # Start RPC server
-    compute = consume.ArastConsumer(shockurl, arasturl, config)
-    compute.start()
+    workers = []
+    for i in range(int(num_threads)):
+        worker_name = "[Worker %s]:" % i
+        compute = consume.ArastConsumer(shockurl, arasturl, config)
+        logging.info("[Master]: Starting %s" % worker_name)
+        p = multiprocessing.Process(name=worker_name, target=compute.start)
+        workers.append(p)
+        p.start()
+        #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
+    workers[0].join()
+
+        
+
+
 
 
 parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command -h" for more information about a command.')
@@ -73,6 +88,8 @@ parser.add_argument("-s", "--server", help="specify AssemblyRAST server",
                     action="store")
 parser.add_argument("-c", "--config", help="specify configuration file",
                     action="store", required=True)
+parser.add_argument("-t", "--threads", help="specify number of worker threads",
+                    action="store", required=False)
 
 args = parser.parse_args()
 if args.verbose:
@@ -80,4 +97,9 @@ if args.verbose:
 arasturl = ''
 if args.server:
     arasturl = args.server
-start(arasturl, args.config)
+
+if args.threads:
+    num_threads = args.threads
+else:
+    num_threads = None
+start(arasturl, args.config, num_threads)
