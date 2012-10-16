@@ -19,7 +19,7 @@ from pkg_resources import resource_filename
 import shock
 
 
-my_version = '0.0.8'
+my_version = '0.0.9'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
