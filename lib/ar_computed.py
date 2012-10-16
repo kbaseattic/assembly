@@ -22,7 +22,7 @@ import shock
 
 #with context:
 
-def start(arast_server, config):
+def start(arast_server, config, num_threads):
     # Read config file
     
     print "Reading from config file"
@@ -32,7 +32,8 @@ def start(arast_server, config):
     shockuser = cparser.get('shock','admin_user')
     shockpass = cparser.get('shock','admin_pass')
     arasturl =  cparser.get('meta','mongo.host')
-    num_threads =  cparser.get('compute','threads')
+    if not num_threads:
+        num_threads =  cparser.get('compute','threads')
 
     mongo_port = int(cparser.get('meta','mongo.port'))
     if arast_server != '':
@@ -96,4 +97,9 @@ if args.verbose:
 arasturl = ''
 if args.server:
     arasturl = args.server
-start(arasturl, args.config)
+
+if args.threads:
+    num_threads = args.threads
+else:
+    num_threads = None
+start(arasturl, args.config, num_threads)
