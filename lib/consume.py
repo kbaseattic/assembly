@@ -69,10 +69,6 @@ class ArastConsumer:
         """Get data from cache or Shock server."""
         params = json.loads(body)
 
-
-        # Download data
-
-        #TODO data caching
         filename = self.datapath
         filename += str(params['data_id'])
         datapath = filename
@@ -80,14 +76,14 @@ class ArastConsumer:
             logging.info("Requested data exists on node")
             touch(datapath)
         else:
+            uid = params['_id']
+            self.metadata.update_job(uid, 'status', 'Data transfer')
             data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
             if data_doc:
                 files = data_doc['filename']
-
                 ids = data_doc['ids']
                 job_id = params['job_id']
                 uid = params['_id']
-
                 filename += "/raw/"
                 os.makedirs(filename)
 

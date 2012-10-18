@@ -27,7 +27,7 @@ def get_default(key):
 def is_available(assembler):
     """ Check if ASSEMBLER is a valid/available assembler.
     """
-    assemblers = ['kiki','velvet']
+    assemblers = ['kiki','velvet','a5']
     if assembler in assemblers:
         return True
     else:
@@ -35,17 +35,48 @@ def is_available(assembler):
 
 def run(assembler, datapath, uid, bwa):
     logging.info("Running assembler: %s" % assembler)
-#    metadata.update_job(uid, 'status', 'running:')
     if assembler == 'kiki':
-#        metadata.update_job(uid, 'status', 'running: kiki')
         result_tar = run_kiki(datapath, uid, bwa)
     elif assembler == 'velvet':
-#        metadata.update_job(uid, 'status', 'running: velvet')
         result_tar = run_velvet(datapath, uid, bwa)
+    elif assembler == 'a5':
+        result_tar = run_a5(datapath, uid)
     return result_tar
 
+def run_a5(datapath, uid):
+    a5_exec = 'a5_pipeline.pl'
+    raw_path = datapath + '/raw/'
+    a5_data = datapath + '/a5/' + uid + '/'
+    os.makedirs(a5_data)
+    a5_prefix = a5_data + 'a5'
+    args = [a5_exec,]
+    valid_files = get_fastq(raw_path)
+
+    readfiles = []
+    tmp_files = []
+    for file in valid_files:
+        readfile = raw_path + file
+        print readfile
+        args.append(readfile)
+        readfiles.append(readfile)
+    args.append(a5_prefix)
+    print args
+    print "Starting a5"
+    p = subprocess.Popen(args)
+    p.wait()
+
+    results = a5_data + '*'
+    rlist = glob.glob(results)
+    #tmp_files += contigs
+    logging.debug("Contigs: %s" % rlist)
+
+    tarfile = tar_list(a5_data, rlist, 'a5_data.tar.gz')
+
+    # Return location of finished data
+    return tarfile
+
+
 def run_kiki(datapath, uid, bwa):
-    """ Runs kiki assembler on ONLY FASTA files. """
     ki_exec = basepath + get_default('kiki.path')
     ki_exec += get_default('kiki.exec')
     threshold = 1000
@@ -78,7 +109,6 @@ def run_kiki(datapath, uid, bwa):
     logging.debug("Contigs: %s" % contigs)
 
     if bwa:
-
         fa_contigs = []
         for contig in contigs:
             outfile = contig + '.kifa'
