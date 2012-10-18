@@ -12,9 +12,9 @@
     bookkeeping required
 
 ** development / production instances
-** documentation
+** DONE documentation
    DEADLINE: <2012-10-02 Tue>
-** test
+** DONE test
    DEADLINE: <2012-10-02 Tue>
 *** install client and server on different machines
 *** arast run, arast stat, arast get ...
@@ -42,7 +42,7 @@
 *** input from URLs						   :ff:
     DEADLINE: <2012-10-02 Tue>
 *** input form SRA id
-*** progress bar for data upload
+*** DONE progress bar for data upload
     arast status shows "downloading"
 ** job management
 *** Run time

@@ -75,8 +75,6 @@ def start(arast_server, config, num_threads):
         #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
     workers[0].join()
 
-        
-
 
 
 
