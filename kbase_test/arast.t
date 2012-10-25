@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 
 $ENV{ARASTURL}      = "140.221.84.124";
-$ENV{KB_DEPLOYMENT} = "/kb/deployment";
+$ENV{KB_DEPLOYMENT} = "/kb/deployment" unless defined $ENV{KB_DEPLOYMENT};
 $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 
 my $testCount = 0;
