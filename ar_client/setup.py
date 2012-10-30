@@ -15,7 +15,7 @@ setup(
     packages = find_packages(),
     install_requires = ['pika>=0.9.5',
                         'pymongo>=2.2.1',
-                        'requests>=0.13.6'],
+                        'requests>=0.13.0'],
     long_description=read('README.md'),
     entry_points={'console_scripts':[
             'arast = ar_client.ar_client:main']},
