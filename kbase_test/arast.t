@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 
 $ENV{ARASTURL}      = "140.221.84.124";
-$ENV{KB_DEPLOYMENT} = "/kb/deployment";
+$ENV{KB_DEPLOYMENT} = "/kb/deployment" unless defined $ENV{KB_DEPLOYMENT};
 $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 
 my $testCount = 0;
@@ -12,13 +12,17 @@ my $testCount = 0;
 # keep adding tests to this list
 my @tests = qw(run stat get prep);
 
+
 setup();
+$testCount++;
+
 foreach my $test (@tests) {
         &$test();
         $testCount++;
 }
 
 done_testing($testCount);
+teardown();
 
 # write your tests as subroutnes, add the sub name to @tests
 sub run {
@@ -74,3 +78,7 @@ sub setup {
 	diag("unable to run $command") if $@;
 }
 
+sub teardown {
+	unlink "smg.fa" if -e "smg.fa";
+	unlink glob "job*.tar";
+}
