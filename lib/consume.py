@@ -13,6 +13,7 @@ import time
 import datetime 
 import socket
 import multiprocessing
+import tarfile
 from multiprocessing import current_process as proc
 
 import config
@@ -119,6 +120,8 @@ class ArastConsumer:
 
         # Download files (if necessary)
         datapath = self.get_data(body)
+        rawpath = datapath + '/raw/'
+        extract_files(rawpath)
         if not datapath:
             error = True
             logging.error("Data does not exist!")
@@ -135,26 +138,29 @@ class ArastConsumer:
         if not error:
             start_time = time.time()
             download_ids = {}
+            status = 'complete'
             for a in params['assemblers']:
                 if asm.is_available(a):
                     self.garbage_collect(self.datapath, 0)
                     self.metadata.update_job(uid, 'status', "running: %s" % a)
-                    result_tar = asm.run(a, datapath, uid, bwa)
-                    renamed = os.path.split(result_tar)[0] + '/'
-                    renamed += asm.get_tar_name(job_id, a)
-                    os.rename(result_tar, renamed)
-                    # send to shock
-                    url = "http://%s" % (self.shockurl)
-                    url += '/node'
-                    res = self.upload(url, renamed, a)
-                    # Get location
-                    download_ids[a] = res['D']['id']
-                else:
-                    logging.info("%s failed to finish" % a)
+                    try:
+                        result_tar = asm.run(a, datapath, uid, bwa)
+                        renamed = os.path.split(result_tar)[0] + '/'
+                        renamed += asm.get_tar_name(job_id, a)
+                        os.rename(result_tar, renamed)
+                        # send to shock
+                        url = "http://%s" % (self.shockurl)
+                        url += '/node'
+                        res = self.upload(url, renamed, a)
+                        # Get location
+                        download_ids[a] = res['D']['id']
+                    except:
+                        status += ":failed %s " % a
+                        logging.info("%s failed to finish" % a)
             elapsed_time = time.time() - start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
             self.metadata.update_job(uid, 'result_data', download_ids)
-            self.metadata.update_job(uid, 'status', 'complete')
+            self.metadata.update_job(uid, 'status', status)
             self.metadata.update_job(uid, 'computation_time', ftime)
         else:
             self.metadata.update_job(uid, 'status', 'Data error')
@@ -216,6 +222,7 @@ class ArastConsumer:
             #     #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
             # workers[0].join()
         self.fetch_job()
+
 def touch(path):
     now = time.time()
     try:
@@ -228,3 +235,14 @@ def touch(path):
         open(path, "w").close()
         os.utime(path, (now, now))
     
+def extract_files(datapath):
+    """ Decompress files if necessary """
+    files = os.listdir(datapath)
+    logging.debug("Looking for files to extract in %s" % files)
+    for tfile in [datapath + f for f in files]:
+        if tarfile.is_tarfile(tfile):
+            logging.debug("Extracting %s" % tfile)
+            tarfile.open(tfile, 'r').extractall(datapath)
+            os.remove(tfile)
+    else:
+        pass
