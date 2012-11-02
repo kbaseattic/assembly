@@ -138,7 +138,7 @@ class ArastConsumer:
         if not error:
             start_time = time.time()
             download_ids = {}
-            status = 'complete'
+            status = 'complete:'
             for a in params['assemblers']:
                 if asm.is_available(a):
                     self.garbage_collect(self.datapath, 0)
@@ -154,8 +154,11 @@ class ArastConsumer:
                         res = self.upload(url, renamed, a)
                         # Get location
                         download_ids[a] = res['D']['id']
+                        status += "%s [success] " % a
+                    except Exception as e:
+                        status += "%s [failed:%s] " % (a, e)
                     except:
-                        status += ":failed %s " % a
+                        status += "%s [failed:%s] " % (a, str(sys.exc_info()[0]))
                         logging.info("%s failed to finish" % a)
             elapsed_time = time.time() - start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))

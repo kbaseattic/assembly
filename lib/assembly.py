@@ -57,7 +57,8 @@ def run_a5(datapath, uid):
     a5_prefix = a5_data + 'a5'
     args = [a5_exec,]
     valid_files = get_fastq(raw_path)
-
+    if not valid_files:
+        raise Exception('No valid input files')
     readfiles = []
     tmp_files = []
     for file in valid_files:
@@ -94,8 +95,12 @@ def run_kiki(datapath, uid, bwa):
     valid_files  = get_fasta(raw_path)
     valid_files += get_fastq(raw_path)
 
+    if not valid_files:
+        raise Exception('No valid input files')
+
     readfiles = []
     tmp_files = []
+
     for file in valid_files:
         readfile = raw_path + file
         print readfile
@@ -111,6 +116,9 @@ def run_kiki(datapath, uid, bwa):
 
     contigfile = kiki_data + '*.contig'
     contigs = glob.glob(contigfile)
+
+    if not contigs:
+        raise Exception("No contigs")
     tmp_files += contigs
     logging.debug("Contigs: %s" % contigs)
 
@@ -173,6 +181,8 @@ def run_velvet(datapath, uid, bwa):
     raw_path = datapath + '/raw/'
     read_files = []
 
+
+
     # Find paired
     paired_reads = get_paired(get_fasta(raw_path))
     if len(paired_reads) > 0:
@@ -193,6 +203,10 @@ def run_velvet(datapath, uid, bwa):
         # TODO handle more than just fasta files
         valid_files = get_fasta(raw_path)
         valid_files += get_fastq(raw_path)
+
+        if not valid_files:
+            raise Exception('No valid input files')
+
         for file in valid_files:
             readfile = raw_path + file
             args.append(readfile)
@@ -209,6 +223,9 @@ def run_velvet(datapath, uid, bwa):
     g.wait()
 
     vfiles = [velvet_data + 'contigs.fa', velvet_data + 'stats.txt']
+    for f in vfiles:
+        if not os.path.exists(f):
+            raise Exception('No contigs')
 
     #Run BWA if specified
     if bwa:
