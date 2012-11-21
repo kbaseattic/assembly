@@ -13,7 +13,7 @@ import os
 import re
 import subprocess
 import shutil
-import tarfile
+#import tarfile
 import glob
 
 import metadata as meta
@@ -34,6 +34,9 @@ def is_available(assembler):
         return False
 
 def run(assembler, datapath, uid, bwa):
+    
+    if len(os.listdir(datapath)) == 0:
+        raise IOError #empty directory!
     logging.info("Running assembler: %s" % assembler)
     if assembler == 'kiki':
         result_tar = run_kiki(datapath, uid, bwa)
@@ -41,7 +44,10 @@ def run(assembler, datapath, uid, bwa):
         result_tar = run_velvet(datapath, uid, bwa)
     elif assembler == 'a5':
         result_tar = run_a5(datapath, uid)
-    return result_tar
+    if result_tar is not None:
+        return result_tar
+    else:
+        raise IOError
 
 def run_a5(datapath, uid):
     a5_exec = 'a5_pipeline.pl'
@@ -51,7 +57,8 @@ def run_a5(datapath, uid):
     a5_prefix = a5_data + 'a5'
     args = [a5_exec,]
     valid_files = get_fastq(raw_path)
-
+    if not valid_files:
+        raise Exception('No valid input files')
     readfiles = []
     tmp_files = []
     for file in valid_files:
@@ -70,10 +77,10 @@ def run_a5(datapath, uid):
     #tmp_files += contigs
     logging.debug("Contigs: %s" % rlist)
 
-    tarfile = tar_list(a5_data, rlist, 'a5_data.tar.gz')
+    tar_file = tar_list(a5_data, rlist, 'a5_data.tar.gz')
 
     # Return location of finished data
-    return tarfile
+    return tar_file
 
 
 def run_kiki(datapath, uid, bwa):
@@ -88,8 +95,12 @@ def run_kiki(datapath, uid, bwa):
     valid_files  = get_fasta(raw_path)
     valid_files += get_fastq(raw_path)
 
+    if not valid_files:
+        raise Exception('No valid input files')
+
     readfiles = []
     tmp_files = []
+
     for file in valid_files:
         readfile = raw_path + file
         print readfile
@@ -105,6 +116,9 @@ def run_kiki(datapath, uid, bwa):
 
     contigfile = kiki_data + '*.contig'
     contigs = glob.glob(contigfile)
+
+    if not contigs:
+        raise Exception("No contigs")
     tmp_files += contigs
     logging.debug("Contigs: %s" % contigs)
 
@@ -125,7 +139,7 @@ def run_kiki(datapath, uid, bwa):
         contigs.append(bwa_bam)
         #tmp_files.append(bwa_bam)
 
-    tarfile = tar_list(kiki_data, contigs, 'ki_data.tar.gz')
+    tar_file = tar_list(kiki_data, contigs, 'ki_data.tar.gz')
 
     # Remove intermediate files
     contigfile = raw_path + '*.contig.*'
@@ -139,7 +153,7 @@ def run_kiki(datapath, uid, bwa):
     #         logging.info("Could not remove %s" % temp)
 
     # Return location of finished data
-    return tarfile
+    return tar_file
 
 
 def run_velvet(datapath, uid, bwa):
@@ -167,6 +181,8 @@ def run_velvet(datapath, uid, bwa):
     raw_path = datapath + '/raw/'
     read_files = []
 
+
+
     # Find paired
     paired_reads = get_paired(get_fasta(raw_path))
     if len(paired_reads) > 0:
@@ -187,6 +203,10 @@ def run_velvet(datapath, uid, bwa):
         # TODO handle more than just fasta files
         valid_files = get_fasta(raw_path)
         valid_files += get_fastq(raw_path)
+
+        if not valid_files:
+            raise Exception('No valid input files')
+
         for file in valid_files:
             readfile = raw_path + file
             args.append(readfile)
@@ -203,6 +223,9 @@ def run_velvet(datapath, uid, bwa):
     g.wait()
 
     vfiles = [velvet_data + 'contigs.fa', velvet_data + 'stats.txt']
+    for f in vfiles:
+        if not os.path.exists(f):
+            raise Exception('No contigs')
 
     #Run BWA if specified
     if bwa:
@@ -210,8 +233,8 @@ def run_velvet(datapath, uid, bwa):
 
 
 
-    tarfile = tar_list(datapath, vfiles, 'velvet_data.tar.gz')
-    return tarfile
+    tar_file = tar_list(datapath, vfiles, 'velvet_data.tar.gz')
+    return tar_file
 
 def get_tar_name(job_id, suffix):
     name = 'job' + str(job_id)
