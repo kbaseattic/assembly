@@ -11,6 +11,35 @@ exit 0;
 
 
 sub teardown {
-	unlink "smg.fa" if -e "smg.fa";
-	unlink glob "job*.tar";
+    print "Delete uploaded sequence files and assembly results\n";
+    if (-e "/mnt/smg.fa") {
+        my $command = "sudo rm /mnt/smg.fa"; 
+        eval {!system("$command > /dev/null") or die $!;};
+        diag("unable to run $command") if $@;
+    } 
+    if (-e "/mnt/SRR328463_1.fastq.bz2") { 
+        my $command = "sudo rm /mnt/SRR328463_1.fastq.bz2";
+        eval {!system("$command > /dev/null") or die $!;}; 
+        diag("unable to run $command") if $@; 
+    }
+    if (-e "/mnt/SRR328463_1.fastq") {
+	my $command = "sudo rm /mnt/SRR328463_1.fastq"; 
+	eval {!system("$command > /dev/null") or die $!;};
+	diag("unable to run $command") if $@;
+    }
+    if (-e "/mnt/SRR328463_2.fastq.bz2") {
+        my $command = "sudo rm /mnt/SRR328463_2.fastq.bz2"; 
+        eval {!system("$command > /dev/null") or die $!;}; 
+        diag("unable to run $command") if $@; 
+    } 
+    if (-e "/mnt/SRR328463_2.fastq") {
+        my $command = "sudo rm /mnt/SRR328463_2.fastq"; 
+        eval {!system("$command > /dev/null") or die $!;};
+        diag("unable to run $command") if $@;
+    } 
+    my $command = "sudo rm /mnt/job*.tar"; 
+    eval {!system("$command > /dev/null") or die $!;}; 
+    diag("unable to run $command") if $@; 
+
+#    unlink glob "job*.tar";
 }

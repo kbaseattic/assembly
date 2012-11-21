@@ -12,9 +12,15 @@ my $testCount = 0;
 
 
 # keep adding tests to this list
-my @tests = qw(stat get stat);  #run was also in this list but it appears to be duplicate code to the beginning of get
-my @assemblers = qw(kiki velvet);
-my @files = qw(smg.fa);
+my @assemblers = qw(kiki velvet); #kiki velvet
+my @files = (
+"/mnt/smg.fa", 
+"bad_file_input.fa", 
+"/mnt/smg.fa bad_file_input.fa",  
+"/mnt/SRR328463_1.fastq", 
+"/mnt/SRR328463_1.fastq /mnt/SRR328463_2.fastq", 
+"/mnt/smg.fa /mnt/SRR328463_1.fastq"
+);
 
 #THIS FILE was to test bad input files and how the program responds.
 #Unfortunately the program hangs on this.  It stays in a perpetual Queued state and does not let any other subsequent jobs to be run.
@@ -29,15 +35,23 @@ foreach my $file_inputs (@files)
     foreach my $assembler (@assemblers)
     {
 	print "Performing Assembler tests for $assembler \n";
-	foreach my $test (@tests) {
-	    &$test($assembler,$file_inputs);
-	    $testCount++;
-	}
+	my $job_id = run($assembler,$file_inputs);
+	$testCount++;
+	stat_try($ENV{ARASTURL});
+	$testCount++;
+	get($job_id);
+	$testCount++;
+	stat_try($ENV{ARASTURL});
+	$testCount++;
+	my $file_name = "job".$job_id."_".$assembler.".tar";
+        print "Moving $file_name to /mnt\n"; 
+        my $command = "sudo mv $file_name /mnt/."; 
+        eval {!system("$command > /dev/null") or die $!;}; 
+        diag("unable to run $command") if $@; 
     }
 }
 
 done_testing($testCount);
-teardown();
 
 #write your tests as subroutnes, add the sub name to @tests
 #Should really break up run and get properly passing out the job id to be used later by the get command.
@@ -46,34 +60,27 @@ sub run {
     my $assembler = shift;
     my $file_inputs = shift;
     my $jobid;
-    my $command = "arast -s $ENV{ARASTURL} run -a $assembler -f $file_inputs --bwa -m \"$assembler run command\"";
+    my $command = "arast -s $ENV{ARASTURL} run -a $assembler -f $file_inputs --bwa -m \"$assembler run command on $file_inputs\"";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
+    $jobid = $1 if $jobid =~ /\'(\d+)\'/; 
+    return $jobid;
 }
 
-sub stat {
-    my $assembler = shift;
-    my $file_inputs = shift;
-    my $command = "arast -s $ENV{ARASTURL} stat";
+sub stat_try {
+    my $env = shift;
+    my $command = "arast -s $env stat";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
 }
 
 sub get {
-    my $assembler = shift;
-    my $file_inputs = shift;
     # needs code change to arast to only return the job id
-    my $jobid;
-    my $command = "arast -s $ENV{ARASTURL} run -a $assembler -f $file_inputs --bwa -m \"$assembler get command\"";
-    eval {$jobid = `$command` or die $!;};
-    ok($? == 0, (caller(0))[3] . " jobid: $jobid");
-    diag("unable to run $command") if $@;
-    $jobid = $1 if $jobid =~ /\'(\d+)\'/;
-    
+    my $jobid = shift;
     my $done;
-    print "Waiting for job to complete.";
+    print "Waiting for job $jobid to complete.";
     while (!$done) {
 	my $stat = `arast -s $ENV{ARASTURL} stat -j $jobid`;
 	$done = 1 if $stat =~ /complete/;
@@ -82,7 +89,7 @@ sub get {
     }
     print " [done]\n";
     
-    $command = "arast -s $ENV{ARASTURL} get -j $jobid";
+    my $command = "arast -s $ENV{ARASTURL} get -j $jobid";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("unable to run $command") if $@;
@@ -91,15 +98,39 @@ sub get {
 
 # needed to set up the tests, should be called before any tests are run
 sub setup {
-	unlink "smg.fa" if -e "smg.fa";
-	my $command_1 = "wget http://www.mcs.anl.gov/~fangfang/test/smg.fa";
-	eval {!system("$command_1 > /dev/null") or die $!;};
-	diag("unable to run $command_1") if $@;
-# needto add more files types in here.
+    unless (-e "/mnt/smg.fa") {
+        my $command_1 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/smg.fa";
+        eval {!system("$command_1 > /dev/null") or die $!;}; 
+        diag("unable to run $command_1") if $@; 
+	print "FILE DOES NOT EXIST 1";
+    }
+    if ((!(-e "/mnt/SRR328463_1.fastq.bz2"))&&(!(-e "/mnt/SRR328463_1.fastq"))) {
+	#get zip file
+        my $command_2 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/SRR328463_1.fastq.bz2";
+        eval {!system("$command_2 > /dev/null") or die $!;}; 
+        diag("unable to run $command_2") if $@;
+    }
+    unless  (-e "/mnt/SRR328463_1.fastq") {
+	#have zip file no unzip it
+        print "Unzipping /mnt/SRR328463_2.fastq.bz2\n"; 
+	my $command_3 = "sudo bzip2 -d /mnt/SRR328463_1.fastq.bz2";
+        eval {!system("$command_3 > /dev/null") or die $!;}; 
+        diag("unable to run $command_3") if $@; 
+    }
+    if ((!(-e "/mnt/SRR328463_2.fastq.bz2"))&&(!(-e "/mnt/SRR328463_2.fastq"))) {
+        #get zip file     
+        my $command_4 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/SRR328463_2.fastq.bz2"; 
+        eval {!system("$command_4 > /dev/null") or die $!;}; 
+        diag("unable to run $command_4") if $@;
+    }
+    unless  (-e "/mnt/SRR328463_2.fastq") {
+	#get zip file
+        print "Unzipping /mnt/SRR328463_2.fastq.bz2\n"; 
+        my $command_5 = "sudo bzip2 -d /mnt/SRR328463_2.fastq.bz2";
+        eval {!system("$command_5 > /dev/null") or die $!;};
+        diag("unable to run $command_5") if $@;
+    }
+# need to add more files types in here.
 }
 
-#tear down is no longer needed and is handled by the zzz_teardown 
-sub teardown {
-#	unlink "smg.fa" if -e "smg.fa";
-#	unlink glob "job*.tar";
-}
+
