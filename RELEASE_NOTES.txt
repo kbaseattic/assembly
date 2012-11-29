@@ -19,3 +19,4 @@ ANTICIPATED FUTURE DEVELOPMENTS:
 - More assemblers: Mira, AllPaths-LG, ...
 - Preprocessing and postprocessing steps
 - Assembly quality score
+
