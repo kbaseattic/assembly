@@ -180,6 +180,10 @@ def main():
     url_rpc = RpcClient()
     url = "http://%s" % url_rpc.call(json.dumps(url_req))
 
+    #Curl request
+    
+
+
     # Upload file(s) to Shock
     res_ids = []
     file_sizes = []

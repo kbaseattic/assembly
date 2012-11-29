@@ -3,6 +3,7 @@ Job router.  Recieves job requests.  Manages data transfer, job queuing.
 """
 
 import logging
+import cherrypy
 import pika
 import pprint
 import sys
@@ -15,6 +16,7 @@ from prettytable import PrettyTable
 
 import shock
 import metadata as meta
+
 
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
@@ -196,6 +198,24 @@ def start(config_file):
     mongo_host = parser.get('meta', 'mongo.host')
     metadata = meta.MetadataConnection(config_file, mongo_host)
 
+    ##### CherryPy ######
+    root = Root()
+    root.job = Resource({})
+    root.shock = Resource({"shockurl": get_upload_url()})
+    conf = {
+        'global': {
+            'server.socket_host': '0.0.0.0',
+            'server.socket_port': 8080,
+            'log.screen': True,
+        },
+        '/': {
+            'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+        }
+    }
+
+    cherrypy.quickstart(root, '/', conf)
+
+    # TODO remove this ######
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host='localhost'))
     channel = connection.channel()
@@ -204,4 +224,39 @@ def start(config_file):
     channel.basic_consume(on_request, queue='rpc_queue')
     print " [x] Awaiting RPC requests..."
     channel.start_consuming()
+    ##### REMOVE #######
 
+
+
+class Root(object):
+    pass
+
+class Resource(object):
+
+    def __init__(self, content):
+        self.content = content
+
+    exposed = True
+
+    def GET(self):
+        return self.to_html()
+
+    def PUT(self):
+        self.content = self.from_html(cherrypy.request.body.read())
+
+    def POST(self):
+        json_request = cherrypy.request.body.read()
+        route_job(json_request)
+        return json_request
+
+    def to_html(self):
+        html_item = lambda (name,value): '<div>{name}:{value}</div>'.format(**vars())
+        items = map(html_item, self.content.items())
+        items = ''.join(items)
+        return '<html>{items}</html>'.format(**vars())
+
+    @staticmethod
+    def from_html(data):
+        pattern = re.compile(r'\<div\>(?P<name>.*?)\:(?P<value>.*?)\</div\>')
+        items = [match.groups() for match in pattern.finditer(data)]
+        return dict(items)
