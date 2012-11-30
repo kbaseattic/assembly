@@ -13,7 +13,7 @@ setup(
     description = ("A commandline client for the KBASE Assembly Service"),
     url = "http://www.kbase.us/services/assembly",
     packages = find_packages(),
-    install_requires = ['pika>=0.9.5',
+    install_requires = ['pika>=0.9.8',
                         'pymongo>=2.2.1',
                         'requests>=0.13.0'],
     long_description=read('README.md'),
