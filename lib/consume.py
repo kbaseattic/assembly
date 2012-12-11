@@ -105,7 +105,7 @@ class ArastConsumer:
                 for i in range(len(files)):
                     file = files[i]
                     id = ids[i]
-                    temp_url = url + "node/{}?download".format(id)
+                    temp_url = url + "/node/{}?download".format(id)
                     #temp_url = url
                     #temp_url += "/node/%s" % (id)
                     #temp_url += "?download" 
