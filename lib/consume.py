@@ -72,6 +72,8 @@ class ArastConsumer:
         filename = self.datapath
         filename += str(params['data_id'])
         datapath = filename
+        filename += '_tmp/'
+
         if os.path.isdir(datapath):
             logging.info("Requested data exists on node")
             touch(datapath)
@@ -84,7 +86,9 @@ class ArastConsumer:
                 ids = data_doc['ids']
                 job_id = params['job_id']
                 uid = params['_id']
+
                 filename += "/raw/"
+                #os.makedirs(tmp)
                 os.makedirs(filename)
 
                 # Get required space and garbage collect
@@ -100,14 +104,20 @@ class ArastConsumer:
                 for i in range(len(files)):
                     file = files[i]
                     id = ids[i]
-                    temp_url = url
-                    temp_url += "/node/%s" % (id)
-                    temp_url += "?download" 
+                    temp_url = url + "node/{}?download".format(id)
+                    #temp_url = url
+                    #temp_url += "/node/%s" % (id)
+                    #temp_url += "?download" 
+
+                    # TODO make sure this chunks downloading
                     r = self.get(temp_url)
+                    #cur_file = tmp
                     cur_file = filename
                     cur_file += file
                     with open(cur_file, "wb") as code:
                         code.write(r.content)
+                # Done downloading, move file to correct dir
+                os.renames(datapath + '_tmp/', datapath)
             else:
                 datapath = None
         return datapath
