@@ -232,8 +232,8 @@ def run_velvet(datapath, uid, bwa):
         vfiles.append(run_bwa(velvet_data, 'contigs.fa', read_files, 'velvet'))
 
 
-
-    tar_file = tar_list(datapath, vfiles, 'velvet_data.tar.gz')
+    tar_file = tar_list(velvet_data, vfiles, 'velvet_data.tar.gz')
+    #tar_file = tar_list(datapath, vfiles, 'velvet_data.tar.gz')
     return tar_file
 
 def get_tar_name(job_id, suffix):
