@@ -224,6 +224,7 @@ class ArastConsumer:
             #     p.start()
             #     #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
             # workers[0].join()
+        self.garbage_collect(self.datapath, 0)
         self.fetch_job()
 
 def touch(path):
