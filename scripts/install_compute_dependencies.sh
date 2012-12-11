@@ -43,9 +43,20 @@ cd ngopt*
 cd bin
 export PATH=$PATH:`pwd`
 
+# Install AllPaths-LG
+#cd ../../../..
+#mkdir allpaths
+#cd allpaths
+#wget ftp://ftp.broadinstitute.org/pub/crd/ALLPATHS/Release-LG/latest_source_code/LATEST_VERSION.tar.gz
+#tar -xvf LATEST_VERSION.tar.gz
+#cd allpaths*
+
+
 sudo mkdir /mnt/data
+sudo chown ubuntu:ubuntu /mnt/data
 
 cd ..
 sudo git clone kbase@git.kbase.us:assembly.git
 cd assembly/lib/
+
 
