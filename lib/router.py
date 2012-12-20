@@ -200,8 +200,10 @@ def start(config_file):
 
     ##### CherryPy ######
     root = Root()
-    root.job = Resource({})
-    root.shock = Resource({"shockurl": get_upload_url()})
+    root.job = JobResource({})
+    root.shock = ShockResource({"shockurl": get_upload_url()})
+    root.status = StatusResource()
+    
     conf = {
         'global': {
             'server.socket_host': '0.0.0.0',
@@ -231,7 +233,7 @@ def start(config_file):
 class Root(object):
     pass
 
-class Resource(object):
+class JobResource(object):
 
     def __init__(self, content):
         self.content = content
@@ -239,24 +241,26 @@ class Resource(object):
     exposed = True
 
     def GET(self):
-        return self.to_html()
+        pass
 
     def PUT(self):
-        self.content = self.from_html(cherrypy.request.body.read())
+        pass
 
     def POST(self):
         json_request = cherrypy.request.body.read()
-        route_job(json_request)
-        return json_request
+        return route_job(json_request)
 
-    def to_html(self):
-        html_item = lambda (name,value): '<div>{name}:{value}</div>'.format(**vars())
-        items = map(html_item, self.content.items())
-        items = ''.join(items)
-        return '<html>{items}</html>'.format(**vars())
+class StatusResource:
+    def GET(self):
+        json_request = cherrypy.request.body.read()
+        return route_job(json_request)
 
-    @staticmethod
-    def from_html(data):
-        pattern = re.compile(r'\<div\>(?P<name>.*?)\:(?P<value>.*?)\</div\>')
-        items = [match.groups() for match in pattern.finditer(data)]
-        return dict(items)
+class ShockResource(object):
+
+    def __init__(self, content):
+        self.content = content
+
+    exposed = True
+
+    def GET(self):
+        return json.dumps(self.content)
