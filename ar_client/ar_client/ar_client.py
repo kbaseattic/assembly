@@ -35,18 +35,13 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
 
 p_run.add_argument("-f", "--file", action="store", dest="filename", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', required=True)
-#p_run.add_argument("-p", "--params", action="store", dest="params", nargs='*', help="specify global assembly parameters")
+p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*')
+#TODO require either asm or pipe
+p_run.add_argument("--pipeline", action="store", dest="pipeline", nargs='*', help="Pipeline")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--bwa", action="store_true", dest="bwa", help="enable bwa alignment")
 
-## Assembler flags ##
-
-# Velvet
-#v = p_run.add_argument_group('Velvet parameters')
-#v.add_argument('--velvet-lib1', nargs = '+', help= "paired ends")
-#v.add_argument('--velvet-lib2', nargs = '+', help= "paired ends")
 
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
@@ -185,7 +180,8 @@ def main():
     file_sizes = []
     file_list = []
     if args.command == "run":
-        if not (args.assemblers and (args.filename or args.data_id)):
+        if not ((args.assemblers or args.pipeline) and (args.filename or args.data_id)):
+            print args.pipeline
             parser.print_usage()
             sys.exit()
 
@@ -316,4 +312,4 @@ class RpcClient:
 global ARASTUSER, ARASTPASSWORD
 
 
-#main()
+main()

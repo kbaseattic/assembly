@@ -1,0 +1,14 @@
+[Core]
+Name = kiki
+Module = kiki
+
+[Settings]
+executable = /usr/bin/kiki
+filetypes = fasta,fa,fastq,fq
+k = 29
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = Kiki read assembler
+

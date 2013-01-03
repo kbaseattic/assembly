@@ -14,6 +14,7 @@ import datetime
 import socket
 import multiprocessing
 import tarfile
+from yapsy.PluginManager import PluginManager
 from multiprocessing import current_process as proc
 
 import config
@@ -26,6 +27,17 @@ class ArastConsumer:
     def __init__(self, shockurl, arasturl, config):
         self.parser = SafeConfigParser()
         self.parser.read(config)
+        # Load plugins
+        self.pmanager = PluginManager()
+        self.pmanager.setPluginPlaces(["plugins"])
+        self.pmanager.collectPlugins()
+        self.pmanager.locatePlugins()
+        if len(self.pmanager.getAllPlugins()) == 0:
+            raise Exception("No Plugins Found!")
+        for plugin in self.pmanager.getAllPlugins():
+            settings = plugin.details.items('Settings')
+            print "Plugin found: {}".format(plugin.name)
+
 
     # Set up environment
         self.shockurl = shockurl
@@ -73,6 +85,7 @@ class ArastConsumer:
         filename = self.datapath
         filename += str(params['data_id'])
         datapath = filename
+        all_files = []
         if os.path.isdir(datapath):
             logging.info("Requested data exists on node")
             touch(datapath)
@@ -95,7 +108,7 @@ class ArastConsumer:
                         req_space += file_size
                     self.garbage_collect(self.datapath, req_space)
                 except:
-                    pass
+                    pass 
 
                 url = "http://%s" % (self.shockurl)
                 for i in range(len(files)):
@@ -109,9 +122,10 @@ class ArastConsumer:
                     cur_file += file
                     with open(cur_file, "wb") as code:
                         code.write(r.content)
+                    all_files.append(cur_file)
             else:
                 datapath = None
-        return datapath
+        return datapath, all_files
 
 
     def compute(self, body):
@@ -119,7 +133,7 @@ class ArastConsumer:
         params = json.loads(body)
 
         # Download files (if necessary)
-        datapath = self.get_data(body)
+        datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
         extract_files(rawpath)
         if not datapath:
@@ -129,11 +143,30 @@ class ArastConsumer:
         job_id = params['job_id']
         uid = params['_id']
 
+        ### Build job_data
+        ### {'reads' : [(file1,), (paired1,paired2)]}
+        reads = [(f,) for f in all_files]
+        job_data = {'job_id' : params['job_id'], 
+                    'uid' : params['_id'],
+                    'reads': reads,
+                    'datapath': datapath}
+
+
         try:
             bwa = params['bwa']
         except:
             bwa = False
 
+        try:
+            pipeline = params['pipeline']
+        except:
+            pipeline = False
+
+
+        #ex pipeline = ['sga', 'kiki', 'sspace']
+        if pipeline:
+            self.run_pipeline(pipeline, job_data)
+        
         # Run assemblies
         if not error:
             start_time = time.time()
@@ -143,6 +176,7 @@ class ArastConsumer:
                 if asm.is_available(a):
                     self.garbage_collect(self.datapath, 0)
                     self.metadata.update_job(uid, 'status', "running: %s" % a)
+                    
                     try:
                         result_tar = asm.run(a, datapath, uid, bwa)
                         renamed = os.path.split(result_tar)[0] + '/'
@@ -167,6 +201,13 @@ class ArastConsumer:
             self.metadata.update_job(uid, 'computation_time', ftime)
         else:
             self.metadata.update_job(uid, 'status', 'Data error')
+
+    def run_pipeline(self, pipeline, job_data):
+        for module_name in pipeline:
+             plugin = self.pmanager.getPluginByName(module_name)
+             settings = plugin.details.items('Settings')
+             print plugin.plugin_object(settings, job_data)
+        pass
 
     def upload(self, url, file, assembler):
         files = {}
