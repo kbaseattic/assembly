@@ -3,7 +3,7 @@ Name = kiki
 Module = kiki
 
 [Settings]
-executable = /usr/bin/kiki
+executable = /usr/bin/ki
 filetypes = fasta,fa,fastq,fq
 k = 29
 

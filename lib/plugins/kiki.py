@@ -7,37 +7,25 @@ from yapsy.IPlugin import IPlugin
 class KikiAssembler(BaseAssembler, IPlugin):
     name = "kiki"
 
-    def run(self, settings, job_data, outpath, contigs=True, tarfile=True, report=True):
+    def run(self, reads):
         """ 
         Build the command and run.
-        Return list of contig file(s) and optionally the tarball and report file
+        Return list of contig file(s)
         """
         
         cmd_args = [self.executable, '-k', self.k, '-i',]
-        
-        for tuple in job_data['reads']:
+        for tuple in reads:
             cmd_args.append(tuple[0])
             try:
                 cmd_args.append(tuple[1])
             except:
                 pass #no pair
-
         cmd_args.append('-o')
-        cmd_args.append(outpath)
-        print cmd_args
-
+        cmd_args.append(self.outpath + '/kiki')
         p = subprocess.Popen(cmd_args)
         p.wait()
-
-        contigfile = kiki_data + '*.contig'
-        contigs = glob.glob(contigfile)
-        print "Contigs: {}".format(contigs)
-
+        contigs = glob.glob(self.outpath + '/*.contig')
         if not contigs:
             raise Exception("No contigs")
+        return contigs
 
-        return contigs, "tarfile",  "report"
-
-
-    def run_checks(self, settings, job_data):
-        pass

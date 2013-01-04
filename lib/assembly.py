@@ -33,21 +33,25 @@ def is_available(assembler):
     else:
         return False
 
-def run(assembler, datapath, uid, bwa):
+def run(assembler, job_data):
+    plugin = self.pmanager.getPluginByName(assembler)
+    settings = plugin.details.items('Settings')
+    return plugin.plugin_object(settings, job_data)
     
-    if len(os.listdir(datapath)) == 0:
-        raise IOError #empty directory!
-    logging.info("Running assembler: %s" % assembler)
-    if assembler == 'kiki':
-        result_tar = run_kiki(datapath, uid, bwa)
-    elif assembler == 'velvet':
-        result_tar = run_velvet(datapath, uid, bwa)
-    elif assembler == 'a5':
-        result_tar = run_a5(datapath, uid)
-    if result_tar is not None:
-        return result_tar
-    else:
-        raise IOError
+
+    # if len(os.listdir(datapath)) == 0:
+    #     raise IOError #empty directory!
+    # logging.info("Running assembler: %s" % assembler)
+    # if assembler == 'kiki':
+    #     result_tar = run_kiki(datapath, uid, bwa)
+    # elif assembler == 'velvet':
+    #     result_tar = run_velvet(datapath, uid, bwa)
+    # elif assembler == 'a5':
+    #     result_tar = run_a5(datapath, uid)
+    # if result_tar is not None:
+    #     return result_tar
+    # else:
+    #     raise IOError
 
 def run_a5(datapath, uid):
     a5_exec = 'a5_pipeline.pl'

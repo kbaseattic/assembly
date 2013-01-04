@@ -14,7 +14,8 @@ import datetime
 import socket
 import multiprocessing
 import tarfile
-from yapsy.PluginManager import PluginManager
+#from yapsy.PluginManager import PluginManager
+from plugins import ModuleManager
 from multiprocessing import current_process as proc
 
 import config
@@ -28,15 +29,7 @@ class ArastConsumer:
         self.parser = SafeConfigParser()
         self.parser.read(config)
         # Load plugins
-        self.pmanager = PluginManager()
-        self.pmanager.setPluginPlaces(["plugins"])
-        self.pmanager.collectPlugins()
-        self.pmanager.locatePlugins()
-        if len(self.pmanager.getAllPlugins()) == 0:
-            raise Exception("No Plugins Found!")
-        for plugin in self.pmanager.getAllPlugins():
-            settings = plugin.details.items('Settings')
-            print "Plugin found: {}".format(plugin.name)
+        self.pmanager = ModuleManager()
 
 
     # Set up environment
@@ -167,8 +160,8 @@ class ArastConsumer:
         if pipeline:
             self.run_pipeline(pipeline, job_data)
         
-        # Run assemblies
-        if not error:
+        # Run individual assemblies
+        if not error and params['assemblers']:
             start_time = time.time()
             download_ids = {}
             status = 'complete:'
@@ -178,15 +171,17 @@ class ArastConsumer:
                     self.metadata.update_job(uid, 'status', "running: %s" % a)
                     
                     try:
-                        result_tar = asm.run(a, datapath, uid, bwa)
-                        renamed = os.path.split(result_tar)[0] + '/'
-                        renamed += asm.get_tar_name(job_id, a)
-                        os.rename(result_tar, renamed)
-                        # send to shock
+                        result_tar = self.pmanager.run_module(a, job_data, tar=True)
+                    # try:
+                    #     result_tar = asm.run(a, datapath, uid, bwa)
+                    #     renamed = os.path.split(result_tar)[0] + '/'
+                    #     renamed += asm.get_tar_name(job_id, a)
+                    #     os.rename(result_tar, renamed)
+                    #     # send to shock
                         url = "http://%s" % (self.shockurl)
                         url += '/node'
-                        res = self.upload(url, renamed, a)
-                        # Get location
+                        res = self.upload(url, result_tar, a)
+                         # Get location
                         download_ids[a] = res['D']['id']
                         status += "%s [success] " % a
                     except Exception as e:
@@ -194,6 +189,7 @@ class ArastConsumer:
                     except:
                         status += "%s [failed:%s] " % (a, str(sys.exc_info()[0]))
                         logging.info("%s failed to finish" % a)
+
             elapsed_time = time.time() - start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
             self.metadata.update_job(uid, 'result_data', download_ids)
