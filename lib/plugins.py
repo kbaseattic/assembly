@@ -101,9 +101,11 @@ class ModuleManager():
         self.pmanager.setPluginPlaces(["plugins"])
         self.pmanager.collectPlugins()
         self.pmanager.locatePlugins()
+        self.plugins = []
         if len(self.pmanager.getAllPlugins()) == 0:
             raise Exception("No Plugins Found!")
         for plugin in self.pmanager.getAllPlugins():
+            self.plugins.append(plugin.name)
             print "Plugin found: {}".format(plugin.name)
 
     def run_module(self, module, job_data, tar=False):
@@ -114,3 +116,9 @@ class ModuleManager():
             return plugin.plugin_object.tar(contigs, job_data['job_id'])
 
         return plugin.plugin_object(settings, job_data)
+
+    def has_plugin(self, plugin):
+        if not plugin in self.plugins:
+            logging.error("{} plugin not found".format(plugin))
+            return False
+        return True

@@ -166,7 +166,8 @@ class ArastConsumer:
             download_ids = {}
             status = 'complete:'
             for a in params['assemblers']:
-                if asm.is_available(a):
+                #if asm.is_available(a):
+                if self.pmanager.has_plugin(a):
                     self.garbage_collect(self.datapath, 0)
                     self.metadata.update_job(uid, 'status', "running: %s" % a)
                     
@@ -189,7 +190,8 @@ class ArastConsumer:
                     except:
                         status += "%s [failed:%s] " % (a, str(sys.exc_info()[0]))
                         logging.info("%s failed to finish" % a)
-
+                else:
+                    status += "%s [failed:Module unavail] " % (a)
             elapsed_time = time.time() - start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
             self.metadata.update_job(uid, 'result_data', download_ids)
