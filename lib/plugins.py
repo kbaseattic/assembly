@@ -13,7 +13,7 @@ class BasePlugin(object):
     - job_id
     - uid
 
-    Could contain (dependent on stage of pipeline or input data)
+    job_data could contain (dependent on stage of pipeline or input data)
     - reads: list of tuples eg. [('/data/unpaired.fa,), ('/data/1a.fa', '/data/1b.fa')]
     - contigs: list of contig files
 
@@ -24,7 +24,8 @@ class BasePlugin(object):
     """
         
     def create_directories(self, job_data):
-        datapath = job_data['datapath'] + '/' + str(job_data['job_id']) + '/' + self.name + '_' + str(uuid.uuid4())
+        datapath = (job_data['datapath'] + '/' + str(job_data['job_id']) + 
+                    '/' + self.name + '_' + str(uuid.uuid4()))
         logging.info("Creating directory: {}".format(datapath))
         os.makedirs(datapath)
         return datapath
@@ -44,6 +45,11 @@ class BasePlugin(object):
         return assembly.tar_list(self.outpath, files, 
                                  self.name + str(job_id) + '.tar.gz')
 
+    def update_settings(self, job_data):
+        """
+        Overwrite any new settings passed in JOB_DATA
+        """
+        pass
 
     def update_status(self):
         pass
@@ -111,6 +117,7 @@ class ModuleManager():
     def run_module(self, module, job_data, tar=False):
         plugin = self.pmanager.getPluginByName(module)
         settings = plugin.details.items('Settings')
+        plugin.plugin_object.update_settings(job_data)
         if tar:
             contigs =  plugin.plugin_object(settings, job_data)
             return plugin.plugin_object.tar(contigs, job_data['job_id'])

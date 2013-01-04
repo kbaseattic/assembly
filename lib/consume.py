@@ -155,36 +155,31 @@ class ArastConsumer:
         except:
             pipeline = False
 
-
+        start_time = time.time()
+        download_ids = {}
         #ex pipeline = ['sga', 'kiki', 'sspace']
-        if pipeline:
-            self.run_pipeline(pipeline, job_data)
         
+
+        if error:
+            self.metadata.update_job(uid, 'status', 'Datapath error')
+
+        url = "http://%s" % (self.shockurl)
+        url += '/node'
+
+
         # Run individual assemblies
-        if not error and params['assemblers']:
-            start_time = time.time()
-            download_ids = {}
-            status = 'complete:'
+        status = 'complete:'
+        if params['assemblers']:
             for a in params['assemblers']:
                 #if asm.is_available(a):
                 if self.pmanager.has_plugin(a):
                     self.garbage_collect(self.datapath, 0)
                     self.metadata.update_job(uid, 'status', "running: %s" % a)
-                    
                     try:
                         result_tar = self.pmanager.run_module(a, job_data, tar=True)
-                    # try:
-                    #     result_tar = asm.run(a, datapath, uid, bwa)
-                    #     renamed = os.path.split(result_tar)[0] + '/'
-                    #     renamed += asm.get_tar_name(job_id, a)
-                    #     os.rename(result_tar, renamed)
-                    #     # send to shock
-                        url = "http://%s" % (self.shockurl)
-                        url += '/node'
-                        res = self.upload(url, result_tar, a)
+                        res = self.upload(url, result_tar)
                          # Get location
                         download_ids[a] = res['D']['id']
-                        status += "%s [success] " % a
                     except Exception as e:
                         status += "%s [failed:%s] " % (a, e)
                     except:
@@ -192,22 +187,41 @@ class ArastConsumer:
                         logging.info("%s failed to finish" % a)
                 else:
                     status += "%s [failed:Module unavail] " % (a)
-            elapsed_time = time.time() - start_time
-            ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
-            self.metadata.update_job(uid, 'result_data', download_ids)
-            self.metadata.update_job(uid, 'status', status)
-            self.metadata.update_job(uid, 'computation_time', ftime)
-        else:
-            self.metadata.update_job(uid, 'status', 'Data error')
+
+        if pipeline:
+#            try:
+                result_tar = self.run_pipeline(pipeline, job_data)
+                res = self.upload(url, result_tar)
+                # Get location
+                download_ids['pipeline'] = res['D']['id']
+                status += "pipeline [success] "
+#            except:
+                status += "%s [failed:%s] " % ("pipeline", str(sys.exc_info()[0]))
+
+        elapsed_time = time.time() - start_time
+        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
+        self.metadata.update_job(uid, 'result_data', download_ids)
+        self.metadata.update_job(uid, 'status', status)
+        self.metadata.update_job(uid, 'computation_time', ftime)
 
     def run_pipeline(self, pipeline, job_data):
+        pipeline_stage = 1
+        pipeline_results = []
         for module_name in pipeline:
-             plugin = self.pmanager.getPluginByName(module_name)
-             settings = plugin.details.items('Settings')
-             print plugin.plugin_object(settings, job_data)
-        pass
+             output = self.pmanager.run_module(module_name, job_data)
+             # Prefix outfiles with pipe stage
+             newfiles = [asm.prefix_file(file, pipeline_stage) 
+                         for file in output]
+             job_data['reads'] = asm.tupled(newfiles)
+             pipeline_results += newfiles
+             pipeline_stage += 1
+        pipeline_datapath = job_data['datapath'] + '/pipeline/'
+        os.makedirs(pipeline_datapath)
+        return asm.tar_list(pipeline_datapath, pipeline_results, 
+                            'pipeline' + str(job_data['job_id']) +
+                            '.tar.gz')
 
-    def upload(self, url, file, assembler):
+    def upload(self, url, file):
         files = {}
         files["file"] = (os.path.basename(file), open(file, 'rb'))
         logging.debug("Message sent to shock on upload: %s" % files)
@@ -288,3 +302,5 @@ def extract_files(datapath):
             os.remove(tfile)
     else:
         pass
+
+

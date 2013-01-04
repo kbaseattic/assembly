@@ -1,5 +1,6 @@
 import glob
 import logging
+import os
 import subprocess
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
@@ -25,7 +26,23 @@ class KikiAssembler(BaseAssembler, IPlugin):
         p = subprocess.Popen(cmd_args)
         p.wait()
         contigs = glob.glob(self.outpath + '/*.contig')
-        if not contigs:
+        contigs_renamed = [contig + '.fa' for contig in contigs]
+        for i in range(len(contigs)):
+            self.tab_to_fasta(contigs[i], contigs_renamed[i], self.contig_threshold)
+        if not contigs_renamed:
             raise Exception("No contigs")
-        return contigs
+        return contigs_renamed
+
+    def tab_to_fasta(self, tabbed_file, outfile, threshold):
+        tabbed = open(tabbed_file, 'r')
+        fasta = open(outfile, 'w')
+        prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', ' seed_', '\n']
+        for line in tabbed:
+            l = line.split('\t')
+            if int(l[1]) <= threshold:
+                for i in range(len(l)):
+                    fasta.write(prefixes[i] + l[i])
+        tabbed.close()
+        fasta.close()
+
 

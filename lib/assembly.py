@@ -13,7 +13,6 @@ import os
 import re
 import subprocess
 import shutil
-#import tarfile
 import glob
 
 import metadata as meta
@@ -286,6 +285,13 @@ def tar_list(outpath, file_list, tarname):
     t = subprocess.Popen(targs)
     t.wait()
     return outfile
+
+def prefix_file(file, prefix):
+    """ Adds prefix to file, returns new file"""
+    f = '/' + str(prefix) + '_' + os.path.basename(file)
+    newfile =  os.path.split(file)[0] + f
+    os.rename(file, newfile)
+    return newfile
     
 
 def get_paired(directory):
@@ -433,7 +439,13 @@ def tab_to_fasta(tabbed_file, outfile, threshold):
 def fasta_to_tab(fasta_file):
     pass
 
+def tupled(filelist):
+    return [(file,) for file in filelist]
 
+def untupled(filelist):
+    pass
+
+                 
 
 
 parser = SafeConfigParser()
