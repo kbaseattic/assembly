@@ -19,7 +19,7 @@ from pkg_resources import resource_filename
 import shock
 
 
-my_version = '0.0.9'
+my_version = '0.1.0'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -40,7 +40,6 @@ p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", narg
 p_run.add_argument("--pipeline", action="store", dest="pipeline", nargs='*', help="Pipeline")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
-p_run.add_argument("--bwa", action="store_true", dest="bwa", help="enable bwa alignment")
 
 
 # stat -h
@@ -311,5 +310,5 @@ class RpcClient:
 
 global ARASTUSER, ARASTPASSWORD
 
-
-main()
+if __name__ == '__main__':
+    main()
