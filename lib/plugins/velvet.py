@@ -5,8 +5,6 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class VelvetAssembler(BaseAssembler, IPlugin):
-    name = "velvet"
-
     def run(self, reads):
         """ 
         Build the command and run.

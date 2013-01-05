@@ -25,7 +25,7 @@ class BasePlugin(object):
         
     def create_directories(self, job_data):
         datapath = (job_data['datapath'] + '/' + str(job_data['job_id']) + 
-                    '/' + self.name + '_' + str(uuid.uuid4()))
+                    '/' + self.name + '_' + str(uuid.uuid4())) + '/'
         logging.info("Creating directory: {}".format(datapath))
         os.makedirs(datapath)
         return datapath
@@ -41,9 +41,18 @@ class BasePlugin(object):
         #Check data is valid
         pass
 
+    def setname(self, name):
+        self.name = name
+
     def tar(self, files, job_id):
         return assembly.tar_list(self.outpath, files, 
                                  self.name + str(job_id) + '.tar.gz')
+
+    def tar_output(self, job_id):
+        files = [self.outpath + file for file in os.listdir(self.outpath)]
+        return assembly.tar_list(self.outpath, files, 
+                                 self.name + str(job_id) + '.tar.gz')
+
 
     def update_settings(self, job_data):
         """
@@ -76,7 +85,7 @@ class BaseAssembler(BasePlugin):
         valid_files = []
         for filetype in filetypes:
             for file in job_data['reads']:
-                if file[0].find(filetype) != -1:
+                if file[0].endswith(filetype):
                     f1 = file[0]
                     try:
                         f2 = file[1]
@@ -85,7 +94,7 @@ class BaseAssembler(BasePlugin):
                         files = (f1,)
                     valid_files.append(files)
         if not valid_files:
-            raise Exception('No valid input files')
+            raise Exception('No valid input files (Compression unsupported)')
 
         return valid_files
 
@@ -95,7 +104,8 @@ class BaseAssembler(BasePlugin):
         """
         Input: list of tuples of strings, paired files in same tuple
           eg. reads = [('/data/unpaired.fa,), ('/data/1a.fa', '/data/1b.fa')]
-        Output: list of full paths to contig files
+        Output: list of full paths to contig files.  File extensions should reflect
+          the file type
           eg. return ['/data/contigs1.fa', '/data/contigs2.fa']
         """
         return
@@ -112,6 +122,7 @@ class ModuleManager():
             raise Exception("No Plugins Found!")
         for plugin in self.pmanager.getAllPlugins():
             self.plugins.append(plugin.name)
+            plugin.plugin_object.setname(plugin.name)
             print "Plugin found: {}".format(plugin.name)
 
     def run_module(self, module, job_data, tar=False):
@@ -119,8 +130,8 @@ class ModuleManager():
         settings = plugin.details.items('Settings')
         plugin.plugin_object.update_settings(job_data)
         if tar:
-            contigs =  plugin.plugin_object(settings, job_data)
-            return plugin.plugin_object.tar(contigs, job_data['job_id'])
+            plugin.plugin_object(settings, job_data)
+            return plugin.plugin_object.tar_output(job_data['job_id'])
 
         return plugin.plugin_object(settings, job_data)
 

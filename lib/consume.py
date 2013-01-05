@@ -14,6 +14,7 @@ import datetime
 import socket
 import multiprocessing
 import tarfile
+import subprocess
 #from yapsy.PluginManager import PluginManager
 from plugins import ModuleManager
 from multiprocessing import current_process as proc
@@ -128,7 +129,7 @@ class ArastConsumer:
         # Download files (if necessary)
         datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
-        extract_files(rawpath)
+        #extract_files(rawpath)
         if not datapath:
             error = True
             logging.error("Data does not exist!")
@@ -180,6 +181,7 @@ class ArastConsumer:
                         res = self.upload(url, result_tar)
                          # Get location
                         download_ids[a] = res['D']['id']
+                        status += "{} [success] ".format(a)
                     except Exception as e:
                         status += "%s [failed:%s] " % (a, e)
                     except:
@@ -189,13 +191,13 @@ class ArastConsumer:
                     status += "%s [failed:Module unavail] " % (a)
 
         if pipeline:
-#            try:
+            try:
                 result_tar = self.run_pipeline(pipeline, job_data)
                 res = self.upload(url, result_tar)
                 # Get location
                 download_ids['pipeline'] = res['D']['id']
                 status += "pipeline [success] "
-#            except:
+            except:
                 status += "%s [failed:%s] " % ("pipeline", str(sys.exc_info()[0]))
 
         elapsed_time = time.time() - start_time
@@ -300,7 +302,10 @@ def extract_files(datapath):
             logging.debug("Extracting %s" % tfile)
             tarfile.open(tfile, 'r').extractall(datapath)
             os.remove(tfile)
-    else:
-        pass
+        elif tfile.endswith('.bz2'):
+            logging.debug("Extracting %s" % tfile)
+            p = subprocess.Popen(['bunzip2', tfile])
+            p.wait()
 
+            
 
