@@ -13,7 +13,6 @@ import os
 import re
 import subprocess
 import shutil
-#import tarfile
 import glob
 
 import metadata as meta
@@ -33,21 +32,25 @@ def is_available(assembler):
     else:
         return False
 
-def run(assembler, datapath, uid, bwa):
+def run(assembler, job_data):
+    plugin = self.pmanager.getPluginByName(assembler)
+    settings = plugin.details.items('Settings')
+    return plugin.plugin_object(settings, job_data)
     
-    if len(os.listdir(datapath)) == 0:
-        raise IOError #empty directory!
-    logging.info("Running assembler: %s" % assembler)
-    if assembler == 'kiki':
-        result_tar = run_kiki(datapath, uid, bwa)
-    elif assembler == 'velvet':
-        result_tar = run_velvet(datapath, uid, bwa)
-    elif assembler == 'a5':
-        result_tar = run_a5(datapath, uid)
-    if result_tar is not None:
-        return result_tar
-    else:
-        raise IOError
+
+    # if len(os.listdir(datapath)) == 0:
+    #     raise IOError #empty directory!
+    # logging.info("Running assembler: %s" % assembler)
+    # if assembler == 'kiki':
+    #     result_tar = run_kiki(datapath, uid, bwa)
+    # elif assembler == 'velvet':
+    #     result_tar = run_velvet(datapath, uid, bwa)
+    # elif assembler == 'a5':
+    #     result_tar = run_a5(datapath, uid)
+    # if result_tar is not None:
+    #     return result_tar
+    # else:
+    #     raise IOError
 
 def run_a5(datapath, uid):
     a5_exec = 'a5_pipeline.pl'
@@ -282,6 +285,13 @@ def tar_list(outpath, file_list, tarname):
     t = subprocess.Popen(targs)
     t.wait()
     return outfile
+
+def prefix_file(file, prefix):
+    """ Adds prefix to file, returns new file"""
+    f = '/' + str(prefix) + '_' + os.path.basename(file)
+    newfile =  os.path.split(file)[0] + f
+    os.rename(file, newfile)
+    return newfile
     
 
 def get_paired(directory):
@@ -429,7 +439,13 @@ def tab_to_fasta(tabbed_file, outfile, threshold):
 def fasta_to_tab(fasta_file):
     pass
 
+def tupled(filelist):
+    return [(file,) for file in filelist]
 
+def untupled(filelist):
+    pass
+
+                 
 
 
 parser = SafeConfigParser()
