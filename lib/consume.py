@@ -171,24 +171,23 @@ class ArastConsumer:
         # Run individual assemblies
         status = 'complete:'
         if params['assemblers']:
-            for a in params['assemblers']:
-                #if asm.is_available(a):
-                if self.pmanager.has_plugin(a):
-                    self.garbage_collect(self.datapath, 0)
-                    self.metadata.update_job(uid, 'status', "running: %s" % a)
-                    try:
-                        result_tar = self.pmanager.run_module(a, job_data, tar=True)
-                        res = self.upload(url, result_tar)
-                         # Get location
-                        download_ids[a] = res['D']['id']
-                        status += "{} [success] ".format(a)
-                    except Exception as e:
-                        status += "%s [failed:%s] " % (a, e)
-                    except:
-                        status += "%s [failed:%s] " % (a, str(sys.exc_info()[0]))
-                        logging.info("%s failed to finish" % a)
-                else:
-                    status += "%s [failed:Module unavail] " % (a)
+            assemblers, overrides = parse_params(params['assemblers'])
+            for idx, a in enumerate(assemblers):
+                #for a in params['assemblers']:
+                self.garbage_collect(self.datapath, 0)
+                self.metadata.update_job(uid, 'status', "running: %s" % a)
+                job_data['params'] = overrides[idx].items()
+                try:
+                    result_tar = self.pmanager.run_module(a, job_data, tar=True)
+                    res = self.upload(url, result_tar)
+                     # Get location
+                    download_ids[a] = res['D']['id']
+                    status += "{} [success] ".format(a)
+                except Exception as e:
+                    status += "%s [failed:%s] " % (a, e)
+                except:
+                    status += "%s [failed:%s] " % (a, str(sys.exc_info()[0]))
+                    logging.info("%s failed to finish" % a)
 
         if pipeline:
             try:
@@ -207,21 +206,7 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'computation_time', ftime)
 
     def run_pipeline(self, pipe, job_data):
-        # Parse param overrides
-        overrides = []
-        pipeline = []
-        for word in pipe:
-            module_num = -1
-            if not word.startswith('?'): # is module
-                pipeline.append(word)
-                module_num += 1
-                overrides.append({})
-
-            elif word[1:-1].find('=') != -1: # is param
-                kv = word[1:].split('=')
-                overrides[module_num] = dict(overrides[module_num].items() +
-                                             dict([kv]).items())
-
+        pipeline, overrides = parse_params(pipe)
         pipeline_stage = 1
         pipeline_results = []
         for module_name in pipeline:
@@ -325,4 +310,27 @@ def extract_files(datapath):
             p.wait()
 
             
+def parse_params(pipe):
+    """ Returns the parameter overrides from string.
+    e.g Input: [kiki ?k=31 velvet ?ins=500 a5]
+    Output: [kiki, velvet, a5], [{k:31}, {ins:500}, {}]
+    """
+    # Parse param overrides
+    overrides = []
+    pipeline = []
+    for word in pipe:
+        module_num = -1
+        if not word.startswith('?'): # is module
+            pipeline.append(word)
+            module_num += 1
+            overrides.append({})
+            
+        elif word[1:-1].find('=') != -1: # is param
+            kv = word[1:].split('=')
+            overrides[module_num] = dict(overrides[module_num].items() +
+                                         dict([kv]).items())
+    return pipeline, overrides
 
+
+def parse_files(body):
+    pass
