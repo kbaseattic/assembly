@@ -198,7 +198,7 @@ class ArastConsumer:
                 download_ids['pipeline'] = res['D']['id']
                 status += "pipeline [success] "
             except:
-                status += "%s [failed:%s] " % ("pipeline", str(sys.exc_info()[0]))
+                status += "%s [failed:%s] " % ("pipeline", str(sys.exc_info()))
 
         elapsed_time = time.time() - start_time
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
@@ -206,17 +206,34 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'status', status)
         self.metadata.update_job(uid, 'computation_time', ftime)
 
-    def run_pipeline(self, pipeline, job_data):
+    def run_pipeline(self, pipe, job_data):
+        # Parse param overrides
+        overrides = []
+        pipeline = []
+        for word in pipe:
+            module_num = -1
+            if not word.startswith('?'): # is module
+                pipeline.append(word)
+                module_num += 1
+                overrides.append({})
+
+            elif word[1:-1].find('=') != -1: # is param
+                kv = word[1:].split('=')
+                overrides[module_num] = dict(overrides[module_num].items() +
+                                             dict([kv]).items())
+
         pipeline_stage = 1
         pipeline_results = []
         for module_name in pipeline:
-             output = self.pmanager.run_module(module_name, job_data)
+            print pipeline_stage
+            job_data['params'] = overrides[pipeline_stage-1].items()
+            output = self.pmanager.run_module(module_name, job_data)
              # Prefix outfiles with pipe stage
-             newfiles = [asm.prefix_file(file, pipeline_stage) 
-                         for file in output]
-             job_data['reads'] = asm.tupled(newfiles)
-             pipeline_results += newfiles
-             pipeline_stage += 1
+            newfiles = [asm.prefix_file(file, pipeline_stage) 
+                        for file in output]
+            job_data['reads'] = asm.tupled(newfiles)
+            pipeline_results += newfiles
+            pipeline_stage += 1
         pipeline_datapath = job_data['datapath'] + '/pipeline/'
         os.makedirs(pipeline_datapath)
         return asm.tar_list(pipeline_datapath, pipeline_results, 

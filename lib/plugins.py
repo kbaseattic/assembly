@@ -30,10 +30,15 @@ class BasePlugin(object):
         os.makedirs(datapath)
         return datapath
 
-    def init_settings(self, settings):
+    def init_settings(self, settings, job_data):
         for kv in settings:
             print kv
             setattr(self, kv[0], kv[1])
+
+        for kv in job_data['params']:
+            print "Override: {}".format(kv)
+            setattr(self, kv[0], kv[1])
+
 
     def run_checks(self, settings, job_data):
         logging.info("Doing checks")
@@ -63,6 +68,9 @@ class BasePlugin(object):
     def update_status(self):
         pass
 
+    def write_report(self):
+        pass
+
     
 class BaseAssembler(BasePlugin):
     """
@@ -73,7 +81,7 @@ class BaseAssembler(BasePlugin):
     def __call__(self, settings, job_data):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
-        self.init_settings(settings)
+        self.init_settings(settings, job_data)
         self.outpath = self.create_directories(job_data)
         valid_files = self.get_valid_reads(job_data)
         return self.run(valid_files)
@@ -126,6 +134,8 @@ class ModuleManager():
             print "Plugin found: {}".format(plugin.name)
 
     def run_module(self, module, job_data, tar=False):
+        if not self.has_plugin(module):
+            raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)
         settings = plugin.details.items('Settings')
         plugin.plugin_object.update_settings(job_data)
