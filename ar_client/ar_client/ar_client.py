@@ -40,8 +40,8 @@ p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", narg
 p_run.add_argument("--pipeline", action="store", dest="pipeline", nargs='*', help="Pipeline")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
-p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library")
-p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file")
+p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
+p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
 
 
 # stat -h
