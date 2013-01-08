@@ -34,14 +34,15 @@ sudo cp bwa /usr/bin
 
 # Install A5
 cd ..
-sudo mkdir a5
+mkdir a5
 cd a5
-#svn checkout http://ngopt.googlecode.com/svn/trunk/ ngopt-read-only
-sudo wget http://ngopt.googlecode.com/files/ngopt_a5pipeline_linux-x64_20120518.tar.gz
+wget http://ngopt.googlecode.com/files/ngopt_a5pipeline_linux-x64_20120518.tar.gz
 tar -xvf ngopt*
 cd ngopt*
-cd bin
-export PATH=$PATH:`pwd`
+cp -R bin/ ../../../bin/a5/
+cd ../..
+rm -rf a5/
+
 
 # Install AllPaths-LG
 #cd ../../../..

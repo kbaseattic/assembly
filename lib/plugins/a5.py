@@ -12,7 +12,7 @@ class A5Assembler(BaseAssembler, IPlugin):
         Return list of contig file(s)
         """
         
-        cmd_args = [self.executable]
+        cmd_args = [os.path.join(os.getcwd(),self.executable)]
         for tuple in reads:
             cmd_args.append(tuple[0])
             try:
@@ -22,6 +22,7 @@ class A5Assembler(BaseAssembler, IPlugin):
 
         cmd_args.append('a5')
         print cmd_args
+        print os.getcwd()
         p = subprocess.Popen(cmd_args, cwd=self.outpath)
         p.wait()
 
