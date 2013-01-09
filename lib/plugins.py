@@ -87,20 +87,23 @@ class BaseAssembler(BasePlugin):
         return self.run(valid_files)
 
 
+    def get_files(self, file_dicts):
+        """ Return a list of files from dicts. """
+        files = []
+        for d in file_dicts:
+            files += d['files']
+        return files
+
     def get_valid_reads(self, job_data):
+        print job_data['reads']
         filetypes = self.filetypes.split(',')
         filetypes = ['.' + filetype for filetype in filetypes]
         valid_files = []
         for filetype in filetypes:
-            for file in job_data['reads']:
-                if file[0].endswith(filetype):
-                    f1 = file[0]
-                    try:
-                        f2 = file[1]
-                        files = (f1,f2)
-                    except:
-                        files = (f1,)
-                    valid_files.append(files)
+            for d in job_data['reads']:
+                print d['files'][0]
+                if d['files'][0].endswith(filetype):
+                    valid_files.append(d)
         if not valid_files:
             raise Exception('No valid input files (Compression unsupported)')
 

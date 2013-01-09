@@ -13,13 +13,10 @@ class A5Assembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [os.path.join(os.getcwd(),self.executable)]
-        for tuple in reads:
-            cmd_args.append(tuple[0])
-            try:
-                cmd_args.append(tuple[1])
-            except:
-                pass #no pair
-
+        files = self.get_files(reads)
+        if len(files) > 2:
+            files = files[:2]
+        cmd_args += files
         cmd_args.append('a5')
         print cmd_args
         print os.getcwd()

@@ -12,15 +12,16 @@ class VelvetAssembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [self.velveth, self.outpath, self.hash_length]
-        
-        paired_count = 1
-        for tuple in reads:
-            read1 = tuple[0]
+
+        paired_count = 1                    
+        for d in reads:
+            read1 = d['files'][0]
             cmd_args.append('-' + infer_filetype(read1))
-            try:
-                read2 = tuple[1]
+            if d['type'] == 'paired':
                 cmd_args.append('-' + 'shortPaired' + str(paired_count))
                 paired_count += 1
+            try:
+                read2 = d['files'][1] # If 2 files
                 cmd_args.append(read1)
                 cmd_args.append(read2)
             except:

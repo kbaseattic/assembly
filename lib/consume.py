@@ -22,6 +22,7 @@ from multiprocessing import current_process as proc
 import config
 import assembly as asm
 import metadata as meta
+import shock 
 
 from ConfigParser import SafeConfigParser
 
@@ -121,13 +122,132 @@ class ArastConsumer:
                 datapath = None
         return datapath, all_files
 
+    def get_data2(self, body):
+        """Get data from cache or Shock server."""
+        params = json.loads(body)
+        filepath = self.datapath + str(params['data_id'])
+        datapath = filepath
+        filepath += "/raw/"
+        all_files = []
+
+        uid = params['_id']
+        job_id = params['job_id']
+
+        data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
+        if data_doc:
+            paired = data_doc['pair']
+            single = data_doc['single']
+            files = data_doc['filename']
+            ids = data_doc['ids']
+        else:
+            raise Exception('Data {} does not exist on Shock Server'.format(
+                    params['data_id']))
+
+        all_files = []
+        if os.path.isdir(datapath):
+            logging.info("Requested data exists on node")
+            try:
+                for l in paired:
+                    filedict = {'type':'paired', 'files':[]}
+                    for word in l:
+                        if is_filename(word):
+                            filedict['files'].append(
+                                os.path.join(filepath,  word))
+                        else:
+                            kv = word.split('=')
+                            filedict[kv[0]] = kv[1]
+                    all_files.append(filedict)
+            except:
+                logging.info('No paired files submitted')
+
+            try:
+                for l in single:
+                    filedict = {'type':'single', 'files':[]}
+                    for word in l:
+                        if is_filename(word):
+                            filedict['files'].append(
+                                os.path.join(filepath, word))
+                        else:
+                            kv = word.split('=')
+                            filedict[kv[0]] = kv[1]
+                    all_files.append(filedict)
+            except:
+                logging.info('No single files submitted')
+            print all_files
+            touch(datapath)
+
+        else: # download data
+            self.metadata.update_job(uid, 'status', 'Data transfer')
+
+            os.makedirs(filepath)
+
+            # Get required space and garbage collect
+            try:
+                req_space = 0
+                for file_size in data_doc['file_sizes']:
+                    req_space += file_size
+                self.garbage_collect(self.datapath, req_space)
+            except:
+                pass 
+
+            url = "http://%s" % (self.shockurl)
+
+            
+            try:
+                for l in paired:
+                    filedict = {'type':'paired', 'files':[]}
+                    for word in l:
+                        if is_filename(word):
+                            filedict['files'].append(
+                                shock.download(url, ids[files.index(word)], filepath))
+                        else:
+                            kv = word.split('=')
+                            filedict[kv[0]] = kv[1]
+                    all_files.append(filedict)
+            except:
+                logging.info('No paired files submitted')
+
+            try:
+                for l in single:
+                    filedict = {'type':'single', 'files':[]}
+                    for word in l:
+                        if is_filename(word):
+                            filedict['files'].append(
+                                shock.download(url, ids[files.index(word)], filepath))
+                        else:
+                            kv = word.split('=')
+                            filedict[kv[0]] = kv[1]
+                    all_files.append(filedict)
+            except:
+                logging.info('No single end files submitted')
+
+
+
+        #     for i in range(len(files)):
+        #         file = files[i]
+        #         id = ids[i]
+        #         temp_url = url
+        #         temp_url += "/node/%s" % (id)
+        #         temp_url += "?download" 
+        #         r = self.get(temp_url)
+        #         cur_file = filename
+        #         cur_file += file
+        #         with open(cur_file, "wb") as code:
+        #             code.write(r.content)
+        #         all_files.append(cur_file)
+        #     else:
+        #         datapath = None
+
+        return datapath, all_files
+
+
 
     def compute(self, body):
         error = False
         params = json.loads(body)
 
         # Download files (if necessary)
-        datapath, all_files = self.get_data(body)
+        datapath, all_files = self.get_data2(body)
         rawpath = datapath + '/raw/'
         #extract_files(rawpath)
         if not datapath:
@@ -139,10 +259,10 @@ class ArastConsumer:
 
         ### Build job_data
         ### {'reads' : [(file1,), (paired1,paired2)]}
-        reads = [(f,) for f in all_files]
+        print all_files
         job_data = {'job_id' : params['job_id'], 
                     'uid' : params['_id'],
-                    'reads': reads,
+                    'reads': all_files,
                     'datapath': datapath}
 
 
@@ -210,7 +330,6 @@ class ArastConsumer:
         pipeline_stage = 1
         pipeline_results = []
         for module_name in pipeline:
-            print pipeline_stage
             job_data['params'] = overrides[pipeline_stage-1].items()
             output = self.pmanager.run_module(module_name, job_data)
              # Prefix outfiles with pipe stage
@@ -332,5 +451,29 @@ def parse_params(pipe):
     return pipeline, overrides
 
 
-def parse_files(body):
+def parse_reads(params):
+    """
+    Get file pairings from list.
+    E.g Input: [
+        Output: [('1a.fa,1b.fa), ('interleaved.fa',), 'unpaired.fa']
+        [{'type':'paired','files': [pair1,pair2],'ins':300', 'exp_cov': None},
+         {'type':'single', 'files': [file], 'ins': None, 'exp_cov': }
+
+    """
+    # Look in pair key
+    #for pair in 
+
+
+    # Look in single key
+
+    
+
+    files = []
+    for word in filestring:
+        if word[1:-1].find('=') != -1: # is paired
+            kv = word.split('=')
     pass
+
+
+def is_filename(word):
+    return word.find('.') != -1 and word.find('=') == -1
