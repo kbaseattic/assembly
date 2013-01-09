@@ -36,54 +36,6 @@ def run(assembler, job_data):
     plugin = self.pmanager.getPluginByName(assembler)
     settings = plugin.details.items('Settings')
     return plugin.plugin_object(settings, job_data)
-    
-
-    # if len(os.listdir(datapath)) == 0:
-    #     raise IOError #empty directory!
-    # logging.info("Running assembler: %s" % assembler)
-    # if assembler == 'kiki':
-    #     result_tar = run_kiki(datapath, uid, bwa)
-    # elif assembler == 'velvet':
-    #     result_tar = run_velvet(datapath, uid, bwa)
-    # elif assembler == 'a5':
-    #     result_tar = run_a5(datapath, uid)
-    # if result_tar is not None:
-    #     return result_tar
-    # else:
-    #     raise IOError
-
-def run_a5(datapath, uid):
-    a5_exec = 'a5_pipeline.pl'
-    raw_path = datapath + '/raw/'
-    a5_data = datapath + '/a5/' + uid + '/'
-    os.makedirs(a5_data)
-    a5_prefix = a5_data + 'a5'
-    args = [a5_exec,]
-    valid_files = get_fastq(raw_path)
-    if not valid_files:
-        raise Exception('No valid input files')
-    readfiles = []
-    tmp_files = []
-    for file in valid_files:
-        readfile = raw_path + file
-        print readfile
-        args.append(readfile)
-        readfiles.append(readfile)
-    args.append(a5_prefix)
-    print args
-    print "Starting a5"
-    p = subprocess.Popen(args)
-    p.wait()
-
-    results = a5_data + '*'
-    rlist = glob.glob(results)
-    #tmp_files += contigs
-    logging.debug("Contigs: %s" % rlist)
-
-    tar_file = tar_list(a5_data, rlist, 'a5_data.tar.gz')
-
-    # Return location of finished data
-    return tar_file
 
 
 def run_kiki(datapath, uid, bwa):
@@ -439,8 +391,15 @@ def tab_to_fasta(tabbed_file, outfile, threshold):
 def fasta_to_tab(fasta_file):
     pass
 
-def tupled(filelist):
-    return [(file,) for file in filelist]
+def arast_reads(filelist):
+    """ Returns a list of files into the ARAST reads dict format """
+    filedicts = []
+    for f in filelist:
+        filedicts.append({'type':'single', 'files':[f]})
+    return filedicts
+
+    
+
 
 def untupled(filelist):
     pass
