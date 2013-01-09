@@ -30,6 +30,50 @@ class BasePlugin(object):
         os.makedirs(datapath)
         return datapath
 
+    def get_valid_reads(self, job_data):
+        """
+        Based on plugin config file, filters for valid filetypes
+        """
+
+        filetypes = self.filetypes.split(',')
+        filetypes = ['.' + filetype for filetype in filetypes]
+        valid_files = []
+        for filetype in filetypes:
+            for d in job_data['reads']:
+                if d['files'][0].endswith(filetype):
+                    valid_files.append(d)
+        if not valid_files:
+            raise Exception('No valid input files (Compression unsupported)')
+        return valid_files
+
+    # def get_file_pair(reads):
+    #     """ Return list of first and second (if possible) paired files 
+    #         Returns empty list if single ended
+    #     """
+    #     pair = []
+    #     for d in reads:
+    #         if d['type'] == 'paired':
+    #             pair.append(d['files'][0])
+    #             try:
+    #                 pair.append(d['files'][1])
+    #             except:
+    #                 pass
+    #         return pair
+
+    # def get_singled(reads):
+    #     """ Return list of first and second (if possible) paired files 
+    #         Returns empty list if single ended
+    #     """
+    #     pair = []
+    #     for d in reads:
+    #         if d['type'] == 'paired':
+    #             pair.append(d['files'][0])
+    #             try:
+    #                 pair.append(d['files'][1])
+    #             except:
+    #                 pass
+    #         return pair
+
     def init_settings(self, settings, job_data):
         for kv in settings:
             print kv
@@ -94,33 +138,42 @@ class BaseAssembler(BasePlugin):
             files += d['files']
         return files
 
-    def get_valid_reads(self, job_data):
-        print job_data['reads']
-        filetypes = self.filetypes.split(',')
-        filetypes = ['.' + filetype for filetype in filetypes]
-        valid_files = []
-        for filetype in filetypes:
-            for d in job_data['reads']:
-                print d['files'][0]
-                if d['files'][0].endswith(filetype):
-                    valid_files.append(d)
-        if not valid_files:
-            raise Exception('No valid input files (Compression unsupported)')
-
-        return valid_files
 
     # Must implement run() method
     @abc.abstractmethod
     def run(self, reads):
         """
-        Input: list of tuples of strings, paired files in same tuple
-          eg. reads = [('/data/unpaired.fa,), ('/data/1a.fa', '/data/1b.fa')]
+        Input: list of dicts contain file and read info
         Output: list of full paths to contig files.  File extensions should reflect
           the file type
           eg. return ['/data/contigs1.fa', '/data/contigs2.fa']
         """
         return
 
+class BasePreprocessor(BasePlugin):
+    """
+    A preprocessing plugin should implement a run() function
+
+    """
+
+    def __call__(self, settings, job_data):
+        self.run_checks(settings, job_data)
+        logging.info("{} Settings: {}".format(self.name, settings))
+        self.init_settings(settings, job_data)
+        self.outpath = self.create_directories(job_data)
+        valid_files = self.get_valid_reads(job_data)
+        return self.run(valid_files)
+
+    # Must implement run() method
+    @abc.abstractmethod
+    def run(self, reads):
+        """
+        Input: list of dicts contain file and read info
+        Output: list of full paths to processed files.  File extensions should reflect
+          the file type
+          eg. return ['/data/read1.fa', '/data/read2.fa']
+        """
+        return
 
 class ModuleManager():
     def __init__(self):

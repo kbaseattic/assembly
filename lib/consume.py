@@ -221,23 +221,6 @@ class ArastConsumer:
             except:
                 logging.info('No single end files submitted')
 
-
-
-        #     for i in range(len(files)):
-        #         file = files[i]
-        #         id = ids[i]
-        #         temp_url = url
-        #         temp_url += "/node/%s" % (id)
-        #         temp_url += "?download" 
-        #         r = self.get(temp_url)
-        #         cur_file = filename
-        #         cur_file += file
-        #         with open(cur_file, "wb") as code:
-        #             code.write(r.content)
-        #         all_files.append(cur_file)
-        #     else:
-        #         datapath = None
-
         return datapath, all_files
 
 
@@ -264,7 +247,6 @@ class ArastConsumer:
                     'uid' : params['_id'],
                     'reads': all_files,
                     'datapath': datapath}
-
 
         try:
             bwa = params['bwa']
@@ -300,13 +282,13 @@ class ArastConsumer:
                 try:
                     result_tar = self.pmanager.run_module(a, job_data, tar=True)
                     res = self.upload(url, result_tar)
-                     # Get location
+                    # Get location
                     download_ids[a] = res['D']['id']
                     status += "{} [success] ".format(a)
                 except Exception as e:
                     status += "%s [failed:%s] " % (a, e)
                 except:
-                    status += "%s [failed:%s] " % (a, str(sys.exc_info()[0]))
+                    status += "%s [failed:%s] " % (a, str(sys.exc_info()))
                     logging.info("%s failed to finish" % a)
 
         if pipeline:
@@ -330,16 +312,25 @@ class ArastConsumer:
         pipeline_stage = 1
         pipeline_results = []
         for module_name in pipeline:
+            logging.info('New job_data for stage {}: {}'.format(
+                    pipeline_stage, job_data))
             job_data['params'] = overrides[pipeline_stage-1].items()
             output = self.pmanager.run_module(module_name, job_data)
              # Prefix outfiles with pipe stage
-            newfiles = [asm.prefix_file(file, pipeline_stage) 
-                        for file in output]
-            job_data['reads'] = asm.tupled(newfiles)
-            pipeline_results += newfiles
+            if type(output[0]) == str: #Assume assembly contigs
+                newfiles = [asm.prefix_file(file, "{}_{}".format(pipeline_stage, module_name)) 
+                            for file in output]
+                job_data['reads'] = asm.arast_reads(newfiles)
+                pipeline_results += newfiles
+            elif type(output[0]) == dict: #Assume preprocessing
+                job_data['reads'] = output
             pipeline_stage += 1
+
         pipeline_datapath = job_data['datapath'] + '/pipeline/'
-        os.makedirs(pipeline_datapath)
+        try:
+            os.makedirs(pipeline_datapath)
+        except:
+            logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
         return asm.tar_list(pipeline_datapath, pipeline_results, 
                             'pipeline' + str(job_data['job_id']) +
                             '.tar.gz')
