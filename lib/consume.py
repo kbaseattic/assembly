@@ -297,17 +297,17 @@ class ArastConsumer:
                 self.garbage_collect(self.datapath, 0)
                 self.metadata.update_job(uid, 'status', "running: %s" % a)
                 job_data['params'] = overrides[idx].items()
-                try:
-                    result_tar = self.pmanager.run_module(a, job_data, tar=True)
-                    res = self.upload(url, result_tar)
-                     # Get location
-                    download_ids[a] = res['D']['id']
-                    status += "{} [success] ".format(a)
-                except Exception as e:
-                    status += "%s [failed:%s] " % (a, e)
-                except:
-                    status += "%s [failed:%s] " % (a, str(sys.exc_info()[0]))
-                    logging.info("%s failed to finish" % a)
+                #try:
+                result_tar = self.pmanager.run_module(a, job_data, tar=True)
+                res = self.upload(url, result_tar)
+                 # Get location
+                download_ids[a] = res['D']['id']
+                status += "{} [success] ".format(a)
+                # except Exception as e:
+                #     status += "%s [failed:%s] " % (a, e)
+                # except:
+                #     status += "%s [failed:%s] " % (a, str(sys.exc_info()))
+                #     logging.info("%s failed to finish" % a)
 
         if pipeline:
             try:
