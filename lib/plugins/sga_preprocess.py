@@ -40,6 +40,9 @@ class SgaPreprocessor(BasePreprocessor, IPlugin):
             logging.info("SGA Plugin: {}".format(cmd_args))
             p = subprocess.Popen(cmd_args)
             p.wait()
-            processed_reads.append(pp_file)
+            new_file_set = file_set
+            new_file_set['files'] = [pp_file]
+            processed_reads.append(new_file_set)
+
         return processed_reads
 

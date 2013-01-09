@@ -312,14 +312,20 @@ class ArastConsumer:
         pipeline_stage = 1
         pipeline_results = []
         for module_name in pipeline:
+            logging.info('New job_data for stage {}: {}'.format(
+                    pipeline_stage, job_data))
             job_data['params'] = overrides[pipeline_stage-1].items()
             output = self.pmanager.run_module(module_name, job_data)
              # Prefix outfiles with pipe stage
-            newfiles = [asm.prefix_file(file, "{}_{}".format(pipeline_stage, module_name)) 
-                        for file in output]
-            job_data['reads'] = asm.arast_reads(newfiles)
-            pipeline_results += newfiles
+            if type(output[0]) == str: #Assume assembly contigs
+                newfiles = [asm.prefix_file(file, "{}_{}".format(pipeline_stage, module_name)) 
+                            for file in output]
+                job_data['reads'] = asm.arast_reads(newfiles)
+                pipeline_results += newfiles
+            elif type(output[0]) == dict: #Assume preprocessing
+                job_data['reads'] = output
             pipeline_stage += 1
+
         pipeline_datapath = job_data['datapath'] + '/pipeline/'
         try:
             os.makedirs(pipeline_datapath)
