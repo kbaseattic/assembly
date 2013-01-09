@@ -18,6 +18,7 @@ import subprocess
 #from yapsy.PluginManager import PluginManager
 from plugins import ModuleManager
 from multiprocessing import current_process as proc
+from traceback import format_tb
 
 import config
 import assembly as asm
@@ -288,7 +289,8 @@ class ArastConsumer:
                 except Exception as e:
                     status += "%s [failed:%s] " % (a, e)
                 except:
-                    status += "%s [failed:%s] " % (a, str(sys.exc_info()))
+                    status += "%s [failed:%s %s] " % (a, str(sys.exc_info()),
+                                                          format_tb(sys.exc_info()[2]))
                     logging.info("%s failed to finish" % a)
 
         if pipeline:
@@ -299,7 +301,8 @@ class ArastConsumer:
                 download_ids['pipeline'] = res['D']['id']
                 status += "pipeline [success] "
             except:
-                status += "%s [failed:%s] " % ("pipeline", str(sys.exc_info()))
+                status += "%s [failed:%s%s] " % ("pipeline", sys.exc_info(), 
+                                                 format_tb(sys.exc_info()[2]))
 
         elapsed_time = time.time() - start_time
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
@@ -311,19 +314,27 @@ class ArastConsumer:
         pipeline, overrides = parse_params(pipe)
         pipeline_stage = 1
         pipeline_results = []
+        include_reads = False # TODO enable switching
         for module_name in pipeline:
             logging.info('New job_data for stage {}: {}'.format(
                     pipeline_stage, job_data))
             job_data['params'] = overrides[pipeline_stage-1].items()
-            output = self.pmanager.run_module(module_name, job_data)
+            output, alldata = self.pmanager.run_module(module_name, job_data, all_data=True,
+                                                       reads=include_reads)
+            output_type = self.pmanager.output_type(module_name)
              # Prefix outfiles with pipe stage
-            if type(output[0]) == str: #Assume assembly contigs
-                newfiles = [asm.prefix_file(file, "{}_{}".format(pipeline_stage, module_name)) 
-                            for file in output]
+            newfiles = [asm.prefix_file_move(file, "{}_{}".format(pipeline_stage, module_name)) 
+                        for file in alldata]
+            if output_type == 'contigs': #Assume assembly contigs
                 job_data['reads'] = asm.arast_reads(newfiles)
-                pipeline_results += newfiles
-            elif type(output[0]) == dict: #Assume preprocessing
+
+            elif output_type == 'reads': #Assume preprocessing
+                if include_reads: # data was prefixed and moved
+                    for d in output:
+                        d['files'] = [asm.prefix_file(f, "{}_{}".format(
+                                    pipeline_stage, module_name)) for f in d['files']]
                 job_data['reads'] = output
+            pipeline_results += newfiles
             pipeline_stage += 1
 
         pipeline_datapath = job_data['datapath'] + '/pipeline/'

@@ -46,34 +46,6 @@ class BasePlugin(object):
             raise Exception('No valid input files (Compression unsupported)')
         return valid_files
 
-    # def get_file_pair(reads):
-    #     """ Return list of first and second (if possible) paired files 
-    #         Returns empty list if single ended
-    #     """
-    #     pair = []
-    #     for d in reads:
-    #         if d['type'] == 'paired':
-    #             pair.append(d['files'][0])
-    #             try:
-    #                 pair.append(d['files'][1])
-    #             except:
-    #                 pass
-    #         return pair
-
-    # def get_singled(reads):
-    #     """ Return list of first and second (if possible) paired files 
-    #         Returns empty list if single ended
-    #     """
-    #     pair = []
-    #     for d in reads:
-    #         if d['type'] == 'paired':
-    #             pair.append(d['files'][0])
-    #             try:
-    #                 pair.append(d['files'][1])
-    #             except:
-    #                 pass
-    #         return pair
-
     def init_settings(self, settings, job_data):
         for kv in settings:
             print kv
@@ -83,6 +55,13 @@ class BasePlugin(object):
             print "Override: {}".format(kv)
             setattr(self, kv[0], kv[1])
 
+
+    def get_all_output_files(self):
+        """ Returns list of all files created after run. """
+        if os.path.exists(self.outpath):
+            return [os.path.join(self.outpath, f) for 
+                    f in os.listdir(self.outpath)]
+        raise Exception("No output files in directory")
 
     def run_checks(self, settings, job_data):
         logging.info("Doing checks")
@@ -121,6 +100,9 @@ class BaseAssembler(BasePlugin):
     An assembler plugin should implement a run() function
 
     """
+    # Default behavior for run()
+    INPUT = 'reads'
+    OUTPUT = 'contigs'
 
     def __call__(self, settings, job_data):
         self.run_checks(settings, job_data)
@@ -155,6 +137,9 @@ class BasePreprocessor(BasePlugin):
     A preprocessing plugin should implement a run() function
 
     """
+    # Default behavior for run()
+    INPUT = 'reads'
+    OUTPUT = 'reads'
 
     def __call__(self, settings, job_data):
         self.run_checks(settings, job_data)
@@ -168,10 +153,10 @@ class BasePreprocessor(BasePlugin):
     @abc.abstractmethod
     def run(self, reads):
         """
-        Input: list of dicts contain file and read info
-        Output: list of full paths to processed files.  File extensions should reflect
-          the file type
-          eg. return ['/data/read1.fa', '/data/read2.fa']
+        Input: READS: list of dicts contain file and read info
+        Output: Updated READS (each read['files'] list should be updated 
+        with the new processed reads
+          
         """
         return
 
@@ -189,17 +174,39 @@ class ModuleManager():
             plugin.plugin_object.setname(plugin.name)
             print "Plugin found: {}".format(plugin.name)
 
-    def run_module(self, module, job_data, tar=False):
+    def run_module(self, module, job_data, tar=False, all_data=False, reads=False):
+        """
+        Keyword Arguments:
+        module -- name of plugin
+        job_data -- dict of job parameters
+        tar -- return tar of all output, rather than module.OUTPUT file
+        all_data -- return module.OUTPUT and list of all files in self.outdir
+        reads -- include files if module.OUTPUT == 'reads'
+          Not recommended for large read files.
+
+        """
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)
         settings = plugin.details.items('Settings')
         plugin.plugin_object.update_settings(job_data)
+        output = plugin.plugin_object(settings, job_data)
         if tar:
-            plugin.plugin_object(settings, job_data)
             return plugin.plugin_object.tar_output(job_data['job_id'])
+        if all_data:
+            if not reads and plugin.plugin_object.OUTPUT == 'reads':
+                #Don't return all files from plugins that output reads 
+                data = []
+            else:
+                data = plugin.plugin_object.get_all_output_files()
+            return output, data
+        return output
 
-        return plugin.plugin_object(settings, job_data)
+    def output_type(self, module):
+        return self.pmanager.getPluginByName(module).plugin_object.OUTPUT
+
+    def input_type(self, module):
+        return self.pmanager.getPluginByName(module).plugin_object.INPUT
 
     def has_plugin(self, plugin):
         if not plugin in self.plugins:
