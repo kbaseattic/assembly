@@ -34,7 +34,7 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 # run -h
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
 
-p_run.add_argument("-f", "--file", action="store", dest="filename", nargs='*', help="specify sequence file(s)")
+p_run.add_argument("-f", "--file", action="append", dest="single", nargs='*', help="specify sequence file(s)")
 p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*')
 #TODO require either asm or pipe
 p_run.add_argument("--pipeline", action="store", dest="pipeline", nargs='*', help="Pipeline")
@@ -181,48 +181,62 @@ def main():
     file_sizes = []
     file_list = []
     if args.command == "run":
-        if not ((args.assemblers or args.pipeline) and (args.filename or args.data_id)):
+        if not ((args.assemblers or args.pipeline) and (args.filename or args.data_id or args.pair or args.single)):
             print args.pipeline
             parser.print_usage()
             sys.exit()
 
         if args.filename:
-            url += "/node"
             files = args.filename
             file_list = args.filename
-            if args.config:
-                options['config_id'] = upload(url, [args.config])
+        else:
+            files = []
+        if args.pair:
+            for ls in args.pair:
+                for word in ls:
+                    if is_filename(word):
+                        files.append(word)
+        if args.single:
+            for ls in args.single:
+                for word in ls:
+                    if is_filename(word):
+                        files.append(word)
 
-            base_files = []
-            file_sizes = []
-            del options['filename']
-            res_ids = []
-            for f in files:
-                #Check file or dir
-                if os.path.isfile(f):
-                    res_ids += upload(url, [f,])
-                    file_sizes.append(os.path.getsize(f))
-                    base_files.append(os.path.basename(f))
-                elif os.path.isdir(f):
-                    ls_files = os.listdir(f)
 
-                    #Remove config from upload list
-                    if args.config:
-                        cfile = os.path.basename(args.config)
-                        if cfile in ls_files:
-                            ls_files.remove(cfile)
+        url += "/node"
+        if args.config:
+            options['config_id'] = upload(url, [args.config])
 
-                    fullpaths = [str(f + "/"+ file) for file in ls_files 
-                                 if not os.path.isdir(str(f + "/" +file))]
-                    print fullpaths
-                    file_list = fullpaths # ???
+        base_files = []
+        file_sizes = []
+        del options['filename']
+        res_ids = []
+        for f in files:
+            #Check file or dir
+            if os.path.isfile(f):
+                res_ids += upload(url, [f,])
+                file_sizes.append(os.path.getsize(f))
+                base_files.append(os.path.basename(f))
+            elif os.path.isdir(f):
+                ls_files = os.listdir(f)
 
-                    res_ids += upload(url, fullpaths)
-                    for path in fullpaths:
-                        file_sizes.append(os.path.getsize(path))
-                    base_files += [os.path.basename(file) for file in fullpaths]
+                #Remove config from upload list
+                if args.config:
+                    cfile = os.path.basename(args.config)
+                    if cfile in ls_files:
+                        ls_files.remove(cfile)
 
-            options['filename'] = base_files
+                fullpaths = [str(f + "/"+ file) for file in ls_files 
+                             if not os.path.isdir(str(f + "/" +file))]
+                print fullpaths
+                file_list = fullpaths # ???
+
+                res_ids += upload(url, fullpaths)
+                for path in fullpaths:
+                    file_sizes.append(os.path.getsize(path))
+                base_files += [os.path.basename(file) for file in fullpaths]
+
+        options['filename'] = base_files
 
         # Send message to RPC Server
         options['ARASTUSER'] = ARASTUSER
@@ -311,6 +325,11 @@ class RpcClient:
         return self.response
 
 global ARASTUSER, ARASTPASSWORD
+
+def is_filename(word):
+    return word.find('.') != -1 and word.find('=') == -1
+
+
 
 if __name__ == '__main__':
     main()
