@@ -13,12 +13,7 @@ class KikiAssembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [self.executable, '-k', self.k, '-i',]
-        for tuple in reads:
-            cmd_args.append(tuple[0])
-            try:
-                cmd_args.append(tuple[1])
-            except:
-                pass #no pair
+        cmd_args += self.get_files(reads)
         cmd_args.append('-o')
         cmd_args.append(self.outpath + '/kiki')
         p = subprocess.Popen(cmd_args)
@@ -42,5 +37,3 @@ class KikiAssembler(BaseAssembler, IPlugin):
                     fasta.write(prefixes[i] + l[i])
         tabbed.close()
         fasta.close()
-
-
