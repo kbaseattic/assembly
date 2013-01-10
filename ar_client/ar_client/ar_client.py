@@ -34,7 +34,7 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 # run -h
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
 
-p_run.add_argument("-f", "--file", action="append", dest="single", nargs='*', help="specify sequence file(s)")
+p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
 p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*')
 #TODO require either asm or pipe
 p_run.add_argument("--pipeline", action="store", dest="pipeline", nargs='*', help="Pipeline")
@@ -181,16 +181,12 @@ def main():
     file_sizes = []
     file_list = []
     if args.command == "run":
-        if not ((args.assemblers or args.pipeline) and (args.filename or args.data_id or args.pair or args.single)):
+        if not ((args.assemblers or args.pipeline) and (args.data_id or args.pair or args.single)):
             print args.pipeline
             parser.print_usage()
             sys.exit()
 
-        if args.filename:
-            files = args.filename
-            file_list = args.filename
-        else:
-            files = []
+        files = []
         if args.pair:
             for ls in args.pair:
                 for word in ls:
@@ -209,7 +205,6 @@ def main():
 
         base_files = []
         file_sizes = []
-        del options['filename']
         res_ids = []
         for f in files:
             #Check file or dir
