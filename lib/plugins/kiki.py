@@ -16,7 +16,8 @@ class KikiAssembler(BaseAssembler, IPlugin):
         cmd_args += self.get_files(reads)
         cmd_args.append('-o')
         cmd_args.append(self.outpath + '/kiki')
-        self.out_module.write(subprocess.check_output(cmd_args))
+        #self.out_module.write(subprocess.check_output(cmd_args))
+        self.arast_popen(cmd_args)
 
         contigs = glob.glob(self.outpath + '/*.contig')
         contigs_renamed = [contig + '.fa' for contig in contigs]

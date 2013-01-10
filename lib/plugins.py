@@ -4,6 +4,7 @@ import logging
 import os
 import uuid
 import sys
+import subprocess
 from yapsy.PluginManager import PluginManager
 
 # A-Rast modules
@@ -25,7 +26,22 @@ class BasePlugin(object):
         eg. self.k = 29
     """
         
-    
+    def arast_popen(self, cmd_args, **kwargs):
+        for kv in self.extra_params:
+            dashes = '-'
+            if len(kv[0]) != 1:
+                dashes += '-'
+            flag = '{}{}'.format(dashes, kv[0])
+            if kv[1] == 'False':
+                cmd_args.remove(flag)
+            else:
+                cmd_args.append(flag)
+            if kv[1] != 'True':
+                cmd_args.append(kv[1])
+
+        self.out_module.write("Running command:{}\n".format(cmd_args))
+        self.out_module.write(subprocess.check_output(cmd_args, **kwargs))
+
 
     def create_directories(self, job_data):
         datapath = (job_data['datapath'] + '/' + str(job_data['job_id']) + 
@@ -47,6 +63,11 @@ class BasePlugin(object):
             for d in job_data['reads']:
                 if d['files'][0].endswith(filetype):
                     valid_files.append(d)
+                try:
+                    if self.single_library: # only one library
+                        break
+                except:
+                    pass
         if not valid_files:
             raise Exception('No valid input files (Compression unsupported)')
         return valid_files
@@ -59,7 +80,10 @@ class BasePlugin(object):
         for kv in settings:
             setattr(self, kv[0], kv[1])
 
+        self.extra_params = []
         for kv in job_data['params']:
+            if not hasattr(self, kv[0]):
+                self.extra_params.append(kv)
             print "Override: {}".format(kv)
             setattr(self, kv[0], kv[1])
 

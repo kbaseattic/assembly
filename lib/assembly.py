@@ -72,14 +72,14 @@ def tar_list(outpath, file_list, tarname):
 
 def prefix_file_move(file, prefix):
     """ Adds prefix to file, returns new file name, moves file"""
-    f = '/' + str(prefix) + '_' + os.path.basename(file)
+    f = '/' + str(prefix) + '__' + os.path.basename(file)
     newfile =  os.path.split(file)[0] + f
     os.rename(file, newfile)
     return newfile
 
 def prefix_file(file, prefix):
     """ Adds prefix to file, returns new file"""
-    f = '/' + str(prefix) + '_' + os.path.basename(file)
+    f = '/' + str(prefix) + '__' + os.path.basename(file)
     newfile =  os.path.split(file)[0] + f
     return newfile
     

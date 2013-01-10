@@ -262,7 +262,6 @@ class ArastConsumer:
 
         start_time = time.time()
         download_ids = {}
-        #ex pipeline = ['sga', 'kiki', 'sspace']
         
 
         if error:
@@ -313,6 +312,7 @@ class ArastConsumer:
             except:
                 status += "%s [failed] " % ("pipeline")
                 print sys.exc_info()
+                print format_tb(sys.exc_info()[2])
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
 
@@ -325,10 +325,13 @@ class ArastConsumer:
         self.out_report.close()
 
     def run_pipeline(self, pipe, job_data):
-        # If only preprocessing, return reads back
-        include_reads = self.pmanager.output_type(pipe[-1]) == 'reads'
+
+        
 
         pipeline, overrides = parse_params(pipe)
+        # If only preprocessing, return reads back
+        include_reads = self.pmanager.output_type(pipeline[-1]) == 'reads'
+
         pipeline_stage = 1
         pipeline_results = []
         
@@ -343,21 +346,23 @@ class ArastConsumer:
                                                        reads=include_reads)
             output_type = self.pmanager.output_type(module_name)
              # Prefix outfiles with pipe stage
-            newfiles = [asm.prefix_file_move(file, "{}_{}".format(pipeline_stage, module_name)) 
+            newfiles = [asm.prefix_file_move(
+                    file, "Stage{}_{}".format(pipeline_stage, module_name)) 
                         for file in alldata]
+
             if output_type == 'contigs': #Assume assembly contigs
                 job_data['reads'] = asm.arast_reads(newfiles)
 
             elif output_type == 'reads': #Assume preprocessing
                 if include_reads: # data was prefixed and moved
                     for d in output:
-                        d['files'] = [asm.prefix_file(f, "{}_{}".format(
+                        d['files'] = [asm.prefix_file(f, "Stage{}_{}".format(
                                     pipeline_stage, module_name)) for f in d['files']]
                 job_data['reads'] = output
             pipeline_results += newfiles
             pipeline_stage += 1
 
-        pipeline_datapath = job_data['datapath'] + '/pipeline/'
+        pipeline_datapath = '{}/{}/pipeline/'.format(job_data['datapath'], job_data['job_id'])
         try:
             os.makedirs(pipeline_datapath)
         except:

@@ -43,15 +43,21 @@ cp -R bin/ ../../../bin/a5/
 cd ../..
 rm -rf a5/
 
-
-# Install AllPaths-LG
-#cd ../../../..
-#mkdir allpaths
-#cd allpaths
-#wget ftp://ftp.broadinstitute.org/pub/crd/ALLPATHS/Release-LG/latest_source_code/LATEST_VERSION.tar.gz
-#tar -xvf LATEST_VERSION.tar.gz
-#cd allpaths*
-
+# Install IDBA toolkit
+mkdir idba
+cd idba
+wget http://hku-idba.googlecode.com/files/idba-1.1.0.tar.gz
+tar -xf idba*
+cd idba*
+./configure
+make
+cd bin
+rm *.o
+rm Make*
+cd ..
+cp -R bin/ ../../../bin/idba/
+cd ../..
+rm -rf idba
 
 sudo mkdir /mnt/data
 sudo chown ubuntu:ubuntu /mnt/data

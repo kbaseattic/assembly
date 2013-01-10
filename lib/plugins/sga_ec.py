@@ -22,11 +22,11 @@ class SgaEcPreprocessor(BasePreprocessor, IPlugin):
                 fixes = os.path.basename(f).rsplit('.', 1)
                 ec_file = os.path.join(self.outpath, fixes[0] + '.ec.' + fixes[1])
                 logging.info("SGA Ec Plugin -- indexing: {}".format(cmd_args))
-                self.out_module.write(subprocess.check_output(cmd_args, cwd=self.outpath))
+                self.arast_popen(cmd_args, cwd=self.outpath)
                 cmd_args = [os.path.join(os.getcwd(), self.executable), 'correct',
                             '-o', ec_file, f]
                 logging.info("SGA Ec Plugin -- error correction: {}".format(cmd_args))
-                self.out_module.write(subprocess.check_output(cmd_args, cwd=self.outpath))
+                self.arast_popen(cmd_args, cwd=self.outpath)
                 new_files.append(ec_file)
             new_file_set['files'] = new_files
             processed_reads.append(new_file_set)
