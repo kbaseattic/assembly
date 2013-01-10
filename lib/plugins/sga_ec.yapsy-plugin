@@ -1,0 +1,15 @@
+[Core]
+Name = sga_ec
+Module = sga_ec
+
+[Settings]
+executable = ../bin/a5/sga
+filetypes = fastq,fq
+
+
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = SGA preprocess plugin
+

@@ -28,11 +28,11 @@ import shock
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, arasturl, config):
+    def __init__(self, shockurl, arasturl, config, threads):
         self.parser = SafeConfigParser()
         self.parser.read(config)
         # Load plugins
-        self.pmanager = ModuleManager()
+        self.pmanager = ModuleManager(threads)
 
 
     # Set up environment
@@ -243,7 +243,6 @@ class ArastConsumer:
 
         ### Build job_data
         ### {'reads' : [(file1,), (paired1,paired2)]}
-        print all_files
         job_data = {'job_id' : params['job_id'], 
                     'uid' : params['_id'],
                     'reads': all_files,
@@ -271,7 +270,7 @@ class ArastConsumer:
         url += '/node'
 
 
-        # Run individual assemblies
+        # Run individual modules
         status = 'complete:'
         if params['assemblers']:
             assemblers, overrides = parse_params(params['assemblers'])
@@ -311,10 +310,13 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'computation_time', ftime)
 
     def run_pipeline(self, pipe, job_data):
+        # If only preprocessing, return reads back
+        include_reads = self.pmanager.output_type(pipe[-1]) == 'reads'
+
         pipeline, overrides = parse_params(pipe)
         pipeline_stage = 1
         pipeline_results = []
-        include_reads = False # TODO enable switching
+        
         for module_name in pipeline:
             logging.info('New job_data for stage {}: {}'.format(
                     pipeline_stage, job_data))

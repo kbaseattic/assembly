@@ -1,4 +1,5 @@
 import abc
+import copy
 import logging 
 import os
 import uuid
@@ -23,6 +24,8 @@ class BasePlugin(object):
         eg. self.k = 29
     """
         
+    
+
     def create_directories(self, job_data):
         datapath = (job_data['datapath'] + '/' + str(job_data['job_id']) + 
                     '/' + self.name + '_' + str(uuid.uuid4())) + '/'
@@ -47,6 +50,7 @@ class BasePlugin(object):
         return valid_files
 
     def init_settings(self, settings, job_data):
+        self.threads = 1
         for kv in settings:
             print kv
             setattr(self, kv[0], kv[1])
@@ -55,6 +59,10 @@ class BasePlugin(object):
             print "Override: {}".format(kv)
             setattr(self, kv[0], kv[1])
 
+    def linuxRam(self):
+        """Returns the RAM of a linux system"""
+        totalMemory = os.popen("free -m").readlines()[1].split()[1]
+        return int(totalMemory)
 
     def get_all_output_files(self):
         """ Returns list of all files created after run. """
@@ -161,7 +169,7 @@ class BasePreprocessor(BasePlugin):
         return
 
 class ModuleManager():
-    def __init__(self):
+    def __init__(self, threads):
         self.pmanager = PluginManager()
         self.pmanager.setPluginPlaces(["plugins"])
         self.pmanager.collectPlugins()
@@ -170,11 +178,12 @@ class ModuleManager():
         if len(self.pmanager.getAllPlugins()) == 0:
             raise Exception("No Plugins Found!")
         for plugin in self.pmanager.getAllPlugins():
+            plugin.threads = threads
             self.plugins.append(plugin.name)
             plugin.plugin_object.setname(plugin.name)
             print "Plugin found: {}".format(plugin.name)
 
-    def run_module(self, module, job_data, tar=False, all_data=False, reads=False):
+    def run_module(self, module, job_data_orig, tar=False, all_data=False, reads=False):
         """
         Keyword Arguments:
         module -- name of plugin
@@ -185,6 +194,7 @@ class ModuleManager():
           Not recommended for large read files.
 
         """
+        job_data = copy.deepcopy(job_data_orig)
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)

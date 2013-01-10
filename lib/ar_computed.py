@@ -67,7 +67,7 @@ def start(arast_server, config, num_threads):
     workers = []
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
-        compute = consume.ArastConsumer(shockurl, arasturl, config)
+        compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
         workers.append(p)
