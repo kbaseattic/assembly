@@ -233,6 +233,7 @@ class ArastConsumer:
         # Download files (if necessary)
         datapath, all_files = self.get_data2(body)
         rawpath = datapath + '/raw/'
+
         #extract_files(rawpath)
         if not datapath:
             error = True
@@ -241,17 +242,18 @@ class ArastConsumer:
         job_id = params['job_id']
         uid = params['_id']
 
-        ### Build job_data
-        ### {'reads' : [(file1,), (paired1,paired2)]}
+        jobpath = os.path.join(datapath, str(job_id))
+        os.makedirs(jobpath
+)
+        # Create job log
+        self.out_report = open('{}/{}_report.txt'.format(jobpath, str(job_id)), 'w')
+
         job_data = {'job_id' : params['job_id'], 
                     'uid' : params['_id'],
                     'reads': all_files,
-                    'datapath': datapath}
-
-        try:
-            bwa = params['bwa']
-        except:
-            bwa = False
+                    'datapath': datapath,
+                    'out_report' : self.out_report}
+        self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
 
         try:
             pipeline = params['pipeline']
@@ -285,12 +287,20 @@ class ArastConsumer:
                     # Get location
                     download_ids[a] = res['D']['id']
                     status += "{} [success] ".format(a)
+                    self.out_report.write("ERROR TRACE:\n{}\n".
+                                          format(format_tb(sys.exc_info()[2])))
+
                 except Exception as e:
                     status += "%s [failed:%s] " % (a, e)
+                    self.out_report.write("ERROR TRACE:\n{}\n".
+                                          format(format_tb(sys.exc_info()[2])))
+
                 except:
                     status += "%s [failed:%s %s] " % (a, str(sys.exc_info()),
                                                           format_tb(sys.exc_info()[2]))
                     logging.info("%s failed to finish" % a)
+                    self.out_report.write("ERROR TRACE:\n{}\n".
+                                          format(format_tb(sys.exc_info()[2])))
 
         if pipeline:
             try:
@@ -299,15 +309,20 @@ class ArastConsumer:
                 # Get location
                 download_ids['pipeline'] = res['D']['id']
                 status += "pipeline [success] "
+                self.out_report.write("Pipeline completed successfully\n")
             except:
-                status += "%s [failed:%s%s] " % ("pipeline", sys.exc_info(), 
-                                                 format_tb(sys.exc_info()[2]))
+                status += "%s [failed] " % ("pipeline")
+                print sys.exc_info()
+                self.out_report.write("ERROR TRACE:\n{}\n".
+                                      format(format_tb(sys.exc_info()[2])))
+
 
         elapsed_time = time.time() - start_time
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'status', status)
         self.metadata.update_job(uid, 'computation_time', ftime)
+        self.out_report.close()
 
     def run_pipeline(self, pipe, job_data):
         # If only preprocessing, return reads back
@@ -318,6 +333,9 @@ class ArastConsumer:
         pipeline_results = []
         
         for module_name in pipeline:
+            self.out_report.write('\n============== STAGE {}: {} ==================\n'.format(
+                    pipeline_stage, module_name))
+            self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
             logging.info('New job_data for stage {}: {}'.format(
                     pipeline_stage, job_data))
             job_data['params'] = overrides[pipeline_stage-1].items()
@@ -481,3 +499,10 @@ def parse_reads(params):
 
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1
+
+def list_io_basenames(job_data):
+    basenames = []
+    for d in job_data['reads']:
+        for f in d['files']:
+            basenames.append(os.path.basename(f))
+    return basenames

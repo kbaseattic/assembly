@@ -74,7 +74,6 @@ def prefix_file_move(file, prefix):
     """ Adds prefix to file, returns new file name, moves file"""
     f = '/' + str(prefix) + '_' + os.path.basename(file)
     newfile =  os.path.split(file)[0] + f
-    logging.info("Renaming {} to {}".format(file, newfile))
     os.rename(file, newfile)
     return newfile
 

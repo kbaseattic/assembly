@@ -30,6 +30,7 @@ class BasePlugin(object):
         datapath = (job_data['datapath'] + '/' + str(job_data['job_id']) + 
                     '/' + self.name + '_' + str(uuid.uuid4())) + '/'
         logging.info("Creating directory: {}".format(datapath))
+
         os.makedirs(datapath)
         return datapath
 
@@ -51,6 +52,7 @@ class BasePlugin(object):
 
     def init_settings(self, settings, job_data):
         self.threads = 1
+        self.out_report = job_data['out_report']
         for kv in settings:
             print kv
             setattr(self, kv[0], kv[1])
@@ -195,6 +197,9 @@ class ModuleManager():
 
         """
         job_data = copy.deepcopy(job_data_orig)
+        # Pass back orig file descriptor
+        job_data['out_report'] = job_data_orig['out_report'] 
+
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)

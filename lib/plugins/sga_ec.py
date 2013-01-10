@@ -10,7 +10,7 @@ class SgaEcPreprocessor(BasePreprocessor, IPlugin):
     def run(self, reads):
         """ 
         Build the command and run.
-        Return list of reads
+
         """
         processed_reads = []
 
@@ -18,10 +18,8 @@ class SgaEcPreprocessor(BasePreprocessor, IPlugin):
             new_file_set = file_set
             new_files = []
             for f in file_set['files']:
-                print f
                 cmd_args = [os.path.join(os.getcwd(), self.executable), 'index', f]
                 fixes = os.path.basename(f).rsplit('.', 1)
-                print fixes
                 ec_file = os.path.join(self.outpath, fixes[0] + '.ec.' + fixes[1])
                 logging.info("SGA Ec Plugin -- indexing: {}".format(cmd_args))
                 p = subprocess.Popen(cmd_args, cwd=self.outpath)

@@ -28,11 +28,13 @@ class VelvetAssembler(BaseAssembler, IPlugin):
                 cmd_args.append(read1)
 
         logging.info("Running subprocess:{}".format(cmd_args))
+        self.out_report.write('Command: {}\n'.format(cmd_args))
         p = subprocess.Popen(cmd_args)
         p.wait()
         
         cmd_args = [self.velvetg, self.outpath]
         logging.info("Running subprocess:{}".format(cmd_args))
+        self.out_report.write('Command: {}\n'.format(cmd_args))
         p = subprocess.Popen(cmd_args)
         p.wait()
 

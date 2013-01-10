@@ -7,9 +7,8 @@ executable = ../bin/a5/sga
 filetypes = fastq,fq
 
 
-
 [Documentation]
 Author = Chris Bun
 Version = 0.1
-Description = SGA preprocess plugin
+Description = SGA error correction plugin.  Runs 'sga index' and 'sga correct'
 
