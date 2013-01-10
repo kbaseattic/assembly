@@ -18,10 +18,8 @@ class A5Assembler(BaseAssembler, IPlugin):
             files = files[:2]
         cmd_args += files
         cmd_args.append('a5')
-        print cmd_args
-        print os.getcwd()
-        p = subprocess.Popen(cmd_args, cwd=self.outpath)
-        p.wait()
+
+        self.out_module.write(subprocess.check_output(cmd_args, cwd=self.outpath))
 
         contigs = glob.glob(self.outpath + '/*.contigs.fasta')
 

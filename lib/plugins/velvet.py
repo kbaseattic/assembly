@@ -30,15 +30,11 @@ class VelvetAssembler(BaseAssembler, IPlugin):
         logging.info("Running subprocess:{}".format(cmd_args))
         self.out_report.write('Command: {}\n'.format(cmd_args))
         self.out_module.write(subprocess.check_output(cmd_args))
-        #p = subprocess.Popen(cmd_args)
-        #p.wait()
         
         cmd_args = [self.velvetg, self.outpath]
         logging.info("Running subprocess:{}".format(cmd_args))
         self.out_report.write('Command: {}\n'.format(cmd_args))
         self.out_module.write(subprocess.check_output(cmd_args))
-#        p = subprocess.Popen(cmd_args)
-#        p.wait()
 
         contigs = [self.outpath + '/contigs.fa']
         if not os.path.exists(contigs[0]):

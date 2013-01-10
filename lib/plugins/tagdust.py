@@ -25,8 +25,7 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
                 td_file = os.path.join(self.outpath, fixes[0] + '.tagdust.' + fixes[1])
                 cmd_args += [td_file, os.path.join(os.getcwd(), self.library), f]
                 logging.info("TagDust Plugin: {}".format(cmd_args))
-                p = subprocess.Popen(cmd_args, cwd=self.outpath)
-                p.wait()
+                self.out_module.write(subprocess.check_output(cmd_args, cwd=self.outpath))
                 new_files.append(td_file)
             new_file_set['files'] = new_files
             processed_reads.append(new_file_set)

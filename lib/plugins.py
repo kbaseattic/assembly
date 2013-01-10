@@ -55,6 +55,7 @@ class BasePlugin(object):
         self.threads = 1
         self.out_report = job_data['out_report'] #Job log file
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
+        print type(self.out_module)
         for kv in settings:
             setattr(self, kv[0], kv[1])
 
@@ -160,8 +161,10 @@ class BasePreprocessor(BasePlugin):
         self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data)
         valid_files = self.get_valid_reads(job_data)
+        output = self.run(valid_files)
+
         self.out_module.close()
-        return self.run(valid_files)
+        return output
 
     # Must implement run() method
     @abc.abstractmethod

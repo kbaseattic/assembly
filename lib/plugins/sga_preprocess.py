@@ -41,8 +41,7 @@ class SgaPreprocessor(BasePreprocessor, IPlugin):
             if get_qual_encoding(files[0]) == 'phred64':
                 cmd_args.append('--phred64')
             logging.info("SGA Plugin: {}".format(cmd_args))
-            p = subprocess.Popen(cmd_args)
-            p.wait()
+            self.out_module.write(subprocess.check_output(cmd_args))
             new_file_set = file_set
             new_file_set['files'] = [pp_file]
             processed_reads.append(new_file_set)
