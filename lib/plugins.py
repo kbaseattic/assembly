@@ -3,6 +3,7 @@ import copy
 import logging 
 import os
 import uuid
+import sys
 from yapsy.PluginManager import PluginManager
 
 # A-Rast modules
@@ -52,9 +53,9 @@ class BasePlugin(object):
 
     def init_settings(self, settings, job_data):
         self.threads = 1
-        self.out_report = job_data['out_report']
+        self.out_report = job_data['out_report'] #Job log file
+        self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
         for kv in settings:
-            print kv
             setattr(self, kv[0], kv[1])
 
         for kv in job_data['params']:
@@ -117,10 +118,12 @@ class BaseAssembler(BasePlugin):
     def __call__(self, settings, job_data):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
-        self.init_settings(settings, job_data)
         self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data)
         valid_files = self.get_valid_reads(job_data)
-        return self.run(valid_files)
+        output = self.run(valid_files)
+        self.out_module.close()
+        return output
 
 
     def get_files(self, file_dicts):
@@ -154,9 +157,10 @@ class BasePreprocessor(BasePlugin):
     def __call__(self, settings, job_data):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
-        self.init_settings(settings, job_data)
         self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data)
         valid_files = self.get_valid_reads(job_data)
+        self.out_module.close()
         return self.run(valid_files)
 
     # Must implement run() method
@@ -228,3 +232,5 @@ class ModuleManager():
             logging.error("{} plugin not found".format(plugin))
             return False
         return True
+
+
