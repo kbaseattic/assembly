@@ -39,8 +39,9 @@ class BasePlugin(object):
                 cmd_args.append(flag)
             if kv[1] != 'True':
                 cmd_args.append(kv[1])
-
-        self.out_module.write("Running command:{}\n".format(cmd_args))
+        cmd_string = ''.join(['{} '.format(w) for w in cmd_args])
+        self.out_module.write("Command: {}\n".format(cmd_string))
+        self.out_report.write('Command: {}\n'.format(cmd_string))
         out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
         self.out_module.write(out)
 

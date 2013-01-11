@@ -5,7 +5,8 @@ sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
 sudo pip install requests
-sudo pip install --upgrade python-novaclient
+sudo pip install yapsy
+#sudo pip install --upgrade python-novaclient
 
 # Install Velvet
 pushd /tmp/

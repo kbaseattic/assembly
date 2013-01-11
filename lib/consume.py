@@ -344,15 +344,18 @@ class ArastConsumer:
             cur_outputs = []
             pipe_suffix = '' # filename code for indiv pipes
             for module_name in pipeline:
+                print '\n\n{0} Running module: {1} {2}'.format(
+                    '='*20, module_name, '='*(35-len(module_name)))
                 if module_name.lower() == 'none':
                     continue
                 ## For now, module code is 1st and last letter
                 pipe_suffix += module_name[0].upper() + module_name[-1]
 
-                self.out_report.write('\n============== STAGE {}: {} ==================\n'.format(
-                        pipeline_stage, module_name))
+                self.out_report.write('\n{0} PIPELINE {1} -- STAGE {2}: {3} {4}\n'.format(
+                        '='*20, pipeline_num, pipeline_stage, 
+                        module_name, '='*(35-len(module_name))))
                 self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
-                logging.info('New job_data for stage {}: {}'.format(
+                logging.debug('New job_data for stage {}: {}'.format(
                         pipeline_stage, job_data))
                 job_data['params'] = overrides[pipeline_stage-1].items()
 
