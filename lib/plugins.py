@@ -1,6 +1,7 @@
 import abc
 import copy
 import logging 
+import itertools
 import os
 import uuid
 import sys
@@ -260,4 +261,65 @@ class ModuleManager():
             return False
         return True
 
+    def valid_modules(self, l):
+        """ Return filtered list of available modules """
+        return [m for m in l if not m.startswith('?') and self.has_plugin(m)]
 
+    def validate_pipe(self):
+        pass
+
+    def split_pipe(self, l):
+        """ Splits a multi-module string in to bins 
+        Ex: 'kiki ?k=29 velvet' -> [[kiki, ?k=29], [velvet]]
+        """
+        bins = []
+        for word in l:
+            if not word.startswith('?') and self.has_plugin(word):
+                bins.append([word])
+            elif word.startswith('?'):
+                bins[-1].append(word)
+        return bins
+            
+    def parse_input(self, pipe):
+        """
+        Ex: ['sga', '?p=True', 'kiki ?k=31 velvet', 'sspace']
+        """
+        # Split into stages
+        stages = []
+        for word in pipe:
+            lswords = word.split(' ')
+            if len(lswords) == 1: # Not branch, append new stage
+                if not word.startswith('?') and self.has_plugin(word):
+                    stages.append([[word]])
+                elif word.startswith('?'):
+                    stages[-1][0].append(word)
+            else:
+                stages.append(self.split_pipe(lswords))
+        # Return all combinations
+        all_pipes = list(itertools.product(*stages))
+        flat_pipes = [list(itertools.chain(*pipe)) for pipe in all_pipes]
+        print flat_pipes
+        return flat_pipes
+
+    def parse_pipe(self, pipe):
+        """ Returns the pipeline(s)z of modules.
+        Returns parameter overrides from string.
+        e.g Input: [sga_ec 'kiki ?k=31 velvet ?ins=500' sspace]
+        Output: [kiki, velvet, a5], [{k:31}, {ins:500}, {}]
+        """
+
+        # Parse param overrides
+        overrides = []
+        pipeline = []
+        for word in pipe:
+            module_num = -1
+            if not word.startswith('?'): # is module
+                pipeline.append(word)
+                module_num += 1
+                overrides.append({})
+
+            elif word[1:-1].find('=') != -1: # is param
+                kv = word[1:].split('=')
+                overrides[module_num] = dict(overrides[module_num].items() +
+                                             dict([kv]).items())
+        return pipeline, overrides

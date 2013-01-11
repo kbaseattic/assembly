@@ -2,6 +2,7 @@
 Consumes a job from the queue
 """
 
+import copy
 import logging
 import pika
 import sys
@@ -324,52 +325,62 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'computation_time', ftime)
         self.out_report.close()
 
-    def run_pipeline(self, pipe, job_data):
+    def run_pipeline(self, pipes, job_data_global):
 
-        
+        all_pipes = self.pmanager.parse_input(pipes)
+        #include_reads = self.pmanager.output_type(pipeline[-1]) == 'reads'
+        include_reads = False
+        pipeline_num = 1
+        all_files = []
+        for pipe in all_pipes:
+            job_data = copy.deepcopy(job_data_global)
+            job_data['out_report'] = job_data_global['out_report'] 
+            pipeline, overrides = self.pmanager.parse_pipe(pipe)
+            pipeline_stage = 1
+            pipeline_results = []
+            pipe_suffix = '' # filename code for indiv pipes
+            for module_name in pipeline:
+                ## For now, module code is 1st and last letter
+                pipe_suffix += module_name[0].upper() + module_name[-1]
 
-        pipeline, overrides = parse_params(pipe)
-        # If only preprocessing, return reads back
-        include_reads = self.pmanager.output_type(pipeline[-1]) == 'reads'
+                self.out_report.write('\n============== STAGE {}: {} ==================\n'.format(
+                        pipeline_stage, module_name))
+                self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
+                logging.info('New job_data for stage {}: {}'.format(
+                        pipeline_stage, job_data))
+                job_data['params'] = overrides[pipeline_stage-1].items()
+                output, alldata = self.pmanager.run_module(module_name, job_data, all_data=True,
+                                                           reads=include_reads)
+                output_type = self.pmanager.output_type(module_name)
+                 # Prefix outfiles with pipe stage
+                newfiles = [asm.prefix_file_move(
+                        file, "Stage{}_{}".format(pipeline_stage, module_name)) 
+                            for file in alldata]
 
-        pipeline_stage = 1
-        pipeline_results = []
-        
-        for module_name in pipeline:
-            self.out_report.write('\n============== STAGE {}: {} ==================\n'.format(
-                    pipeline_stage, module_name))
-            self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
-            logging.info('New job_data for stage {}: {}'.format(
-                    pipeline_stage, job_data))
-            job_data['params'] = overrides[pipeline_stage-1].items()
-            output, alldata = self.pmanager.run_module(module_name, job_data, all_data=True,
-                                                       reads=include_reads)
-            output_type = self.pmanager.output_type(module_name)
-             # Prefix outfiles with pipe stage
-            newfiles = [asm.prefix_file_move(
-                    file, "Stage{}_{}".format(pipeline_stage, module_name)) 
-                        for file in alldata]
+                if output_type == 'contigs': #Assume assembly contigs
+                    job_data['reads'] = asm.arast_reads(newfiles)
 
-            if output_type == 'contigs': #Assume assembly contigs
-                job_data['reads'] = asm.arast_reads(newfiles)
+                elif output_type == 'reads': #Assume preprocessing
+                    if include_reads: # data was prefixed and moved
+                        for d in output:
+                            d['files'] = [asm.prefix_file(f, "Stage{}_{}".format(
+                                        pipeline_stage, module_name)) for f in d['files']]
+                    job_data['reads'] = output
+                pipeline_results += newfiles
+                pipeline_stage += 1
 
-            elif output_type == 'reads': #Assume preprocessing
-                if include_reads: # data was prefixed and moved
-                    for d in output:
-                        d['files'] = [asm.prefix_file(f, "Stage{}_{}".format(
-                                    pipeline_stage, module_name)) for f in d['files']]
-                job_data['reads'] = output
-            pipeline_results += newfiles
-            pipeline_stage += 1
+            pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], job_data['job_id'],
+                                                           pipeline_num)
 
-        pipeline_datapath = '{}/{}/pipeline/'.format(job_data['datapath'], job_data['job_id'])
-        try:
-            os.makedirs(pipeline_datapath)
-        except:
-            logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
-        return asm.tar_list(pipeline_datapath, pipeline_results, 
-                            'pipeline' + str(job_data['job_id']) +
-                            '.tar.gz')
+            try:
+                os.makedirs(pipeline_datapath)
+            except:
+                logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
+            all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
+                                'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
+            pipeline_num += 1
+        return asm.tar_list('{}{}'.format(job_data['datapath'], job_data['job_id']),
+                        all_files,'pipelines_{}.tar.gz'.format(job_data['job_id']))
 
     def upload(self, url, file):
         files = {}
