@@ -62,9 +62,9 @@ cp -R bin/ ../../../bin/idba/
 cd ../..
 rm -rf idba
 
-cd ../bin/
-wget http://standardized-velvet-assembly-report.googlecode.com/svn/trunk/mergePairs.py
-chmod +x mergePairs.py
+#cd ../bin/
+#wget http://standardized-velvet-assembly-report.googlecode.com/svn/trunk/mergePairs.py
+#chmod +x mergePairs.py
 
 
 
