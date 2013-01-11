@@ -12,6 +12,7 @@ from distutils.version import StrictVersion
 from bson import json_util
 from ConfigParser import SafeConfigParser
 from prettytable import PrettyTable
+from traceback import format_exc
 
 import shock
 import metadata as meta
@@ -35,6 +36,9 @@ def send_message(body, routingKey):
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
+    if params['version'].find('beta'):
+        print 'Sent to testing queue'
+        return 'jobs.test'
     return parser.get('rabbitmq','default_routing_key')
 
 
@@ -45,7 +49,7 @@ def get_upload_url():
 
 def route_job(body):
     client_params = json.loads(body) #dict of params
-    routing_key = determine_routing_key (1, body)
+    routing_key = determine_routing_key (1, client_params)
     job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
 
     if not client_params['data_id']:
@@ -169,7 +173,9 @@ def on_request(ch, method, props, body):
                 ack = "Error getting results"
                 
     except:
-        logging.error("Unexpected error:", sys.exc_info()[0])
+        logging.error("Unexpected error: {}".format(sys.exc_info()[0]))
+        traceback = format_exc(sys.exc_info())
+        print traceback
         ack = "Error: Malformed message. Using latest version?"
 
     # Check client version TODO:handle all cases
