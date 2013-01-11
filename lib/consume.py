@@ -247,7 +247,8 @@ class ArastConsumer:
         os.makedirs(jobpath
 )
         # Create job log
-        self.out_report = open('{}/{}_report.txt'.format(jobpath, str(job_id)), 'w')
+        self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
+        self.out_report = open(self.out_report_name, 'w')
 
         job_data = {'job_id' : params['job_id'], 
                     'uid' : params['_id'],
@@ -319,10 +320,16 @@ class ArastConsumer:
 
         elapsed_time = time.time() - start_time
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
+
+        self.out_report.close()
+        res = self.upload(url, self.out_report_name)
+        # Get location
+        download_ids['report'] = res['D']['id']
+
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'status', status)
         self.metadata.update_job(uid, 'computation_time', ftime)
-        self.out_report.close()
+
         print '=========== JOB COMPLETE ============'
 
     def run_pipeline(self, pipes, job_data_global):
@@ -415,7 +422,7 @@ class ArastConsumer:
             pipeline_num += 1
         if len(all_files) == 1:
             return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                all_files[0],'pipeline_{}.tar.gz'.format(job_data['job_id']))
+                                [all_files[0]],'pipeline_{}.tar.gz'.format(job_data['job_id']))
             
         return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
                         all_files,'pipelines_{}.tar.gz'.format(job_data['job_id']))
