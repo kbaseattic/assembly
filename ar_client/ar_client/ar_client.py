@@ -19,9 +19,9 @@ from pkg_resources import resource_filename
 import shock
 
 
-my_version = '0.1.1'
+my_version = '0.2.0-beta'
 # setup option/arg parser
-parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
+parser = argparse.ArgumentParser(prog='assembly', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
 parser.add_argument('-u', '--ARASTUSER', help='Overrules env ARASTUSER')
 parser.add_argument('-p', '--ARASTPASSWORD', help='Overrules env ARASTPASSWORD')
@@ -35,9 +35,8 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
 
 p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*')
-#TODO require either asm or pipe
-p_run.add_argument("--pipeline", action="store", dest="pipeline", nargs='*', help="Pipeline")
+p_run.add_argument("-a", "--assemblers", action="store", dest="pipeline", nargs='*')
+p_run.add_argument("-p", "--pipeline", action="store", dest="pipeline", nargs='*', help="Pipeline")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
@@ -181,7 +180,7 @@ def main():
     file_sizes = []
     file_list = []
     if args.command == "run":
-        if not ((args.assemblers or args.pipeline) and (args.data_id or args.pair or args.single)):
+        if not ((args.pipeline) and (args.data_id or args.pair or args.single)):
             print args.pipeline
             parser.print_usage()
             sys.exit()
@@ -274,8 +273,6 @@ def main():
             job = -1
         else:
             job = args.job_id[0]
-        if args.assemblers:
-            pass
         logging.info("get %s" % (job))
         options['ARASTUSER'] = ARASTUSER
         options['job_id'] = job
