@@ -19,7 +19,7 @@ import subprocess
 #from yapsy.PluginManager import PluginManager
 from plugins import ModuleManager
 from multiprocessing import current_process as proc
-from traceback import format_tb
+from traceback import format_tb, format_exc
 
 import config
 import assembly as asm
@@ -263,14 +263,12 @@ class ArastConsumer:
 
         start_time = time.time()
         download_ids = {}
-        
 
         if error:
             self.metadata.update_job(uid, 'status', 'Datapath error')
 
         url = "http://%s" % (self.shockurl)
         url += '/node'
-
 
         # Run individual modules
         status = 'complete:'
@@ -304,6 +302,7 @@ class ArastConsumer:
 
         if pipeline:
             try:
+                self.pmanager.validate_pipe(pipeline)
                 result_tar = self.run_pipeline(pipeline, job_data)
                 res = self.upload(url, result_tar)
                 # Get location
@@ -311,9 +310,9 @@ class ArastConsumer:
                 status += "pipeline [success] "
                 self.out_report.write("Pipeline completed successfully\n")
             except:
-                status += "%s [failed] " % ("pipeline")
-                print sys.exc_info()
-                print format_tb(sys.exc_info()[2])
+                traceback = format_exc(sys.exc_info())
+                status = "[FAIL] {}".format(sys.exc_info()[1])
+                print traceback
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
 
@@ -324,6 +323,7 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'status', status)
         self.metadata.update_job(uid, 'computation_time', ftime)
         self.out_report.close()
+        print '=========== JOB COMPLETE ============'
 
     def run_pipeline(self, pipes, job_data_global):
         """

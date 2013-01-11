@@ -266,8 +266,12 @@ class ModuleManager():
         """ Return filtered list of available modules """
         return [m for m in l if not m.startswith('?') and self.has_plugin(m)]
 
-    def validate_pipe(self):
-        pass
+    def validate_pipe(self, pipe):
+        for stage in pipe:
+            for word in stage.split(' '):
+                if not (word.startswith('?') or self.has_plugin(word)):
+                    raise Exception('Invalid pipeline command')
+                
 
     def split_pipe(self, l):
         """ Splits a multi-module string in to bins 
