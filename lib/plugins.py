@@ -41,7 +41,8 @@ class BasePlugin(object):
                 cmd_args.append(kv[1])
 
         self.out_module.write("Running command:{}\n".format(cmd_args))
-        self.out_module.write(subprocess.check_output(cmd_args, **kwargs))
+        out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
+        self.out_module.write(out)
 
 
     def create_directories(self, job_data):

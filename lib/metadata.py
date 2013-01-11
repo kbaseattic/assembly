@@ -92,7 +92,6 @@ class MetadataConnection:
 
 
     def update_job(self, job_id, field, value):
-        logging.info("Updating metadata job %s" % job_id)
         jobs = self.get_jobs()
         jobs.update({'_id' : job_id},
                     {'$set' : {field : value}})
