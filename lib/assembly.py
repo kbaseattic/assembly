@@ -23,173 +23,10 @@ def get_default(key):
     """Get assemblers default value from config file."""
     return parser.get('assemblers', key)
 
-def is_available(assembler):
-    """ Check if ASSEMBLER is a valid/available assembler.
-    """
-    assemblers = ['kiki','velvet','a5']
-    if assembler in assemblers:
-        return True
-    else:
-        return False
-
 def run(assembler, job_data):
     plugin = self.pmanager.getPluginByName(assembler)
     settings = plugin.details.items('Settings')
     return plugin.plugin_object(settings, job_data)
-
-
-def run_kiki(datapath, uid, bwa):
-    ki_exec = basepath + get_default('kiki.path')
-    ki_exec += get_default('kiki.exec')
-    threshold = 1000
-    raw_path = datapath + '/raw/'
-    kiki_data = datapath + '/kiki/' + uid + '/'
-    os.makedirs(kiki_data)
-    kiki_prefix = kiki_data + 'kiki'
-    args = [ki_exec, '-k', '29', '-i']
-    valid_files  = get_fasta(raw_path)
-    valid_files += get_fastq(raw_path)
-
-    if not valid_files:
-        raise Exception('No valid input files')
-
-    readfiles = []
-    tmp_files = []
-
-    for file in valid_files:
-        readfile = raw_path + file
-        print readfile
-        args.append(readfile)
-        readfiles.append(readfile)
-    args.append('-o')
-    args.append(kiki_prefix)
-    #ki_data = raw_path + 'ki/'    
-    print args
-    print "Starting kiki"
-    p = subprocess.Popen(args)
-    p.wait()
-
-    contigfile = kiki_data + '*.contig'
-    contigs = glob.glob(contigfile)
-
-    if not contigs:
-        raise Exception("No contigs")
-    tmp_files += contigs
-    logging.debug("Contigs: %s" % contigs)
-
-    if bwa:
-        fa_contigs = []
-        for contig in contigs:
-            outfile = contig + '.kifa'
-            tab_to_fasta(contig, outfile, threshold)
-            fa_contigs.append(outfile)
-            tmp_files.append(outfile)
-
-        if len(fa_contigs) < 1:
-            pass #TODO concat
-        else:
-            ref_contig = os.path.basename(fa_contigs[0])
-
-        bwa_bam = run_bwa(kiki_data, ref_contig, readfiles, 'kiki')
-        contigs.append(bwa_bam)
-        #tmp_files.append(bwa_bam)
-
-    tar_file = tar_list(kiki_data, contigs, 'ki_data.tar.gz')
-
-    # Remove intermediate files
-    contigfile = raw_path + '*.contig.*'
-    #tmp_files += glob.glob(contigfile)
-
-    # for temp in tmp_files:
-    #     try:
-    #         os.remove(temp)
-    #         logging.info("Removed %s" % temp)
-    #     except:
-    #         logging.info("Could not remove %s" % temp)
-
-    # Return location of finished data
-    return tar_file
-
-
-def run_velvet(datapath, uid, bwa):
-
-    velvet_data = datapath 
-    velvet_data += '/'
-    velvet_data += uid
-    velvet_data += '/'
-    os.makedirs(velvet_data)
-
-    # Set up parameters
-    velveth = basepath + get_default('velvet.path')
-    velvetg = velveth
-    velveth += get_default('velvet.exec_h')
-    velvetg += get_default('velvet.exec_g')
-    hash = get_default('velvet.hash_length')
-    file_type = get_default('velvet.file_type')
-
-    # Run velvet
-    print "Starting velvet"
-    args = [velveth,
-            velvet_data,
-            hash,
-            file_type]
-    raw_path = datapath + '/raw/'
-    read_files = []
-
-
-
-    # Find paired
-    paired_reads = get_paired(get_fasta(raw_path))
-    if len(paired_reads) > 0:
-        print "Found paired ends"
-        print paired_reads
-        pair_str = '-shortPaired'
-        args.append(pair_str)
-        args.append(str(raw_path + paired_reads[0][0]))
-        args.append(str(raw_path + paired_reads[0][1]))
-        for i in range(1,len(paired_reads)):
-            flag = pair_str + str(i+1)
-            args.append(flag)
-            args.append(str(raw_path + paired_reads[i][0]))
-            args.append(str(raw_path + paired_reads[i][1]))
-            read_files.append(str(raw_path + paired_reads[i][0]))
-            read_files.append(str(raw_path + paired_reads[i][1]))
-    else:
-        # TODO handle more than just fasta files
-        valid_files = get_fasta(raw_path)
-        valid_files += get_fastq(raw_path)
-
-        if not valid_files:
-            raise Exception('No valid input files')
-
-        for file in valid_files:
-            readfile = raw_path + file
-            args.append(readfile)
-            read_files.append(readfile)
-    
-
-    logging.info(args)
-    p = subprocess.Popen(args)
-    p.wait()
-
-    args_g = [velvetg, velvet_data]
-    logging.info(args_g)
-    g = subprocess.Popen(args_g)
-    g.wait()
-
-    vfiles = [velvet_data + 'contigs.fa', velvet_data + 'stats.txt']
-    for f in vfiles:
-        if not os.path.exists(f):
-            raise Exception('No contigs')
-
-    #Run BWA if specified
-    if bwa:
-        vfiles.append(run_bwa(velvet_data, 'contigs.fa', read_files, 'velvet'))
-
-
-
-    tar_file = tar_list(datapath, vfiles, 'velvet_data.tar.gz')
-    return tar_file
 
 def get_tar_name(job_id, suffix):
     name = 'job' + str(job_id)
@@ -198,11 +35,6 @@ def get_tar_name(job_id, suffix):
     name += '.tar.gz'
     return name
     
-
-def run_soapdenovo():
-    return 2
-
-
 def tar(outpath, asm_data, tarname):
     print "Compressing"
     outfile = outpath + '/tar/'
@@ -238,37 +70,19 @@ def tar_list(outpath, file_list, tarname):
     t.wait()
     return outfile
 
-def prefix_file(file, prefix):
-    """ Adds prefix to file, returns new file"""
-    f = '/' + str(prefix) + '_' + os.path.basename(file)
+def prefix_file_move(file, prefix):
+    """ Adds prefix to file, returns new file name, moves file"""
+    f = '/' + str(prefix) + '__' + os.path.basename(file)
     newfile =  os.path.split(file)[0] + f
     os.rename(file, newfile)
     return newfile
+
+def prefix_file(file, prefix):
+    """ Adds prefix to file, returns new file"""
+    f = '/' + str(prefix) + '__' + os.path.basename(file)
+    newfile =  os.path.split(file)[0] + f
+    return newfile
     
-
-def get_paired(directory):
-    """ Return a list of tuples of paired reads from directory or list
-    """
-    if type(directory) == 'str':
-        files = os.listdir(directory)
-    else:
-        files = directory
-
-    paired_re = re.compile('.A.|_1.')
-    paired_files = []
-    for file in files:
-        m = re.search(paired_re, file)
-        if m is not None:
-            # Found first paired, look for second
-            file2 = ''
-            if m.group(0) == '.A.':
-                file2 = re.sub('.A.', '.B.', file)
-            elif m.group(0) == '_1.':
-                file2 = re.sub('_1.', '_2.', file)
-            if file2 in files:
-                pair = [file, file2]
-                paired_files.append(pair)
-    return paired_files
 
 def get_fasta(directory):
     """ Return the list of Fasta files in DIRECTORY
@@ -375,6 +189,23 @@ def run_bwa(data_dir, ref_name, read_files, prefix):
 
     return bam_out
 
+def get_qual_encoding(file):
+    f = open(file, 'r')
+    while True:
+        bline = f.readline()
+        if bline.find('+') != -1: # Line before quality line
+            line = f.readline()
+            for c in line:
+                if ord(c) > 73:
+                    logging.info("Detected phred64 quality encoding")
+                    return 'phred64'
+                elif ord(c) < 59:
+                    logging.info("Detected phred33 quality encoding")
+                    return 'phred33'
+        if len(bline) == 0: #EOF
+            break
+    return
+
 def tab_to_fasta(tabbed_file, outfile, threshold):
     tabbed = open(tabbed_file, 'r')
     fasta = open(outfile, 'w')
@@ -388,8 +219,6 @@ def tab_to_fasta(tabbed_file, outfile, threshold):
     tabbed.close()
     fasta.close()
 
-def fasta_to_tab(fasta_file):
-    pass
 
 def arast_reads(filelist):
     """ Returns a list of files into the ARAST reads dict format """
@@ -397,14 +226,6 @@ def arast_reads(filelist):
     for f in filelist:
         filedicts.append({'type':'single', 'files':[f]})
     return filedicts
-
-    
-
-
-def untupled(filelist):
-    pass
-
-                 
 
 
 parser = SafeConfigParser()

@@ -1,0 +1,22 @@
+[Core]
+Name = idba
+Module = idba
+
+[Settings]
+single_lib = True
+
+bin_idba_ud = ../bin/idba/idba_ud
+bin_idba_tran = ../bin/idba/idba_tran
+bin_idba_hybrid = ../bin/idba/idba_hybrid
+bin_mergeReads = ../bin/idba/idba
+bin_fq2fa = ../bin/idba/idba
+bin_normReads = ../bin/idba/idba
+
+filetypes = fasta,fa,fastq,fq
+scaffold = True
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = IDBA assembler plugin
+
