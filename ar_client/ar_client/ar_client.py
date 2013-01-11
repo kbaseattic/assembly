@@ -180,7 +180,7 @@ def main():
     file_sizes = []
     file_list = []
     if args.command == "run":
-        if not ((args.assemblers or args.pipeline) and (args.data_id or args.pair or args.single)):
+        if not ((args.pipeline) and (args.data_id or args.pair or args.single)):
             print args.pipeline
             parser.print_usage()
             sys.exit()
@@ -273,8 +273,6 @@ def main():
             job = -1
         else:
             job = args.job_id[0]
-        if args.assemblers:
-            pass
         logging.info("get %s" % (job))
         options['ARASTUSER'] = ARASTUSER
         options['job_id'] = job
