@@ -344,6 +344,8 @@ class ArastConsumer:
             cur_outputs = []
             pipe_suffix = '' # filename code for indiv pipes
             for module_name in pipeline:
+                if module_name.lower() == 'none':
+                    continue
                 ## For now, module code is 1st and last letter
                 pipe_suffix += module_name[0].upper() + module_name[-1]
 

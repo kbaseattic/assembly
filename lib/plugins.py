@@ -77,7 +77,6 @@ class BasePlugin(object):
         self.threads = 1
         self.out_report = job_data['out_report'] #Job log file
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
-        print type(self.out_module)
         for kv in settings:
             setattr(self, kv[0], kv[1])
 
@@ -208,7 +207,7 @@ class ModuleManager():
         self.pmanager.setPluginPlaces(["plugins"])
         self.pmanager.collectPlugins()
         self.pmanager.locatePlugins()
-        self.plugins = []
+        self.plugins = ['none']
         if len(self.pmanager.getAllPlugins()) == 0:
             raise Exception("No Plugins Found!")
         for plugin in self.pmanager.getAllPlugins():
@@ -216,6 +215,7 @@ class ModuleManager():
             self.plugins.append(plugin.name)
             plugin.plugin_object.setname(plugin.name)
             print "Plugin found: {}".format(plugin.name)
+        
 
     def run_module(self, module, job_data_orig, tar=False, all_data=False, reads=False):
         """
@@ -256,7 +256,7 @@ class ModuleManager():
         return self.pmanager.getPluginByName(module).plugin_object.INPUT
 
     def has_plugin(self, plugin):
-        if not plugin in self.plugins:
+        if not plugin.lower() in self.plugins:
             logging.error("{} plugin not found".format(plugin))
             return False
         return True
@@ -282,6 +282,7 @@ class ModuleManager():
             
     def parse_input(self, pipe):
         """
+        Parses inital pipe and separates branching bins
         Ex: ['sga', '?p=True', 'kiki ?k=31 velvet', 'sspace']
         """
         # Split into stages
@@ -298,7 +299,6 @@ class ModuleManager():
         # Return all combinations
         all_pipes = list(itertools.product(*stages))
         flat_pipes = [list(itertools.chain(*pipe)) for pipe in all_pipes]
-        print flat_pipes
         return flat_pipes
 
     def parse_pipe(self, pipe):
