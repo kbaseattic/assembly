@@ -12,7 +12,7 @@ bin_merge_reads = ../bin/mergePairs.py
 bin_fq2fa = ../bin/idba/fq2fa
 bin_normReads = ../bin/idba/normReads
 
-max_k = 90
+max_k = 50
 
 filetypes = fasta,fa,fastq,fq
 scaffold = True

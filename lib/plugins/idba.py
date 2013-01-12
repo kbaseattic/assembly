@@ -31,6 +31,7 @@ class IdbaAssembler(BaseAssembler, IPlugin):
             parts = read_file.rsplit('.', 1)
             fa_file = '{}.fasta'.format(parts[0])
             fqfa_command = [os.path.join(cwd, self.bin_fq2fa), read_file, fa_file]
+            self.arast_popen(fqfa_command)
             read_file = fa_file
 
         base = os.path.join(self.outpath, 'run')
