@@ -359,8 +359,8 @@ class ArastConsumer:
                 pipe_suffix += module_name[0].upper() + module_name[-1]
 
                 self.out_report.write('\n{0} PIPELINE {1} -- STAGE {2}: {3} {4}\n'.format(
-                        '='*20, pipeline_num, pipeline_stage, 
-                        module_name, '='*(35-len(module_name))))
+                        '='*10, pipeline_num, pipeline_stage, 
+                        module_name, '='*(25-len(module_name))))
                 self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
                 logging.debug('New job_data for stage {}: {}'.format(
                         pipeline_stage, job_data))
