@@ -16,6 +16,7 @@ import time
 from ConfigParser import SafeConfigParser
 from pkg_resources import resource_filename
 
+import client
 import shock
 
 
@@ -75,7 +76,7 @@ def post(url, files):
 
 
 # upload all files in list, return list of ids
-def upload(url, files):
+def upload(files):
     ids = []
     for f in files:
         # check if file exists
@@ -86,7 +87,8 @@ def upload(url, files):
          #   logging.info("%s is a directory.  Skipping." % f)
         else:
             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
-            res = curl_post_file(url, f)
+            #res = curl_post_file(url, f)
+            res = aclient.upload_data_shock(f)
             ids.append(res['D']['id'])
 
             if res["E"] is not None:
@@ -129,7 +131,7 @@ def process_file_args(filename, options):
     return filename
 
 def main():
-    global ARASTURL, ARASTUSER, ARASTPASSWORD
+    global ARASTURL, ARASTUSER, ARASTPASSWORD, aclient
 
     args = parser.parse_args()
     opt = parser.parse_args()
@@ -169,13 +171,9 @@ def main():
         print "arast: err: ARASTURL not set"
         sys.exit()
 
-    # Request Shock URL
-    url_req = {}
-    url_req['command'] = 'get_url'
-    url_rpc = RpcClient()
-    url = "http://%s" % url_rpc.call(json.dumps(url_req))
 
-    # Upload file(s) to Shock
+    aclient = client.Client(ARASTURL, ARASTUSER, ARASTPASSWORD)
+        
     res_ids = []
     file_sizes = []
     file_list = []
@@ -232,21 +230,23 @@ def main():
 
         options['filename'] = base_files
 
-        # Send message to RPC Server
+        # # Send message to RPC Server
         options['ARASTUSER'] = ARASTUSER
         options['ids'] = res_ids
         options['file_sizes'] = file_sizes
         del options['ARASTPASSWORD']
         del options['ARASTURL']
         rpc_body = json.dumps(options, sort_keys=True)
-        arast_rpc = RpcClient()
+        # arast_rpc = RpcClient()
         logging.debug(" [x] Sending message: %r" % (rpc_body))
-        response = arast_rpc.call(rpc_body)
+        # response = arast_rpc.call(rpc_body)
+        response = aclient.submit_job(rpc_body)
+
         logging.debug(" [.] Response: %r" % (response))
-        if 'error' in response.lower():
-            sys.exit(response)
-        else:
-            print response
+        # if 'error' in response.lower():
+        #     sys.exit(response)
+        # else:
+        #     print response
 
 
     # Stat
@@ -320,8 +320,6 @@ global ARASTUSER, ARASTPASSWORD
 
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1
-
-
 
 if __name__ == '__main__':
     main()

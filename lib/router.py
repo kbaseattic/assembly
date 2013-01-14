@@ -3,6 +3,7 @@ Job router.  Recieves job requests.  Manages data transfer, job queuing.
 """
 
 import logging
+import cherrypy
 import pika
 import pprint
 import sys
@@ -16,6 +17,7 @@ from traceback import format_exc
 
 import shock
 import metadata as meta
+
 
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
@@ -202,6 +204,26 @@ def start(config_file):
     mongo_host = parser.get('meta', 'mongo.host')
     metadata = meta.MetadataConnection(config_file, mongo_host)
 
+    ##### CherryPy ######
+    root = Root()
+    root.job = JobResource({})
+    root.shock = ShockResource({"shockurl": get_upload_url()})
+    root.status = StatusResource()
+    
+    conf = {
+        'global': {
+            'server.socket_host': '0.0.0.0',
+            'server.socket_port': 8080,
+            'log.screen': True,
+        },
+        '/': {
+            'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+        }
+    }
+
+    cherrypy.quickstart(root, '/', conf)
+
+    # TODO remove this ######
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host='localhost'))
     channel = connection.channel()
@@ -210,4 +232,41 @@ def start(config_file):
     channel.basic_consume(on_request, queue='rpc_queue')
     print " [x] Awaiting RPC requests..."
     channel.start_consuming()
+    ##### REMOVE #######
 
+
+
+class Root(object):
+    pass
+
+class JobResource(object):
+
+    def __init__(self, content):
+        self.content = content
+
+    exposed = True
+
+    def GET(self):
+        pass
+
+    def PUT(self):
+        pass
+
+    def POST(self):
+        json_request = cherrypy.request.body.read()
+        return route_job(json_request)
+
+class StatusResource:
+    def GET(self):
+        json_request = cherrypy.request.body.read()
+        return route_job(json_request)
+
+class ShockResource(object):
+
+    def __init__(self, content):
+        self.content = content
+
+    exposed = True
+
+    def GET(self):
+        return json.dumps(self.content)
