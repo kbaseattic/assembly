@@ -6,6 +6,8 @@ sudo pip install python-daemon
 sudo pip install pymongo
 sudo pip install requests
 sudo pip install yapsy
+sudo pip install numpy
+sudo pip install biopython
 #sudo pip install --upgrade python-novaclient
 
 # Install Velvet
@@ -59,6 +61,12 @@ cd ..
 cp -R bin/ ../../../bin/idba/
 cd ../..
 rm -rf idba
+
+#cd ../bin/
+#wget http://standardized-velvet-assembly-report.googlecode.com/svn/trunk/mergePairs.py
+#chmod +x mergePairs.py
+
+
 
 sudo mkdir /mnt/data
 sudo chown ubuntu:ubuntu /mnt/data

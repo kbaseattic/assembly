@@ -35,7 +35,6 @@ class ArastConsumer:
         # Load plugins
         self.pmanager = ModuleManager(threads)
 
-
     # Set up environment
         self.shockurl = shockurl
         self.arasturl = arasturl
@@ -247,7 +246,8 @@ class ArastConsumer:
         os.makedirs(jobpath
 )
         # Create job log
-        self.out_report = open('{}/{}_report.txt'.format(jobpath, str(job_id)), 'w')
+        self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
+        self.out_report = open(self.out_report_name, 'w')
 
         job_data = {'job_id' : params['job_id'], 
                     'uid' : params['_id'],
@@ -319,10 +319,16 @@ class ArastConsumer:
 
         elapsed_time = time.time() - start_time
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
+
+        self.out_report.close()
+        res = self.upload(url, self.out_report_name)
+        # Get location
+        download_ids['report'] = res['D']['id']
+
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'status', status)
         self.metadata.update_job(uid, 'computation_time', ftime)
-        self.out_report.close()
+
         print '=========== JOB COMPLETE ============'
 
     def run_pipeline(self, pipes, job_data_global):
@@ -352,13 +358,12 @@ class ArastConsumer:
                 pipe_suffix += module_name[0].upper() + module_name[-1]
 
                 self.out_report.write('\n{0} PIPELINE {1} -- STAGE {2}: {3} {4}\n'.format(
-                        '='*20, pipeline_num, pipeline_stage, 
-                        module_name, '='*(35-len(module_name))))
+                        '='*10, pipeline_num, pipeline_stage, 
+                        module_name, '='*(25-len(module_name))))
                 self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
                 logging.debug('New job_data for stage {}: {}'.format(
                         pipeline_stage, job_data))
                 job_data['params'] = overrides[pipeline_stage-1].items()
-
 
                 #### Run module
                 # Check if output data exists
@@ -415,7 +420,7 @@ class ArastConsumer:
             pipeline_num += 1
         if len(all_files) == 1:
             return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                all_files[0],'pipeline_{}.tar.gz'.format(job_data['job_id']))
+                                [all_files[0]],'pipeline_{}.tar.gz'.format(job_data['job_id']))
             
         return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
                         all_files,'pipelines_{}.tar.gz'.format(job_data['job_id']))
@@ -464,20 +469,11 @@ class ArastConsumer:
         print " [*] %r:%r" % (method.routing_key, body)
         self.compute(body)
 
-
-    # For now, use this instead of daemon
     def start(self):
-            # workers = []
-            # for i in range(int(threads)):
-            #     worker_name = "[Worker %s]:" % i
-            #     logging.info("[Master]: Starting %s" % worker_name)
-            #     p = multiprocessing.Process(name=worker_name, target=self.fetch_job)
-            #     workers.append(p)
-            #     p.start()
-            #     #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
-            # workers[0].join()
         self.fetch_job()
 
+
+### Helper functions ###
 def touch(path):
     now = time.time()
     try:

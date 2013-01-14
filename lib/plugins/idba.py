@@ -10,19 +10,19 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         Build the command and run.
         Return list of contig file(s)
         """
-
+	d = reads[0]
+        cwd = os.getcwd()
+        cmd_args = [os.path.join(cwd, self.bin_idba_ud)]
         read_file = d['files'][0]
         if d['type'] == 'paired':
-            if self.scaffold:
-                cmd_args.append('--scaffold')
             if len(d['files']) == 2:
                 parts = d['files'][0].rsplit('.',1)
                 ## TODO move this to idba folder
                 merged_read = parts[0][:-1] + '.idba_merged.' + parts[1]
-                merge_cmd = [self.bin_mergeReads,
+                merge_cmd = [os.path.join(cwd, self.bin_merge_reads),
                              d['files'][0],
                              d['files'][1],
-                             merged_read]
+                             '-g', merged_read]
                 self.arast_popen(merge_cmd)
                 read_file = merged_read
 
@@ -30,13 +30,15 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         if infer_filetype(read_file) == 'fastq':
             parts = read_file.rsplit('.', 1)
             fa_file = '{}.fasta'.format(parts[0])
-            fqfa_command = [self.bin_fq2fa, read_file, fa_file]
+            fqfa_command = [os.path.join(cwd, self.bin_fq2fa), read_file, fa_file]
+            self.arast_popen(fqfa_command)
             read_file = fa_file
 
-        cmd_args = [self.bin_idba_ud, '--read', read_file, '-o', 'idba']        
+        base = os.path.join(self.outpath, 'run')
+        cmd_args += ['-r', read_file, '-o', base, '--maxk', self.max_k] 
         self.arast_popen(cmd_args, cwd=self.outpath)
         
-        return []
+        return ["{}-contig.fa".format(base)]
 
 def infer_filetype(file):
     filemap = {'.fa':'fasta',

@@ -39,7 +39,16 @@ class BasePlugin(object):
                 cmd_args.append(flag)
             if kv[1] != 'True':
                 cmd_args.append(kv[1])
-        cmd_string = ''.join(['{} '.format(w) for w in cmd_args])
+
+                #cmd_human = [os.path.basename(w) for w in cmd_args]
+        cmd_human = []
+        for w in cmd_args:
+            if w.endswith('/'):
+                cmd_human.append(os.path.basename(w[:-1]))
+            else:
+                cmd_human.append(os.path.basename(w))
+        cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
+
         self.out_module.write("Command: {}\n".format(cmd_string))
         self.out_report.write('Command: {}\n'.format(cmd_string))
         out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
