@@ -35,7 +35,6 @@ class ArastConsumer:
         # Load plugins
         self.pmanager = ModuleManager(threads)
 
-
     # Set up environment
         self.shockurl = shockurl
         self.arasturl = arasturl
@@ -366,7 +365,6 @@ class ArastConsumer:
                         pipeline_stage, job_data))
                 job_data['params'] = overrides[pipeline_stage-1].items()
 
-
                 #### Run module
                 # Check if output data exists
                 reuse_data = False
@@ -471,20 +469,11 @@ class ArastConsumer:
         print " [*] %r:%r" % (method.routing_key, body)
         self.compute(body)
 
-
-    # For now, use this instead of daemon
     def start(self):
-            # workers = []
-            # for i in range(int(threads)):
-            #     worker_name = "[Worker %s]:" % i
-            #     logging.info("[Master]: Starting %s" % worker_name)
-            #     p = multiprocessing.Process(name=worker_name, target=self.fetch_job)
-            #     workers.append(p)
-            #     p.start()
-            #     #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
-            # workers[0].join()
         self.fetch_job()
 
+
+### Helper functions ###
 def touch(path):
     now = time.time()
     try:
