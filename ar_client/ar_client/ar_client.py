@@ -83,8 +83,6 @@ def upload(files):
         if not os.path.exists(f):
             logging.error("File does not exist: '%s'" % (f))
             continue
-        #if os.path.isdir(f):
-         #   logging.info("%s is a directory.  Skipping." % f)
         else:
             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
             #res = curl_post_file(url, f)
@@ -132,23 +130,35 @@ def process_file_args(filename, options):
 
 def main():
     global ARASTURL, ARASTUSER, ARASTPASSWORD, aclient
+    
+    clientlog = logging.getLogger('client')
+    clientlog.setLevel(logging.INFO)
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG)
+    frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    sh.setFormatter(frmt)
+    clientlog.addHandler(sh)
+
+
+    clientlog.info("Logger Info mode")
 
     args = parser.parse_args()
     opt = parser.parse_args()
     options = vars(args)
-
+    
     options['version'] = my_version
     cparser = SafeConfigParser()
 
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        clientlog.setLevel(logging.DEBUG)
+        clientlog.debug("Logger Debugging mode")
 
     if args.config:
         config_file = args.config
     else:
         #config_file = "settings.conf"
         config_file = resource_filename(__name__, 'settings.conf')
-        logging.info("Reading config file: %s" % config_file)
+        clientlog.info("Reading config file: %s" % config_file)
 
     cparser.read(config_file)
 
@@ -157,7 +167,7 @@ def main():
         ARASTPASSWORD = cparser.get('arast', 'password')
         ARASTURL = cparser.get('arast', 'url')
     except:
-        logging.error("Invalid config file")
+        clientlog.error("Invalid config file")
 
     # overwrite env vars in args
     if args.ARASTUSER:
@@ -179,7 +189,6 @@ def main():
     file_list = []
     if args.command == "run":
         if not ((args.pipeline) and (args.data_id or args.pair or args.single)):
-            print args.pipeline
             parser.print_usage()
             sys.exit()
 
@@ -196,9 +205,8 @@ def main():
                         files.append(word)
 
 
-        url += "/node"
-        if args.config:
-            options['config_id'] = upload(url, [args.config])
+        #if args.config:
+         #   options['config_id'] = upload(url, [args.config])
 
         base_files = []
         file_sizes = []
@@ -206,7 +214,7 @@ def main():
         for f in files:
             #Check file or dir
             if os.path.isfile(f):
-                res_ids += upload(url, [f,])
+                res_ids += upload([f,])
                 file_sizes.append(os.path.getsize(f))
                 base_files.append(os.path.basename(f))
             elif os.path.isdir(f):
@@ -238,11 +246,11 @@ def main():
         del options['ARASTURL']
         rpc_body = json.dumps(options, sort_keys=True)
         # arast_rpc = RpcClient()
-        logging.debug(" [x] Sending message: %r" % (rpc_body))
+        clientlog.debug(" [x] Sending message: %r" % (rpc_body))
         # response = arast_rpc.call(rpc_body)
         response = aclient.submit_job(rpc_body)
 
-        logging.debug(" [.] Response: %r" % (response))
+        clientlog.debug(" [.] Response: %r" % (response))
         # if 'error' in response.lower():
         #     sys.exit(response)
         # else:
@@ -257,9 +265,9 @@ def main():
                 options['ARASTUSER'] = ARASTUSER
                 rpc_body = json.dumps(options, sort_keys=True)
                 arast_rpc = RpcClient()
-                logging.debug(" [x] Sending message: %r" % (rpc_body))
+                clientlog.debug(" [x] Sending message: %r" % (rpc_body))
                 response = arast_rpc.call(rpc_body)
-                logging.debug(" [.] Response: %s" % (response))
+                clientlog.debug(" [.] Response: %s" % (response))
                 if 'error' in response.lower():
                     sys.exit(response)
                 else:
@@ -273,14 +281,14 @@ def main():
             job = -1
         else:
             job = args.job_id[0]
-        logging.info("get %s" % (job))
+        clientlog.info("get %s" % (job))
         options['ARASTUSER'] = ARASTUSER
         options['job_id'] = job
         rpc_body = json.dumps(options, sort_keys=True)
         arast_rpc = RpcClient()
-        logging.debug(" [x] Sending message: %r" % (rpc_body))
+        clientlog.debug(" [x] Sending message: %r" % (rpc_body))
         response = arast_rpc.call(rpc_body)
-        logging.debug(" [.] Response: %s" % (response))
+        clientlog.debug(" [.] Response: %s" % (response))
         try:
             params = json.loads(response)
             for id in params.values():

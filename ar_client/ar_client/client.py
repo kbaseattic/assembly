@@ -49,7 +49,8 @@ format from html??
 
 class Client:
     def __init__(self, url, user, password):
-        self.url = url
+        self.port = 8000 ## change
+        self.url = url + ':{}'.format(self.port)
         self.user = user
         self.password = password
         self.headers = {'Content-type': 'application/json', 
