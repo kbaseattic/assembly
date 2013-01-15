@@ -206,14 +206,14 @@ def start(config_file):
 
     ##### CherryPy ######
     root = Root()
-    root.job = JobResource({})
+    root.user = UserResource({})
     root.shock = ShockResource({"shockurl": get_upload_url()})
     root.status = StatusResource()
     
     conf = {
         'global': {
             'server.socket_host': '0.0.0.0',
-            'server.socket_port': 8080,
+            'server.socket_port': 8000,
             'log.screen': True,
         },
         '/': {
@@ -235,16 +235,18 @@ def start(config_file):
     ##### REMOVE #######
 
 
-
 class Root(object):
     pass
 
-class JobResource(object):
+class UserResource(object):
 
     def __init__(self, content):
         self.content = content
 
     exposed = True
+    def index(self, userid, resource): # 
+        if resource == 'job':
+            pass
 
     def GET(self):
         pass
@@ -255,6 +257,10 @@ class JobResource(object):
     def POST(self):
         json_request = cherrypy.request.body.read()
         return route_job(json_request)
+
+class JobResource:
+    def index(self):
+        pass
 
 class StatusResource:
     def GET(self):
@@ -269,4 +275,5 @@ class ShockResource(object):
     exposed = True
 
     def GET(self):
+        print 'shock!!'
         return json.dumps(self.content)
