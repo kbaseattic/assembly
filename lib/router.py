@@ -38,9 +38,9 @@ def send_message(body, routingKey):
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
-    if params['version'].find('beta'):
-        print 'Sent to testing queue'
-        return 'jobs.test'
+    #if params['version'].find('beta'):
+     #   print 'Sent to testing queue'
+      #  return 'jobs.test'
     return parser.get('rabbitmq','default_routing_key')
 
 
@@ -206,9 +206,8 @@ def start(config_file):
 
     ##### CherryPy ######
     root = Root()
-    root.user = UserResource({})
+    root.user = UserResource()
     root.shock = ShockResource({"shockurl": get_upload_url()})
-    root.status = StatusResource()
     
     conf = {
         'global': {
@@ -216,9 +215,6 @@ def start(config_file):
             'server.socket_port': 8000,
             'log.screen': True,
         },
-        '/': {
-            'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-        }
     }
 
     cherrypy.quickstart(root, '/', conf)
@@ -236,31 +232,35 @@ def start(config_file):
 
 
 class Root(object):
-    pass
+    @cherrypy.expose
+    def index(self):
+        return "hello root"
+    
 
 class UserResource(object):
 
-    def __init__(self, content):
-        self.content = content
+    @cherrypy.expose
+    def new():
+        pass
 
-    exposed = True
-    def index(self, userid, resource): # 
+    @cherrypy.expose
+    def default(self, userid, resource): # 
         if resource == 'job':
+            if cherrypy.request.method == 'POST':
+                print 'post'
+                return JobResource().new(userid)
+
+
+        if resource == 'data':
             pass
 
-    def GET(self):
-        pass
-
-    def PUT(self):
-        pass
-
-    def POST(self):
-        json_request = cherrypy.request.body.read()
-        return route_job(json_request)
 
 class JobResource:
-    def index(self):
-        pass
+    def new(self, user):
+        print "new job for {}".format(user)
+        msg = cherrypy.request.body.read()
+        return route_job(msg)
+        
 
 class StatusResource:
     def GET(self):
@@ -272,8 +272,7 @@ class ShockResource(object):
     def __init__(self, content):
         self.content = content
 
-    exposed = True
-
-    def GET(self):
+    @cherrypy.expose
+    def index(self):
         print 'shock!!'
         return json.dumps(self.content)

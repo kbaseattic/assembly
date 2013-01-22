@@ -5,5 +5,6 @@ sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
 sudo pip install requests
+sudo pip install cherrypy
 sudo pip install --upgrade python-novaclient
 

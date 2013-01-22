@@ -33,10 +33,10 @@ Admin
 -----
 Create user                       POST URL/users
 
-Run job                           POST URL/user/USER_ID/jobs --data JSON_MSG
-Get status of recent jobs         GET  URL/user/USER_ID/jobs/current/status/?start=<N>&end=<N>
-Get status of one job             GET  URL/user/USER_ID/jobs/JOB_ID/status
-Download data results of job      GET  URL/user/USER_ID/jobs/JOB_ID/download
+Run job                           POST URL/user/USER_ID/job/new --data JSON_MSG
+Get status of recent jobs         GET  URL/user/USER_ID/job/current/status/?start=<N>&end=<N>
+Get status of one job             GET  URL/user/USER_ID/job/JOB_ID/status
+Download data results of job      GET  URL/user/USER_ID/job/JOB_ID/download
 Get list of user's data           GET  URL/user/USER_ID/data/current/status
 Get list of files for data_id     GET  URL/user/USER_ID/data/DATA_ID/status
 
