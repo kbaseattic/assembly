@@ -179,7 +179,6 @@ class ArastConsumer:
 
         else: # download data
             self.metadata.update_job(uid, 'status', 'Data transfer')
-
             os.makedirs(filepath)
 
             # Get required space and garbage collect
@@ -211,10 +210,20 @@ class ArastConsumer:
             try:
                 for l in single:
                     filedict = {'type':'single', 'files':[]}
-                    for word in l:
+
+                    
+                    for wordpath in l:
+                        # Parse user directories
+                        try:
+                            path, word = wordpath.rsplit('/', 1)
+                            path += '/'
+                        except:
+                            word = wordpath
+                            path = ''
+
                         if is_filename(word):
                             filedict['files'].append(
-                                shock.download(url, ids[files.index(word)], filepath))
+                                shock.download(url, ids[files.index(word)], filepath + '/' + path))
                         else:
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
