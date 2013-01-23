@@ -237,6 +237,35 @@ class Root(object):
         return "hello root"
     
 
+class JobResource:
+
+    @cherrypy.expose
+    def new(self, userid=None):
+        params = json.loads(cherrypy.request.body.read())
+        params['ARASTUSER'] = userid
+        return route_job(json.dumps(params))
+
+    @cherrypy.expose
+    def default(self, job_id, userid=None):
+        pass
+
+    @cherrypy.expose
+    def status(self, userid=None, job_id=None):
+        if not job_id:
+            docs = metadata.list_jobs(userid)
+            pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
+            if docs:
+                for doc in docs:
+                    row = [doc['job_id'], str(doc['data_id']), doc['status'],]
+                    try:
+                        row.append(str(doc['computation_time']))
+                        row.append(str(doc['message']))
+                    except:
+                        row += ['','']
+                    pt.add_row(row)
+                return pt.get_string() + "\n"
+        pass
+
 class UserResource(object):
 
     @cherrypy.expose
@@ -244,26 +273,22 @@ class UserResource(object):
         pass
 
     @cherrypy.expose
-    def default(self, userid, resource): # 
-        if resource == 'job':
-            if cherrypy.request.method == 'POST':
-                print 'post'
-                return JobResource().new(userid)
+    def default(self):
+        pass
+
+    default.job = JobResource()
+
+    def __getattr__(self, name):
+        print name
+        if name is not ('_cp_config'): #assume username
+            cherrypy.request.params['userid'] = name
+            return self.default
+        raise AttributeError("%r object has no attribute %r" % (self.__class__.__name__, name))
 
 
-        if resource == 'data':
-            pass
-
-
-class JobResource:
-    def new(self, user):
-        print "new job for {}".format(user)
-        msg = cherrypy.request.body.read()
-        return route_job(msg)
         
-
 class StatusResource:
-    def GET(self):
+    def current(self):
         json_request = cherrypy.request.body.read()
         return route_job(json_request)
 
@@ -274,5 +299,4 @@ class ShockResource(object):
 
     @cherrypy.expose
     def index(self):
-        print 'shock!!'
         return json.dumps(self.content)

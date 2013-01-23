@@ -34,7 +34,7 @@ Admin
 Create user                       POST URL/users
 
 Run job                           POST URL/user/USER_ID/job/new --data JSON_MSG
-Get status of recent jobs         GET  URL/user/USER_ID/job/current/status/?start=<N>&end=<N>
+Get status of recent jobs         GET  URL/user/USER_ID/job/status/?start=<N>&end=<N>
 Get status of one job             GET  URL/user/USER_ID/job/JOB_ID/status
 Download data results of job      GET  URL/user/USER_ID/job/JOB_ID/download
 Get list of user's data           GET  URL/user/USER_ID/data/current/status
@@ -63,12 +63,15 @@ class Client:
         return shock.curl_post_file(filename)
 
     def submit_job(self, data):
-        url = 'http://{}/user/{}/job'.format(self.url, self.user)
+        url = 'http://{}/user/{}/job/new'.format(self.url, self.user)
         r = requests.post(url, data=data, headers=self.headers)
         return r.text
 
-    def get_status(self):
-        url = 'http://{}/status'.format(self.url)
+    def get_job_status(self, job_id=None):
+        if job_id:
+            url = 'http://{}/user/{}/job/{}/status'.format(self.url, self.user, job_id)
+        else:
+            url = 'http://{}/user/{}/job/status'.format(self.url, self.user)
         r = requests.get(url)
         return r.text
 
@@ -86,7 +89,5 @@ class Shock:
 
         cmd = "curl -X POST -F upload=@" + filename + cmd + " " + self.shockurl
         ret = subprocess.check_output(cmd.split())
-        print ret
         res = json.loads(ret)
-
         return res

@@ -245,16 +245,10 @@ def main():
         del options['ARASTPASSWORD']
         del options['ARASTURL']
         rpc_body = json.dumps(options, sort_keys=True)
-        # arast_rpc = RpcClient()
         clientlog.debug(" [x] Sending message: %r" % (rpc_body))
-        # response = arast_rpc.call(rpc_body)
         response = aclient.submit_job(rpc_body)
-
+        print response
         clientlog.debug(" [.] Response: %r" % (response))
-        # if 'error' in response.lower():
-        #     sys.exit(response)
-        # else:
-        #     print response
 
 
     # Stat
@@ -265,8 +259,9 @@ def main():
                 options['ARASTUSER'] = ARASTUSER
                 rpc_body = json.dumps(options, sort_keys=True)
                 arast_rpc = RpcClient()
-                clientlog.debug(" [x] Sending message: %r" % (rpc_body))
-                response = arast_rpc.call(rpc_body)
+                clientlog.debug(" [x] Available data: %r" % (rpc_body))
+                #response = arast_rpc.call(rpc_body)
+                response = aclient.get_job_status()
                 clientlog.debug(" [.] Response: %s" % (response))
                 if 'error' in response.lower():
                     sys.exit(response)
