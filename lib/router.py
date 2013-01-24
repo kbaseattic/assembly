@@ -246,26 +246,55 @@ class JobResource:
         return route_job(json.dumps(params))
 
     @cherrypy.expose
-    def default(self, job_id, userid=None):
-        pass
+    def default(self, job_id, *args, **kwargs):
+        if len(args) == 0: # /user/USER/job/JOBID/
+            pass
+        else:
+            resource = args[0]
+
+        try:
+            userid = kwargs['userid']
+        except:
+            raise cherrypyHTTPError(403)
+
+        if resource == 'shock_node':
+            return self.get_shock_node(userid, job_id)
+
 
     @cherrypy.expose
-    def status(self, userid=None, job_id=None):
-        if not job_id:
-            docs = metadata.list_jobs(userid)
-            pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
-            if docs:
-                for doc in docs:
-                    row = [doc['job_id'], str(doc['data_id']), doc['status'],]
-                    try:
-                        row.append(str(doc['computation_time']))
-                        row.append(str(doc['message']))
-                    except:
-                        row += ['','']
-                    pt.add_row(row)
-                return pt.get_string() + "\n"
+    def status(self, **kwargs):
+        try: 
+            records = int(kwargs['records'])
+        except:
+            records = 15
+
+        docs = metadata.list_jobs(kwargs['userid'])
+        pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
+        if docs:
+            for doc in docs[-records:]:
+                row = [doc['job_id'], str(doc['data_id']), doc['status'],]
+                try:
+                    row.append(str(doc['computation_time']))
+                    row.append(str(doc['message']))
+                except:
+                    row += ['','']
+                pt.add_row(row)
+            return pt.get_string() + "\n"
         pass
 
+
+    def get_shock_node(self, userid=None, job_id=None):
+        """ GET /user/USER/job/JOB/node """
+        if not job_id:
+            raise cherrypy.HTTPError(403)
+        doc = metadata.get_job(userid, job_id)
+        try:
+            result_data = doc['result_data']
+        except:
+            raise cherrypy.HTTPError(500)
+        return json.dumps(result_data)
+
+        
 class UserResource(object):
 
     @cherrypy.expose
