@@ -1,0 +1,13 @@
+[Core]
+Name = quast
+Module = quast
+
+[Settings]
+executable = ../bin/quast/quast.py
+filetypes = fasta,fa
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = QUAST plugin
+
