@@ -29,14 +29,14 @@ sudo make ki
 cp ki /usr/bin
 
 # Install BWA
-cd ..
-sudo git clone git://github.com/lh3/bwa.git bwa
-cd bwa
-sudo make
-sudo cp bwa /usr/bin
+#cd ..
+#sudo git clone git://github.com/lh3/bwa.git bwa
+#cd bwa
+#sudo make
+#sudo cp bwa /usr/bin
 
 # Install A5
-cd ..
+cd ../..
 mkdir a5
 cd a5
 wget http://ngopt.googlecode.com/files/ngopt_a5pipeline_linux-x64_20120518.tar.gz
