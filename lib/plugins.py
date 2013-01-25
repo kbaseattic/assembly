@@ -51,7 +51,11 @@ class BasePlugin(object):
 
         self.out_module.write("Command: {}\n".format(cmd_string))
         self.out_report.write('Command: {}\n'.format(cmd_string))
-        out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
+        try:
+            out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
+        except subprocess.CalledProcessError as e:
+            out = 'Process Failed.\nExit Code: {}\nOutput:{}\n'.format(
+                e.returncode, e.output)
         self.out_module.write(out)
 
 
@@ -125,9 +129,9 @@ class BasePlugin(object):
 
     def tar_output(self, job_id):
         files = [self.outpath + file for file in os.listdir(self.outpath)]
-        return assembly.tar_list(self.outpath, files, 
-                                 self.name + str(job_id) + '.tar.gz')
-
+#        return assembly.tar_list(self.outpath, files, 
+        return assembly.tar_directory(self.outpath, self.outpath,
+                                      self.name + str(job_id) + '.tar.gz')
 
     def update_settings(self, job_data):
         """
@@ -212,6 +216,69 @@ class BasePreprocessor(BasePlugin):
         """
         return
 
+class BasePostprocessor(BasePlugin):
+    """
+    A postprocessing plugin should implement a run() function
+
+    """
+    # Default behavior for run()
+    INPUT = 'contigs, reads'
+    OUTPUT = 'contigs'
+
+    def __call__(self, settings, job_data):
+        self.run_checks(settings, job_data)
+        logging.info("{} Settings: {}".format(self.name, settings))
+        self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data)
+        valid_files = self.get_valid_reads(job_data)
+        output = self.run(valid_files)
+
+        self.out_module.close()
+        return output
+
+    # Must implement run() method
+    @abc.abstractmethod
+    def run(self, reads, contigs):
+        """
+        Input: READS: list of dicts contain file and read info
+               CONTIGS: ...
+        Output: list of full paths to contig files.  File extensions should reflect
+          the file type
+          eg. return ['/data/contigs1.fa', '/data/contigs2.fa']
+          
+        """
+        return
+
+
+class BaseAssessment(BasePlugin):
+    """
+    A assessment plugin should implement a run() function
+
+    """
+    # Default behavior for run()
+    INPUT = 'contigs'
+    OUTPUT = 'report'
+
+    def __call__(self, settings, job_data):
+        self.run_checks(settings, job_data)
+        logging.info("{} Settings: {}".format(self.name, settings))
+        self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data)
+        contigs = job_data['final_contigs']
+        output = self.run(contigs)
+
+        self.out_module.close()
+        return output
+
+    # Must implement run() method
+    @abc.abstractmethod
+    def run(self, contigs):
+        """
+        Return reports
+          
+        """
+        return
+
 class ModuleManager():
     def __init__(self, threads):
         self.pmanager = PluginManager()
@@ -278,7 +345,7 @@ class ModuleManager():
 
     def validate_pipe(self, pipe):
         for stage in pipe:
-            for word in stage.split(' '):
+            for word in stage.replace('+', ' ').split(' '):
                 if not (word.startswith('?') or self.has_plugin(word)):
                     raise Exception('Invalid pipeline command')
                 
@@ -289,7 +356,7 @@ class ModuleManager():
         """
         bins = []
         for word in l:
-            if not word.startswith('?') and self.has_plugin(word):
+            if not word.startswith('?'):
                 bins.append([word])
             elif word.startswith('?'):
                 bins[-1].append(word)
@@ -305,7 +372,7 @@ class ModuleManager():
         for word in pipe:
             lswords = word.split(' ')
             if len(lswords) == 1: # Not branch, append new stage
-                if not word.startswith('?') and self.has_plugin(word):
+                if not word.startswith('?'):
                     stages.append([[word]])
                 elif word.startswith('?'):
                     stages[-1][0].append(word)
@@ -326,15 +393,18 @@ class ModuleManager():
         # Parse param overrides
         overrides = []
         pipeline = []
-        for word in pipe:
+        for group in pipe:
             module_num = -1
-            if not word.startswith('?'): # is module
-                pipeline.append(word)
-                module_num += 1
-                overrides.append({})
+            for word in group.split('+'):
+                if word.lower() == 'none':
+                    continue
+                if not word.startswith('?') and self.has_plugin(word): # is module
+                    pipeline.append(word)
+                    module_num += 1
+                    overrides.append({})
 
-            elif word[1:-1].find('=') != -1: # is param
-                kv = word[1:].split('=')
-                overrides[module_num] = dict(overrides[module_num].items() +
-                                             dict([kv]).items())
+                elif word[1:-1].find('=') != -1: # is param
+                    kv = word[1:].split('=')
+                    overrides[module_num] = dict(overrides[module_num].items() +
+                                                 dict([kv]).items())
         return pipeline, overrides

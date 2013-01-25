@@ -18,7 +18,7 @@ class IdbaAssembler(BaseAssembler, IPlugin):
             if len(d['files']) == 2:
                 parts = d['files'][0].rsplit('.',1)
                 ## TODO move this to idba folder
-                merged_read = parts[0][:-1] + '.idba_merged.' + parts[1]
+                merged_read = parts[0] + '.idba_merged.' + parts[1]
                 merge_cmd = [os.path.join(cwd, self.bin_merge_reads),
                              d['files'][0],
                              d['files'][1],

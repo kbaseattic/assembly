@@ -50,6 +50,19 @@ def tar(outpath, asm_data, tarname):
     t.wait()
     return outfile
 
+def tar_directory(outpath, directory, tarname):
+    outfile = outpath
+    try:
+        os.makedirs(outfile)
+    except:
+        pass
+
+    outfile += tarname
+    targs = ['tar', '-czvf', outfile, './']
+    t = subprocess.Popen(targs, cwd=directory)
+    t.wait()
+    return outfile
+
 def tar_list(outpath, file_list, tarname):
     outfile = outpath + '/tar/'
 
@@ -82,6 +95,13 @@ def prefix_file(file, prefix):
     """ Adds prefix to file, returns new file"""
     f = '/' + str(prefix) + '__' + os.path.basename(file)
     newfile =  os.path.split(file)[0] + f
+    return newfile
+
+def rename_file_copy(filepath, newname):
+    """ Adds prefix to file, returns new file name, moves file"""
+    f = '/' + newname + '.' + os.path.basename(filepath).rsplit('.', 1)[1]
+    newfile =  os.path.split(filepath)[0] + f
+    shutil.copy(filepath, newfile)
     return newfile
     
 

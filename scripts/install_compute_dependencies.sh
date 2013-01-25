@@ -62,6 +62,19 @@ cp -R bin/ ../../../bin/idba/
 cd ../..
 rm -rf idba
 
+#Install QUAST
+mkdir quast
+mkdir ../bin/quast
+cd quast
+wget http://downloads.sourceforge.net/project/quast/quast-2.0.tar.gz
+tar -xf quast*
+cd quast*
+cp -R * ../../../bin/quast
+cd ../..
+rm -rf quast
+
+
+
 #cd ../bin/
 #wget http://standardized-velvet-assembly-report.googlecode.com/svn/trunk/mergePairs.py
 #chmod +x mergePairs.py
