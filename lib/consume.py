@@ -312,10 +312,13 @@ class ArastConsumer:
         if pipeline:
             try:
                 self.pmanager.validate_pipe(pipeline)
-                result_tar = self.run_pipeline(pipeline, job_data)
+                result_tar, quast  = self.run_pipeline(pipeline, job_data)
                 res = self.upload(url, result_tar)
-                # Get location
                 download_ids['pipeline'] = res['D']['id']
+
+                res = self.upload(url, quast)
+                download_ids['quast'] = res['D']['id']
+
                 status += "pipeline [success] "
                 self.out_report.write("Pipeline completed successfully\n")
             except:
@@ -350,71 +353,88 @@ class ArastConsumer:
         pipeline_num = 1
         all_files = []
         pipe_outputs = []
+        final_contigs = []
         for pipe in all_pipes:
-            job_data = copy.deepcopy(job_data_global)
-            job_data['out_report'] = job_data_global['out_report'] 
-            pipeline, overrides = self.pmanager.parse_pipe(pipe)
-            pipeline_stage = 1
-            pipeline_results = []
-            cur_outputs = []
-            pipe_suffix = '' # filename code for indiv pipes
-            for module_name in pipeline:
-                print '\n\n{0} Running module: {1} {2}'.format(
-                    '='*20, module_name, '='*(35-len(module_name)))
-                if module_name.lower() == 'none':
-                    continue
-                ## For now, module code is 1st and last letter
-                pipe_suffix += module_name[0].upper() + module_name[-1]
+            try:
+                job_data = copy.deepcopy(job_data_global)
+                job_data['out_report'] = job_data_global['out_report'] 
+                pipeline, overrides = self.pmanager.parse_pipe(pipe)
+                num_stages = len(pipeline)
+                pipeline_stage = 1
+                pipeline_results = []
+                cur_outputs = []
+                self.out_report.write('Pipeline {}: {}\n'.format(pipeline_num, pipe))
+                pipe_suffix = '' # filename code for indiv pipes
+                for module_name in pipeline:
+                    print '\n\n{0} Running module: {1} {2}'.format(
+                        '='*20, module_name, '='*(35-len(module_name)))
+                    if module_name.lower() == 'none':
+                        continue
+                    ## For now, module code is 1st and last letter
+                    pipe_suffix += module_name[0].upper() + module_name[-1]
 
-                self.out_report.write('\n{0} PIPELINE {1} -- STAGE {2}: {3} {4}\n'.format(
-                        '='*10, pipeline_num, pipeline_stage, 
-                        module_name, '='*(25-len(module_name))))
-                self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
-                logging.debug('New job_data for stage {}: {}'.format(
-                        pipeline_stage, job_data))
-                job_data['params'] = overrides[pipeline_stage-1].items()
+                    self.out_report.write('\n{0} PIPELINE {1} -- STAGE {2}: {3} {4}\n'.format(
+                            '='*10, pipeline_num, pipeline_stage, 
+                            module_name, '='*(25-len(module_name))))
+                    self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
+                    logging.debug('New job_data for stage {}: {}'.format(
+                            pipeline_stage, job_data))
+                    job_data['params'] = overrides[pipeline_stage-1].items()
 
-                #### Run module
-                # Check if output data exists
-                reuse_data = False
-                for pipe in pipe_outputs:
-                    if reuse_data:
-                        break
-                    for i in range(pipeline_stage):
-                        try:
-                            if not pipe[i][0] == cur_outputs[i][0]:
-                                break
-                        except:
-                            pass
-                        if pipe[i][0] == module_name and i == pipeline_stage - 1: #copy!
-                            logging.info('Found previously computed data, reusing.')
-                            output = [] + pipe[i][1]
-                            alldata = [] + pipe[i][2]
-                            reuse_data = True
+                    #### Run module
+                    # Check if output data exists
+                    reuse_data = False
+                    for pipe in pipe_outputs:
+                        if reuse_data:
                             break
+                        for i in range(pipeline_stage):
+                            try:
+                                if not pipe[i][0] == cur_outputs[i][0]:
+                                    break
+                            except:
+                                pass
+                            if pipe[i][0] == module_name and i == pipeline_stage - 1: #copy!
+                                logging.info('Found previously computed data, reusing.')
+                                output = [] + pipe[i][1]
+                                alldata = [] + pipe[i][2]
+                                reuse_data = True
+                                break
 
-                if not reuse_data:
-                    output, alldata = self.pmanager.run_module(module_name, job_data, all_data=True,
-                                                               reads=include_reads)
+                    if not reuse_data:
+                        output, alldata = self.pmanager.run_module(module_name, job_data, all_data=True,
+                                                                   reads=include_reads)
 
-                    # Prefix outfiles with pipe stage
-                    alldata = [asm.prefix_file_move(
-                            file, "Stage{}_{}".format(pipeline_stage, module_name)) 
-                                for file in alldata]
+                        # Prefix outfiles with pipe stage
+                        alldata = [asm.prefix_file_move(
+                                file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                                    for file in alldata]
 
-                output_type = self.pmanager.output_type(module_name)
-                if output_type == 'contigs': #Assume assembly contigs
-                    job_data['reads'] = asm.arast_reads(alldata)
+                    output_type = self.pmanager.output_type(module_name)
+                    if output_type == 'contigs': #Assume assembly contigs
+                        job_data['reads'] = asm.arast_reads(alldata)
 
-                elif output_type == 'reads': #Assume preprocessing
-                    if include_reads and reuse_data: # data was prefixed and moved
-                        for d in output:
-                            d['files'] = [asm.prefix_file(f, "Stage{}_{}".format(
-                                        pipeline_stage, module_name)) for f in d['files']]
-                    job_data['reads'] = output
-                pipeline_results += alldata
-                pipeline_stage += 1
-                cur_outputs.append([module_name, output, alldata])
+                    elif output_type == 'reads': #Assume preprocessing
+                        if include_reads and reuse_data: # data was prefixed and moved
+                            for d in output:
+                                files = [asm.prefix_file(f, "P{}_S{}_{}".format(
+                                            pipeline_num, pipeline_stage, module_name)) for f in d['files']]
+                                d['files'] = files
+                                d['short_reads'] = [] + files
+
+                        job_data['reads'] = output
+                    pipeline_results += alldata
+                    if pipeline_stage == num_stages: # Last stage, add contig for assessment
+                        fcontigs = [asm.prefix_file(
+                                file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                                    for file in output]
+                        rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
+                                    pipeline_num, pipe_suffix)) for f in fcontigs]
+                        final_contigs += rcontigs
+                    pipeline_stage += 1
+                    cur_outputs.append([module_name, output, alldata])
+            except:
+                traceback = format_exc(sys.exc_info())
+                self.out_report.write('Pipeline Failed {}\n'.format(traceback))
 
             pipe_outputs.append(cur_outputs)
             pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], job_data['job_id'],
@@ -427,12 +447,20 @@ class ArastConsumer:
             all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
                                 'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
             pipeline_num += 1
+
+        # Quast
+        job_data['final_contigs'] = final_contigs
+        quast_tar = self.pmanager.run_module('quast', job_data, tar=True)
+        quast_ret = quast_tar.rsplit('/', 1)[0] + '/report.tar.gz'
+        os.rename(quast_tar, quast_ret)
+
         if len(all_files) == 1:
             return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                [all_files[0]],'pipeline_{}.tar.gz'.format(job_data['job_id']))
+                                [all_files[0]],'pipeline_{}.tar.gz'.format(job_data['job_id'])), quast_ret
             
         return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                        all_files,'pipelines_{}.tar.gz'.format(job_data['job_id']))
+                        all_files,'pipelines_{}.tar.gz'.format(job_data['job_id'])), quast_ret
+    
 
     def upload(self, url, file):
         files = {}

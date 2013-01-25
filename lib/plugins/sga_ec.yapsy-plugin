@@ -5,7 +5,7 @@ Module = sga_ec
 [Settings]
 executable = ../bin/a5/sga
 filetypes = fastq,fq
-
+dependencies = sga_preprocess
 
 [Documentation]
 Author = Chris Bun
