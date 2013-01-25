@@ -7,15 +7,13 @@ def read(fname):
 
 setup(
     name = "ar_client",
-    version = "0.2.0-beta",
+    version = "0.2.1",
     author = "Chris Bun",
     author_email = "chrisbun@gmail.com",
     description = ("A commandline client for the KBASE Assembly Service"),
     url = "http://www.kbase.us/services/assembly",
     packages = find_packages(),
-    install_requires = ['pika>=0.9.5',
-                        'pymongo>=2.2.1',
-                        'requests>=0.13.0'],
+    install_requires = ['requests>=0.13.0'],
     long_description=read('README.md'),
     entry_points={'console_scripts':[
             'assembly = ar_client.ar_client:main']},
