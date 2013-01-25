@@ -44,7 +44,7 @@ p_run.add_argument("--single", action="append", dest="single", nargs='*', help="
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
 p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
-p_stat.add_argument("-n", dest="stat_n", action="store", nargs=1, default=15, type=int, help="specify number ofrecords to show")
+p_stat.add_argument("-n", dest="stat_n", action="store", default=15, type=int, help="specify number of records to show")
 
 
 # get
@@ -183,7 +183,7 @@ def main():
         while True:
                 if args.watch:
                         os.system('clear')
-                response = aclient.get_job_status(args.stat_n[0])
+                response = aclient.get_job_status(args.stat_n)
                 print response
                 if not args.watch:
                         break
