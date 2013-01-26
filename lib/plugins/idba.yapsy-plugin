@@ -5,10 +5,9 @@ Module = idba
 [Settings]
 single_lib = True
 # Newest idba is broken
-bin_idba_ud = ../bin/a5/idba
+bin_idba_ud = ../bin/idba/idba
 bin_idba_tran = ../bin/idba/idba_tran
 bin_idba_hybrid = ../bin/idba/idba_hybrid
-bin_merge_reads = ../bin/mergePairs.py
 bin_fq2fa = ../bin/idba/fq2fa
 bin_normReads = ../bin/idba/normReads
 

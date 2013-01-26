@@ -15,14 +15,14 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         cmd_args = [os.path.join(cwd, self.bin_idba_ud)]
         read_file = d['files'][0]
         if d['type'] == 'paired':
-            if len(d['files']) == 2:
+            if len(d['files']) == 2 :
                 parts = d['files'][0].rsplit('.',1)
                 ## TODO move this to idba folder
-                merged_read = parts[0] + '.idba_merged.' + parts[1]
-                merge_cmd = [os.path.join(cwd, self.bin_merge_reads),
+                merged_read = parts[0] + '.idba_merged.fa'
+                merge_cmd = [os.path.join(cwd, self.bin_fq2fa), '--merge', '--filter',
                              d['files'][0],
                              d['files'][1],
-                             '-g', merged_read]
+                             merged_read]
                 self.arast_popen(merge_cmd)
                 read_file = merged_read
 
