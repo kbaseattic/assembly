@@ -37,8 +37,8 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         base = os.path.join(self.outpath, 'run')
         cmd_args += ['-r', read_file, '-o', base, '--maxk', self.max_k] 
         self.arast_popen(cmd_args, cwd=self.outpath)
-        
-        return ["{}-contig.fa".format(base)]
+        self.outpath = base
+        return ["{}/contig.fa".format(base)]
 
 def infer_filetype(file):
     filemap = {'.fa':'fasta',
@@ -49,3 +49,7 @@ def infer_filetype(file):
         if file.endswith(ext):
             return filemap[ext]
     return ''
+
+
+
+    
