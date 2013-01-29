@@ -83,7 +83,7 @@ class MetadataConnection:
     def get_next_data_id(self, user):
         return self.get_next_id(user, 'data')
 
-    def get_doc_by_data_id(self, user, data_id):
+    def get_doc_by_data_id(self, data_id, user):
         try:
             job = self.get_jobs().find({'user': user,'data_id':int(data_id)})[0]
         except:
