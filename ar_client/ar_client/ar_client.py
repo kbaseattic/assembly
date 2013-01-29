@@ -6,7 +6,10 @@ arast-client -- commandline client for Assembly RAST
 
 
 import os, sys, json, shutil
+import appdirs
 import argparse
+import datetime
+import getpass
 import logging
 import requests
 import uuid
@@ -15,9 +18,10 @@ import time
 from ConfigParser import SafeConfigParser
 from pkg_resources import resource_filename
 
+#arast libs
 import client
 import shock
-
+from auth_token import *
 
 my_version = '0.2.1'
 # setup option/arg parser
@@ -80,7 +84,6 @@ def main():
     sh.setFormatter(frmt)
     clientlog.addHandler(sh)
 
-
     args = parser.parse_args()
     opt = parser.parse_args()
     options = vars(args)
@@ -95,33 +98,63 @@ def main():
     if args.config:
         config_file = args.config
     else:
-        #config_file = "settings.conf"
         config_file = resource_filename(__name__, 'settings.conf')
         clientlog.debug("Reading config file: %s" % config_file)
 
     cparser.read(config_file)
 
     try:
-        ARASTUSER = cparser.get('arast', 'user')
-        ARASTPASSWORD = cparser.get('arast', 'password')
         ARASTURL = cparser.get('arast', 'url')
     except:
         clientlog.error("Invalid config file")
 
+    # Check Authorization
+    user_dir = appdirs.user_data_dir(cparser.get('arast','appname'),
+                                       cparser.get('arast','appauthor'))
+    oauth_file = os.path.join(user_dir, cparser.get('arast','oauth_filename'))
+    expiration = int(cparser.get('arast', 'oauth_exp_days'))
+
+
+    oauth_parser = SafeConfigParser()
+    oauth_parser.read(oauth_file)
+    reauthorize = True
+
+    if os.path.exists(oauth_file):
+        token_date_str = oauth_parser.get('auth', 'token_date')
+        tdate = datetime.datetime.strptime(token_date_str, '%Y-%m-%d').date()
+        cdate = datetime.date.today()
+        if (cdate - tdate).days > expiration:
+            reauthorize = True
+        else:
+            reauthorize = False
+    if not reauthorize:
+        a_user = oauth_parser.get('auth', 'user')
+        a_token = oauth_parser.get('auth', 'token')
+        print "Credentials Exist. Using login: {}".format(a_user)
+    else:
+        print("Please authenticate with Globus Online")
+        a_user = raw_input("Globus Login: ")
+        a_pass = getpass.getpass(prompt="Globus Password: ")
+        globus_map = get_token(a_user, a_pass)
+        a_token = globus_map['access_token']
+        try:
+            os.makedirs(user_dir)
+        except:
+            pass
+        uparse = SafeConfigParser()
+        uparse.add_section('auth')
+        uparse.set('auth', 'user', a_user)
+        uparse.set('auth', 'token', a_token)
+        uparse.set('auth', 'token_date', str(datetime.date.today()))
+        uparse.write(open(oauth_file, 'wb'))
+
     # overwrite env vars in args
-    if args.ARASTUSER:
-        ARASTUSER = args.ARASTUSER                              
     if args.ARASTPASSWORD:
         ARASTPASSWORD = args.ARASTPASSWORD                              
     if args.ARASTURL:
         ARASTURL = args.ARASTURL
-    if not ARASTURL:
-        print parser.print_usage()
-        print "arast: err: ARASTURL not set"
-        sys.exit()
 
-
-    aclient = client.Client(ARASTURL, ARASTUSER, ARASTPASSWORD)
+    aclient = client.Client(ARASTURL, a_user, a_token)
         
     res_ids = []
     file_sizes = []
@@ -197,6 +230,10 @@ global ARASTUSER, ARASTPASSWORD
 
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1
+
+
+
+
 
 if __name__ == '__main__':
     main()

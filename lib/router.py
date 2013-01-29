@@ -1,23 +1,26 @@
 """
 Job router.  Recieves job requests.  Manages data transfer, job queuing.
 """
-
-import logging
+# Import python libs
 import cherrypy
+import datetime
+import json
+import logging
 import pika
 import pprint
-import sys
-import json
 import os
-from distutils.version import StrictVersion
+import re
+import sys
 from bson import json_util
 from ConfigParser import SafeConfigParser
+from distutils.version import StrictVersion
 from prettytable import PrettyTable
 from traceback import format_exc
 
-import shock
+# Import A-RAST libs
 import metadata as meta
-
+import shock
+from nexus import client as nexusclient
 
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
@@ -182,7 +185,7 @@ def on_request(ch, method, props, body):
 
     # Check client version TODO:handle all cases
     try:
-        if StrictVersion(params['version']) < StrictVersion('0.0.7') and params['command'] == 'run':
+        if StrictVersion(params['version']) < StrictVersion('0.2.1') and params['command'] == 'run':
             ack += "\nNew version of client available.  Please update"
     except:
         if params['command'] == 'run':
@@ -194,6 +197,56 @@ def on_request(ch, method, props, body):
             correlation_id=props.correlation_id),
                      body=ack)
     ch.basic_ack(delivery_tag=method.delivery_tag)
+
+
+def authenticate_request():
+    print 'authorization'
+    print cherrypy.request.headers
+    try:
+        token = cherrypy.request.headers['Authorization']
+    except:
+        raise cherrypy.HTTPError(403)
+    
+    #parse out username
+    r = re.compile('un=(.*?)\|')
+    m = r.search(token)
+    if m:
+        user = m.group(1)
+    else:
+        print 'um'
+        raise cherrypyHTTPError(403, 'Bad Token')
+    print user
+    auth_info = metadata.get_auth_info(user)
+    if auth_info:
+        # Check exp date
+        auth_time_str = auth_info['token_time']
+        atime = datetime.datetime.strptime(auth_time_str, '%Y-%m-%d %H:%M:%S.%f')
+        ctime = datetime.datetime.today()
+        print 'found auth'
+        globus_user = user
+        print auth_info
+        if (ctime - atime).seconds > 15*60: # 15 min auth token
+            print 'expired, reauth'
+            nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
+            globus_user = nexus.authenticate_user(token)
+            metadata.update_auth_info(globus_user, token, str(ctime))
+            
+    else:
+        print 'auth first time'
+        nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
+        globus_user = nexus.authenticate_user(token)
+        if globus_user:
+            metadata.insert_auth_info(globus_user, token,
+                                      str(datetime.datetime.today()))
+        else:
+            raise Exception ('problem authorizing with nexus')
+        
+    try:
+        #cherrypy.request.params['globus_user'] = globus_user
+        print globus_user
+    except:
+        raise cherrypy.HTTPError(403, 'Failed Authorization')
+    
 
 def start(config_file):
     global parser, metadata
@@ -217,24 +270,21 @@ def start(config_file):
         },
     }
 
+    cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.quickstart(root, '/', conf)
+    ###### DOES IT AUTH EVERY REQUEST??? ########
 
-    # TODO remove this ######
-    connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host='localhost'))
-    channel = connection.channel()
-    channel.queue_declare(queue='rpc_queue')
-    channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(on_request, queue='rpc_queue')
-    print " [x] Awaiting RPC requests..."
-    channel.start_consuming()
+    # # TODO remove this ######
+    # connection = pika.BlockingConnection(pika.ConnectionParameters(
+    #         host='localhost'))
+    # channel = connection.channel()
+    # channel.queue_declare(queue='rpc_queue')
+    # channel.basic_qos(prefetch_count=1)
+    # channel.basic_consume(on_request, queue='rpc_queue')
+    # print " [x] Awaiting RPC requests..."
+    # channel.start_consuming()
     ##### REMOVE #######
 
-
-class Root(object):
-    @cherrypy.expose
-    def index(self):
-        return "hello root"
     
 
 class JobResource:
@@ -263,6 +313,7 @@ class JobResource:
 
     @cherrypy.expose
     def status(self, **kwargs):
+        print 'status'
         try: 
             records = int(kwargs['records'])
         except:
@@ -303,12 +354,12 @@ class UserResource(object):
 
     @cherrypy.expose
     def default(self):
+        print 'user default'
         pass
 
     default.job = JobResource()
 
     def __getattr__(self, name):
-        print name
         if name is not ('_cp_config'): #assume username
             cherrypy.request.params['userid'] = name
             return self.default
@@ -328,4 +379,12 @@ class ShockResource(object):
 
     @cherrypy.expose
     def index(self):
+        print 'shock'
         return json.dumps(self.content)
+
+
+class Root(object):
+    @cherrypy.expose
+    def default(self):
+        print 'root'
+

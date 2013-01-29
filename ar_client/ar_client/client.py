@@ -51,23 +51,25 @@ format from html??
 
 
 class Client:
-    def __init__(self, url, user, password):
+    def __init__(self, url, user, token):
         self.port = 8000 ## change
         self.url = url + ':{}'.format(self.port)
         self.user = user
-        self.password = password
-        self.headers = {'Content-type': 'application/json', 
+        #self.password = password
+        self.token = token
+        self.headers = {'Authorization': '{}'.format(self.token),
+                        'Content-type': 'application/json', 
                         'Accept': 'text/plain'}
-        shockres = requests.get('http://{}/shock'.format(self.url)).text
+        shockres = requests.get('http://{}/shock'.format(self.url), headers=self.headers).text
         shockurl = 'http://{}/'.format(json.loads(shockres)['shockurl'])
-        self.shock = Shock(shockurl, self.user, self.password)
+        self.shock = Shock(shockurl, self.user, self.token)
 
     def get_job_data(self, job_id=None, outdir=None):
         if not job_id:
             raise NotImplementedError('Job id required')
         # Get node id
         res = requests.get('http://{}/user/{}/job/{}/shock_node'.format(
-                self.url, self.user, job_id))
+                self.url, self.user, job_id), headers=self.headers)
 
         # Download files
         try:
@@ -94,30 +96,39 @@ class Client:
         else:
             url = 'http://{}/user/{}/job/status?records={}'.format(
                 self.url, self.user, stat_n)
-        r = requests.get(url)
+        r = requests.get(url, headers=self.headers)
         return r.text
 
 
 
 class Shock:
-    def __init__(self, shockurl, user, password):
+    def __init__(self, shockurl, user, token):
         self.shockurl = shockurl
         self.user = user
-        self.password = password
-
+        self.token = token
 
     def curl_post_file(self, filename):
-        if self.user and self.password:
-            cmd = " --user " + self.user + ":" + self.password
-        cmd = "curl -X POST -F upload=@" + filename + cmd + " " + self.shockurl + 'node/'
-        ret = subprocess.check_output(cmd.split())
+        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+               '-X', 'POST', '-F', 'upload=@{}'.format(filename),
+               '{}node/'.format(self.shockurl)]
+
+        #cmd = "curl -X POST -F upload=@" + filename + cmd + " " + self.shockurl + 'node/'
+        #ret = subprocess.check_output(cmd.split())
+#        print cmd.split()
+        ret = subprocess.check_output(cmd)
         res = json.loads(ret)
+        print res
         return res
 
     def curl_download_file(self, node_id, outdir=None):
         # Get filename
-        r = requests.get('{}/node/{}'.format(self.shockurl, node_id),
-                         auth=(self.user, self.password))
+        #r = requests.get('{}/node/{}'.format(self.shockurl, node_id),
+         #                auth=(self.user, self.password))
+        cmd = (['curl', '-H', "Authorization: OAuth Globus-Goauthtoken {} ".format(self.token),
+               '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)])
+        print cmd
+        r = subprocess.check_output(cmd.split())
+
         filename = json.loads(r.text)['D']['file']['name']
         if outdir:
             try:
@@ -127,7 +138,12 @@ class Shock:
         else:
             outdir = os.getcwd()
         d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
-        p = subprocess.Popen('curl --user {}:{} -o {} {}'.format(
-                self.user, self.password, filename, d_url).split())
+
+        cmd = ['curl', '-H', 'Authorization: OAuth Globus-Goauthtoken {} '.format(self.token),
+               '-o', '{} {}'.format(filename, d_url)]
+
+        #p = subprocess.Popen('curl --user {}:{} -o {} {}'.format(
+         #       self.user, self.password, filename, d_url).split())
+        p = subprocess.Popen(cmd)
         p.wait()
         print "File downloaded: {}/{}".format(outdir, filename)

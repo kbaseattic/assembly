@@ -1,7 +1,5 @@
 #! /bin/bash
-apt-get -y install python-pip rabbitmq-server mongodb
-pip install pika
-pip install pymongo
+apt-get -y install python-pip
 pip install requests
-
+pip install appdirs
 

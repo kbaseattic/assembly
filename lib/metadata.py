@@ -16,6 +16,7 @@ class MetadataConnection:
         self.port = int(self.parser.get('meta', 'mongo.port'))
         self.db = self.parser.get('meta', 'mongo.db')
         self.collection = self.parser.get('meta', 'mongo.collection')
+        self.auth_collection = self.parser.get('meta', 'mongo.collection.auth')
 
     def get_jobs(self):
         """Fetch approriate database and collection for jobs."""
@@ -74,7 +75,7 @@ class MetadataConnection:
         else:
             doc = ids.find_and_modify(query={'user' : user}, update={'$inc': {'c' : 1}})
             next_id = doc['c']
-        return next_id
+        return user+next_id
     
     def get_next_job_id(self, user):
         return self.get_next_id(user, 'ids')
@@ -107,9 +108,6 @@ class MetadataConnection:
             r.append(j)
         return r
 
-
-        
-
     def get_job(self, user, job_id):
         try:
             job = self.get_jobs().find({'ARASTUSER':user, 'job_id':int(job_id)})[0]
@@ -117,3 +115,29 @@ class MetadataConnection:
             job = None
             logging.error("Job %s does not exist" % job_id)
         return job
+
+    def get_auth_info(self, user):
+        connection = pymongo.Connection(self.host, self.port)
+        database = connection[self.db]
+        col = database[self.auth_collection]
+        try:
+            auth_info = col.find_one({'globus_user': user})
+            print 'found'
+            print auth_info
+        except:
+            return None
+        return auth_info
+
+    def insert_auth_info(self, globus_user, token, token_time):
+        data = {'globus_user': globus_user,
+                'token': token,
+                'token_time': token_time}
+        return self.insert_doc(self.auth_collection, data)
+
+    def update_auth_info(self, globus_user, token, token_time):
+        self.update_doc(self.auth_collection, 'globus_user', globus_user,
+                   'token', token)
+        self.update_doc(self.auth_collection, 'globus_user', globus_user,
+                   'token_time', token_time)
+        
+        
