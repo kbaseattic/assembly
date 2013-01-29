@@ -23,7 +23,7 @@ all:
 
 deploy: deploy-client
 deploy-service: install-dep create-scripts deploy-mongo
-deploy-client: deploy-dir install-client
+deploy-client: deploy-dir install-client deploy-docs
 
 redeploy-service: clean install-dep create-scripts deploy-mongo
 
@@ -76,6 +76,10 @@ install-client:
 #	echo "python -W ignore::UserWarning /kb/dev_container/modules/assembly/bin/arast" '"$$@"' >> $(CLIENT_EXE)
 	echo "python /kb/dev_container/modules/assembly/bin/arast" '"$$@"' >> $(CLIENT_EXE)
 	chmod a+x $(CLIENT_EXE)
+
+deploy-docs:
+        mkdir -p $(TARGET)/services/$(SERVICE)/webroot
+        cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
 
 test:
 	cd kbase_test && ./test_arast_client.sh
