@@ -82,7 +82,7 @@ deploy-docs:
         cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
 
 test:
-	cd kbase_test && ./test_arast_client.sh
+	cd test && ./test_arast_client.sh
 
 clean:
 	rm -rfv $(SERVICE_DIR)
