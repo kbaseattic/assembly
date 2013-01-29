@@ -13,7 +13,7 @@ setup(
     description = ("A commandline client for the KBASE Assembly Service"),
     url = "http://www.kbase.us/services/assembly",
     packages = find_packages(),
-    install_requires = ['requests>=0.13.0'],
+    install_requires = ['requests>=0.13.0', 'appdirs'],
     long_description=read('README.md'),
     entry_points={'console_scripts':[
             'assembly = ar_client.ar_client:main']},

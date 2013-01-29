@@ -41,14 +41,15 @@ def start(config_file):
     # Check RabbitMQ status
         #TODO
         
-    print " [.] Connecting to Shock server..."
-    url = "http://%s" % cparser.get('shock', 'host')
-    res = shock.get(url, cparser.get('shock','admin_user'),
-              cparser.get('shock','admin_pass'))
+    # print " [.] Connecting to Shock server..."
+    # url = "http://%s" % cparser.get('shock', 'host')
+    # res = shock.get(url, cparser.get('shock','admin_user'),
+    #           cparser.get('shock','admin_pass'))
     
-    if res is not None:
-        print " [x] Shock connection successful"
+    # if res is not None:
+    #     print " [x] Shock connection successful"
     # Start RPC server
+
     router.start(config_file)
 
 def tear_down():
