@@ -74,54 +74,54 @@ class ArastConsumer:
             logging.debug("Free space in bytes: %s" % free_space)
         self.gc_lock.release()
 
-    def get_data(self, body):
-        """Get data from cache or Shock server."""
-        params = json.loads(body)
+    # def get_data(self, body):
+    #     """Get data from cache or Shock server."""
+    #     params = json.loads(body)
 
-        filename = self.datapath
-        filename += str(params['data_id'])
-        datapath = filename
-        all_files = []
-        if os.path.isdir(datapath):
-            logging.info("Requested data exists on node")
-            touch(datapath)
-        else:
-            uid = params['_id']
-            self.metadata.update_job(uid, 'status', 'Data transfer')
-            data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
-            if data_doc:
-                files = data_doc['filename']
-                ids = data_doc['ids']
-                job_id = params['job_id']
-                uid = params['_id']
-                filename += "/raw/"
-                os.makedirs(filename)
+    #     filename = self.datapath
+    #     filename += str(params['data_id'])
+    #     datapath = filename
+    #     all_files = []
+    #     if os.path.isdir(datapath):
+    #         logging.info("Requested data exists on node")
+    #         touch(datapath)
+    #     else:
+    #         uid = params['_id']
+    #         self.metadata.update_job(uid, 'status', 'Data transfer')
+    #         data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
+    #         if data_doc:
+    #             files = data_doc['filename']
+    #             ids = data_doc['ids']
+    #             job_id = params['job_id']
+    #             uid = params['_id']
+    #             filename += "/raw/"
+    #             os.makedirs(filename)
 
-                # Get required space and garbage collect
-                try:
-                    req_space = 0
-                    for file_size in data_doc['file_sizes']:
-                        req_space += file_size
-                    self.garbage_collect(self.datapath, req_space)
-                except:
-                    pass 
+    #             # Get required space and garbage collect
+    #             try:
+    #                 req_space = 0
+    #                 for file_size in data_doc['file_sizes']:
+    #                     req_space += file_size
+    #                 self.garbage_collect(self.datapath, req_space)
+    #             except:
+    #                 pass 
 
-                url = "http://%s" % (self.shockurl)
-                for i in range(len(files)):
-                    file = files[i]
-                    id = ids[i]
-                    temp_url = url
-                    temp_url += "/node/%s" % (id)
-                    temp_url += "?download" 
-                    r = self.get(temp_url)
-                    cur_file = filename
-                    cur_file += file
-                    with open(cur_file, "wb") as code:
-                        code.write(r.content)
-                    all_files.append(cur_file)
-            else:
-                datapath = None
-        return datapath, all_files
+    #             url = "http://%s" % (self.shockurl)
+    #             for i in range(len(files)):
+    #                 file = files[i]
+    #                 id = ids[i]
+    #                 temp_url = url
+    #                 temp_url += "/node/%s" % (id)
+    #                 temp_url += "?download" 
+    #                 r = self.get(temp_url)
+    #                 cur_file = filename
+    #                 cur_file += file
+    #                 with open(cur_file, "wb") as code:
+    #                     code.write(r.content)
+    #                 all_files.append(cur_file)
+    #         else:
+    #             datapath = None
+    #     return datapath, all_files
 
     def get_data2(self, body):
         """Get data from cache or Shock server."""
@@ -192,6 +192,7 @@ class ArastConsumer:
 
             url = "http://%s" % (self.shockurl)
 
+            print ids
             
             try:
                 for l in paired:
@@ -236,6 +237,7 @@ class ArastConsumer:
 
 
     def compute(self, body):
+        print body
         error = False
         params = json.loads(body)
 
@@ -467,6 +469,7 @@ class ArastConsumer:
         files["file"] = (os.path.basename(file), open(file, 'rb'))
         logging.debug("Message sent to shock on upload: %s" % files)
         res = self.post(url, files)
+        print res
         return res
 
     # TODO move this to shock.py

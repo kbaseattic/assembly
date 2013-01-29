@@ -9,7 +9,9 @@ def download(url, node_id, outdir):
     logging.info("Downloading id: %s" % node_id)
     u = url
     u += "/node/%s" % node_id
+    print u
     r = get(u)
+    print r
     print r.text
     res = json.loads(r.text)
     filename = res['D']['file']['name']
@@ -39,7 +41,7 @@ def post(url, files, user, password):
 	return res
 
 
-def get(url, user='cbun', password='1234'):
+def get(url, user='assembly', password='service1234'):
     
     r = None
     if user and password:
