@@ -75,7 +75,7 @@ class MetadataConnection:
         else:
             doc = ids.find_and_modify(query={'user' : user}, update={'$inc': {'c' : 1}})
             next_id = doc['c']
-        return user+next_id
+        return next_id
     
     def get_next_job_id(self, user):
         return self.get_next_id(user, 'ids')
@@ -83,9 +83,9 @@ class MetadataConnection:
     def get_next_data_id(self, user):
         return self.get_next_id(user, 'data')
 
-    def get_doc_by_data_id(self, data_id):
+    def get_doc_by_data_id(self, user, data_id):
         try:
-            job = self.get_jobs().find({'data_id':int(data_id)})[0]
+            job = self.get_jobs().find({'user': user,'data_id':int(data_id)})[0]
         except:
             job = None
             logging.error("Job %s does not exist" % data_id)
