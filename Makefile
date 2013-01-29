@@ -66,7 +66,7 @@ deploy-mongo:
 
 install-client:
 	cd ar_client; env PYTHONPATH=$(LIB_PYTHON) pip install -e . --install-option="--prefix=$(MODULE_DIR)"
-#	cd ar_client; env PYTHONPATH=$(LIB_PYTHON) python setup.py install --prefix $(MODULE_DIR)
+#	cd ar_client; env PYTHONPATH=$(LIB_PYTHON) python setup.py install --prefix $(MODULE_DIR)
 # 	cd ar_client; env PYTHONPATH=/kb/deployment/lib/python2.7/site-packages easy_install --prefix /kb/deployment ar_client-0.0.7-py2.7.egg
 	echo '#!/bin/sh' > $(CLIENT_EXE)
 	echo "export PYTHONPATH=$(LIB_PYTHON)" >> $(CLIENT_EXE)
