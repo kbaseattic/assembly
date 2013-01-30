@@ -14,6 +14,7 @@ import time
 import datetime 
 import socket
 import multiprocessing
+import threading
 import tarfile
 import subprocess
 #from yapsy.PluginManager import PluginManager
@@ -228,7 +229,11 @@ class ArastConsumer:
 
         pipeline = params['pipeline']
         
-        start_time = time.time()
+        self.start_time = time.time()
+        self.done_flag = threading.Event()
+        timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
+        timer_thread.start()
+        
         download_ids = {}
 
         if error:
@@ -257,8 +262,6 @@ class ArastConsumer:
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
 
-        elapsed_time = time.time() - start_time
-        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
 
         self.out_report.close()
         res = self.upload(url, user, token, self.out_report_name)
@@ -268,9 +271,19 @@ class ArastConsumer:
 
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'status', status)
+
+        elapsed_time = time.time() - self.start_time
+        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
         self.metadata.update_job(uid, 'computation_time', ftime)
+#        self.update_time_record()
+        self.done_flag.set()
 
         print '=========== JOB COMPLETE ============'
+
+    def update_time_record(self):
+        elapsed_time = time.time() - self.start_time
+        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
+        self.metadata.update_job(uid, 'computation_time', ftime)
 
     def run_pipeline(self, pipes, job_data_global):
         """
@@ -473,3 +486,23 @@ def list_io_basenames(job_data):
         for f in d['files']:
             basenames.append(os.path.basename(f))
     return basenames
+
+class UpdateTimer(threading.Thread):
+    def __init__(self, meta_obj, update_interval, start_time, uid, done_flag):
+        self.meta = meta_obj
+        self.interval = update_interval
+        self.uid = uid
+        self.start_time = start_time
+        self.done_flag = done_flag
+        threading.Thread.__init__(self)
+
+    def run(self):
+        while True:
+            if self.done_flag.is_set():
+                return
+            elapsed_time = time.time() - self.start_time
+            ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
+
+            self.meta.update_job(self.uid, 'computation_time', ftime)
+
+            time.sleep(self.interval)
