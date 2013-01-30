@@ -214,7 +214,6 @@ def main():
         #options['ARASTUSER'] = ARASTUSER
         options['ids'] = res_ids
         options['file_sizes'] = file_sizes
-        del options['ARASTPASSWORD']
         del options['ARASTURL']
         rpc_body = json.dumps(options, sort_keys=True)
         clientlog.debug(" [x] Sending message: %r" % (rpc_body))
