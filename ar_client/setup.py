@@ -16,6 +16,6 @@ setup(
     install_requires = ['requests>=0.13.0', 'appdirs'],
     long_description=read('README.md'),
     entry_points={'console_scripts':[
-            'assembly = ar_client.ar_client:main']},
+            'arast = ar_client.ar_client:main']},
     package_data = {'':['*.conf']},
 )

@@ -25,7 +25,7 @@ from auth_token import *
 
 my_version = '0.2.1'
 # setup option/arg parser
-parser = argparse.ArgumentParser(prog='assembly', epilog='Use "arast command -h" for more information about a command.')
+parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
 parser.add_argument('-c', '--config', action="store", help='Specify config file')
 parser.add_argument('-u', '--ARASTUSER', help='Overrules env ARASTUSER')
