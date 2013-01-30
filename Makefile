@@ -79,7 +79,7 @@ install-client:
 
 deploy-docs:
 	mkdir -p $(TARGET)/services/$(SERVICE)/webroot
-        cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
+	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
 
 test:
 	cd test && ./test_arast_client.sh
