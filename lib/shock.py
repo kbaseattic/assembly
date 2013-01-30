@@ -74,3 +74,44 @@ def curl_download_file(url, node_id, token, outdir=None):
     p.wait()
     print "File downloaded: {}/{}".format(outdir, filename)
     return os.path.join(outdir, filename)
+
+class Shock:
+    def __init__(self, shockurl, user, token):
+        self.shockurl = shockurl
+        self.user = user
+        self.token = token
+
+    def curl_post_file(self, filename):
+        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+               '-X', 'POST', '-F', 'upload=@{}'.format(filename),
+               '{}node/'.format(self.shockurl)]
+
+        ret = subprocess.check_output(cmd)
+        res = json.loads(ret)
+        print res
+        return res
+
+    def curl_download_file(self, node_id, outdir=None):
+        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+               '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+        print cmd
+        r = subprocess.check_output(cmd)
+        print r
+        filename = json.loads(r)['D']['file']['name']
+        if outdir:
+            try:
+                os.makedirs(outdir)
+            except:
+                pass
+                #raise Exception('Unable to create download directory:\n{}'.format(outdir))
+
+        else:
+            outdir = os.getcwd()
+        d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
+        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+               '-o', filename, d_url]
+
+        p = subprocess.Popen(cmd, cwd=outdir)
+        p.wait()
+        print "File downloaded: {}/{}".format(outdir, filename)
+        return os.path.join(outdir, filename)

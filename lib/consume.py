@@ -258,6 +258,8 @@ class ArastConsumer:
         
         job_id = params['job_id']
         uid = params['_id']
+        user = params['ARASTUSER']
+        token = params['oauth_token']
 
         jobpath = os.path.join(datapath, str(job_id))
         os.makedirs(jobpath
@@ -321,10 +323,12 @@ class ArastConsumer:
             try:
                 self.pmanager.validate_pipe(pipeline)
                 result_tar, quast  = self.run_pipeline(pipeline, job_data)
-                res = self.upload(url, result_tar)
+                #res = self.upload(url, result_tar)
+                res = self.upload(url, user, token, result_tar)
                 download_ids['pipeline'] = res['D']['id']
 
-                res = self.upload(url, quast)
+                #res = self.upload(url, quast)
+                res = self.upload(url, user, token, quast)
                 download_ids['quast'] = res['D']['id']
 
                 status += "pipeline [success] "
@@ -341,7 +345,8 @@ class ArastConsumer:
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
 
         self.out_report.close()
-        res = self.upload(url, self.out_report_name)
+        #res = self.upload(url, self.out_report_name)
+        res = self.upload(url, user, token, self.out_report_name)
         # Get location
         download_ids['report'] = res['D']['id']
 
@@ -470,11 +475,13 @@ class ArastConsumer:
                         all_files,'pipelines_{}.tar.gz'.format(job_data['job_id'])), quast_ret
     
 
-    def upload(self, url, file):
+    def upload(self, url, user, token, file):
         files = {}
         files["file"] = (os.path.basename(file), open(file, 'rb'))
         logging.debug("Message sent to shock on upload: %s" % files)
-        res = self.post(url, files)
+        sclient = shock.Shock(url, user, token)
+        res = sclient.curl_post_file(file)
+        #res = self.post(url, files)
         print res
         return res
 

@@ -112,15 +112,11 @@ class Shock:
                '-X', 'POST', '-F', 'upload=@{}'.format(filename),
                '{}node/'.format(self.shockurl)]
 
-        #cmd = "curl -X POST -F upload=@" + filename + cmd + " " + self.shockurl + 'node/'
-        #ret = subprocess.check_output(cmd.split())
-#        print cmd.split()
         ret = subprocess.check_output(cmd)
         res = json.loads(ret)
         print res
         return res
 
-# TODO move into function
     def curl_download_file(self, node_id, outdir=None):
         cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
