@@ -85,7 +85,7 @@ class MetadataConnection:
 
     def get_doc_by_data_id(self, data_id, user):
         try:
-            job = self.get_jobs().find({'user': user,'data_id':int(data_id)})[0]
+            job = self.get_jobs().find({'ARASTUSER': user,'data_id':int(data_id)})[0]
         except:
             job = None
             logging.error("Job %s does not exist" % data_id)

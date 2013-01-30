@@ -126,7 +126,9 @@ class ArastConsumer:
     def get_data2(self, body):
         """Get data from cache or Shock server."""
         params = json.loads(body)
-        filepath = self.datapath + str(params['data_id'])
+        #filepath = self.datapath + str(params['data_id'])
+        filepath = os.path.join(self.datapath, params['ARASTUSER'],
+                                str(params['data_id']))
         datapath = filepath
         filepath += "/raw/"
         all_files = []
@@ -134,12 +136,13 @@ class ArastConsumer:
         uid = params['_id']
         job_id = params['job_id']
 
-        data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
+        data_doc = self.metadata.get_doc_by_data_id(params['data_id'], params['ARASTUSER'])
         if data_doc:
             paired = data_doc['pair']
             single = data_doc['single']
             files = data_doc['filename']
             ids = data_doc['ids']
+            token = params['oauth_token']
         else:
             raise Exception('Data {} does not exist on Shock Server'.format(
                     params['data_id']))
@@ -173,7 +176,8 @@ class ArastConsumer:
                             filedict[kv[0]] = kv[1]
                     all_files.append(filedict)
             except:
-                logging.info('No single files submitted')
+                logging.info(format_tb(sys.exc_info()[2]))
+                logging.info('No single files submitted!')
             print all_files
             touch(datapath)
 
@@ -192,26 +196,26 @@ class ArastConsumer:
 
             url = "http://%s" % (self.shockurl)
 
-            print ids
-            
             try:
                 for l in paired:
                     filedict = {'type':'paired', 'files':[]}
                     for word in l:
                         if is_filename(word):
+                            baseword = os.path.basename(word)
                             filedict['files'].append(
-                                shock.download(url, ids[files.index(word)], filepath))
+                                shock.curl_download_file(url, ids[files.index(baseword)], token, outdir=filepath))
                         else:
+                            print word
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
                     all_files.append(filedict)
             except:
+                logging.info(format_exc(sys.exc_info()))
                 logging.info('No paired files submitted')
 
             try:
                 for l in single:
                     filedict = {'type':'single', 'files':[]}
-
                     
                     for wordpath in l:
                         # Parse user directories
@@ -224,12 +228,15 @@ class ArastConsumer:
 
                         if is_filename(word):
                             filedict['files'].append(
-                                shock.download(url, ids[files.index(word)], filepath + '/' + path))
+                                shock.curl_download_file(url, ids[files.index(word)], token, outdir=filepath))
+                            #shock.download(url, ids[files.index(word)], filepath + '/' + path))
                         else:
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
                     all_files.append(filedict)
             except:
+                logging.info(format_tb(sys.exc_info()[2]))
+
                 logging.info('No single end files submitted')
 
         return datapath, all_files
@@ -237,7 +244,6 @@ class ArastConsumer:
 
 
     def compute(self, body):
-        print body
         error = False
         params = json.loads(body)
 

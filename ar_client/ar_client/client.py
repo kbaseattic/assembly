@@ -120,30 +120,28 @@ class Shock:
         print res
         return res
 
-    def curl_download_file(self, node_id, outdir=None):
-        # Get filename
-        #r = requests.get('{}/node/{}'.format(self.shockurl, node_id),
-         #                auth=(self.user, self.password))
-        cmd = (['curl', '-H', "Authorization: OAuth Globus-Goauthtoken {} ".format(self.token),
-               '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)])
-        print cmd
-        r = subprocess.check_output(cmd.split())
+# TODO move into function
+def curl_download_file(url, node_id, token, outdir=None):
+    cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
+           '-X', 'GET', '{}/node/{}'.format(url, node_id)]
 
-        filename = json.loads(r.text)['D']['file']['name']
-        if outdir:
-            try:
-                os.makedirs(outdir)
-            except:
-                raise Exception('Unable to create download directory:\n{}'.format(outdir))
-        else:
-            outdir = os.getcwd()
-        d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
 
-        cmd = ['curl', '-H', 'Authorization: OAuth Globus-Goauthtoken {} '.format(self.token),
-               '-o', '{} {}'.format(filename, d_url)]
+    r = subprocess.check_output(cmd)
+    filename = json.loads(r)['D']['file']['name']
+    if outdir:
+        try:
+            os.makedirs(outdir)
+        except:
+            pass
+            #raise Exception('Unable to create download directory:\n{}'.format(outdir))
+        
+    else:
+        outdir = os.getcwd()
+    d_url = '{}/node/{}?download'.format(url, node_id)
+    cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
+           '-o', filename, d_url]
 
-        #p = subprocess.Popen('curl --user {}:{} -o {} {}'.format(
-         #       self.user, self.password, filename, d_url).split())
-        p = subprocess.Popen(cmd)
-        p.wait()
-        print "File downloaded: {}/{}".format(outdir, filename)
+    p = subprocess.Popen(cmd, cwd=outdir)
+    p.wait()
+    print "File downloaded: {}/{}".format(outdir, filename)
+    return os.path.join(outdir, filename)

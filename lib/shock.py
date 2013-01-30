@@ -4,6 +4,7 @@ import logging
 import requests
 import json
 import os
+import subprocess
 
 def download(url, node_id, outdir):
     logging.info("Downloading id: %s" % node_id)
@@ -44,8 +45,32 @@ def post(url, files, user, password):
 def get(url, user='assembly', password='service1234'):
     
     r = None
-    if user and password:
-        r = requests.get(url, auth=(user, password), timeout=20)       
-    else:
-        r = requests.get(url, timeout=20)
+    r = requests.get(url, auth=(user, password), timeout=20)       
+
     return r
+
+
+def curl_download_file(url, node_id, token, outdir=None):
+    cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
+           '-X', 'GET', '{}/node/{}'.format(url, node_id)]
+
+
+    r = subprocess.check_output(cmd)
+    filename = json.loads(r)['D']['file']['name']
+    if outdir:
+        try:
+            os.makedirs(outdir)
+        except:
+            pass
+            #raise Exception('Unable to create download directory:\n{}'.format(outdir))
+        
+    else:
+        outdir = os.getcwd()
+    d_url = '{}/node/{}?download'.format(url, node_id)
+    cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
+           '-o', filename, d_url]
+
+    p = subprocess.Popen(cmd, cwd=outdir)
+    p.wait()
+    print "File downloaded: {}/{}".format(outdir, filename)
+    return os.path.join(outdir, filename)
