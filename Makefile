@@ -78,7 +78,7 @@ install-client:
 	chmod a+x $(CLIENT_EXE)
 
 deploy-docs:
-        mkdir -p $(TARGET)/services/$(SERVICE)/webroot
+	mkdir -p $(TARGET)/services/$(SERVICE)/webroot
         cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
 
 test:
