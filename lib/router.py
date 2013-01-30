@@ -293,6 +293,7 @@ class JobResource:
     def new(self, userid=None):
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
+        params['oauth_token'] = cherrypy.request.headers['Authorization']
         return route_job(json.dumps(params))
 
     @cherrypy.expose
