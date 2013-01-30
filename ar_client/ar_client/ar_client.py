@@ -23,13 +23,12 @@ import client
 import shock
 from auth_token import *
 
-my_version = '0.2.1'
+my_version = '0.2.2'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
 parser.add_argument('-c', '--config', action="store", help='Specify config file')
 parser.add_argument('-u', '--ARASTUSER', help='Overrules env ARASTUSER')
-parser.add_argument('-p', '--ARASTPASSWORD', help='Overrules env ARASTPASSWORD')
 parser.add_argument("-v", "--verbose", action="store_true", help="Verbose")
 parser.add_argument('--version', action='version', version='%(prog)s ' + my_version)
 
@@ -55,6 +54,8 @@ p_stat.add_argument("-n", dest="stat_n", action="store", default=15, type=int, h
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
 p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, required=True, help="specify which job data to get")
 
+p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
+p_login = subparsers.add_parser('login', description='Force log in', help='log in')
 
 # upload all files in list, return list of ids
 def upload(files):
@@ -119,6 +120,15 @@ def main():
     oauth_parser.read(oauth_file)
     reauthorize = True
 
+    if args.command == 'logout' or args.command == 'login':
+        try:
+            os.remove(oauth_file)
+        except:
+            pass
+        if args.command == 'logout':
+            print '[x] Logged out'
+            sys.exit()
+
     if os.path.exists(oauth_file):
         token_date_str = oauth_parser.get('auth', 'token_date')
         tdate = datetime.datetime.strptime(token_date_str, '%Y-%m-%d').date()
@@ -130,7 +140,7 @@ def main():
     if not reauthorize:
         a_user = oauth_parser.get('auth', 'user')
         a_token = oauth_parser.get('auth', 'token')
-        print "Credentials Exist. Using login: {}".format(a_user)
+        print "Logged in as: {}".format(a_user)
     else:
         print("Please authenticate with Globus Online")
         a_user = raw_input("Globus Login: ")
@@ -148,9 +158,10 @@ def main():
         uparse.set('auth', 'token_date', str(datetime.date.today()))
         uparse.write(open(oauth_file, 'wb'))
 
-    # overwrite env vars in args
-    if args.ARASTPASSWORD:
-        ARASTPASSWORD = args.ARASTPASSWORD                              
+    if args.command == 'login':
+        print "Logged in"
+        sys.exit()
+    
     if args.ARASTURL:
         ARASTURL = args.ARASTURL
 
@@ -224,7 +235,6 @@ def main():
 
     elif args.command == 'get':
         aclient.get_job_data(args.job_id[0])
-
 
 global ARASTUSER, ARASTPASSWORD
 
