@@ -87,6 +87,7 @@ class ArastConsumer:
 
         uid = params['_id']
         job_id = params['job_id']
+        user = params['ARASTUSER']
 
         data_doc = self.metadata.get_doc_by_data_id(params['data_id'], params['ARASTUSER'])
         if data_doc:
@@ -100,7 +101,7 @@ class ArastConsumer:
                     params['data_id']))
 
         all_files = []
-        if os.path.isdir(datapath):
+        if os.path.isdir(filepath):
             logging.info("Requested data exists on node")
             try:
                 for l in paired:
@@ -147,7 +148,6 @@ class ArastConsumer:
                 self.garbage_collect(self.datapath, req_space)
             except:
                 pass 
-
             url = "http://%s" % (self.shockurl)
 
             try:
@@ -157,9 +157,8 @@ class ArastConsumer:
                         if is_filename(word):
                             baseword = os.path.basename(word)
                             filedict['files'].append(
-                                shock.curl_download_file(url, ids[files.index(baseword)], token, outdir=filepath))
+                                self.download(url, user, token, ids[files.index(baseword)], filepath))
                         else:
-                            print word
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
                     all_files.append(filedict)
@@ -183,8 +182,7 @@ class ArastConsumer:
                         if is_filename(word):
                             baseword = os.path.basename(word)
                             filedict['files'].append(
-                                shock.curl_download_file(url, ids[files.index(baseword)], token, outdir=filepath))
-                            #shock.download(url, ids[files.index(word)], filepath + '/' + path))
+                                self.download(url, user, token, ids[files.index(baseword)], filepath))
                         else:
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -193,7 +191,6 @@ class ArastConsumer:
                 logging.info(format_tb(sys.exc_info()[2]))
                 logging.info('No single end files submitted')
         return datapath, all_files
-
 
 
     def compute(self, body):
@@ -260,7 +257,6 @@ class ArastConsumer:
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
 
-
         elapsed_time = time.time() - start_time
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
 
@@ -287,87 +283,93 @@ class ArastConsumer:
         all_files = []
         pipe_outputs = []
         final_contigs = []
+        num_pipes = len(all_pipes)
         for pipe in all_pipes:
-            try:
-                job_data = copy.deepcopy(job_data_global)
-                job_data['out_report'] = job_data_global['out_report'] 
-                pipeline, overrides = self.pmanager.parse_pipe(pipe)
-                num_stages = len(pipeline)
-                pipeline_stage = 1
-                pipeline_results = []
-                cur_outputs = []
-                self.out_report.write('Pipeline {}: {}\n'.format(pipeline_num, pipe))
-                pipe_suffix = '' # filename code for indiv pipes
-                for module_name in pipeline:
-                    print '\n\n{0} Running module: {1} {2}'.format(
-                        '='*20, module_name, '='*(35-len(module_name)))
-                    if module_name.lower() == 'none':
-                        continue
-                    ## For now, module code is 1st and last letter
-                    pipe_suffix += module_name[0].upper() + module_name[-1]
+            job_data = copy.deepcopy(job_data_global)
+            job_data['out_report'] = job_data_global['out_report'] 
+            pipeline, overrides = self.pmanager.parse_pipe(pipe)
+            num_stages = len(pipeline)
+            pipeline_stage = 1
+            pipeline_results = []
+            cur_outputs = []
+            self.out_report.write('Pipeline {}: {}\n'.format(pipeline_num, pipe))
+            pipe_suffix = '' # filename code for indiv pipes
+            for module_name in pipeline:
+                print '\n\n{0} Running module: {1} {2}'.format(
+                    '='*20, module_name, '='*(35-len(module_name)))
+                pipes_complete = (pipeline_num - 1) / float(num_pipes)
+                stage_complete = (pipeline_stage - 1) / float(num_stages)
+                pct_segment = 1.0 / num_pipes
+                stage_complete *= pct_segment
+                total_complete = pipes_complete + stage_complete
+                cur_state = 'Running: [{}%]'.format(int(total_complete * 100))
+                self.metadata.update_job(job_data['uid'], 'status', cur_state)
 
-                    self.out_report.write('\n{0} PIPELINE {1} -- STAGE {2}: {3} {4}\n'.format(
-                            '='*10, pipeline_num, pipeline_stage, 
-                            module_name, '='*(25-len(module_name))))
-                    self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
-                    logging.debug('New job_data for stage {}: {}'.format(
-                            pipeline_stage, job_data))
-                    job_data['params'] = overrides[pipeline_stage-1].items()
 
-                    #### Run module
-                    # Check if output data exists
-                    reuse_data = False
-                    for pipe in pipe_outputs:
-                        if reuse_data:
-                            break
-                        for i in range(pipeline_stage):
-                            try:
-                                if not pipe[i][0] == cur_outputs[i][0]:
-                                    break
-                            except:
-                                pass
-                            if pipe[i][0] == module_name and i == pipeline_stage - 1: #copy!
-                                logging.info('Found previously computed data, reusing.')
-                                output = [] + pipe[i][1]
-                                alldata = [] + pipe[i][2]
-                                reuse_data = True
+                if module_name.lower() == 'none':
+                    continue
+                ## For now, module code is 1st and last letter
+                pipe_suffix += module_name[0].upper() + module_name[-1]
+
+                self.out_report.write('\n{0} PIPELINE {1} -- STAGE {2}: {3} {4}\n'.format(
+                        '='*10, pipeline_num, pipeline_stage, 
+                        module_name, '='*(25-len(module_name))))
+                self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
+                logging.debug('New job_data for stage {}: {}'.format(
+                        pipeline_stage, job_data))
+                job_data['params'] = overrides[pipeline_stage-1].items()
+
+                #### Run module
+                # Check if output data exists
+                reuse_data = False
+                for pipe in pipe_outputs:
+                    if reuse_data:
+                        break
+                    for i in range(pipeline_stage):
+                        try:
+                            if not pipe[i][0] == cur_outputs[i][0]:
                                 break
+                        except:
+                            pass
+                        if pipe[i][0] == module_name and i == pipeline_stage - 1: #copy!
+                            logging.info('Found previously computed data, reusing.')
+                            output = [] + pipe[i][1]
+                            alldata = [] + pipe[i][2]
+                            reuse_data = True
+                            break
 
-                    if not reuse_data:
-                        output, alldata = self.pmanager.run_module(module_name, job_data, all_data=True,
-                                                                   reads=include_reads)
+                if not reuse_data:
+                    output, alldata = self.pmanager.run_module(module_name, job_data, all_data=True,
+                                                               reads=include_reads)
 
-                        # Prefix outfiles with pipe stage
-                        alldata = [asm.prefix_file_move(
-                                file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
-                                    for file in alldata]
+                    # Prefix outfiles with pipe stage
+                    alldata = [asm.prefix_file_move(
+                            file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                                for file in alldata]
 
-                    output_type = self.pmanager.output_type(module_name)
-                    if output_type == 'contigs': #Assume assembly contigs
-                        job_data['reads'] = asm.arast_reads(alldata)
+                output_type = self.pmanager.output_type(module_name)
+                if output_type == 'contigs': #Assume assembly contigs
+                    job_data['reads'] = asm.arast_reads(alldata)
 
-                    elif output_type == 'reads': #Assume preprocessing
-                        if include_reads and reuse_data: # data was prefixed and moved
-                            for d in output:
-                                files = [asm.prefix_file(f, "P{}_S{}_{}".format(
-                                            pipeline_num, pipeline_stage, module_name)) for f in d['files']]
-                                d['files'] = files
-                                d['short_reads'] = [] + files
+                elif output_type == 'reads': #Assume preprocessing
+                    if include_reads and reuse_data: # data was prefixed and moved
+                        for d in output:
+                            files = [asm.prefix_file(f, "P{}_S{}_{}".format(
+                                        pipeline_num, pipeline_stage, module_name)) for f in d['files']]
+                            d['files'] = files
+                            d['short_reads'] = [] + files
 
-                        job_data['reads'] = output
-                    pipeline_results += alldata
-                    if pipeline_stage == num_stages: # Last stage, add contig for assessment
-                        fcontigs = [asm.prefix_file(
-                                file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
-                                    for file in output]
-                        rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
-                                    pipeline_num, pipe_suffix)) for f in fcontigs]
-                        final_contigs += rcontigs
-                    pipeline_stage += 1
-                    cur_outputs.append([module_name, output, alldata])
-            except:
-                traceback = format_exc(sys.exc_info())
-                self.out_report.write('Pipeline Failed {}\n'.format(traceback))
+                    job_data['reads'] = output
+                pipeline_results += alldata
+                if pipeline_stage == num_stages: # Last stage, add contig for assessment
+                    fcontigs = [asm.prefix_file(
+                            file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                                for file in output]
+                    rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
+                                pipeline_num, pipe_suffix)) for f in fcontigs]
+                    final_contigs += rcontigs
+                pipeline_stage += 1
+                cur_outputs.append([module_name, output, alldata])
 
             pipe_outputs.append(cur_outputs)
             pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], job_data['job_id'],
@@ -402,6 +404,11 @@ class ArastConsumer:
         sclient = shock.Shock(url, user, token)
         res = sclient.curl_post_file(file)
         return res
+
+    def download(self, url, user, token, node_id, outdir):
+        sclient = shock.Shock(url, user, token)
+        downloaded = sclient.curl_download_file(node_id, outdir=outdir)
+        return downloaded
 
     def fetch_job(self):
         connection = pika.BlockingConnection(pika.ConnectionParameters(
