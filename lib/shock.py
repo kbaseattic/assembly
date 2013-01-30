@@ -94,7 +94,6 @@ class Shock:
     def curl_download_file(self, node_id, outdir=None):
         cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
-        print cmd
         r = subprocess.check_output(cmd)
         print r
         filename = json.loads(r)['D']['file']['name']
@@ -113,5 +112,10 @@ class Shock:
 
         p = subprocess.Popen(cmd, cwd=outdir)
         p.wait()
-        print "File downloaded: {}/{}".format(outdir, filename)
-        return os.path.join(outdir, filename)
+
+        downloaded = os.path.join(outdir, filename)
+        if os.path.exists(downloaded):
+            print "File downloaded: {}".format(downloaded)
+            return downloaded
+        else:
+            raise Exception ('Data does not exist')
