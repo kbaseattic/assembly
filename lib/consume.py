@@ -74,56 +74,8 @@ class ArastConsumer:
             logging.debug("Free space in bytes: %s" % free_space)
         self.gc_lock.release()
 
-    # def get_data(self, body):
-    #     """Get data from cache or Shock server."""
-    #     params = json.loads(body)
 
-    #     filename = self.datapath
-    #     filename += str(params['data_id'])
-    #     datapath = filename
-    #     all_files = []
-    #     if os.path.isdir(datapath):
-    #         logging.info("Requested data exists on node")
-    #         touch(datapath)
-    #     else:
-    #         uid = params['_id']
-    #         self.metadata.update_job(uid, 'status', 'Data transfer')
-    #         data_doc = self.metadata.get_doc_by_data_id(params['data_id'])
-    #         if data_doc:
-    #             files = data_doc['filename']
-    #             ids = data_doc['ids']
-    #             job_id = params['job_id']
-    #             uid = params['_id']
-    #             filename += "/raw/"
-    #             os.makedirs(filename)
-
-    #             # Get required space and garbage collect
-    #             try:
-    #                 req_space = 0
-    #                 for file_size in data_doc['file_sizes']:
-    #                     req_space += file_size
-    #                 self.garbage_collect(self.datapath, req_space)
-    #             except:
-    #                 pass 
-
-    #             url = "http://%s" % (self.shockurl)
-    #             for i in range(len(files)):
-    #                 file = files[i]
-    #                 id = ids[i]
-    #                 temp_url = url
-    #                 temp_url += "/node/%s" % (id)
-    #                 temp_url += "?download" 
-    #                 r = self.get(temp_url)
-    #                 cur_file = filename
-    #                 cur_file += file
-    #                 with open(cur_file, "wb") as code:
-    #                     code.write(r.content)
-    #                 all_files.append(cur_file)
-    #         else:
-    #             datapath = None
-    #     return datapath, all_files
-
-    def get_data2(self, body):
+    def get_data(self, body):
         """Get data from cache or Shock server."""
         params = json.loads(body)
         #filepath = self.datapath + str(params['data_id'])
@@ -155,8 +107,9 @@ class ArastConsumer:
                     filedict = {'type':'paired', 'files':[]}
                     for word in l:
                         if is_filename(word):
+                            baseword = os.path.basename(word)
                             filedict['files'].append(
-                                os.path.join(filepath,  word))
+                                os.path.join(filepath,  baseword))
                         else:
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -169,8 +122,9 @@ class ArastConsumer:
                     filedict = {'type':'single', 'files':[]}
                     for word in l:
                         if is_filename(word):
+                            baseword = os.path.basename(word)
                             filedict['files'].append(
-                                os.path.join(filepath, word))
+                                os.path.join(filepath, baseword))
                         else:
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -227,8 +181,9 @@ class ArastConsumer:
                             path = ''
 
                         if is_filename(word):
+                            baseword = os.path.basename(word)
                             filedict['files'].append(
-                                shock.curl_download_file(url, ids[files.index(word)], token, outdir=filepath))
+                                shock.curl_download_file(url, ids[files.index(baseword)], token, outdir=filepath))
                             #shock.download(url, ids[files.index(word)], filepath + '/' + path))
                         else:
                             kv = word.split('=')
@@ -236,9 +191,7 @@ class ArastConsumer:
                     all_files.append(filedict)
             except:
                 logging.info(format_tb(sys.exc_info()[2]))
-
                 logging.info('No single end files submitted')
-
         return datapath, all_files
 
 
@@ -247,8 +200,8 @@ class ArastConsumer:
         error = False
         params = json.loads(body)
 
-        # Download files (if necessary)
-        datapath, all_files = self.get_data2(body)
+        ### Download files (if necessary)
+        datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
 
         #extract_files(rawpath)
@@ -262,12 +215,13 @@ class ArastConsumer:
         token = params['oauth_token']
 
         jobpath = os.path.join(datapath, str(job_id))
-        os.makedirs(jobpath
-)
-        # Create job log
+        os.makedirs(jobpath)
+
+        ### Create job log
         self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
         self.out_report = open(self.out_report_name, 'w')
 
+        ### Create data to pass to pipeline
         job_data = {'job_id' : params['job_id'], 
                     'uid' : params['_id'],
                     'reads': all_files,
@@ -275,11 +229,8 @@ class ArastConsumer:
                     'out_report' : self.out_report}
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
 
-        try:
-            pipeline = params['pipeline']
-        except:
-            pipeline = False
-
+        pipeline = params['pipeline']
+        
         start_time = time.time()
         download_ids = {}
 
@@ -289,45 +240,14 @@ class ArastConsumer:
         url = "http://%s" % (self.shockurl)
         url += '/node'
 
-        # Run individual modules
-        status = 'complete:'
-        # if params['assemblers']:
-        #     assemblers, overrides = parse_params(params['assemblers'])
-        #     for idx, a in enumerate(assemblers):
-        #         #for a in params['assemblers']:
-        #         self.garbage_collect(self.datapath, 0)
-        #         self.metadata.update_job(uid, 'status', "running: %s" % a)
-        #         job_data['params'] = overrides[idx].items()
-        #         try:
-        #             result_tar = self.pmanager.run_module(a, job_data, tar=True)
-        #             res = self.upload(url, result_tar)
-        #             # Get location
-        #             download_ids[a] = res['D']['id']
-        #             status += "{} [success] ".format(a)
-        #             self.out_report.write("ERROR TRACE:\n{}\n".
-        #                                   format(format_tb(sys.exc_info()[2])))
-
-        #         except Exception as e:
-        #             status += "%s [failed:%s] " % (a, e)
-        #             self.out_report.write("ERROR TRACE:\n{}\n".
-        #                                   format(format_tb(sys.exc_info()[2])))
-
-        #         except:
-        #             status += "%s [failed:%s %s] " % (a, str(sys.exc_info()),
-        #                                                   format_tb(sys.exc_info()[2]))
-        #             logging.info("%s failed to finish" % a)
-        #             self.out_report.write("ERROR TRACE:\n{}\n".
-        #                                   format(format_tb(sys.exc_info()[2])))
-
+        status = ''
         if pipeline:
             try:
                 self.pmanager.validate_pipe(pipeline)
                 result_tar, quast  = self.run_pipeline(pipeline, job_data)
-                #res = self.upload(url, result_tar)
                 res = self.upload(url, user, token, result_tar)
                 download_ids['pipeline'] = res['D']['id']
 
-                #res = self.upload(url, quast)
                 res = self.upload(url, user, token, quast)
                 download_ids['quast'] = res['D']['id']
 
@@ -345,8 +265,8 @@ class ArastConsumer:
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
 
         self.out_report.close()
-        #res = self.upload(url, self.out_report_name)
         res = self.upload(url, user, token, self.out_report_name)
+
         # Get location
         download_ids['report'] = res['D']['id']
 
@@ -481,23 +401,7 @@ class ArastConsumer:
         logging.debug("Message sent to shock on upload: %s" % files)
         sclient = shock.Shock(url, user, token)
         res = sclient.curl_post_file(file)
-        #res = self.post(url, files)
-        print res
         return res
-
-    # TODO move this to shock.py
-    def post(self, url, files):
-            r = None
-            r = requests.post(url, auth=(self.shockuser, self.shockpass), files=files)
-
-            res = json.loads(r.text)
-            return res
-
-    def get(self, url):     
-        r = None
-        r = requests.get(url, auth=(self.shockuser, self.shockpass))       
-            #res = json.loads(r.text)
-        return r
 
     def fetch_job(self):
         connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -552,53 +456,6 @@ def extract_files(datapath):
             logging.debug("Extracting %s" % tfile)
             p = subprocess.Popen(['bunzip2', tfile])
             p.wait()
-
-            
-def parse_params(pipe):
-    """ Returns the parameter overrides from string.
-    e.g Input: [kiki ?k=31 velvet ?ins=500 a5]
-    Output: [kiki, velvet, a5], [{k:31}, {ins:500}, {}]
-    """
-    # Parse param overrides
-    overrides = []
-    pipeline = []
-    for word in pipe:
-        module_num = -1
-        if not word.startswith('?'): # is module
-            pipeline.append(word)
-            module_num += 1
-            overrides.append({})
-            
-        elif word[1:-1].find('=') != -1: # is param
-            kv = word[1:].split('=')
-            overrides[module_num] = dict(overrides[module_num].items() +
-                                         dict([kv]).items())
-    return pipeline, overrides
-
-
-def parse_reads(params):
-    """
-    Get file pairings from list.
-    E.g Input: [
-        Output: [('1a.fa,1b.fa), ('interleaved.fa',), 'unpaired.fa']
-        [{'type':'paired','files': [pair1,pair2],'ins':300', 'exp_cov': None},
-         {'type':'single', 'files': [file], 'ins': None, 'exp_cov': }
-
-    """
-    # Look in pair key
-    #for pair in 
-
-
-    # Look in single key
-
-    
-
-    files = []
-    for word in filestring:
-        if word[1:-1].find('=') != -1: # is paired
-            kv = word.split('=')
-    pass
-
 
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1

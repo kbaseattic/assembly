@@ -41,6 +41,8 @@ class BasePlugin(object):
                 cmd_args.append(kv[1])
 
                 #cmd_human = [os.path.basename(w) for w in cmd_args]
+
+        print cmd_args
         cmd_human = []
         for w in cmd_args:
             if w.endswith('/'):
