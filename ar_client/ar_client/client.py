@@ -114,15 +114,12 @@ class Shock:
 
         ret = subprocess.check_output(cmd)
         res = json.loads(ret)
-        print res
         return res
 
     def curl_download_file(self, node_id, outdir=None):
         cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
-        print cmd
         r = subprocess.check_output(cmd)
-        print r
         filename = json.loads(r)['D']['file']['name']
         if outdir:
             try:
