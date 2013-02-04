@@ -44,8 +44,10 @@ default:
 
 # Test
 
-test: test-client test-scripts test-service
-	@echo "running client and script tests"
+test: test-sh
+
+# test: test-client test-scripts test-service
+# 	@echo "running client and script tests"
 
 test-sh:
 	cd test && ./test_arast_client.sh
