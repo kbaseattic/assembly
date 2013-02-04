@@ -52,8 +52,10 @@ sub get {
         my $done;
         print "Waiting for job to complete.";
         while (!$done) {
-            my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid`;
-            $done = 1 if $stat =~ /complete/;
+            # my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid`;
+            # $done = 1 if $stat =~ /complete/;
+            my $stat = `ar_stat -s $ENV{ARASTURL}`;
+            $done = 1 if $stat =~ /\|   $jobid /;
             print ".";
             sleep 10;
         }
