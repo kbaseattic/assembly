@@ -89,12 +89,12 @@ test-service:
 deploy: deploy-client
 
 # deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
-deploy-client: install-client-dep deploy-libs deploy-scripts deploy-docs
+deploy-client: install-client-dep deploy-libs deploy-client-scripts deploy-docs
 
 deploy-libs: 
 	rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
 
-deploy-scripts:
+deploy-client-scripts:
 	export KB_TOP=$(TARGET); \
 	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
 	export KB_PERL_PATH=$(TARGET)/lib bash ; \
@@ -114,6 +114,9 @@ deploy-scripts:
 		$(WRAP_PYTHON_SCRIPT) "$(TARGET)/pybin/$$basefile" $(TARGET)/bin/$$base ; \
 	done
 
+deploy-docs:
+	mkdir -p $(TARGET)/services/$(SERVICE)/webroot
+	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
 
 deploy-service: install-dep create-scripts deploy-mongo
 redeploy-service: clean install-dep create-scripts deploy-mongo
@@ -166,11 +169,6 @@ install-client:
 #	echo "python -W ignore::UserWarning /kb/dev_container/modules/assembly/bin/arast" '"$$@"' >> $(CLIENT_EXE)
 	echo "python /kb/dev_container/modules/assembly/bin/arast" '"$$@"' >> $(CLIENT_EXE)
 	chmod a+x $(CLIENT_EXE)
-
-deploy-docs:
-	mkdir -p $(TARGET)/services/$(SERVICE)/webroot
-	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
-
 
 clean:
 	rm -rfv $(SERVICE_DIR)
