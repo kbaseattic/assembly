@@ -117,6 +117,7 @@ redeploy-service: clean install-dep create-scripts deploy-mongo
 deploy-compute: install-dep
 
 deploy-dir:
+	if [ ! -d $(TARGET) ] ; then mkdir -p $(TARGET) ; fi
 	if [ ! -d $(LIB_PYTHON) ] ; then mkdir -p $(LIB_PYTHON) ; fi
 
 install-dep:
