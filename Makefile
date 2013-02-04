@@ -89,6 +89,7 @@ deploy: deploy-client
 deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs
 
 deploy-libs:
+	rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
 
 deploy-scripts:
 	export KB_TOP=$(TARGET); \
