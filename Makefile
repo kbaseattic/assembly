@@ -86,7 +86,7 @@ test-service:
 
 deploy: deploy-client
 
-deploy-client: deploy-dir deploy-libs deploy-scripts deploy-docs
+deploy-client: install-client-dep deploy-dir deploy-libs deploy-scripts deploy-docs
 
 deploy-libs:
 	rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
