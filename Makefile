@@ -111,7 +111,7 @@ deploy-scripts:
 
 
 # deploy-libs: build-libs
-#tab rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
+	# rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
 
 deploy-service: install-dep create-scripts deploy-mongo
 redeploy-service: clean install-dep create-scripts deploy-mongo
