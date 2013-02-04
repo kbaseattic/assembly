@@ -95,6 +95,7 @@ deploy-libs:
 deploy-scripts:
 	export KB_TOP=$(TARGET); \
 	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
+	export KB_PYTHON_PATH=$(TARGET)/lib bash ; \
 	export KB_PERL_PATH=$(TARGET)/lib bash ; \
 	for src in $(SRC_PYTHON) ; do \
 		basefile=`basename $$src`; \
@@ -102,7 +103,7 @@ deploy-scripts:
 		echo install $$src $$base ; \
 		cp $$src $(TARGET)/pybin ; \
 		$(WRAP_PYTHON_SCRIPT) "$(TARGET)/pybin/$$basefile" $(TARGET)/bin/$$base ; \
-	done
+	done; \
 	for src in $(SRC_PERL) ; do \
 		basefile=`basename $$src`; \
 		base=`basename $$src .pl`; \
