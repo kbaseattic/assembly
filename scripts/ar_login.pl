@@ -16,8 +16,7 @@ End_of_Usage
 my $help;
 my $server;
 
-my $rc = GetOptions("h|help" => \$help,
-                    "s" => \$server);
+my $rc = GetOptions("h|help" => \$help);
 
 ($rc && !$help) or die $usage;
 

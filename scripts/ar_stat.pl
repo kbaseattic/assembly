@@ -26,7 +26,7 @@ my $help;
 my $server;
 
 my $rc = GetOptions("h|help" => \$help,
-                    "s" => \$server);
+                    "s=s" => \$server);
 
 ($rc && !$help) or die $usage;
 
