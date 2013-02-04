@@ -86,7 +86,7 @@ test-service:
 
 deploy: deploy-client
 
-deploy-client: install-client-dep deploy-dir deploy-client-libs deploy-scripts deploy-docs
+deploy-client: install-client-dep install-client deploy-dir deploy-client-libs deploy-scripts deploy-docs
 
 deploy-client-libs:
 	rsync --exclude '*.bak*' -arv ar_client/ar_client/. $(TARGET)/lib/.
@@ -96,13 +96,13 @@ deploy-scripts:
 	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
 	export KB_PYTHON_PATH=$(TARGET)/lib bash ; \
 	export KB_PERL_PATH=$(TARGET)/lib bash ; \
-	for src in $(SRC_PYTHON) ; do \
-		basefile=`basename $$src`; \
-		base=`basename $$src .py`; \
-		echo install $$src $$base ; \
-		cp $$src $(TARGET)/pybin ; \
-		$(WRAP_PYTHON_SCRIPT) "$(TARGET)/pybin/$$basefile" $(TARGET)/bin/$$base ; \
-	done; \
+	# for src in $(SRC_PYTHON) ; do \
+	# 	basefile=`basename $$src`; \
+	# 	base=`basename $$src .py`; \
+	# 	echo install $$src $$base ; \
+	# 	cp $$src $(TARGET)/pybin ; \
+	# 	$(WRAP_PYTHON_SCRIPT) "$(TARGET)/pybin/$$basefile" $(TARGET)/bin/$$base ; \
+	# done; \
 	for src in $(SRC_PERL) ; do \
 		basefile=`basename $$src`; \
 		base=`basename $$src .pl`; \
