@@ -27,14 +27,14 @@ teardown();
 # write your tests as subroutnes, add the sub name to @tests
 sub run {
 	my $jobid;
-	my $command = "arast -s $ENV{ARASTURL} run -a kiki -f smg.fa --bwa";
+	my $command = "ar_run -s $ENV{ARASTURL} -a kiki -f smg.fa";
         eval {$jobid = `$command` or die $!;};
         ok($? == 0, (caller(0))[3] . " jobid: $jobid");
         diag("unable to run $command") if $@;
 }
 
 sub stat {
-	my $command = "arast -s $ENV{ARASTURL} stat";
+	my $command = "ar_stat -s $ENV{ARASTURL}";
 	eval {!system($command) or die $!;};
 	ok(!$@, (caller(0))[3]);
 	diag("could not execute $command") if $@;
@@ -43,7 +43,7 @@ sub stat {
 sub get {
 	# needs code change to arast to only return the job id
 	my $jobid;
-	my $command = "arast -s $ENV{ARASTURL} run -a kiki -f smg.fa --bwa";
+	my $command = "ar_run -s $ENV{ARASTURL}  -a kiki -f smg.fa";
         eval {$jobid = `$command` or die $!;};
         ok($? == 0, (caller(0))[3] . " jobid: $jobid");
         diag("unable to run $command") if $@;
@@ -52,14 +52,14 @@ sub get {
         my $done;
         print "Waiting for job to complete.";
         while (!$done) {
-            my $stat = `arast -s $ENV{ARASTURL} stat -j $jobid`;
+            my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid`;
             $done = 1 if $stat =~ /complete/;
             print ".";
             sleep 10;
         }
         print " [done]\n";
 	
-	$command = "arast -s $ENV{ARASTURL} get -j $jobid";
+	$command = "ar_get -s $ENV{ARASTURL} -j $jobid";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
@@ -80,5 +80,5 @@ sub setup {
 
 sub teardown {
 	unlink "smg.fa" if -e "smg.fa";
-	unlink glob "job*.tar";
+	# unlink glob "job*.tar";
 }
