@@ -88,10 +88,31 @@ test-service:
 
 deploy: deploy-client
 
-deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
+# deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
+deploy-client: install-client-dep deploy-libs deploy-scripts deploy-docs
 
 deploy-client-libs:
 	rsync --exclude '*.bak*' -arv ar_client/ar_client/. $(TARGET)/lib/.
+
+deploy-scripts:
+	export KB_TOP=$(TARGET); \
+	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
+	export KB_PERL_PATH=$(TARGET)/lib bash ; \
+	for src in $(SRC_PERL) ; do \
+		basefile=`basename $$src`; \
+		base=`basename $$src .pl`; \
+		echo install $$src $$base ; \
+		cp $$src $(TARGET)/plbin ; \
+		$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
+	done; \
+	export KB_PYTHON_PATH=$(TARGET)/lib bash ; \
+	for src in $(SRC_PYTHON) ; do \
+		basefile=`basename $$src`; \
+		base=`basename $$src .pl`; \
+		echo install $$src $$base ; \
+		cp $$src $(TARGET)/pybin ; \
+		$(WRAP_PYTHON_SCRIPT) "$(TARGET)/pybin/$$basefile" $(TARGET)/bin/$$base ; \
+	done
 
 deploy-client-scripts:
 	export KB_TOP=$(TARGET); \
