@@ -10,7 +10,7 @@ $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 my $testCount = 0;
 
 # keep adding tests to this list
-my @tests = qw(run stat get prep);
+my @tests = qw(login run stat get prep);
 
 
 setup();
@@ -25,6 +25,14 @@ done_testing($testCount);
 teardown();
 
 # write your tests as subroutnes, add the sub name to @tests
+
+sub login {
+	my $command = "ar_login";
+	eval {!system($command) or die $!;};
+	ok(!$@, (caller(0))[3]);
+	diag("could not execute $command") if $@;
+}
+
 sub run {
 	my $jobid;
 	my $command = "ar_run -s $ENV{ARASTURL} -a kiki -f smg.fa";
