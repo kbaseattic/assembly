@@ -47,10 +47,10 @@ sleep 2
 ar_stat
 sleep 5
 
-message "Check random data status"
+# message "Check random data status"
 # arast -s $ARASTURL stat --data 1
-ar_stat --data 1
-sleep 5
+# ar_stat --data 1
+# sleep 5
 
 message "Wait 90s for job to finish and download results"
 sleep 90
