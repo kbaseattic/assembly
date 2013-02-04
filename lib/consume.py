@@ -213,7 +213,12 @@ class ArastConsumer:
         token = params['oauth_token']
 
         jobpath = os.path.join(datapath, str(job_id))
-        os.makedirs(jobpath)
+
+        try:
+            os.makedirs(jobpath)
+        except:
+            self.metadata.update_job(uid, 'status', 'Data error')
+            return
 
         ### Create job log
         self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
@@ -399,15 +404,15 @@ class ArastConsumer:
         # Quast
         job_data['final_contigs'] = final_contigs
         quast_tar = self.pmanager.run_module('quast', job_data, tar=True)
-        quast_ret = quast_tar.rsplit('/', 1)[0] + '/report.tar.gz'
+        quast_ret = quast_tar.rsplit('/', 1)[0] + '/{}_analysis.tar.gz'.format(job_data['job_id'])
         os.rename(quast_tar, quast_ret)
 
         if len(all_files) == 1:
             return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                [all_files[0]],'pipeline_{}.tar.gz'.format(job_data['job_id'])), quast_ret
+                                [all_files[0]],'{}_assemblies.tar.gz'.format(job_data['job_id'])), quast_ret
             
         return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                        all_files,'pipelines_{}.tar.gz'.format(job_data['job_id'])), quast_ret
+                        all_files,'{}_assemblies.tar.gz'.format(job_data['job_id'])), quast_ret
     
 
     def upload(self, url, user, token, file):
