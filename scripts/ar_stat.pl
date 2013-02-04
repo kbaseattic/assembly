@@ -7,7 +7,7 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_stat [-h] [-w] [-d [FILES] | -j STAT_JOB] [-n STAT_N]
+Usage: ar_stat [-h] [-w] [-d [FILES] | -j STAT_JOB] [-n STAT_N] [-s server_addr]
 
 Query status of running jobs
 
@@ -23,8 +23,10 @@ optional arguments:
 End_of_Usage
 
 my $help;
+my $server;
 
-my $rc = GetOptions("h|help" => \$help);
+my $rc = GetOptions("h|help" => \$help,
+                    "s" => \$server);
 
 ($rc && !$help) or die $usage;
 
@@ -33,5 +35,8 @@ my $rc = GetOptions("h|help" => \$help);
 # system "$target/$arast stat @ARGV";
 
 
-system "arast stat @ARGV";
+my $arast = 'arast';
+$arast .= " -s $server" if $server;
+
+system "$arast stat @ARGV";
                     
