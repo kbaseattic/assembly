@@ -36,8 +36,8 @@ SERVER_TESTS = $(wildcard server-tests/*.t)
 
 CLIENT_DIR = $(TARGET)/bin
 CLIENT_EXE = $(CLIENT_DIR)/arast
-LIB_PYTHON = $(MODULE_DIR)/lib/python2.7/site-packages
 MODULE_DIR = $(TARGET)/modules/assembly
+LIB_PYTHON = $(MODULE_DIR)/lib/python2.7/site-packages
 
 
 default:
@@ -89,7 +89,8 @@ deploy: deploy-client
 deploy-client: install-client-dep deploy-dir deploy-libs deploy-scripts deploy-docs
 
 deploy-libs:
-	rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
+	# rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
+	rsync --exclude '*.bak*' -arv ar_client/ar_client/. $(TARGET)/lib/.
 
 deploy-scripts:
 	export KB_TOP=$(TARGET); \
