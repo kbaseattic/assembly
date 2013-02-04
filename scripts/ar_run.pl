@@ -38,8 +38,9 @@ my $rc = GetOptions("h|help" => \$help);
 
 ($rc && !$help) or die $usage;
 
-my $target = $ENV{HOME}. "/kb/assembly";
-my $arast  = "ar_client/ar_client/ar_client.py";
+# my $target = $ENV{HOME}. "/kb/assembly";
+# my $arast  = "ar_client/ar_client/ar_client.py";
+# system "$target/$arast run @ARGV";
 
-system "$target/$arast run @ARGV";
+system "arast run @ARGV";
 
