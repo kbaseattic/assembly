@@ -92,16 +92,16 @@ deploy-client-libs:
 	rsync --exclude '*.bak*' -arv ar_client/ar_client/. $(TARGET)/lib/.
 
 deploy-scripts:
-	export KB_TOP=$(TARGET); \
-	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
-	export KB_PERL_PATH=$(TARGET)/lib bash ; \
-	for src in $(SRC_PERL) ; do \
-		basefile=`basename $$src`; \
-		base=`basename $$src .pl`; \
-		echo install $$src $$base ; \
-		cp $$src $(TARGET)/plbin ; \
-		$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
-	done
+	# export KB_TOP=$(TARGET); \
+	# export KB_RUNTIME=$(DEPLOY_RUNTIME); \
+	# export KB_PERL_PATH=$(TARGET)/lib bash ; \
+	# for src in $(SRC_PERL) ; do \
+		# basefile=`basename $$src`; \
+		# base=`basename $$src .pl`; \
+		# echo install $$src $$base ; \
+		# cp $$src $(TARGET)/plbin ; \
+		# $(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
+	# done
 
 
 
