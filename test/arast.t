@@ -55,7 +55,7 @@ sub get {
             # my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid`;
             # $done = 1 if $stat =~ /complete/;
             my $stat = `ar_stat -s $ENV{ARASTURL} 2>/dev/null`;
-            $done = 1 if $stat =~ /\|\s+$jobid\s+/;
+            $done = 1 if $stat =~ /\|\s+$jobid\s+.*success/;
             print ".";
             sleep 10;
         }
