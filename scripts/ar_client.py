@@ -4,7 +4,6 @@ arast-client -- commandline client for Assembly RAST
 
 """
 
-
 import os, sys, json, shutil
 import appdirs
 import argparse
@@ -19,9 +18,10 @@ from ConfigParser import SafeConfigParser
 from pkg_resources import resource_filename
 
 #arast libs
-import client
-import shock
-from auth_token import *
+import arclient.client as client
+import arclient.config as conf
+from arclient.auth_token import *
+
 
 my_version = '0.2.2'
 # setup option/arg parser
@@ -90,31 +90,36 @@ def main():
     options = vars(args)
     
     options['version'] = my_version
-    cparser = SafeConfigParser()
+    #cparser = SafeConfigParser()
 
     if args.verbose:
         clientlog.setLevel(logging.DEBUG)
         clientlog.debug("Logger Debugging mode")
 
-    if args.config:
-        config_file = args.config
-    else:
-        config_file = resource_filename(__name__, 'settings.conf')
-        clientlog.debug("Reading config file: %s" % config_file)
+    # if args.config:
+    #     config_file = args.config
+    # else:
+    #     config_file = resource_filename(__name__, 'settings.conf')
+    #     clientlog.debug("Reading config file: %s" % config_file)
 
-    cparser.read(config_file)
+    #cparser.read(config_file)
 
-    try:
-        ARASTURL = cparser.get('arast', 'url')
-    except:
-        clientlog.error("Invalid config file")
+    # try:
+    #     ARASTURL = cparser.get('arast', 'url')
+    # except:
+    #     clientlog.error("Invalid config file")
+
+    ARASTURL = conf.URL
 
     # Check Authorization
-    user_dir = appdirs.user_data_dir(cparser.get('arast','appname'),
-                                       cparser.get('arast','appauthor'))
-    oauth_file = os.path.join(user_dir, cparser.get('arast','oauth_filename'))
-    expiration = int(cparser.get('arast', 'oauth_exp_days'))
+    # user_dir = appdirs.user_data_dir(cparser.get('arast','appname'),
+    #                                    cparser.get('arast','appauthor'))
+    # oauth_file = os.path.join(user_dir, cparser.get('arast','oauth_filename'))
+    # expiration = int(cparser.get('arast', 'oauth_exp_days'))
 
+    user_dir = appdirs.user_data_dir(conf.APPNAME, conf.APPAUTHOR)
+    oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
+    expiration = conf.OAUTH_EXP_DAYS
 
     oauth_parser = SafeConfigParser()
     oauth_parser.read(oauth_file)
