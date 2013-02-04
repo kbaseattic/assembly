@@ -91,8 +91,8 @@ deploy: deploy-client
 # deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
 deploy-client: install-client-dep deploy-libs deploy-scripts deploy-docs
 
-deploy-client-libs:
-	rsync --exclude '*.bak*' -arv ar_client/ar_client/. $(TARGET)/lib/.
+deploy-libs: build-libs
+	rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
 
 deploy-scripts:
 	export KB_TOP=$(TARGET); \
@@ -113,19 +113,6 @@ deploy-scripts:
 		cp $$src $(TARGET)/pybin ; \
 		$(WRAP_PYTHON_SCRIPT) "$(TARGET)/pybin/$$basefile" $(TARGET)/bin/$$base ; \
 	done
-
-deploy-client-scripts:
-	export KB_TOP=$(TARGET); \
-	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
-	export KB_PERL_PATH=$(TARGET)/lib bash ; \
-	for src in $(SRC_PERL) ; do \
-		basefile=`basename $$src`; \
-		base=`basename $$src .pl`; \
-		echo install $$src $$base ; \
-		cp $$src $(TARGET)/plbin ; \
-		$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
-	done
-
 
 
 deploy-service: install-dep create-scripts deploy-mongo
