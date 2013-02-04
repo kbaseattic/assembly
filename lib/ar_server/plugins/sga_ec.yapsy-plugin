@@ -1,0 +1,14 @@
+[Core]
+Name = sga_ec
+Module = sga_ec
+
+[Settings]
+executable = ../../bin/a5/sga
+filetypes = fastq,fq
+dependencies = sga_preprocess
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = SGA error correction plugin.  Runs 'sga index' and 'sga correct'
+
