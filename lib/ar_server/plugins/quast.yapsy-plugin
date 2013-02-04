@@ -3,7 +3,7 @@ Name = quast
 Module = quast
 
 [Settings]
-executable = ../bin/quast/quast.py
+executable = ../../bin/quast/quast.py
 filetypes = fasta,fa
 
 [Documentation]

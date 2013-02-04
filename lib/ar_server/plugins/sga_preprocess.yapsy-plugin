@@ -3,7 +3,7 @@ Name = sga_preprocess
 Module = sga_preprocess
 
 [Settings]
-executable = ../bin/a5/sga
+executable = ../../bin/a5/sga
 filetypes = fastq,fq
 
 # From A5 defaults
