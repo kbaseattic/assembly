@@ -91,7 +91,7 @@ deploy: deploy-client
 # deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
 deploy-client: install-client-dep deploy-libs deploy-scripts deploy-docs
 
-deploy-libs: build-libs
+deploy-libs: 
 	rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
 
 deploy-scripts:
