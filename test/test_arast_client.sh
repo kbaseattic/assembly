@@ -24,16 +24,17 @@ function message {
 }
 
 
+message "Login with Tester's ID"
+ar_login
+
 message "Check queue status"
-arast -s $ARASTURL stat
+# arast -s $ARASTURL stat
+ar_stat
 
 message "Download synthetic metagenome (200MB)"
 rm -f smg.fa
 # curl -OL http://www.mcs.anl.gov/~fangfang/test/smg.fa
 wget http://www.mcs.anl.gov/~fangfang/test/smg.fa
-
-message "Login with Tester's ID"
-ar_login
 
 message "Submit synthetic  metagenome for kiki assembly and bwa mapping validation"
 # export jobid=`arast -s $ARASTURL run -a kiki -f smg.fa --bwa`
