@@ -7,7 +7,7 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_get [-h] -j JOB_ID [-a [ASSEMBLERS [ASSEMBLERS ...]]]
+Usage: ar_get [-h] -j JOB_ID [-a [ASSEMBLERS [ASSEMBLERS ...]]] [-s server_addr]
 
 Download result data
 
@@ -17,12 +17,15 @@ optional arguments:
                         specify which job data to get
   -a [ASSEMBLERS [ASSEMBLERS ...]], --assemblers [ASSEMBLERS [ASSEMBLERS ...]]
                         specify which assembly data to get
+  -s server_addr        specify ARAST server address
 
 End_of_Usage
 
 my $help;
+my $server;
 
-my $rc = GetOptions("h|help" => \$help);
+my $rc = GetOptions("h|help" => \$help,
+                    "s=s" => \$server);
 
 ($rc && !$help) or die $usage;
 
@@ -30,5 +33,8 @@ my $rc = GetOptions("h|help" => \$help);
 # my $arast  = "ar_client/ar_client/ar_client.py";
 # system "$target/$arast get @ARGV";
 
-system "arast get @ARGV";
+my $arast = 'arast';
+$arast .= " -s $server" if $server;
+
+system "$arast get @ARGV";
                     

@@ -19,6 +19,7 @@ optional arguments:
   -j STAT_JOB, --job STAT_JOB
                         display job status
   -n STAT_N             specify number of records to show
+  -s server_addr        specify ARAST server address
 
 End_of_Usage
 

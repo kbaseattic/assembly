@@ -12,6 +12,7 @@ Usage: ar_run  [-h] [-f [SINGLE [SINGLE ...]]]
                     [-p [PIPELINE [PIPELINE ...]]] [-m MESSAGE]
                     [--data DATA_ID] [--pair [PAIR [PAIR ...]]]
                     [--single [SINGLE [SINGLE ...]]]
+                    [-s server_addr]
 
 Run an Assembly RAST job
 
@@ -29,12 +30,15 @@ optional arguments:
                         Specify a paired-end library and parameters
   --single [SINGLE [SINGLE ...]]
                         Specify a single end file and parameters
+  -s server_addr        Specify ARAST server address
 
 End_of_Usage
 
 my $help;
+my $server;
 
-my $rc = GetOptions("h|help" => \$help);
+my $rc = GetOptions("h|help" => \$help,
+                    "s=s" => \$server);
 
 ($rc && !$help) or die $usage;
 
@@ -42,5 +46,8 @@ my $rc = GetOptions("h|help" => \$help);
 # my $arast  = "ar_client/ar_client/ar_client.py";
 # system "$target/$arast run @ARGV";
 
-system "arast run @ARGV";
+my $arast = 'arast';
+$arast .= " -s $server" if $server;
+
+system "$arast run @ARGV";
 
