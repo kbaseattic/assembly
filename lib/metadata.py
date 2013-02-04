@@ -74,7 +74,7 @@ class MetadataConnection:
             ids.insert({'user' : user, 'c' : 1})
         else:
             doc = ids.find_and_modify(query={'user' : user}, update={'$inc': {'c' : 1}})
-            next_id = doc['c']
+            next_id = doc['c'] + 1
         return next_id
     
     def get_next_job_id(self, user):
@@ -115,6 +115,7 @@ class MetadataConnection:
             job = None
             logging.error("Job %s does not exist" % job_id)
         return job
+
 
     def get_auth_info(self, user):
         connection = pymongo.Connection(self.host, self.port)
