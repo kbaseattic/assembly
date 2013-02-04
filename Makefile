@@ -94,7 +94,6 @@ deploy-client-libs:
 deploy-scripts:
 	export KB_TOP=$(TARGET); \
 	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
-	export KB_PYTHON_PATH=$(TARGET)/lib bash ; \
 	export KB_PERL_PATH=$(TARGET)/lib bash ; \
 	for src in $(SRC_PERL) ; do \
 		basefile=`basename $$src`; \
