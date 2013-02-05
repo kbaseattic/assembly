@@ -10,7 +10,7 @@ $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 my $testCount = 0;
 
 # keep adding tests to this list
-my @tests = qw(login setup run stat get prep);
+my @tests = qw(setup run stat get prep);
 
 foreach my $test (@tests) {
     &$test();
@@ -96,6 +96,10 @@ sub prep {
 
 # needed to set up the tests, should be called before any tests are run
 sub setup {
+    login();
+
+    system "mkdir -p tmpdir";
+    chdir("tmpdir");
     unlink "smg.fa" if -e "smg.fa";
     my $command = "wget http://www.mcs.anl.gov/~fangfang/test/smg.fa";
     eval {!system("$command > /dev/null") or die $!;};
