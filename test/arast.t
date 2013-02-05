@@ -59,10 +59,10 @@ sub get {
             my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
             if ($stat =~ /success/i) {
                 print " [done]\n";
-                break;
+                last;
             } elsif ($stat =~ /fail/i) {
                 print " Job $jobid completed with no contigs.\n";
-                break;
+                last;
             }
             print ".";
             sleep 10;
