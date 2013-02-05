@@ -76,6 +76,13 @@ sub get {
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
     }
+
+    my $invalid_id = '999999999999999999';
+    my $stat = `ar_stat -s $ENV{ARASTURL} -j $invalid_id`;
+    if ($stat =~ /invalid/) {
+        print "Correctly identified invalid job\n";
+    }
+    
 }
 sub prep {
 }
