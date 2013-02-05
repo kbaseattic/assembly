@@ -96,6 +96,7 @@ sub prep {
 
 # needed to set up the tests, should be called before any tests are run
 sub setup {
+    $testCount++;
     login();
 
     system "rm -rf tmpdir" if -d "tmpdir";
