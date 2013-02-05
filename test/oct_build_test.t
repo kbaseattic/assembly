@@ -104,7 +104,7 @@ sub get {
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
-        @results = map { $jobid ."_". $_ } qw(analysis.tar.gz assemblies.tar.gz report.txt);
+        my @results = map { $jobid ."_". $_ } qw(analysis.tar.gz assemblies.tar.gz report.txt);
         print STDERR '\@results = '. Dumper(\@results);
         return @results unless $@;
     }
