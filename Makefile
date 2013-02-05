@@ -29,10 +29,10 @@ WRAP_PYTHON_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PYTHON_TOOL).sh
 SRC_PYTHON = $(wildcard scripts/*.py)
 
 
+SERVER_TESTS = $(wildcard server-tests/*.t)
 CLIENT_TESTS = $(wildcard client-tests/*.t)
-SCRIPTS_TESTS = $(wildcard script-tests/*.t)
-# SERVER_TESTS = $(wildcard server-tests/*.t)
-SERVER_TESTS = $(wildcard test/*.t)
+# SCRIPTS_TESTS = $(wildcard script-tests/*.t)
+SCRIPTS_TESTS = $(wildcard test/*.t)
 
 
 CLIENT_DIR = $(TARGET)/bin
@@ -118,6 +118,7 @@ deploy-scripts:
 deploy-docs:
 	mkdir -p $(TARGET)/services/$(SERVICE)/webroot
 	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
+	cp doc/*.png $(TARGET)/services/$(SERVICE)/webroot/.
 
 deploy-service: install-dep create-scripts deploy-mongo
 redeploy-service: clean install-dep create-scripts deploy-mongo
