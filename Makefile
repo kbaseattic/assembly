@@ -32,7 +32,7 @@ SRC_PYTHON = $(wildcard scripts/*.py)
 SERVER_TESTS = $(wildcard server-tests/*.t)
 CLIENT_TESTS = $(wildcard client-tests/*.t)
 # SCRIPTS_TESTS = $(wildcard script-tests/*.t)
-SCRIPTS_TESTS = $(wildcard test/*.t)
+SCRIPT_TESTS = $(wildcard test/*.t)
 
 
 CLIENT_DIR = $(TARGET)/bin
