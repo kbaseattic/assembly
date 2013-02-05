@@ -105,7 +105,6 @@ sub get {
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
         my @results = map { $jobid ."_". $_ } qw(analysis.tar.gz assemblies.tar.gz report.txt);
-        print STDERR '\@results = '. Dumper(\@results);
         return @results unless $@;
     } else {
         $testCount--;
