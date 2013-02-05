@@ -49,5 +49,10 @@ my $rc = GetOptions("h|help" => \$help,
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-system "$arast run @ARGV";
+my $argv;
+for (@ARGV) {
+    if (/ /) { $argv .= "\"$_\" " } else { $argv .= "$_ " }
+}
+
+system "$arast run $argv";
 
