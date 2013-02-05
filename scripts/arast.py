@@ -239,7 +239,10 @@ def main():
                 time.sleep(2)			
 
     elif args.command == 'get':
-        aclient.get_job_data(args.job_id[0])
+        try:
+            aclient.get_job_data(args.job_id[0])
+        except:
+            print 'Invalid job id'
 
 global ARASTUSER, ARASTPASSWORD
 
