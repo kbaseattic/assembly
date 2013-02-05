@@ -78,7 +78,7 @@ sub get {
     }
 
     my $invalid_id = '999999999999999999';
-    my $stat = `ar_stat -s $ENV{ARASTURL} -j $invalid_id`;
+    my $stat = `ar_get -s $ENV{ARASTURL} -j $invalid_id`;
     if ($stat =~ /invalid/) {
         print "Correctly identified invalid job\n";
     }
