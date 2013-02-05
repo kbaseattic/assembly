@@ -15,13 +15,13 @@ my $testCount = 0;
 # keep adding tests to this list
 my @assemblers = qw(kiki velvet); #kiki velvet
 my @files = (
-"-f /mnt/smg.fa", 
-"-f bad_file_input.fa", 
-"-f /mnt/smg.fa bad_file_input.fa",  
-"-f /mnt/SUB328463_1.fastq", 
-"-paired /mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
-"-f /mnt/smg.fa /mnt/SUB328463_1.fastq"
-);
+             # "-f /mnt/smg.fa", 
+             # "-f bad_file_input.fa", 
+             # "-f /mnt/smg.fa bad_file_input.fa",  
+             # "-f /mnt/SUB328463_1.fastq", 
+             "--paired /mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
+             # "-f /mnt/smg.fa /mnt/SUB328463_1.fastq"
+            );
 
 #THIS FILE was to test bad input files and how the program responds.
 #Unfortunately the program hangs on this.  It stays in a perpetual Queued state and does not let any other subsequent jobs to be run.
@@ -40,8 +40,8 @@ foreach my $file_inputs (@files)
 	$testCount++;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
-	my @results = get($job_id);
-	$testCount++;
+	my @results = get($job_id) if $job_id;
+	$testCount++ if $job_id;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
         for my $f (@results) {
@@ -104,10 +104,12 @@ sub get {
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
         my @results = map { $jobid ."_". $_ } qw(analysis.tar.gz assemblies.tar.gz report.txt);
-        print STDERR '\@results = '. Dumper(\@results);
-        
         return @results unless $@;
+    } else {
+        $testCount--;
     }
+
+    return ();
 }
 
 sub login {
@@ -155,7 +157,7 @@ sub setup {
         eval {!system("$command_5 > /dev/null") or die $!;};
         diag("unable to run $command_5") if $@;
     }
-# need to add more files types in here.
+    # need to add more files types in here.
 }
 
 
