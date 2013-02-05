@@ -31,8 +31,8 @@ message "Check queue status"
 # arast -s $ARASTURL stat
 ar_stat
 
-# export tmpdir = "/mnt"
-# if [ -d $(tmpdir) ];
+mkdir -p tmpdir
+cd tmpdir
 
 message "Download synthetic metagenome (200MB)"
 rm -f smg.fa
