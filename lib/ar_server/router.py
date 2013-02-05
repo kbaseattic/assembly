@@ -310,29 +310,42 @@ class JobResource:
 
         if resource == 'shock_node':
             return self.get_shock_node(userid, job_id)
-
+        elif resource == 'status':
+            return self.status(job_id=job_id, userid=userid)
 
     @cherrypy.expose
     def status(self, **kwargs):
         print 'status'
-        try: 
-            records = int(kwargs['records'])
+        try:
+            job_id = kwargs['job_id']
         except:
-            records = 15
+            job_id = None
+        if job_id:
+            doc = metadata.get_job(kwargs['userid'], job_id)
+            if doc:
+                return doc['status']
+            else:
+                return "Could not get job status"
+            
+        else:
+            try: 
+                records = int(kwargs['records'])
+            except:
+                records = 15
 
-        docs = metadata.list_jobs(kwargs['userid'])
-        pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
-        if docs:
-            for doc in docs[-records:]:
-                row = [doc['job_id'], str(doc['data_id']), doc['status'],]
-                try:
-                    row.append(str(doc['computation_time']))
-                    row.append(str(doc['message']))
-                except:
-                    row += ['','']
-                pt.add_row(row)
-            return pt.get_string() + "\n"
-        pass
+            docs = metadata.list_jobs(kwargs['userid'])
+            pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
+            if docs:
+                for doc in docs[-records:]:
+                    row = [doc['job_id'], str(doc['data_id']), doc['status'],]
+                    try:
+                        row.append(str(doc['computation_time']))
+                        row.append(str(doc['message']))
+                    except:
+                        row += ['','']
+                    pt.add_row(row)
+                return pt.get_string() + "\n"
+
 
 
     def get_shock_node(self, userid=None, job_id=None):
