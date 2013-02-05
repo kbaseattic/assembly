@@ -10,11 +10,7 @@ $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 my $testCount = 0;
 
 # keep adding tests to this list
-my @tests = qw(login run stat get prep);
-
-
-setup();
-$testCount++;
+my @tests = qw(login setup run stat get prep);
 
 foreach my $test (@tests) {
         &$test();
