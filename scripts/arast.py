@@ -18,9 +18,11 @@ from ConfigParser import SafeConfigParser
 from pkg_resources import resource_filename
 
 #arast libs
+
 import ar_client.client as client
 import ar_client.config as conf
 from ar_client.auth_token import *
+
 
 
 my_version = '0.2.2'
@@ -37,8 +39,8 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 # run -h
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
 p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("-a", "--assemblers", action="store", dest="pipeline", nargs='*')
-p_run.add_argument("-p", "--pipeline", action="store", dest="pipeline", nargs='*', help="Pipeline")
+p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use")
+p_run.add_argument("-p", "--pipeline", action="store", dest="pipeline", nargs='*', help="invoke a pipeline")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
@@ -176,7 +178,11 @@ def main():
     res_ids = []
     file_sizes = []
     file_list = []
+    # Format into separate pipelines
     if args.command == "run":
+        if args.assemblers:
+            args.pipeline = [(" ".join(args.assemblers))]
+
         if not ((args.pipeline) and (args.data_id or args.pair or args.single)):
             parser.print_usage()
             sys.exit()
