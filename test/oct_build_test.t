@@ -43,7 +43,7 @@ foreach my $file_inputs (@files)
 	$testCount++;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
-	my $file_name = "job".$job_id."_".$assembler.".tar";
+	my $file_name = $job_id."_".$assembler.".tar";
         print "Moving $file_name to /mnt\n"; 
         my $command = "sudo mv $file_name /mnt/."; 
         eval {!system("$command > /dev/null") or die $!;}; 
