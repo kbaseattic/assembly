@@ -158,7 +158,7 @@ sub setup {
         eval {!system("$command_5 > /dev/null") or die $!;};
         diag("unable to run $command_5") if $@;
     }
-# need to add more files types in here.
+    # need to add more files types in here.
 }
 
 
