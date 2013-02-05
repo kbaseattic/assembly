@@ -40,7 +40,7 @@ foreach my $file_inputs (@files)
 	$testCount++;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
-	my @results = get($job_id);
+	my @results = get($job_id) if $job_id;
 	$testCount++;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
