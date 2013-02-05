@@ -2,6 +2,7 @@
 use strict vars;
 use warnings;
 use Test::More;
+use Data::Dumper;
 
 $ENV{ARASTURL}      = "140.221.84.124";
 $ENV{KB_DEPLOYMENT} = "/kb/deployment" unless defined $ENV{KB_DEPLOYMENT};
@@ -103,6 +104,8 @@ sub get {
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
         my @results = map { $jobid ."_". $_ } qw(analysis.tar.gz assemblies.tar.gz report.txt);
+        print STDERR '\@results = '. Dumper(\@results);
+        
         return @results unless $@;
     }
 }
