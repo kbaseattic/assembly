@@ -1,6 +1,5 @@
 Using the Assembly Service Command-Line Client
 ==============================================
-Prerequisites
 
 Introduction
 ------------
