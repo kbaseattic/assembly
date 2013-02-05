@@ -39,15 +39,16 @@ foreach my $file_inputs (@files)
 	$testCount++;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
-	get($job_id);
+	my @results = get($job_id);
 	$testCount++;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
-	my $file_name = $job_id."_".$assembler.".tar";
-        print "Moving $file_name to /mnt\n"; 
-        my $command = "sudo mv $file_name /mnt/."; 
-        eval {!system("$command > /dev/null") or die $!;}; 
-        diag("unable to run $command") if $@; 
+        for (@results) {
+            print "Moving file $_ to /mnt\n"; 
+            my $command = "sudo mv $_ /mnt/."; 
+            eval {!system("$command > /dev/null") or die $!;}; 
+            diag("unable to run $command") if $@; 
+        }
     }
 }
 
@@ -77,7 +78,6 @@ sub stat_try {
 }
 
 sub get {
-    # needs code change to arast to only return the job id
     my $jobid = shift;
     my $done;
     print "Waiting for job $jobid to complete.";
@@ -101,6 +101,8 @@ sub get {
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
+        my @results = map { $jobid ."_". $_} qw(analysis.tar.gz assemblies.tar.gz report.txt);
+        return @results unless $@;
     }
 }
 
