@@ -77,8 +77,8 @@ class Client:
             for node_id in nodes_map.values():
                 self.shock.curl_download_file(node_id)
         except:
-            print traceback.format_tb(sys.exc_info()[2])
-            print sys.exc_info()
+            #print traceback.format_tb(sys.exc_info()[2])
+            #print sys.exc_info()
             raise Exception("Error retrieving results")
         return 
         
