@@ -29,9 +29,10 @@ WRAP_PYTHON_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PYTHON_TOOL).sh
 SRC_PYTHON = $(wildcard scripts/*.py)
 
 
-CLIENT_TESTS = $(wildcard client-tests/*.t)
-SCRIPTS_TESTS = $(wildcard script-tests/*.t)
 SERVER_TESTS = $(wildcard server-tests/*.t)
+CLIENT_TESTS = $(wildcard client-tests/*.t)
+# SCRIPTS_TESTS = $(wildcard script-tests/*.t)
+SCRIPTS_TESTS = $(wildcard test/*.t)
 
 
 CLIENT_DIR = $(TARGET)/bin
