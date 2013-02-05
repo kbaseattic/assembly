@@ -70,8 +70,8 @@ sub get {
     }
 
     if ($done) {
-        print "Get results for completed job $jobid..\n"
-            $command = "ar_get -s $ENV{ARASTURL} -j $jobid";
+        print "Get results for completed job $jobid..\n";
+        $command = "ar_get -s $ENV{ARASTURL} -j $jobid";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
