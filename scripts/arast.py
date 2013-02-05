@@ -146,7 +146,7 @@ def main():
     if not reauthorize:
         a_user = oauth_parser.get('auth', 'user')
         a_token = oauth_parser.get('auth', 'token')
-        # print >> sys.stderr, "Logged in as: {}".format(a_user)
+        print >> sys.stderr, "Logged in as: {}".format(a_user)
     else:
         print("Please authenticate with Globus Online")
         a_user = raw_input("Globus Login: ")
