@@ -15,13 +15,13 @@ my $testCount = 0;
 # keep adding tests to this list
 my @assemblers = qw(kiki velvet); #kiki velvet
 my @files = (
-"-f /mnt/smg.fa", 
-"-f bad_file_input.fa", 
-"-f /mnt/smg.fa bad_file_input.fa",  
-"-f /mnt/SUB328463_1.fastq", 
-"--paired /mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
-"-f /mnt/smg.fa /mnt/SUB328463_1.fastq"
-);
+             # "-f /mnt/smg.fa", 
+             "-f bad_file_input.fa", 
+             # "-f /mnt/smg.fa bad_file_input.fa",  
+             # "-f /mnt/SUB328463_1.fastq", 
+             # "--paired /mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
+             # "-f /mnt/smg.fa /mnt/SUB328463_1.fastq"
+            );
 
 #THIS FILE was to test bad input files and how the program responds.
 #Unfortunately the program hangs on this.  It stays in a perpetual Queued state and does not let any other subsequent jobs to be run.
@@ -44,6 +44,7 @@ foreach my $file_inputs (@files)
 	$testCount++;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
+        print STDERR '\@results = '. Dumper(\@results);
         for my $f (@results) {
             print "Moving file $f to /mnt\n"; 
             my $command = "sudo mv $f /mnt/."; 
