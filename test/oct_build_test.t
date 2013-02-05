@@ -65,7 +65,8 @@ sub run {
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
-    $jobid = $1 if $jobid =~ /\'(\d+)\'/; 
+    chomp($jobid);
+    $jobid = $1 if $jobid =~ /(\d+)/;
     return $jobid;
 }
 
