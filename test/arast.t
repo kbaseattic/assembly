@@ -98,6 +98,7 @@ sub prep {
 sub setup {
     login();
 
+    system "rm -rf tmpdir" if -d "tmpdir";
     system "mkdir -p tmpdir";
     chdir("tmpdir");
     unlink "smg.fa" if -e "smg.fa";
