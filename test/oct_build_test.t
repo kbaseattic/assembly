@@ -17,9 +17,9 @@ my @files = (
 "/mnt/smg.fa", 
 "bad_file_input.fa", 
 "/mnt/smg.fa bad_file_input.fa",  
-"/mnt/SRR328463_1.fastq", 
-"/mnt/SRR328463_1.fastq /mnt/SRR328463_2.fastq", 
-"/mnt/smg.fa /mnt/SRR328463_1.fastq"
+"/mnt/SUB328463_1.fastq", 
+"/mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
+"/mnt/smg.fa /mnt/SUB328463_1.fastq"
 );
 
 #THIS FILE was to test bad input files and how the program responds.
@@ -60,7 +60,7 @@ sub run {
     my $assembler = shift;
     my $file_inputs = shift;
     my $jobid;
-    my $command = "arast -s $ENV{ARASTURL} run -a $assembler -f $file_inputs --bwa -m \"$assembler run command on $file_inputs\"";
+    my $command = "ar_run -s $ENV{ARASTURL} -a $assembler -f $file_inputs -m \"$assembler run command on $file_inputs\"";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
@@ -70,7 +70,7 @@ sub run {
 
 sub stat_try {
     my $env = shift;
-    my $command = "arast -s $env stat";
+    my $command = "ar_stat -s $env";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
@@ -82,51 +82,61 @@ sub get {
     my $done;
     print "Waiting for job $jobid to complete.";
     while (!$done) {
-	my $stat = `arast -s $ENV{ARASTURL} stat -j $jobid`;
+	my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid`;
 	$done = 1 if $stat =~ /complete/;
 	print ".";
 	sleep 10;
     }
     print " [done]\n";
     
-    my $command = "arast -s $ENV{ARASTURL} get -j $jobid";
+    my $command = "ar_get -s $ENV{ARASTURL} -j $jobid";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("unable to run $command") if $@;
 }
 
+sub login {
+    my $command = "ar_login";
+    eval {!system($command) or die $!;};
+    ok(!$@, (caller(0))[3]);
+    diag("could not execute $command") if $@;
+}
+
 
 # needed to set up the tests, should be called before any tests are run
 sub setup {
+
+    login();
+
     unless (-e "/mnt/smg.fa") {
         my $command_1 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/smg.fa";
         eval {!system("$command_1 > /dev/null") or die $!;}; 
         diag("unable to run $command_1") if $@; 
 	print "FILE DOES NOT EXIST 1";
     }
-    if ((!(-e "/mnt/SRR328463_1.fastq.bz2"))&&(!(-e "/mnt/SRR328463_1.fastq"))) {
+    if ((!(-e "/mnt/SUB328463_1.fastq.bz2"))&&(!(-e "/mnt/SUB328463_1.fastq"))) {
 	#get zip file
-        my $command_2 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/SRR328463_1.fastq.bz2";
+        my $command_2 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/SUB328463_1.fastq.bz2";
         eval {!system("$command_2 > /dev/null") or die $!;}; 
         diag("unable to run $command_2") if $@;
     }
-    unless  (-e "/mnt/SRR328463_1.fastq") {
+    unless  (-e "/mnt/SUB328463_1.fastq") {
 	#have zip file no unzip it
-        print "Unzipping /mnt/SRR328463_2.fastq.bz2\n"; 
-	my $command_3 = "sudo bzip2 -d /mnt/SRR328463_1.fastq.bz2";
+        print "Unzipping /mnt/SUB328463_2.fastq.bz2\n"; 
+	my $command_3 = "sudo bzip2 -d /mnt/SUB328463_1.fastq.bz2";
         eval {!system("$command_3 > /dev/null") or die $!;}; 
         diag("unable to run $command_3") if $@; 
     }
-    if ((!(-e "/mnt/SRR328463_2.fastq.bz2"))&&(!(-e "/mnt/SRR328463_2.fastq"))) {
+    if ((!(-e "/mnt/SUB328463_2.fastq.bz2"))&&(!(-e "/mnt/SUB328463_2.fastq"))) {
         #get zip file     
-        my $command_4 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/SRR328463_2.fastq.bz2"; 
+        my $command_4 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/SUB328463_2.fastq.bz2"; 
         eval {!system("$command_4 > /dev/null") or die $!;}; 
         diag("unable to run $command_4") if $@;
     }
-    unless  (-e "/mnt/SRR328463_2.fastq") {
+    unless  (-e "/mnt/SUB328463_2.fastq") {
 	#get zip file
-        print "Unzipping /mnt/SRR328463_2.fastq.bz2\n"; 
-        my $command_5 = "sudo bzip2 -d /mnt/SRR328463_2.fastq.bz2";
+        print "Unzipping /mnt/SUB328463_2.fastq.bz2\n"; 
+        my $command_5 = "sudo bzip2 -d /mnt/SUB328463_2.fastq.bz2";
         eval {!system("$command_5 > /dev/null") or die $!;};
         diag("unable to run $command_5") if $@;
     }
