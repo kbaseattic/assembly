@@ -19,7 +19,7 @@ my @files = (
 "-f bad_file_input.fa", 
 "-f /mnt/smg.fa bad_file_input.fa",  
 "-f /mnt/SUB328463_1.fastq", 
-"-paired /mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
+"--paired /mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
 "-f /mnt/smg.fa /mnt/SUB328463_1.fastq"
 );
 
