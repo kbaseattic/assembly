@@ -117,6 +117,7 @@ deploy-scripts:
 deploy-docs:
 	mkdir -p $(TARGET)/services/$(SERVICE)/webroot
 	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
+	cp doc/*.png $(TARGET)/services/$(SERVICE)/webroot/.
 
 deploy-service: install-dep create-scripts deploy-mongo
 redeploy-service: clean install-dep create-scripts deploy-mongo
