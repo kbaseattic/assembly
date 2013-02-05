@@ -44,7 +44,6 @@ foreach my $file_inputs (@files)
 	$testCount++;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
-        print STDERR '\@results = '. Dumper(\@results);
         for my $f (@results) {
             print "Moving file $f to /mnt\n"; 
             my $command = "sudo mv $f /mnt/."; 
