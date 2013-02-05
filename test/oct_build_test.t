@@ -26,7 +26,7 @@ my @files = (
 #Unfortunately the program hangs on this.  It stays in a perpetual Queued state and does not let any other subsequent jobs to be run.
 #bad_input.fa);
 
-setup();
+# setup();
 # add other fastq file type.  Do testing on fasta, fastq, and fasta and fastq together
 # do testing having gobbly gook file input
 
