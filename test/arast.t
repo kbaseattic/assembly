@@ -58,7 +58,7 @@ sub get {
 	$jobid = $1 if $jobid =~ /\'(\d+)\'/;
 
         my $done;
-        `ar_stat -s $ENV{ARASTURL}`;
+        # `ar_stat -s $ENV{ARASTURL}`;
         print "Waiting for job to complete.";
         while (!$done) {
             my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
