@@ -41,7 +41,7 @@ foreach my $file_inputs (@files)
 	stat_try($ENV{ARASTURL});
 	$testCount++;
 	my @results = get($job_id) if $job_id;
-	$testCount++;
+	$testCount++ if $job_id;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
         for my $f (@results) {
