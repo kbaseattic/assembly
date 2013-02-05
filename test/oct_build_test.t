@@ -81,18 +81,27 @@ sub get {
     my $jobid = shift;
     my $done;
     print "Waiting for job $jobid to complete.";
-    while (!$done) {
-	my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid`;
-	$done = 1 if $stat =~ /complete/;
-	print ".";
-	sleep 10;
+    while (1) {
+	my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
+        if ($stat =~ /success/i) {
+            $done = 1;
+            print " [done]\n";
+            last;
+        } elsif ($stat =~ /fail/i) {
+            print " Job $jobid completed with no contigs.\n";
+            last;
+        }
+        print ".";
+        sleep 10;
     }
     print " [done]\n";
     
-    my $command = "ar_get -s $ENV{ARASTURL} -j $jobid";
-    eval {!system($command) or die $!;};
-    ok(!$@, (caller(0))[3]);
-    diag("unable to run $command") if $@;
+    if ($done) {
+        my $command = "ar_get -s $ENV{ARASTURL} -j $jobid";
+        eval {!system($command) or die $!;};
+        ok(!$@, (caller(0))[3]);
+        diag("unable to run $command") if $@;
+    }
 }
 
 sub login {
