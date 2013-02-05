@@ -50,7 +50,7 @@ sub get {
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
-    $jobid = $1 if $jobid =~ /\'(\d+)\'/;
+    $jobid = $1 if $jobid =~ /(\d+)/;
 
     `ar_stat -s $ENV{ARASTURL}`;
     print "Waiting for job to complete.";
