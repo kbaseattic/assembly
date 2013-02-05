@@ -14,12 +14,12 @@ my $testCount = 0;
 # keep adding tests to this list
 my @assemblers = qw(kiki velvet); #kiki velvet
 my @files = (
-"/mnt/smg.fa", 
-"bad_file_input.fa", 
-"/mnt/smg.fa bad_file_input.fa",  
-"/mnt/SUB328463_1.fastq", 
-"/mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
-"/mnt/smg.fa /mnt/SUB328463_1.fastq"
+"-f /mnt/smg.fa", 
+"-f bad_file_input.fa", 
+"-f /mnt/smg.fa bad_file_input.fa",  
+"-f /mnt/SUB328463_1.fastq", 
+"-paired /mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
+"-f /mnt/smg.fa /mnt/SUB328463_1.fastq"
 );
 
 #THIS FILE was to test bad input files and how the program responds.
@@ -60,7 +60,7 @@ sub run {
     my $assembler = shift;
     my $file_inputs = shift;
     my $jobid;
-    my $command = "ar_run -s $ENV{ARASTURL} -a $assembler -f $file_inputs -m \"$assembler run command on $file_inputs\"";
+    my $command = "ar_run -s $ENV{ARASTURL} -a $assembler $file_inputs -m \"$assembler run command on $file_inputs\"";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
