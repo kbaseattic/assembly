@@ -43,9 +43,9 @@ foreach my $file_inputs (@files)
 	$testCount++;
 	stat_try($ENV{ARASTURL});
 	$testCount++;
-        for (@results) {
-            print "Moving file $_ to /mnt\n"; 
-            my $command = "sudo mv $_ /mnt/."; 
+        for my $f (@results) {
+            print "Moving file $f to /mnt\n"; 
+            my $command = "sudo mv $f /mnt/."; 
             eval {!system("$command > /dev/null") or die $!;}; 
             diag("unable to run $command") if $@; 
         }
