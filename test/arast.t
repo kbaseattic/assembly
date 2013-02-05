@@ -53,16 +53,20 @@ sub get {
         diag("unable to run $command") if $@;
 	$jobid = $1 if $jobid =~ /\'(\d+)\'/;
 
-        my $done;
         `ar_stat -s $ENV{ARASTURL}`;
         print "Waiting for job to complete.";
-        while (!$done) {
+        while (1) {
             my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
-            $done = 1 if $stat =~ /success/i;
+            if ($stat =~ /success/i) {
+                print " [done]\n";
+                break;
+            } elsif ($stat =~ /fail/i) {
+                print " Job $jobid completed with no contigs.\n";
+                break;
+            }
             print ".";
             sleep 10;
         }
-        print " [done]\n";
 	
 	$command = "ar_get -s $ENV{ARASTURL} -j $jobid";
         eval {!system($command) or die $!;};
