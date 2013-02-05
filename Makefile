@@ -45,7 +45,7 @@ default:
 
 # Test
 
-test: test-sh
+test: test-sh test-scripts
 
 # test: test-client test-scripts test-service
 # 	@echo "running client and script tests"
