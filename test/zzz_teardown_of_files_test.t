@@ -17,27 +17,27 @@ sub teardown {
         eval {!system("$command > /dev/null") or die $!;};
         diag("unable to run $command") if $@;
     } 
-    if (-e "/mnt/SRR328463_1.fastq.bz2") { 
-        my $command = "sudo rm /mnt/SRR328463_1.fastq.bz2";
+    if (-e "/mnt/SUB328463_1.fastq.bz2") { 
+        my $command = "sudo rm /mnt/SUB328463_1.fastq.bz2";
         eval {!system("$command > /dev/null") or die $!;}; 
         diag("unable to run $command") if $@; 
     }
-    if (-e "/mnt/SRR328463_1.fastq") {
-	my $command = "sudo rm /mnt/SRR328463_1.fastq"; 
+    if (-e "/mnt/SUB328463_1.fastq") {
+	my $command = "sudo rm /mnt/SUB328463_1.fastq"; 
 	eval {!system("$command > /dev/null") or die $!;};
 	diag("unable to run $command") if $@;
     }
-    if (-e "/mnt/SRR328463_2.fastq.bz2") {
-        my $command = "sudo rm /mnt/SRR328463_2.fastq.bz2"; 
+    if (-e "/mnt/SUB328463_2.fastq.bz2") {
+        my $command = "sudo rm /mnt/SUB328463_2.fastq.bz2"; 
         eval {!system("$command > /dev/null") or die $!;}; 
         diag("unable to run $command") if $@; 
     } 
-    if (-e "/mnt/SRR328463_2.fastq") {
-        my $command = "sudo rm /mnt/SRR328463_2.fastq"; 
+    if (-e "/mnt/SUB328463_2.fastq") {
+        my $command = "sudo rm /mnt/SUB328463_2.fastq"; 
         eval {!system("$command > /dev/null") or die $!;};
         diag("unable to run $command") if $@;
     } 
-    my $command = "sudo rm /mnt/job*.tar"; 
+    my $command = "sudo rm /mnt/*_report.txt /mnt/*_assemblies.tar.gz /mnt/*_analysis.tar.gz"; 
     eval {!system("$command > /dev/null") or die $!;}; 
     diag("unable to run $command") if $@; 
 
