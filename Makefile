@@ -109,7 +109,7 @@ deploy-scripts:
 	export KB_PYTHON_PATH=$(TARGET)/lib bash ; \
 	for src in $(SRC_PYTHON) ; do \
 		basefile=`basename $$src`; \
-		base=`basename $$src .pl`; \
+		base=`basename $$src .py`; \
 		echo install $$src $$base ; \
 		cp $$src $(TARGET)/pybin ; \
 		$(WRAP_PYTHON_SCRIPT) "$(TARGET)/pybin/$$basefile" $(TARGET)/bin/$$base ; \
