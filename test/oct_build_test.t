@@ -124,6 +124,7 @@ sub login {
 sub setup {
 
     login();
+    $testCount++;
 
     unless (-e "/mnt/smg.fa") {
         my $command_1 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/smg.fa";
