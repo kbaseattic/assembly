@@ -73,6 +73,13 @@ cp -R * ../../../bin/quast
 cd ../..
 rm -rf quast
 
+#Install seqtk
+git clone https://github.com/lh3/seqtk.git
+cd seqtk
+make
+cp seqtk ../../bin/
+cd ..
+rm -rf seqtk
 
 
 #cd ../bin/

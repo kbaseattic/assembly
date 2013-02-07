@@ -12,7 +12,7 @@ class VelvetAssembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [self.velveth, self.outpath, self.hash_length]
-
+        print reads
         paired_count = 1                    
         for d in reads:
             read1 = d['files'][0]

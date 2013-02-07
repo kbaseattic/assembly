@@ -120,17 +120,19 @@ class ArastConsumer:
                 logging.info('No paired files submitted')
 
             try:
-                for l in single:
-                    filedict = {'type':'single', 'files':[]}
-                    for word in l:
-                        if is_filename(word):
-                            baseword = os.path.basename(word)
+                for seqfiles in single:
+                    print 'here'
+                    print seqfiles
+                    for wordpath in seqfiles:
+                        filedict = {'type':'single', 'files':[]}    
+                        if is_filename(wordpath):
+                            baseword = os.path.basename(wordpath)
                             filedict['files'].append(
                                 os.path.join(filepath, baseword))
                         else:
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
-                    all_files.append(filedict)
+                        all_files.append(filedict)
             except:
                 logging.info(format_tb(sys.exc_info()[2]))
                 logging.info('No single files submitted!')
@@ -168,10 +170,9 @@ class ArastConsumer:
                 logging.info('No paired files submitted')
 
             try:
-                for l in single:
-                    filedict = {'type':'single', 'files':[]}
-                    
-                    for wordpath in l:
+                for seqfiles in single:
+                    for wordpath in seqfiles:
+                        filedict = {'type':'single', 'files':[]}
                         # Parse user directories
                         try:
                             path, word = wordpath.rsplit('/', 1)
@@ -187,9 +188,10 @@ class ArastConsumer:
                         else:
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
-                    all_files.append(filedict)
+                        all_files.append(filedict)
             except:
-                logging.info(format_tb(sys.exc_info()[2]))
+                #logging.info(format_tb(sys.exc_info()[2]))
+                logging.info(format_exc(sys.exc_info()))
                 logging.info('No single end files submitted')
         return datapath, all_files
 
