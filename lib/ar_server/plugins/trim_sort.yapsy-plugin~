@@ -1,0 +1,24 @@
+[Core]
+Name = sga_preprocess
+Module = sga_preprocess
+
+[Settings]
+executable = ../../bin/a5/sga
+filetypes = fastq,fq
+
+# From A5 defaults
+#SGA_Q_TRIM => 10
+#SGA_Q_FILTER => 20
+#SGA_MIN_READ_LENGTH => 29
+quality_trim = 10
+quality_filter = 20
+min_length = 29
+permute_ambiguous = True
+
+
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = SGA preprocess plugin
+

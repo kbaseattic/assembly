@@ -329,7 +329,11 @@ class ArastConsumer:
                 if module_name.lower() == 'none':
                     continue
                 ## For now, module code is 1st and last letter
-                pipe_suffix += module_name[0].upper() + module_name[-1]
+                short_name = self.pmanager.get_short_name(module_name)
+                if short_name:
+                    pipe_suffix += short_name.capitalize()
+                else:
+                    pipe_suffix += module_name[0].upper() + module_name[-1]
 
                 self.out_report.write('\n{0} PIPELINE {1} -- STAGE {2}: {3} {4}\n'.format(
                         '='*10, pipeline_num, pipeline_stage, 

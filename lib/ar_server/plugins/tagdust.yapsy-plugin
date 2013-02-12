@@ -3,9 +3,10 @@ Name = tagdust
 Module = tagdust
 
 [Settings]
+short_name = tag
 executable = ../../bin/a5/tagdust
 filetypes = fasta,fa,fastq,fq
-library = ../bin/adapter.fasta
+library = ../../bin/adapter.fasta
 
 
 

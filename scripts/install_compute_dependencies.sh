@@ -1,6 +1,6 @@
 #! /bin/bash
 sudo apt-get update
-sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib
+sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip
 sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
@@ -73,13 +73,26 @@ cp -R * ../../../bin/quast
 cd ../..
 rm -rf quast
 
+#Install SolexaQA
+mkdir solexa
+mkdir ../bin/solexa
+cd solexa
+wget http://sourceforge.net/projects/solexaqa/files/src/SolexaQA_v.2.1.zip
+unzip SolexaQA_v.2.1.zip
+cd Solexa*
+cp * ../../../bin/solexa
+chmod +x ../../../bin/solexa/DynamicTrim.pl
+chmod +x ../../../bin/solexa/LengthSort.pl
+cd ../..
+rm -rf solexa
+
 #Install seqtk
-git clone https://github.com/lh3/seqtk.git
-cd seqtk
-make
-cp seqtk ../../bin/
-cd ..
-rm -rf seqtk
+#git clone https://github.com/lh3/seqtk.git
+#cd seqtk
+#make
+#cp seqtk ../../bin/
+#cd ..
+#rm -rf seqtk
 
 
 #cd ../bin/
