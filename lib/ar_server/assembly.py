@@ -98,11 +98,12 @@ def prefix_file(file, prefix):
     return newfile
 
 def rename_file_copy(filepath, newname):
-    """ Adds prefix to file, returns new file name, moves file"""
+    """ Renames the file, keeping the file extension, copies to new file name"""
     f = '/' + newname + '.' + os.path.basename(filepath).rsplit('.', 1)[1]
     newfile =  os.path.split(filepath)[0] + f
     shutil.copy(filepath, newfile)
     return newfile
+
     
 
 def get_fasta(directory):

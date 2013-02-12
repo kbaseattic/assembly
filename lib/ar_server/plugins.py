@@ -335,6 +335,20 @@ class ModuleManager():
     def input_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.INPUT
 
+    def get_short_name(self, module):
+        try:
+            plugin = self.pmanager.getPluginByName(module)
+            settings = plugin.details.items('Settings')
+            for kv in settings:
+                print kv
+                if kv[0] == 'short_name':
+                    sn = kv[1]
+                    break
+            return sn
+        except:
+            return None
+
+
     def has_plugin(self, plugin):
         if not plugin.lower() in self.plugins:
             logging.error("{} plugin not found".format(plugin))

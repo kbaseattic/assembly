@@ -3,6 +3,7 @@ Name = velvet
 Module = velvet
 
 [Settings]
+short_name = vt
 velvetg = /usr/bin/velvetg
 velveth = /usr/bin/velveth
 filetypes = fasta,fa,fastq,fq

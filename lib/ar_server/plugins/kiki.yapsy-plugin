@@ -3,6 +3,7 @@ Name = kiki
 Module = kiki
 
 [Settings]
+short_name = ki
 executable = /usr/bin/ki
 filetypes = fasta,fa,fastq,fq
 k = 29
