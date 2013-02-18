@@ -88,7 +88,7 @@ class MetadataConnection:
             job = self.get_jobs().find({'ARASTUSER': user,'data_id':int(data_id)})[0]
         except:
             job = None
-            logging.error("Job %s does not exist" % data_id)
+            logging.error("Data %s does not exist" % data_id)
         return job
 
 
