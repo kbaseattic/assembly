@@ -9,7 +9,7 @@ bin_lengthsort = ../../bin/solexa/LengthSort.pl
 filetypes = fastq,fq
 
 probcutoff = 0.5
-length = 25
+length = 75
 
 
 [Documentation]

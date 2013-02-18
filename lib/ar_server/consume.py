@@ -98,6 +98,7 @@ class ArastConsumer:
             ids = data_doc['ids']
             token = params['oauth_token']
         else:
+            self.metadata.update_job(uid, 'status', 'Invalid Data ID')
             raise Exception('Data {} does not exist on Shock Server'.format(
                     params['data_id']))
 
@@ -208,6 +209,9 @@ class ArastConsumer:
         if not datapath:
             error = True
             logging.error("Data does not exist!")
+            return
+
+        print datapath
         
         job_id = params['job_id']
         uid = params['_id']
@@ -308,6 +312,8 @@ class ArastConsumer:
             job_data = copy.deepcopy(job_data_global)
             job_data['out_report'] = job_data_global['out_report'] 
             pipeline, overrides = self.pmanager.parse_pipe(pipe)
+            print pipeline
+            print overrides
             num_stages = len(pipeline)
             pipeline_stage = 1
             pipeline_results = []
@@ -324,7 +330,6 @@ class ArastConsumer:
                 total_complete = pipes_complete + stage_complete
                 cur_state = 'Running: [{}%]'.format(int(total_complete * 100))
                 self.metadata.update_job(job_data['uid'], 'status', cur_state)
-
 
                 if module_name.lower() == 'none':
                     continue
@@ -355,7 +360,8 @@ class ArastConsumer:
                                 break
                         except:
                             pass
-                        if pipe[i][0] == module_name and i == pipeline_stage - 1: #copy!
+                        if (pipe[i][0] == module_name and i == pipeline_stage - 1):
+                            #and overrides[i].items() == job_data['params']): #copy!
                             logging.info('Found previously computed data, reusing.')
                             output = [] + pipe[i][1]
                             alldata = [] + pipe[i][2]
@@ -455,7 +461,12 @@ class ArastConsumer:
 
     def callback(self, ch, method, properties, body):
         print " [*] %r:%r" % (method.routing_key, body)
-        self.compute(body)
+        try:
+            self.compute(body)
+        except:
+            params = json.loads(body)
+            status = "[FAIL] {}".format(sys.exc_info()[1])
+            self.metadata.update_job(params['job_id'], 'status', status)
 
     def start(self):
         self.fetch_job()
