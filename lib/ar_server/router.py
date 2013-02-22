@@ -213,7 +213,6 @@ def authenticate_request():
     if m:
         user = m.group(1)
     else:
-        print 'um'
         raise cherrypyHTTPError(403, 'Bad Token')
     print user
     auth_info = metadata.get_auth_info(user)
@@ -270,7 +269,7 @@ def start(config_file):
         },
     }
 
-    cherrypy.request.hooks.attach('before_request_body', authenticate_request)
+    #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.quickstart(root, '/', conf)
     ###### DOES IT AUTH EVERY REQUEST??? ########
 
@@ -291,6 +290,7 @@ class JobResource:
 
     @cherrypy.expose
     def new(self, userid=None):
+        authenticate_request()
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
