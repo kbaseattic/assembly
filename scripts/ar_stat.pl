@@ -29,7 +29,11 @@ my $server;
 my $rc = GetOptions("h|help" => \$help,
                     "s=s" => \$server);
 
-($rc && !$help) or die $usage;
+$rc or die $usage;
+if ($help) {
+    print $usage;
+    exit 0;
+}
 
 # my $target = $ENV{HOME}. "/kb/assembly";
 # my $arast  = "ar_client/ar_client/ar_client.py";
