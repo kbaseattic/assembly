@@ -99,27 +99,7 @@ def main():
         clientlog.setLevel(logging.DEBUG)
         clientlog.debug("Logger Debugging mode")
 
-    # if args.config:
-    #     config_file = args.config
-    # else:
-    #     config_file = resource_filename(__name__, 'settings.conf')
-    #     clientlog.debug("Reading config file: %s" % config_file)
-
-    #cparser.read(config_file)
-
-    # try:
-    #     ARASTURL = cparser.get('arast', 'url')
-    # except:
-    #     clientlog.error("Invalid config file")
-
     ARASTURL = conf.URL
-
-    # Check Authorization
-    # user_dir = appdirs.user_data_dir(cparser.get('arast','appname'),
-    #                                    cparser.get('arast','appauthor'))
-    # oauth_file = os.path.join(user_dir, cparser.get('arast','oauth_filename'))
-    # expiration = int(cparser.get('arast', 'oauth_exp_days'))
-
     user_dir = appdirs.user_data_dir(conf.APPNAME, conf.APPAUTHOR)
     oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
     expiration = conf.OAUTH_EXP_DAYS
@@ -137,6 +117,7 @@ def main():
             print >> sys.stderr, '[x] Logged out'
             sys.exit()
 
+    # Check if user file exists
     if os.path.exists(oauth_file):
         token_date_str = oauth_parser.get('auth', 'token_date')
         tdate = datetime.datetime.strptime(token_date_str, '%Y-%m-%d').date()
