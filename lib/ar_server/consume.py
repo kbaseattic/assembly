@@ -253,11 +253,17 @@ class ArastConsumer:
         url = "http://%s" % (self.shockurl)
         url += '/node'
 
+        try:
+            include_all_data = params['all_data']
+        except:
+            include_all_data = False
+
+        contigs = not include_all_data
         status = ''
         if pipeline:
             try:
                 self.pmanager.validate_pipe(pipeline)
-                result_tar, quast  = self.run_pipeline(pipeline, job_data)
+                result_tar, quast  = self.run_pipeline(pipeline, job_data, contigs_only=contigs)
                 res = self.upload(url, user, token, result_tar)
                 download_ids['pipeline'] = res['D']['id']
 
@@ -296,7 +302,7 @@ class ArastConsumer:
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
         self.metadata.update_job(uid, 'computation_time', ftime)
 
-    def run_pipeline(self, pipes, job_data_global):
+    def run_pipeline(self, pipes, job_data_global, contigs_only=True):
         """
         Runs all pipelines in list PIPES
         """
@@ -419,13 +425,16 @@ class ArastConsumer:
         quast_ret = quast_tar.rsplit('/', 1)[0] + '/{}_analysis.tar.gz'.format(job_data['job_id'])
         os.rename(quast_tar, quast_ret)
 
-        if len(all_files) == 1:
+        if not contigs_only:
+            if len(all_files) == 1:
+                return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
+                                    [all_files[0]],'{}_assemblies.tar.gz'.format(job_data['job_id'])), quast_ret
+
             return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                [all_files[0]],'{}_assemblies.tar.gz'.format(job_data['job_id'])), quast_ret
-            
-        return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                        all_files,'{}_assemblies.tar.gz'.format(job_data['job_id'])), quast_ret
-    
+                            all_files,'{}_all_data.tar.gz'.format(job_data['job_id'])), quast_ret
+        else:
+            return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
+                                final_contigs, '{}_contigs.tar.gz'.format(job_data['job_id'])), quast_ret
 
     def upload(self, url, user, token, file):
         files = {}
