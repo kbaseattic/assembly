@@ -45,6 +45,7 @@ p_run.add_argument("-m", "--message", action="store", dest="message", help="Atta
 p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
 p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
+p_run.add_argument("--all-data", action="store_true", help="save all data for return")
 
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
