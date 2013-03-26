@@ -324,8 +324,9 @@ class ArastConsumer:
             pipeline_stage = 1
             pipeline_results = []
             cur_outputs = []
-            self.out_report.write('Pipeline {}: {}\n'.format(pipeline_num, pipe))
+            self.out_report.write('\n{0} Pipeline {1}: {2} {0}\n'.format('='*15, pipeline_num, pipe))
             pipe_suffix = '' # filename code for indiv pipes
+            pipe_start_time = time.time()
             for module_name in pipeline:
                 print '\n\n{0} Running module: {1} {2}'.format(
                     '='*20, module_name, '='*(35-len(module_name)))
@@ -346,9 +347,8 @@ class ArastConsumer:
                 else:
                     pipe_suffix += module_name[0].upper() + module_name[-1]
 
-                self.out_report.write('\n{0} PIPELINE {1} -- STAGE {2}: {3} {4}\n'.format(
-                        '='*10, pipeline_num, pipeline_stage, 
-                        module_name, '='*(25-len(module_name))))
+                self.out_report.write('PIPELINE {} -- STAGE {}: {}\n'.format(
+                        pipeline_num, pipeline_stage, module_name))
                 self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
                 logging.debug('New job_data for stage {}: {}'.format(
                         pipeline_stage, job_data))
@@ -407,6 +407,9 @@ class ArastConsumer:
                 pipeline_stage += 1
                 cur_outputs.append([module_name, output, alldata])
 
+            pipe_elapsed_time = time.time() - pipe_start_time
+            pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
+            self.out_report.write('Pipeline {} total time: {}\n\n'.format(pipeline_num, pipe_ftime))
             pipe_outputs.append(cur_outputs)
             pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], job_data['job_id'],
                                                            pipeline_num)
@@ -519,6 +522,7 @@ def list_io_basenames(job_data):
     return basenames
 
 class UpdateTimer(threading.Thread):
+    """ Thread for updating time in the mongodb record (for arast stat). """
     def __init__(self, meta_obj, update_interval, start_time, uid, done_flag):
         self.meta = meta_obj
         self.interval = update_interval

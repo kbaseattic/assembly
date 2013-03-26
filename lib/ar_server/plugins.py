@@ -5,6 +5,8 @@ import itertools
 import os
 import uuid
 import sys
+import time
+import datetime 
 import subprocess
 from yapsy.PluginManager import PluginManager
 
@@ -53,12 +55,16 @@ class BasePlugin(object):
 
         self.out_module.write("Command: {}\n".format(cmd_string))
         self.out_report.write('Command: {}\n'.format(cmd_string))
+        m_start_time = time.time()
         try:
             out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
         except subprocess.CalledProcessError as e:
             out = 'Process Failed.\nExit Code: {}\nOutput:{}\n'.format(
                 e.returncode, e.output)
+        m_elapsed_time = time.time() - m_start_time
+        m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
         self.out_module.write(out)
+        self.out_report.write("Process time: {}\n".format(m_ftime))
 
 
     def create_directories(self, job_data):
@@ -134,6 +140,10 @@ class BasePlugin(object):
 #        return assembly.tar_list(self.outpath, files, 
         return assembly.tar_directory(self.outpath, self.outpath,
                                       self.name + str(job_id) + '.tar.gz')
+
+    def get_version(self):
+        """ Module plugin should implement get_version. """
+        return 'get_version not implemented!'
 
     def update_settings(self, job_data):
         """
