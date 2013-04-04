@@ -46,7 +46,6 @@ class ArastConsumer:
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
         self.metadata = meta.MetadataConnection(config, arasturl)
         self.gc_lock = multiprocessing.Lock()
-        
         #self.metadata.update_doc('active_nodes', 'server_name', socket.gethostname(),
          #                        'status', 'running')
 
@@ -409,6 +408,8 @@ class ArastConsumer:
 
             pipe_elapsed_time = time.time() - pipe_start_time
             pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
+            if not output:
+                self.out_report.write('ERROR: No contigs produced. See module log\n')
             self.out_report.write('Pipeline {} total time: {}\n\n'.format(pipeline_num, pipe_ftime))
             pipe_outputs.append(cur_outputs)
             pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], job_data['job_id'],
@@ -515,6 +516,7 @@ def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1
 
 def list_io_basenames(job_data):
+    """ Lists filenames in JOB_DATA dict """
     basenames = []
     for d in job_data['reads']:
         for f in d['files']:
@@ -537,7 +539,5 @@ class UpdateTimer(threading.Thread):
                 return
             elapsed_time = time.time() - self.start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
-
             self.meta.update_job(self.uid, 'computation_time', ftime)
-
             time.sleep(self.interval)

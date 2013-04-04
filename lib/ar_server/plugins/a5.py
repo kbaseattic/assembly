@@ -23,6 +23,7 @@ class A5Assembler(BaseAssembler, IPlugin):
         contigs = glob.glob(self.outpath + '/*.contigs.fasta')
 
         if not contigs:
-            raise Exception("No contigs")
+            #raise Exception("No contigs")
+            print "No contigs"
         return contigs
 

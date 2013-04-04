@@ -24,7 +24,8 @@ class KikiAssembler(BaseAssembler, IPlugin):
         for i in range(len(contigs)):
             self.tab_to_fasta(contigs[i], contigs_renamed[i], self.contig_threshold)
         if not contigs_renamed:
-            raise Exception("No contigs")
+            pass
+            #raise Exception("No contigs")
         return contigs_renamed
 
     def tab_to_fasta(self, tabbed_file, outfile, threshold):
