@@ -13,7 +13,7 @@ setup(
     description = ("A commandline client for the KBASE Assembly Service"),
     url = "http://www.kbase.us/services/assembly",
     packages = find_packages(),
-    install_requires = ['requests>=0.13.0', 'appdirs'],
+    install_requires = ['requests>=0.13.0', 'appdirs', 'httplib2'],
     entry_points={'console_scripts':[
             'arast = ar_client.arast:main']},
     package_data = {'':['ar_client/*.conf']},
