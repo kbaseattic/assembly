@@ -7,7 +7,7 @@ short_name = ki
 executable = /usr/bin/ki
 filetypes = fasta,fa,fastq,fq
 k = 29
-contig_threshold = 10000
+contig_threshold = 1000
 
 [Documentation]
 Author = Chris Bun
