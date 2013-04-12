@@ -6,6 +6,7 @@ Module = kiki
 short_name = ki
 executable = /usr/bin/ki
 filetypes = fasta,fa,fastq,fq
+dashes = 1
 k = 29
 contig_threshold = 1000
 

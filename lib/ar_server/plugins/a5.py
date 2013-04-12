@@ -20,7 +20,8 @@ class A5Assembler(BaseAssembler, IPlugin):
         cmd_args.append('a5')
         self.arast_popen(cmd_args, cwd=self.outpath)
 
-        contigs = glob.glob(self.outpath + '/*.contigs.fasta')
+        #contigs = glob.glob(self.outpath + '/*.contigs.fasta')
+        contigs = glob.glob(self.outpath + '/*.final.scaffolds.fasta')
 
         if not contigs:
             #raise Exception("No contigs")
