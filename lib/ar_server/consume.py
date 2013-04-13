@@ -155,6 +155,7 @@ class ArastConsumer:
 
             try:
                 for l in paired:
+                    #FILEDICT contains a single read library's info
                     filedict = {'type':'paired', 'files':[]}
                     for word in l:
                         if is_filename(word):
@@ -210,7 +211,6 @@ class ArastConsumer:
             logging.error("Data does not exist!")
             return
 
-        print datapath
         
         job_id = params['job_id']
         uid = params['_id']
@@ -266,7 +266,10 @@ class ArastConsumer:
                 res = self.upload(url, user, token, result_tar)
                 download_ids['pipeline'] = res['D']['id']
 
-                res = self.upload(url, user, token, quast)
+                try:
+                    res = self.upload(url, user, token, quast)
+                except IOError:
+                    raise Exception('No Results')
                 download_ids['quast'] = res['D']['id']
 
                 status += "pipeline [success] "
@@ -329,6 +332,7 @@ class ArastConsumer:
             for module_name in pipeline:
                 print '\n\n{0} Running module: {1} {2}'.format(
                     '='*20, module_name, '='*(35-len(module_name)))
+                self.garbage_collect(self.datapath, 2147483648) # 2GB
                 pipes_complete = (pipeline_num - 1) / float(num_pipes)
                 stage_complete = (pipeline_stage - 1) / float(num_stages)
                 pct_segment = 1.0 / num_pipes
@@ -451,7 +455,7 @@ class ArastConsumer:
     def download(self, url, user, token, node_id, outdir):
         sclient = shock.Shock(url, user, token)
         downloaded = sclient.curl_download_file(node_id, outdir=outdir)
-        return downloaded
+        return extract_file(downloaded)
 
     def fetch_job(self):
         connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -498,19 +502,34 @@ def touch(path):
         open(path, "w").close()
         os.utime(path, (now, now))
     
-def extract_files(datapath):
+def extract_file(filename):
     """ Decompress files if necessary """
-    files = os.listdir(datapath)
-    logging.debug("Looking for files to extract in %s" % files)
-    for tfile in [datapath + f for f in files]:
-        if tarfile.is_tarfile(tfile):
-            logging.debug("Extracting %s" % tfile)
-            tarfile.open(tfile, 'r').extractall(datapath)
-            os.remove(tfile)
-        elif tfile.endswith('.bz2'):
-            logging.debug("Extracting %s" % tfile)
-            p = subprocess.Popen(['bunzip2', tfile])
+    filepath = os.path.dirname(filename)
+    supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz', 
+                 'rar', 'tar', 'tgz','zip']
+    for ext in supported:
+        if filename.endswith(ext):
+            logging.debug("Extracting %s" % filename)
+            p = subprocess.Popen(['unp', filename], cwd=filepath)
             p.wait()
+            extracted_file = filename[:filename.index(ext)-1]
+            if os.path.exists(extracted_file):
+                return extracted_file
+            else:
+                print "{} does not exist!".format(extracted_file)
+                raise Exception('Archive structure error')
+    logging.debug("Could not extract %s" % filename)
+    return filename            
+
+    # for tfile in [datapath + f for f in files]:
+    #     if tarfile.is_tarfile(tfile):
+    #         logging.debug("Extracting %s" % tfile)
+    #         tarfile.open(tfile, 'r').extractall(datapath)
+    #         os.remove(tfile)
+    #     elif tfile.endswith('.bz2'):
+    #         logging.debug("Extracting %s" % tfile)
+    #         p = subprocess.Popen(['bunzip2', tfile])
+    #         p.wait()
 
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1
