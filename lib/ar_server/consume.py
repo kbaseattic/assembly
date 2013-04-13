@@ -383,10 +383,15 @@ class ArastConsumer:
                     output, alldata, mod_log = self.pmanager.run_module(module_name, job_data, all_data=True,
                                                                reads=include_reads)
 
-                    # Prefix outfiles with pipe stage
+                    # Prefix outfiles with pipe stage, only assemblers
                     alldata = [asm.prefix_file_move(
                             file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
                                 for file in alldata]
+
+                    if alldata: #If log was renamed
+                        mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
+                                pipeline_num, pipeline_stage, module_name))
+
 
                 output_type = self.pmanager.output_type(module_name)
                 if output_type == 'contigs': #Assume assembly contigs
@@ -410,8 +415,7 @@ class ArastConsumer:
                                 pipeline_num, pipe_suffix)) for f in fcontigs]
                     final_contigs += rcontigs
                 try:
-                    logfiles.append(asm.prefix_file(mod_log, "P{}_S{}_{}".format(
-                                pipeline_num, pipeline_stage, module_name)))
+                    logfiles.append(mod_log)
                 except:
                     pass
                 pipeline_stage += 1
