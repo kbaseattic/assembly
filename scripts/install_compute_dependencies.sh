@@ -1,6 +1,6 @@
 #! /bin/bash
 sudo apt-get update
-sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base
+sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp
 sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
@@ -104,8 +104,8 @@ rm -rf solexa
 sudo mkdir /mnt/data
 sudo chown ubuntu:ubuntu /mnt/data
 
-cd ..
-sudo git clone kbase@git.kbase.us:assembly.git
-cd assembly/lib/
+#cd ..
+#sudo git clone kbase@git.kbase.us:assembly.git
+#cd assembly/lib/
 
 
