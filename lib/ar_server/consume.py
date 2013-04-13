@@ -111,7 +111,7 @@ class ArastConsumer:
                         if is_filename(word):
                             baseword = os.path.basename(word)
                             filedict['files'].append(
-                                os.path.join(filepath,  baseword))
+                                extract_file(os.path.join(filepath,  baseword)))
                         else:
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -121,14 +121,12 @@ class ArastConsumer:
 
             try:
                 for seqfiles in single:
-                    print 'here'
-                    print seqfiles
                     for wordpath in seqfiles:
                         filedict = {'type':'single', 'files':[]}    
                         if is_filename(wordpath):
                             baseword = os.path.basename(wordpath)
                             filedict['files'].append(
-                                os.path.join(filepath, baseword))
+                                extract_file(os.path.join(filepath, baseword)))
                         else:
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -450,8 +448,11 @@ class ArastConsumer:
         self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
         for log in logfiles:
             self.out_report.write("\n\n{0} Begin Module {0}\n".format("="*10))
-            with open(log) as infile:
-                self.out_report.write(infile.read())
+            try:
+                with open(log) as infile:
+                    self.out_report.write(infile.read())
+            except:
+                self.out_report.write("Error writing log file")
 
         if not contigs_only:
             if len(all_files) == 1:
@@ -529,10 +530,12 @@ def extract_file(filename):
                  'rar', 'tar', 'tgz','zip']
     for ext in supported:
         if filename.endswith(ext):
+            extracted_file = filename[:filename.index(ext)-1]
+            if os.path.exists(extracted_file): # Check extracted already
+                return extracted_file
             logging.debug("Extracting %s" % filename)
             p = subprocess.Popen(['unp', filename], cwd=filepath)
             p.wait()
-            extracted_file = filename[:filename.index(ext)-1]
             if os.path.exists(extracted_file):
                 return extracted_file
             else:

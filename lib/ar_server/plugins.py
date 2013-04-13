@@ -93,6 +93,7 @@ class BasePlugin(object):
                 except:
                     pass
         if not valid_files:
+            print job_data
             raise Exception('No valid input files (Compression unsupported)')
         return valid_files
 
