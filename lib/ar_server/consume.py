@@ -314,6 +314,7 @@ class ArastConsumer:
         pipeline_num = 1
         all_files = []
         pipe_outputs = []
+        logfiles = []
         final_contigs = []
         num_pipes = len(all_pipes)
         for pipe in all_pipes:
@@ -333,6 +334,8 @@ class ArastConsumer:
                 print '\n\n{0} Running module: {1} {2}'.format(
                     '='*20, module_name, '='*(35-len(module_name)))
                 self.garbage_collect(self.datapath, 2147483648) # 2GB
+
+                ## PROGRESS CALCULATION
                 pipes_complete = (pipeline_num - 1) / float(num_pipes)
                 stage_complete = (pipeline_stage - 1) / float(num_stages)
                 pct_segment = 1.0 / num_pipes
@@ -340,16 +343,15 @@ class ArastConsumer:
                 total_complete = pipes_complete + stage_complete
                 cur_state = 'Running: [{}%]'.format(int(total_complete * 100))
                 self.metadata.update_job(job_data['uid'], 'status', cur_state)
-
                 if module_name.lower() == 'none':
                     continue
-                ## For now, module code is 1st and last letter
+
+                ## LOG REPORT For now, module code is 1st and last letter
                 short_name = self.pmanager.get_short_name(module_name)
                 if short_name:
                     pipe_suffix += short_name.capitalize()
                 else:
                     pipe_suffix += module_name[0].upper() + module_name[-1]
-
                 self.out_report.write('PIPELINE {} -- STAGE {}: {}\n'.format(
                         pipeline_num, pipeline_stage, module_name))
                 self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
@@ -357,7 +359,7 @@ class ArastConsumer:
                         pipeline_stage, job_data))
                 job_data['params'] = overrides[pipeline_stage-1].items()
 
-                #### Run module
+                ## RUN MODULE
                 # Check if output data exists
                 reuse_data = False
                 for pipe in pipe_outputs:
@@ -378,7 +380,7 @@ class ArastConsumer:
                             break
 
                 if not reuse_data:
-                    output, alldata = self.pmanager.run_module(module_name, job_data, all_data=True,
+                    output, alldata, mod_log = self.pmanager.run_module(module_name, job_data, all_data=True,
                                                                reads=include_reads)
 
                     # Prefix outfiles with pipe stage
@@ -407,11 +409,16 @@ class ArastConsumer:
                     rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
                                 pipeline_num, pipe_suffix)) for f in fcontigs]
                     final_contigs += rcontigs
+                try:
+                    logfiles.append(asm.prefix_file(mod_log, "P{}_S{}_{}".format(
+                                pipeline_num, pipeline_stage, module_name)))
+                except:
+                    pass
                 pipeline_stage += 1
                 cur_outputs.append([module_name, output, alldata])
-
             pipe_elapsed_time = time.time() - pipe_start_time
             pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
+
             if not output:
                 self.out_report.write('ERROR: No contigs produced. See module log\n')
             self.out_report.write('Pipeline {} total time: {}\n\n'.format(pipeline_num, pipe_ftime))
@@ -427,11 +434,20 @@ class ArastConsumer:
                                 'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
             pipeline_num += 1
 
-        # Quast
+        ## ANALYSIS: Quast
+
         job_data['final_contigs'] = final_contigs
-        quast_tar = self.pmanager.run_module('quast', job_data, tar=True)
+        quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, tar=True)
+        logfiles.append(q_log)
         quast_ret = quast_tar.rsplit('/', 1)[0] + '/{}_analysis.tar.gz'.format(job_data['job_id'])
         os.rename(quast_tar, quast_ret)
+
+        ## CONCAT MODULE LOG FILES
+        self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
+        for log in logfiles:
+            self.out_report.write("\n\n{0} Begin Module {0}\n".format("="*10))
+            with open(log) as infile:
+                self.out_report.write(infile.read())
 
         if not contigs_only:
             if len(all_files) == 1:

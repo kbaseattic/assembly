@@ -137,7 +137,6 @@ class BasePlugin(object):
 
     def tar_output(self, job_id):
         files = [self.outpath + file for file in os.listdir(self.outpath)]
-#        return assembly.tar_list(self.outpath, files, 
         return assembly.tar_directory(self.outpath, self.outpath,
                                       self.name + str(job_id) + '.tar.gz')
 
@@ -328,16 +327,17 @@ class ModuleManager():
         settings = plugin.details.items('Settings')
         plugin.plugin_object.update_settings(job_data)
         output = plugin.plugin_object(settings, job_data)
+        log = plugin.plugin_object.out_module.name
         if tar:
-            return plugin.plugin_object.tar_output(job_data['job_id'])
+            return plugin.plugin_object.tar_output(job_data['job_id']), [], log
         if all_data:
             if not reads and plugin.plugin_object.OUTPUT == 'reads':
                 #Don't return all files from plugins that output reads 
                 data = []
             else:
                 data = plugin.plugin_object.get_all_output_files()
-            return output, data
-        return output
+            return output, data, log
+        return output, [], log
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT
