@@ -263,13 +263,13 @@ class ArastConsumer:
             try:
                 self.pmanager.validate_pipe(pipeline)
                 result_tar, quast  = self.run_pipeline(pipeline, job_data, contigs_only=contigs)
-                res = self.upload(url, user, token, result_tar)
-                download_ids['pipeline'] = res['D']['id']
-
                 try:
-                    res = self.upload(url, user, token, quast)
+                    res = self.upload(url, user, token, result_tar)
                 except IOError:
                     raise Exception('No Results')
+                download_ids['pipeline'] = res['D']['id']
+                res = self.upload(url, user, token, quast)
+
                 download_ids['quast'] = res['D']['id']
 
                 status += "pipeline [success] "
