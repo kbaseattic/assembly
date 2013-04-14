@@ -137,6 +137,7 @@ class BasePlugin(object):
                                  self.name + str(job_id) + '.tar.gz')
 
     def tar_output(self, job_id):
+        """ Tars all files in module run's directory """
         files = [self.outpath + file for file in os.listdir(self.outpath)]
         return assembly.tar_directory(self.outpath, self.outpath,
                                       self.name + str(job_id) + '.tar.gz')
@@ -330,7 +331,8 @@ class ModuleManager():
         output = plugin.plugin_object(settings, job_data)
         log = plugin.plugin_object.out_module.name
         if tar:
-            return plugin.plugin_object.tar_output(job_data['job_id']), [], log
+            tarfile = plugin.plugin_object.tar_output(job_data['job_id'])
+            return output, tarfile, [], log
         if all_data:
             if not reads and plugin.plugin_object.OUTPUT == 'reads':
                 #Don't return all files from plugins that output reads 

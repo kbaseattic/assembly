@@ -21,5 +21,7 @@ class QuastAssessment(BaseAssessment, IPlugin):
         for root, sub, files in os.walk(self.outpath):
             for file in files:
                 all_files.append(os.path.join(root, file))
-        return all_files
+                
+        report = os.path.join(self.outpath, 'report.txt')
+        return [report]
 

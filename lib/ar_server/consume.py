@@ -260,15 +260,15 @@ class ArastConsumer:
         if pipeline:
             try:
                 self.pmanager.validate_pipe(pipeline)
-                result_tar, quast  = self.run_pipeline(pipeline, job_data, contigs_only=contigs)
+                result_tar, analysis, summary= self.run_pipeline(pipeline, job_data, contigs_only=contigs)
                 try:
                     res = self.upload(url, user, token, result_tar)
                 except IOError:
                     raise Exception('No Results')
                 download_ids['pipeline'] = res['D']['id']
-                res = self.upload(url, user, token, quast)
+                res = self.upload(url, user, token, analysis)
 
-                download_ids['quast'] = res['D']['id']
+                download_ids['analysis'] = res['D']['id']
 
                 status += "pipeline [success] "
                 self.out_report.write("Pipeline completed successfully\n")
@@ -279,21 +279,35 @@ class ArastConsumer:
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
 
-
+        # Format report
+        print 'kill timer'
+        self.done_flag.set()
+        new_report = open('{}.tmp'.format(self.out_report_name), 'w')
+        try:
+            with open(summary) as s:
+                new_report.write(s.read())
+        except:
+            new_report.write('No Summary File Generated!\n\n\n')
         self.out_report.close()
+        with open(self.out_report_name) as old:
+            new_report.write(old.read())
+        new_report.close()
+        os.remove(self.out_report_name)
+        shutil.move(new_report.name, self.out_report_name)
         res = self.upload(url, user, token, self.out_report_name)
 
         # Get location
         download_ids['report'] = res['D']['id']
 
+        print 'result info'
         self.metadata.update_job(uid, 'result_data', download_ids)
+        print 'update status'
         self.metadata.update_job(uid, 'status', status)
-
-        elapsed_time = time.time() - self.start_time
-        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
-        self.metadata.update_job(uid, 'computation_time', ftime)
+#        elapsed_time = time.time() - self.start_time
+#        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
+#        self.metadata.update_job(uid, 'computation_time', ftime)
 #        self.update_time_record()
-        self.done_flag.set()
+
 
         print '=========== JOB COMPLETE ============'
 
@@ -439,10 +453,8 @@ class ArastConsumer:
         ## ANALYSIS: Quast
 
         job_data['final_contigs'] = final_contigs
-        quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, tar=True)
+        quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, tar=True)
         logfiles.append(q_log)
-        quast_ret = quast_tar.rsplit('/', 1)[0] + '/{}_analysis.tar.gz'.format(job_data['job_id'])
-        os.rename(quast_tar, quast_ret)
 
         ## CONCAT MODULE LOG FILES
         self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
@@ -454,16 +466,23 @@ class ArastConsumer:
             except:
                 self.out_report.write("Error writing log file")
 
+        ## Format Returns
+        analysis = quast_tar.rsplit('/', 1)[0] + '/{}_analysis.tar.gz'.format(job_data['job_id'])
+        summary = quast_report[0]
+        os.rename(quast_tar, analysis)
+
         if not contigs_only:
             if len(all_files) == 1:
                 return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                    [all_files[0]],'{}_assemblies.tar.gz'.format(job_data['job_id'])), quast_ret
+                                    [all_files[0]],'{}_assemblies.tar.gz'.format(
+                        job_data['job_id'])), analysis, summary
 
             return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                            all_files,'{}_all_data.tar.gz'.format(job_data['job_id'])), quast_ret
+                            all_files,'{}_all_data.tar.gz'.format(job_data['job_id'])), analysis, summary
         else:
             return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                final_contigs, '{}_contigs.tar.gz'.format(job_data['job_id'])), quast_ret
+                                final_contigs, '{}_contigs.tar.gz'.format(
+                    job_data['job_id'])), analysis, summary
 
     def upload(self, url, user, token, file):
         files = {}
@@ -503,7 +522,9 @@ class ArastConsumer:
             self.compute(body)
         except:
             params = json.loads(body)
-            status = "[FAIL] {}".format(sys.exc_info()[1])
+            print sys.exc_info()
+            status = "[FAIL] {}".format(format_tb(sys.exc_info()[2]))
+            print logging.error(status)
             self.metadata.update_job(params['job_id'], 'status', status)
 
     def start(self):
@@ -578,6 +599,7 @@ class UpdateTimer(threading.Thread):
     def run(self):
         while True:
             if self.done_flag.is_set():
+                print 'Stopping Timer Thread'
                 return
             elapsed_time = time.time() - self.start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
