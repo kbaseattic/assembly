@@ -5,6 +5,7 @@ Module = quast
 [Settings]
 executable = ../../bin/quast/quast.py
 filetypes = fasta,fa
+min_contig = 200
 
 [Documentation]
 Author = Chris Bun

@@ -49,7 +49,7 @@ class ArastConsumer:
         #self.metadata.update_doc('active_nodes', 'server_name', socket.gethostname(),
          #                        'status', 'running')
 
-    def garbage_collect(self, datapath, required_space):
+    def garbage_collect(self, datapath, user, required_space):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""
         self.gc_lock.acquire()
         s = os.statvfs(datapath)
@@ -58,7 +58,7 @@ class ArastConsumer:
         logging.debug("Required space in bytes: %s" % required_space)
         while ((free_space - self.min_free_space) < required_space):
             #Delete old data
-            dirs = os.listdir(datapath)
+            dirs = os.listdir(os.path.join(datapath, user))
             times = []
             for dir in dirs:
                 times.append(os.path.getmtime(datapath + dir))
@@ -146,7 +146,7 @@ class ArastConsumer:
                 req_space = 0
                 for file_size in data_doc['file_sizes']:
                     req_space += file_size
-                self.garbage_collect(self.datapath, req_space)
+                self.garbage_collect(self.datapath, user, req_space)
             except:
                 pass 
             url = "http://%s" % (self.shockurl)
@@ -230,7 +230,9 @@ class ArastConsumer:
         ### Create data to pass to pipeline
         job_data = {'job_id' : params['job_id'], 
                     'uid' : params['_id'],
+                    'user' : params['ARASTUSER'],
                     'reads': all_files,
+                    'initial_reads': all_files,
                     'datapath': datapath,
                     'out_report' : self.out_report}
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
@@ -280,7 +282,6 @@ class ArastConsumer:
                                       format(format_tb(sys.exc_info()[2])))
 
         # Format report
-        print 'kill timer'
         self.done_flag.set()
         new_report = open('{}.tmp'.format(self.out_report_name), 'w')
         try:
@@ -298,15 +299,8 @@ class ArastConsumer:
 
         # Get location
         download_ids['report'] = res['D']['id']
-
-        print 'result info'
         self.metadata.update_job(uid, 'result_data', download_ids)
-        print 'update status'
         self.metadata.update_job(uid, 'status', status)
-#        elapsed_time = time.time() - self.start_time
-#        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
-#        self.metadata.update_job(uid, 'computation_time', ftime)
-#        self.update_time_record()
 
 
         print '=========== JOB COMPLETE ============'
@@ -321,6 +315,8 @@ class ArastConsumer:
         Runs all pipelines in list PIPES
         """
         all_pipes = self.pmanager.parse_input(pipes)
+        print """ALLLLLL"""
+        print all_pipes
         #include_reads = self.pmanager.output_type(pipeline[-1]) == 'reads'
         include_reads = False
         pipeline_num = 1
@@ -343,9 +339,10 @@ class ArastConsumer:
             pipe_suffix = '' # filename code for indiv pipes
             pipe_start_time = time.time()
             for module_name in pipeline:
+                module_code = '' # unique code for data reuse
                 print '\n\n{0} Running module: {1} {2}'.format(
                     '='*20, module_name, '='*(35-len(module_name)))
-                self.garbage_collect(self.datapath, 2147483648) # 2GB
+                self.garbage_collect(self.datapath, job_data['user'], 2147483648) # 2GB
 
                 ## PROGRESS CALCULATION
                 pipes_complete = (pipeline_num - 1) / float(num_pipes)
@@ -361,9 +358,16 @@ class ArastConsumer:
                 ## LOG REPORT For now, module code is 1st and last letter
                 short_name = self.pmanager.get_short_name(module_name)
                 if short_name:
-                    pipe_suffix += short_name.capitalize()
+                    #pipe_suffix += short_name.capitalize()
+                    module_code += short_name.capitalize()
                 else:
-                    pipe_suffix += module_name[0].upper() + module_name[-1]
+                    #pipe_suffix += module_name[0].upper() + module_name[-1]
+                    module_code += module_name[0].upper() + module_name[-1]
+                mod_overrides =  overrides[pipeline_stage - 1]
+                for k in mod_overrides.keys():
+                            #pipe_suffix += '_{}{}'.format(k[0], par[k])
+                    module_code += '_{}{}'.format(k[0], mod_overrides[k])
+                pipe_suffix += module_code
                 self.out_report.write('PIPELINE {} -- STAGE {}: {}\n'.format(
                         pipeline_num, pipeline_stage, module_name))
                 self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
@@ -374,22 +378,28 @@ class ArastConsumer:
                 ## RUN MODULE
                 # Check if output data exists
                 reuse_data = False
-                for pipe in pipe_outputs:
-                    if reuse_data:
-                        break
-                    for i in range(pipeline_stage):
-                        try:
-                            if not pipe[i][0] == cur_outputs[i][0]:
-                                break
-                        except:
-                            pass
-                        if (pipe[i][0] == module_name and i == pipeline_stage - 1):
-                            #and overrides[i].items() == job_data['params']): #copy!
-                            logging.info('Found previously computed data, reusing.')
-                            output = [] + pipe[i][1]
-                            alldata = [] + pipe[i][2]
-                            reuse_data = True
+                enable_reuse = True # KILL SWITCH
+                if enable_reuse:
+                    print module_code
+                    for pipe in pipe_outputs:
+                        if reuse_data:
                             break
+                        # Check that all previous pipes match
+                        for i in range(pipeline_stage):
+                            try:
+                                if not pipe[i][0] == cur_outputs[i][0]:
+                                    break
+                            except:
+                                pass
+                            if (pipe[i][0] == module_code and i == pipeline_stage - 1):
+
+                                #and overrides[i].items() == job_data['params']): #copy!
+                                logging.info('Found previously computed data, reusing {}.'.format(
+                                        module_code))
+                                output = [] + pipe[i][1]
+                                alldata = [] + pipe[i][2]
+                                reuse_data = True
+                                break
 
                 if not reuse_data:
                     output, alldata, mod_log = self.pmanager.run_module(module_name, job_data, all_data=True,
@@ -416,22 +426,22 @@ class ArastConsumer:
                                         pipeline_num, pipeline_stage, module_name)) for f in d['files']]
                             d['files'] = files
                             d['short_reads'] = [] + files
-
                     job_data['reads'] = output
                 pipeline_results += alldata
                 if pipeline_stage == num_stages: # Last stage, add contig for assessment
-                    fcontigs = [asm.prefix_file(
-                            file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
-                                for file in output]
-                    rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
-                                pipeline_num, pipe_suffix)) for f in fcontigs]
-                    final_contigs += rcontigs
+                    if output: #If a contig was produced
+                        fcontigs = [asm.prefix_file(
+                                file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                                    for file in output]
+                        rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
+                                    pipeline_num, pipe_suffix)) for f in fcontigs]
+                        final_contigs += rcontigs
                 try:
                     logfiles.append(mod_log)
                 except:
                     pass
                 pipeline_stage += 1
-                cur_outputs.append([module_name, output, alldata])
+                cur_outputs.append([module_code, output, alldata])
             pipe_elapsed_time = time.time() - pipe_start_time
             pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
 
@@ -453,6 +463,7 @@ class ArastConsumer:
         ## ANALYSIS: Quast
 
         job_data['final_contigs'] = final_contigs
+        job_data['params'] = [] #clear overrides from last stage
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, tar=True)
         logfiles.append(q_log)
 
@@ -564,16 +575,6 @@ def extract_file(filename):
                 raise Exception('Archive structure error')
     logging.debug("Could not extract %s" % filename)
     return filename            
-
-    # for tfile in [datapath + f for f in files]:
-    #     if tarfile.is_tarfile(tfile):
-    #         logging.debug("Extracting %s" % tfile)
-    #         tarfile.open(tfile, 'r').extractall(datapath)
-    #         os.remove(tfile)
-    #     elif tfile.endswith('.bz2'):
-    #         logging.debug("Extracting %s" % tfile)
-    #         p = subprocess.Popen(['bunzip2', tfile])
-    #         p.wait()
 
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1

@@ -34,7 +34,8 @@ class VelvetAssembler(BaseAssembler, IPlugin):
         self.arast_popen(cmd_args)        
         contigs = [self.outpath + '/contigs.fa']
         if not os.path.exists(contigs[0]):
-            raise Exception("No contigs")
+            contigs = []
+            #raise Exception("No contigs")
         return contigs
 
 def infer_filetype(file):

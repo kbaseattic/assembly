@@ -12,7 +12,9 @@ class QuastAssessment(BaseAssessment, IPlugin):
         Return list of file(s)
         """
         
-        cmd_args = [os.path.join(os.getcwd(),self.executable), '-o', self.outpath]
+        cmd_args = [os.path.join(os.getcwd(),self.executable), 
+                    '--min-contig', self.min_contig,
+                    '-o', self.outpath]
         cmd_args += contigs
 
         self.arast_popen(cmd_args)

@@ -12,6 +12,7 @@ from yapsy.PluginManager import PluginManager
 
 # A-Rast modules
 import assembly
+import pipe as phelper
 
 class BasePlugin(object):
     """ 
@@ -397,20 +398,23 @@ class ModuleManager():
         Ex: ['sga', '?p=True', 'kiki ?k=31 velvet', 'sspace']
         """
         # Split into stages
-        stages = []
-        for word in pipe:
-            lswords = word.split(' ')
-            if len(lswords) == 1: # Not branch, append new stage
-                if not word.startswith('?'):
-                    stages.append([[word]])
-                elif word.startswith('?'):
-                    stages[-1][0].append(word)
-            else:
-                stages.append(self.split_pipe(lswords))
+        # stages = []
+        # for word in pipe:
+        #     lswords = word.split(' ')
+        #     if len(lswords) == 1: # Not branch, append new stage
+        #         if not word.startswith('?'):
+        #             stages.append([[word]])
+        #         elif word.startswith('?'):
+        #             stages[-1][0].append(word)
+        #     else:
+        #         stages.append(self.split_pipe(lswords))
+
+        stages = phelper.parse_branches(pipe)
         # Return all combinations
         all_pipes = list(itertools.product(*stages))
-        flat_pipes = [list(itertools.chain(*pipe)) for pipe in all_pipes]
-        return flat_pipes
+        flat_pipes = [list(itertools.chain(*all_pipes))]
+        #return all_pipes
+        return stages
 
     def parse_pipe(self, pipe):
         """ Returns the pipeline(s)z of modules.
