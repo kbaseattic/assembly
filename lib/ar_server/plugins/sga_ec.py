@@ -29,7 +29,7 @@ class SgaEcPreprocessor(BasePreprocessor, IPlugin):
                 self.arast_popen(cmd_args, cwd=self.outpath)
                 new_files.append(ec_file)
                 if not os.path.exists(ec_file):
-                    raise Exception ('SGA EC Failed')
+                    return []
             new_file_set['files'] = new_files
             processed_reads.append(new_file_set)
 

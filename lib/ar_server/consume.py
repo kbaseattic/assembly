@@ -61,9 +61,9 @@ class ArastConsumer:
             dirs = os.listdir(os.path.join(datapath, user))
             times = []
             for dir in dirs:
-                times.append(os.path.getmtime(datapath + dir))
+                times.append(os.path.getmtime(os.path.join(datapath, user, dir)))
             if len(dirs) > 0:
-                old_dir = datapath + dirs[times.index(min(times))]
+                old_dir = os.path.join(datapath, user, dirs[times.index(min(times))])
                 shutil.rmtree(old_dir, ignore_errors=True)
             else:
                 logging.error("No more directories to remove")
@@ -165,7 +165,7 @@ class ArastConsumer:
                             filedict[kv[0]] = kv[1]
                     all_files.append(filedict)
             except:
-                logging.info(format_exc(sys.exc_info()))
+                #logging.info(format_exc(sys.exc_info()))
                 logging.info('No paired files submitted')
 
             try:
@@ -189,8 +189,7 @@ class ArastConsumer:
                             filedict[kv[0]] = kv[1]
                         all_files.append(filedict)
             except:
-                #logging.info(format_tb(sys.exc_info()[2]))
-                logging.info(format_exc(sys.exc_info()))
+                #logging.info(format_exc(sys.exc_info()))
                 logging.info('No single end files submitted')
         return datapath, all_files
 
@@ -203,12 +202,10 @@ class ArastConsumer:
         datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
 
-        #extract_files(rawpath)
         if not datapath:
             error = True
             logging.error("Data does not exist!")
             return
-
         
         job_id = params['job_id']
         uid = params['_id']
@@ -261,7 +258,9 @@ class ArastConsumer:
         status = ''
         if pipeline:
             try:
-                self.pmanager.validate_pipe(pipeline)
+                print 'its a pipeline'
+                #self.pmanager.validate_pipe(pipeline)
+                print 'run'
                 result_tar, analysis, summary= self.run_pipeline(pipeline, job_data, contigs_only=contigs)
                 try:
                     res = self.upload(url, user, token, result_tar)
@@ -315,8 +314,9 @@ class ArastConsumer:
         Runs all pipelines in list PIPES
         """
         all_pipes = self.pmanager.parse_input(pipes)
-        print """ALLLLLL"""
-        print all_pipes
+        logging.info('{} pipelines:'.format(len(all_pipes)))
+        for p in all_pipes:
+            print '->'.join(p)
         #include_reads = self.pmanager.output_type(pipeline[-1]) == 'reads'
         include_reads = False
         pipeline_num = 1
@@ -338,7 +338,12 @@ class ArastConsumer:
             self.out_report.write('\n{0} Pipeline {1}: {2} {0}\n'.format('='*15, pipeline_num, pipe))
             pipe_suffix = '' # filename code for indiv pipes
             pipe_start_time = time.time()
+            pipe_alive = True
             for module_name in pipeline:
+                if not pipe_alive:
+                    self.out_report.write('\n{0} Module Failure, Killing Pipe {0}'.format(
+                            'X'*10))
+                    break
                 module_code = '' # unique code for data reuse
                 print '\n\n{0} Running module: {1} {2}'.format(
                     '='*20, module_name, '='*(35-len(module_name)))
@@ -384,6 +389,8 @@ class ArastConsumer:
                     for pipe in pipe_outputs:
                         if reuse_data:
                             break
+                        if not pipe:
+                            continue
                         # Check that all previous pipes match
                         for i in range(pipeline_stage):
                             try:
@@ -392,7 +399,6 @@ class ArastConsumer:
                             except:
                                 pass
                             if (pipe[i][0] == module_code and i == pipeline_stage - 1):
-
                                 #and overrides[i].items() == job_data['params']): #copy!
                                 logging.info('Found previously computed data, reusing {}.'.format(
                                         module_code))
@@ -402,9 +408,11 @@ class ArastConsumer:
                                 break
 
                 if not reuse_data:
-                    output, alldata, mod_log = self.pmanager.run_module(module_name, job_data, all_data=True,
-                                                               reads=include_reads)
-
+                    output, alldata, mod_log = self.pmanager.run_module(
+                        module_name, job_data, all_data=True, reads=include_reads)
+                    if not output:
+                        pipe_alive = False
+                        break
                     # Prefix outfiles with pipe stage, only assemblers
                     alldata = [asm.prefix_file_move(
                             file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
@@ -447,8 +455,11 @@ class ArastConsumer:
 
             if not output:
                 self.out_report.write('ERROR: No contigs produced. See module log\n')
+                pipe_outputs.append([])
+            else:
+                pipe_outputs.append(cur_outputs)
             self.out_report.write('Pipeline {} total time: {}\n\n'.format(pipeline_num, pipe_ftime))
-            pipe_outputs.append(cur_outputs)
+
             pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], job_data['job_id'],
                                                            pipeline_num)
 
@@ -566,7 +577,8 @@ def extract_file(filename):
             if os.path.exists(extracted_file): # Check extracted already
                 return extracted_file
             logging.debug("Extracting %s" % filename)
-            p = subprocess.Popen(['unp', filename], cwd=filepath)
+            p = subprocess.Popen(['unp', filename], 
+                                 cwd=filepath, stderr=subprocess.STDOUT)
             p.wait()
             if os.path.exists(extracted_file):
                 return extracted_file

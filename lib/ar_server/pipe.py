@@ -18,8 +18,10 @@ output: [['trim_sort', 'kiki', '?k=29, '?cov=20], ['trim_sort', 'kiki', '?k=30, 
 
 """
 #my_pipe = ['trim_sort', '?length=10-11', 'kiki ?k=29-30 ?cov=29-30']
-#my_pipe = ['ma', '?k=1-2', 'mb mc ?p=3-4 ?j=4-5']
-my_pipe = ['a' , 'kiki ?k=1:2 ?c=3:4 ?l=5:6 velvet']
+my_pipe = ['ma', '?k=1,5,3', 'b']
+#my_pipe = ['a' , 'b ?k=1,10-11,20,30:40:2']
+test=['sga_preprocess', '?min_length=29,100,150','sga_ec', 'tagdust',
+      'velvet ?hash_length=31:39:2 idba']
 def parse_pipe(pipe):
     """
     Parses modules and parameters into stages
@@ -46,6 +48,8 @@ def parse_pipe(pipe):
     return stages
 
 def parse_branches(pipe):
+    print 'branching pipeline'
+    print pipe
     stages = []
     flat_pipe = []
     for i in range(len(pipe)):
@@ -60,7 +64,7 @@ def parse_branches(pipe):
                 flat_pipe = []
         else: # parenth
             stages += [list(itertools.chain(*parse_pipe(pipe[i].split(' '))))]
-
+            
     cart = [list(itertools.product(*stages))]
     all_pipes = []
     for pipe in cart[0]:
@@ -75,23 +79,28 @@ def expand_sweep(module):
     has_range = False
     for word in module:
         if word.startswith('?'):
-            #s = word.split('-')
-            s = re.split('-|:', word)
-            if len(s) != 1: #is range
-                has_range = True
-                delim = s[0].find('=')+1
-                if delim == 1:
-                    break
-                srange = (int(s[0][delim:]),int(s[1]))
-                step_size = 1
-                if len(s) == 3:
-                    step_size = int(s[2])
-                sweep = ['{}{}'.format(s[0][0:delim], x) 
-                         for x in range(
-                        srange[0], srange[1]+1, step_size)]
-                expanded.append(sweep)
-
-                
+            f = re.split('\?|=', word)[1:]
+            flag = f[0]
+            params = f[1]
+            sweep = []
+            for param in params.split(','):
+                s = re.split('-|:', param)
+                if len(s) != 1: #is range
+                    has_range = True
+                    delim = s[0].find('=')+1
+                    if delim == 1:
+                        break
+                    srange = (int(s[0][delim:]),int(s[1]))
+                    step_size = 1
+                    if len(s) == 3:
+                        step_size = int(s[2])
+                    sweep += ['?{}={}'.format(flag, x) 
+                             for x in range(
+                            srange[0], srange[1]+1, step_size)]
+                else:
+                    sweep.append('?{}={}'.format(flag, s[0]))
+                    has_range = True
+            expanded.append(sweep)                    
         else: #mod name
             expanded.append([word])
 

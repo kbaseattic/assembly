@@ -84,18 +84,23 @@ class BasePlugin(object):
         filetypes = self.filetypes.split(',')
         filetypes = ['.' + filetype for filetype in filetypes]
         valid_files = []
+        invalid_files = []
         for filetype in filetypes:
+            f_valid = False
             for d in job_data['reads']:
                 if d['files'][0].endswith(filetype):
                     valid_files.append(d)
+                    invalid_files.append(os.path.basename(d['files'][0]))
                 try:
                     if self.single_library: # only one library
                         break
                 except:
                     pass
         if not valid_files:
-            print job_data
-            raise Exception('No valid input files (Compression unsupported)')
+            raise Exception('{}: File(s) not supported: {}'.format(
+                    self.name,
+                    [os.path.basename(d['files'][0]) for
+                     d in job_data['reads']]))
         return valid_files
 
     def init_settings(self, settings, job_data):
@@ -397,23 +402,7 @@ class ModuleManager():
         Parses inital pipe and separates branching bins
         Ex: ['sga', '?p=True', 'kiki ?k=31 velvet', 'sspace']
         """
-        # Split into stages
-        # stages = []
-        # for word in pipe:
-        #     lswords = word.split(' ')
-        #     if len(lswords) == 1: # Not branch, append new stage
-        #         if not word.startswith('?'):
-        #             stages.append([[word]])
-        #         elif word.startswith('?'):
-        #             stages[-1][0].append(word)
-        #     else:
-        #         stages.append(self.split_pipe(lswords))
-
         stages = phelper.parse_branches(pipe)
-        # Return all combinations
-        all_pipes = list(itertools.product(*stages))
-        flat_pipes = [list(itertools.chain(*all_pipes))]
-        #return all_pipes
         return stages
 
     def parse_pipe(self, pipe):
