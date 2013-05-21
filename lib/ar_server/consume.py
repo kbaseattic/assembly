@@ -197,28 +197,20 @@ class ArastConsumer:
     def compute(self, body):
         error = False
         params = json.loads(body)
-
-        ### Download files (if necessary)
-        datapath, all_files = self.get_data(body)
-        rawpath = datapath + '/raw/'
-
-        if not datapath:
-            error = True
-            logging.error("Data does not exist!")
-            return
-        
         job_id = params['job_id']
         uid = params['_id']
         user = params['ARASTUSER']
         token = params['oauth_token']
+        pipeline = params['pipeline']
 
+        ### Download files (if necessary)
+        datapath, all_files = self.get_data(body)
+        rawpath = datapath + '/raw/'
         jobpath = os.path.join(datapath, str(job_id))
-
         try:
             os.makedirs(jobpath)
         except:
-            self.metadata.update_job(uid, 'status', 'Data error')
-            return
+            raise Exception ('Data Error')
 
         ### Create job log
         self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
@@ -233,8 +225,6 @@ class ArastConsumer:
                     'datapath': datapath,
                     'out_report' : self.out_report}
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
-
-        pipeline = params['pipeline']
         
         self.start_time = time.time()
         self.done_flag = threading.Event()
@@ -242,25 +232,17 @@ class ArastConsumer:
         timer_thread.start()
         
         download_ids = {}
-
-        if error:
-            self.metadata.update_job(uid, 'status', 'Datapath error')
-
         url = "http://%s" % (self.shockurl)
         url += '/node'
-
         try:
             include_all_data = params['all_data']
         except:
             include_all_data = False
-
         contigs = not include_all_data
         status = ''
         if pipeline:
             try:
-                print 'its a pipeline'
-                #self.pmanager.validate_pipe(pipeline)
-                print 'run'
+                self.pmanager.validate_pipe(pipeline)
                 result_tar, analysis, summary= self.run_pipeline(pipeline, job_data, contigs_only=contigs)
                 try:
                     res = self.upload(url, user, token, result_tar)
@@ -268,9 +250,7 @@ class ArastConsumer:
                     raise Exception('No Results')
                 download_ids['pipeline'] = res['D']['id']
                 res = self.upload(url, user, token, analysis)
-
                 download_ids['analysis'] = res['D']['id']
-
                 status += "pipeline [success] "
                 self.out_report.write("Pipeline completed successfully\n")
             except:
@@ -444,6 +424,7 @@ class ArastConsumer:
                         rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
                                     pipeline_num, pipe_suffix)) for f in fcontigs]
                         final_contigs += rcontigs
+                        job_data['final_contigs'] = rcontigs
                 try:
                     logfiles.append(mod_log)
                 except:
@@ -452,6 +433,10 @@ class ArastConsumer:
                 cur_outputs.append([module_code, output, alldata])
             pipe_elapsed_time = time.time() - pipe_start_time
             pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
+
+            bwa = True
+            if bwa:
+                aln_result, _, aln_log = self.pmanager.run_module('bwa', job_data)
 
             if not output:
                 self.out_report.write('ERROR: No contigs produced. See module log\n')
@@ -472,7 +457,6 @@ class ArastConsumer:
             pipeline_num += 1
 
         ## ANALYSIS: Quast
-
         job_data['final_contigs'] = final_contigs
         job_data['params'] = [] #clear overrides from last stage
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, tar=True)

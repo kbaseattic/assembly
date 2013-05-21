@@ -218,10 +218,10 @@ def get_qual_encoding(file):
         if bline.find('+') != -1: # Line before quality line
             line = f.readline()
             for c in line:
-                if ord(c) > 73:
+                if ord(c) > 74:
                     logging.info("Detected phred64 quality encoding")
                     return 'phred64'
-                elif ord(c) < 59:
+                elif ord(c) < 64:
                     logging.info("Detected phred33 quality encoding")
                     return 'phred33'
         if len(bline) == 0: #EOF

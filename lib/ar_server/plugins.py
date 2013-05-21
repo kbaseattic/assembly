@@ -30,18 +30,22 @@ class BasePlugin(object):
         eg. self.k = 29
     """
         
-    def arast_popen(self, cmd_args, **kwargs):
-        for kv in self.extra_params:
-            dashes = '-'
-            if len(kv[0]) != 1:
-                dashes += '-'
-            flag = '{}{}'.format(dashes, kv[0])
-            if kv[1] == 'False':
-                cmd_args.remove(flag)
-            else:
-                cmd_args.append(flag)
-            if kv[1] != 'True':
-                cmd_args.append(kv[1])
+    def arast_popen(self, cmd_args, overrides=True, **kwargs):
+        """
+        Set overrides to FALSE if flags should not be applied to this binary.
+        """
+        if overrides:
+            for kv in self.extra_params:
+                dashes = '-'
+                if len(kv[0]) != 1:
+                    dashes += '-'
+                flag = '{}{}'.format(dashes, kv[0])
+                if kv[1] == 'False':
+                    cmd_args.remove(flag)
+                else:
+                    cmd_args.append(flag)
+                if kv[1] != 'True':
+                    cmd_args.append(kv[1])
 
                 #cmd_human = [os.path.basename(w) for w in cmd_args]
 
@@ -109,7 +113,6 @@ class BasePlugin(object):
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
         for kv in settings:
             setattr(self, kv[0], kv[1])
-
         self.extra_params = []
         for kv in job_data['params']:
             if not hasattr(self, kv[0]):
@@ -131,8 +134,8 @@ class BasePlugin(object):
 
     def run_checks(self, settings, job_data):
         logging.info("Doing checks")
-        #Check binary exists
-        #Check data is valid
+        # TODO Check binary exists
+        # TODO Check data is valid
         pass
 
     def setname(self, name):
@@ -163,6 +166,11 @@ class BasePlugin(object):
 
     def write_report(self):
         pass
+
+    def estimate_insert(self, contigs, reads, num_reads):
+        """ Map READS to CONTIGS using bwa and return insert size """
+        
+        return 1
 
     
 class BaseAssembler(BasePlugin):
@@ -204,9 +212,41 @@ class BaseAssembler(BasePlugin):
         """
         return
 
-class BasePreprocessor(BasePlugin):
+
+class BaseScaffolder(BasePlugin):
     """
     A preprocessing plugin should implement a run() function
+
+    """
+    # Default behavior for run()
+    INPUT = 'reads, contigs'
+    OUTPUT = 'reads'
+
+    def __call__(self, settings, job_data):
+        self.run_checks(settings, job_data)
+        logging.info("{} Settings: {}".format(self.name, settings))
+        self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data)
+        valid_files = self.get_valid_reads(job_data)
+        output = self.run(valid_files)
+
+        self.out_module.close()
+        return output
+
+    # Must implement run() method
+    @abc.abstractmethod
+    def run(self, reads, contigs):
+        """
+        Input: READS: list of dicts contain file and read info
+        Output: Updated READS (each read['files'] list should be updated 
+        with the new processed reads
+          
+        """
+        return
+
+class BasePreprocessor(BasePlugin):
+    """
+    A postprocessing plugin should implement a run() function
 
     """
     # Default behavior for run()
@@ -226,14 +266,17 @@ class BasePreprocessor(BasePlugin):
 
     # Must implement run() method
     @abc.abstractmethod
-    def run(self, reads):
+    def run(self, reads, contigs):
         """
         Input: READS: list of dicts contain file and read info
-        Output: Updated READS (each read['files'] list should be updated 
-        with the new processed reads
+               CONTIGS: ...
+        Output: list of full paths to contig files.  File extensions should reflect
+          the file type
+          eg. return ['/data/contigs1.fa', '/data/contigs2.fa']
           
         """
         return
+
 
 class BasePostprocessor(BasePlugin):
     """
@@ -297,6 +340,49 @@ class BaseAssessment(BasePlugin):
           
         """
         return
+
+class BaseAligner(BasePlugin):
+    """
+    A alignment plugin should implement a run() function
+
+    """
+    # Default behavior for run()
+    INPUT = 'contigs'
+    OUTPUT = 'sam'
+
+    def __call__(self, settings, job_data):
+        self.run_checks(settings, job_data)
+        logging.info("{} Settings: {}".format(self.name, settings))
+        self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data)
+        if len(job_data['final_contigs']) > 1:
+            raise NotImplementedError
+        else:
+            contig_file = job_data['final_contigs'][0]
+        read_records = job_data['initial_reads']
+        if len(read_records) > 1:
+            raise NotImplementedError('Alignment of multiple libraries not impl')
+        read_lib = read_records[0]
+        read_files = read_lib['files']
+        if len(read_files) == 1 and read_lib['type'] == 'paired':
+            merged_pair = True
+        else:
+            merged_pair = False
+        
+        output = self.run(contig_file, read_files, merged_pair)
+
+        self.out_module.close()
+        return output
+
+    # Must implement run() method
+    @abc.abstractmethod
+    def run(self, contigs, reads, merged_pair=False):
+        """
+        Return SAM file
+          
+        """
+        return
+
 
 class ModuleManager():
     def __init__(self, threads):

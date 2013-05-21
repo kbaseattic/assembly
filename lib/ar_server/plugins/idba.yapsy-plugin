@@ -5,7 +5,7 @@ Module = idba
 [Settings]
 single_lib = True
 # Newest idba is broken
-bin_idba_ud = ../../bin/idba/idba
+bin_idba_ud = ../../bin/idba/idba_ud
 bin_idba_tran = ../../bin/idba/idba_tran
 bin_idba_hybrid = ../../bin/idba/idba_hybrid
 bin_fq2fa = ../../bin/idba/fq2fa

@@ -1,0 +1,14 @@
+[Core]
+Name = bwa
+Module = bwa
+
+[Settings]
+short_name = bwa
+executable = ../../bin/a5/bwa
+filetypes = fastq,fq
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = BWA
+

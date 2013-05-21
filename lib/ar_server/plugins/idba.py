@@ -23,7 +23,7 @@ class IdbaAssembler(BaseAssembler, IPlugin):
                              d['files'][0],
                              d['files'][1],
                              merged_read]
-                self.arast_popen(merge_cmd)
+                self.arast_popen(merge_cmd, overrides=False)
                 read_file = merged_read
 
         # If in fastq
@@ -31,7 +31,7 @@ class IdbaAssembler(BaseAssembler, IPlugin):
             parts = read_file.rsplit('.', 1)
             fa_file = '{}.fasta'.format(parts[0])
             fqfa_command = [os.path.join(cwd, self.bin_fq2fa), read_file, fa_file]
-            self.arast_popen(fqfa_command)
+            self.arast_popen(fqfa_command, overrides=False)
             read_file = fa_file
 
         base = os.path.join(self.outpath, 'run')

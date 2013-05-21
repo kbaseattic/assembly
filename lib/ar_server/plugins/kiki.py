@@ -34,7 +34,7 @@ class KikiAssembler(BaseAssembler, IPlugin):
         prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', ' seed_', '\n']
         for line in tabbed:
             l = line.split('\t')
-            if int(l[1]) >= threshold:
+            if int(l[1]) >= int(threshold):
                 for i in range(len(l)):
                     fasta.write(prefixes[i] + l[i])
         tabbed.close()
