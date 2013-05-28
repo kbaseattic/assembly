@@ -387,6 +387,8 @@ class ArastConsumer:
                                 reuse_data = True
                                 break
 
+                output_type = self.pmanager.output_type(module_name)
+
                 if not reuse_data:
                     output, alldata, mod_log = self.pmanager.run_module(
                         module_name, job_data, all_data=True, reads=include_reads)
@@ -398,15 +400,22 @@ class ArastConsumer:
                             file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
                                 for file in alldata]
 
+                    if output_type == 'contigs': #Assume assembly contigs
+                        cur_contigs = [asm.prefix_file(
+                                file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                                    for file in output]
+                        print cur_contigs
+                        job_data['contigs'] = cur_contigs
+
                     if alldata: #If log was renamed
                         mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
                                 pipeline_num, pipeline_stage, module_name))
 
 
-                output_type = self.pmanager.output_type(module_name)
+
                 if output_type == 'contigs': #Assume assembly contigs
                     job_data['reads'] = asm.arast_reads(alldata)
-
+                    
                 elif output_type == 'reads': #Assume preprocessing
                     if include_reads and reuse_data: # data was prefixed and moved
                         for d in output:
@@ -424,7 +433,7 @@ class ArastConsumer:
                         rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
                                     pipeline_num, pipe_suffix)) for f in fcontigs]
                         final_contigs += rcontigs
-                        job_data['final_contigs'] = rcontigs
+                        
                 try:
                     logfiles.append(mod_log)
                 except:
@@ -434,7 +443,7 @@ class ArastConsumer:
             pipe_elapsed_time = time.time() - pipe_start_time
             pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
 
-            bwa = True
+            bwa = False
             if bwa:
                 aln_result, _, aln_log = self.pmanager.run_module('bwa', job_data)
 

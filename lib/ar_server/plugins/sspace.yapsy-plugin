@@ -1,0 +1,18 @@
+[Core]
+Name = sspace
+Module = sspace
+
+[Settings]
+short_name = Ss
+executable = ../../bin/a5/SSPACE/SSPACE
+filetypes = fasta,fa,fastq,fq
+reverse_complement = False
+
+extend = False
+minimum_overlap = 15
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = SSPACE
+

@@ -86,6 +86,14 @@ chmod +x ../../../bin/solexa/LengthSort.pl
 cd ../..
 rm -rf solexa
 
+#Install Spades
+wget http://spades.bioinf.spbau.ru/release2.4.0/SPAdes-2.4.0.tar.gz
+tar -xvf SPAdes-2.4.0.tar.gz
+./SPAdes-2.4.0/
+./spades_compile.sh
+cd ..
+mv SPAdes-2.4.0/ ../bin/
+
 #Install seqtk
 #git clone https://github.com/lh3/seqtk.git
 #cd seqtk

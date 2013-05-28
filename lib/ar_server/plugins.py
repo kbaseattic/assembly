@@ -8,6 +8,7 @@ import sys
 import time
 import datetime 
 import subprocess
+import re
 from yapsy.PluginManager import PluginManager
 
 # A-Rast modules
@@ -58,6 +59,7 @@ class BasePlugin(object):
                 cmd_human.append(os.path.basename(w))
         cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
 
+        cmd_args[0] = os.path.abspath(cmd_args[0])
         self.out_module.write("Command: {}\n".format(cmd_string))
         self.out_report.write('Command: {}\n'.format(cmd_string))
         m_start_time = time.time()
@@ -107,8 +109,10 @@ class BasePlugin(object):
                      d in job_data['reads']]))
         return valid_files
 
-    def init_settings(self, settings, job_data):
+    def init_settings(self, settings, job_data, manager):
+        self.pmanager = manager
         self.threads = 1
+        self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
         for kv in settings:
@@ -167,10 +171,31 @@ class BasePlugin(object):
     def write_report(self):
         pass
 
-    def estimate_insert(self, contigs, reads, num_reads):
+    def estimate_insert(self, contig_file, reads, job_data, min_lines=1000):
         """ Map READS to CONTIGS using bwa and return insert size """
-        
-        return 1
+        logging.info('Estimating insert size')
+        min_reads = min_lines * 4
+        sub_reads = []
+        for r in reads:
+            sub_name = r + '.sub'
+            sub_file = open(sub_name, 'w')
+
+            ## getting subset of reads
+            with open(r) as readfile:
+                for line in itertools.islice(readfile, min_reads):
+                    sub_file.write(line)
+            sub_file.close()
+            sub_reads.append(sub_name)
+            
+        job_data['initial_reads'][0]['files'] = sub_reads
+        job_data['contigs'] = [contig_file]
+        #job_data['final_contigs'] = [contig_file]
+        samfile, _, _ = self.pmanager.run_module('bwa', job_data)
+        cmd_args = [self.tools['ins_from_sam'], samfile]
+        results = subprocess.check_output(cmd_args)
+        insert_size = int(float(re.split('\s|,', results)[3]))
+        logging.info('Estimated Insert Length: {}'.format(insert_size))
+        return insert_size
 
     
 class BaseAssembler(BasePlugin):
@@ -182,11 +207,11 @@ class BaseAssembler(BasePlugin):
     INPUT = 'reads'
     OUTPUT = 'contigs'
 
-    def __call__(self, settings, job_data):
+    def __call__(self, settings, job_data, manager):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
         self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data)
+        self.init_settings(settings, job_data, manager)
         valid_files = self.get_valid_reads(job_data)
         output = self.run(valid_files)
         self.out_module.close()
@@ -220,22 +245,29 @@ class BaseScaffolder(BasePlugin):
     """
     # Default behavior for run()
     INPUT = 'reads, contigs'
-    OUTPUT = 'reads'
+    OUTPUT = 'scaffolds'
 
-    def __call__(self, settings, job_data):
+    def __call__(self, settings, job_data, manager):
+        self.pmanager = manager
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
         self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data)
-        valid_files = self.get_valid_reads(job_data)
-        output = self.run(valid_files)
+        self.init_settings(settings, job_data, manager)
+
+        if len(job_data['initial_reads']) > 1:
+            raise NotImplementedError
+        else:
+            contig_file = job_data['contigs'][0]
+        read_records = job_data['initial_reads']
+        
+        output = self.run(read_records, contig_file, job_data)
 
         self.out_module.close()
         return output
 
     # Must implement run() method
     @abc.abstractmethod
-    def run(self, reads, contigs):
+    def run(self, job_data, read_records, contig_file):
         """
         Input: READS: list of dicts contain file and read info
         Output: Updated READS (each read['files'] list should be updated 
@@ -253,11 +285,11 @@ class BasePreprocessor(BasePlugin):
     INPUT = 'reads'
     OUTPUT = 'reads'
 
-    def __call__(self, settings, job_data):
+    def __call__(self, settings, job_data, manager):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
         self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data)
+        self.init_settings(settings, job_data, manager)
         valid_files = self.get_valid_reads(job_data)
         output = self.run(valid_files)
 
@@ -287,11 +319,11 @@ class BasePostprocessor(BasePlugin):
     INPUT = 'contigs, reads'
     OUTPUT = 'contigs'
 
-    def __call__(self, settings, job_data):
+    def __call__(self, settings, job_data, manager):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
         self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data)
+        self.init_settings(settings, job_data, manager)
         valid_files = self.get_valid_reads(job_data)
         output = self.run(valid_files)
 
@@ -321,11 +353,11 @@ class BaseAssessment(BasePlugin):
     INPUT = 'contigs'
     OUTPUT = 'report'
 
-    def __call__(self, settings, job_data):
+    def __call__(self, settings, job_data, manager):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
         self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data)
+        self.init_settings(settings, job_data, manager)
         contigs = job_data['final_contigs']
         output = self.run(contigs)
 
@@ -350,16 +382,14 @@ class BaseAligner(BasePlugin):
     INPUT = 'contigs'
     OUTPUT = 'sam'
 
-    def __call__(self, settings, job_data):
+    def __call__(self, settings, job_data, manager):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
         self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data)
-        if len(job_data['final_contigs']) > 1:
-            raise NotImplementedError
-        else:
-            contig_file = job_data['final_contigs'][0]
+        self.init_settings(settings, job_data, manager)
+        contig_file = job_data['contigs'][0]
         read_records = job_data['initial_reads']
+        print read_records
         if len(read_records) > 1:
             raise NotImplementedError('Alignment of multiple libraries not impl')
         read_lib = read_records[0]
@@ -413,14 +443,16 @@ class ModuleManager():
         """
         job_data = copy.deepcopy(job_data_orig)
         # Pass back orig file descriptor
-        job_data['out_report'] = job_data_orig['out_report'] 
-
+        try:
+            job_data['out_report'] = job_data_orig['out_report'] 
+        except:
+            pass
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)
         settings = plugin.details.items('Settings')
         plugin.plugin_object.update_settings(job_data)
-        output = plugin.plugin_object(settings, job_data)
+        output = plugin.plugin_object(settings, job_data, self)
         log = plugin.plugin_object.out_module.name
         if tar:
             tarfile = plugin.plugin_object.tar_output(job_data['job_id'])
