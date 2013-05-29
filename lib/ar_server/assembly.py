@@ -92,7 +92,7 @@ def prefix_file_move(file, prefix):
     return newfile
 
 def prefix_file(file, prefix):
-    """ Adds prefix to file, returns new file"""
+    """ Adds prefix to file, returns new filename"""
     f = '/' + str(prefix) + '__' + os.path.basename(file)
     newfile =  os.path.split(file)[0] + f
     return newfile

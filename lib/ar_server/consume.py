@@ -201,7 +201,7 @@ class ArastConsumer:
         uid = params['_id']
         user = params['ARASTUSER']
         token = params['oauth_token']
-        pipeline = params['pipeline']
+        pipelines = params['pipeline']
 
         ### Download files (if necessary)
         datapath, all_files = self.get_data(body)
@@ -240,10 +240,11 @@ class ArastConsumer:
             include_all_data = False
         contigs = not include_all_data
         status = ''
-        if pipeline:
+        if pipelines:
             try:
-                self.pmanager.validate_pipe(pipeline)
-                result_tar, analysis, summary= self.run_pipeline(pipeline, job_data, contigs_only=contigs)
+                for p in pipelines:
+                    self.pmanager.validate_pipe(p)
+                result_tar, analysis, summary= self.run_pipeline(pipelines, job_data, contigs_only=contigs)
                 try:
                     res = self.upload(url, user, token, result_tar)
                 except IOError:
@@ -293,7 +294,9 @@ class ArastConsumer:
         """
         Runs all pipelines in list PIPES
         """
-        all_pipes = self.pmanager.parse_input(pipes)
+        all_pipes = []
+        for p in pipes:
+            all_pipes += self.pmanager.parse_input(p)
         logging.info('{} pipelines:'.format(len(all_pipes)))
         for p in all_pipes:
             print '->'.join(p)
@@ -430,6 +433,7 @@ class ArastConsumer:
                         fcontigs = [asm.prefix_file(
                                 file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
                                     for file in output]
+                        #copy the result contig to newfile for shorter assesment name
                         rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
                                     pipeline_num, pipe_suffix)) for f in fcontigs]
                         final_contigs += rcontigs

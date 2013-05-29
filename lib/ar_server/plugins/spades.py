@@ -23,7 +23,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
                                  '-2', lib['files'][1]]
                 else:
                     raise Exception('Spades module file error')
-            elif lib['type'] == single:
+            elif lib['type'] == 'single':
                 cmd_args += ['-s', lib['files'][0]]
         cmd_args += ['--only-assembler',
                      '-o', self.outpath]
