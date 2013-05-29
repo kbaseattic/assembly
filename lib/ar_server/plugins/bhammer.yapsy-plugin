@@ -1,0 +1,14 @@
+[Core]
+Name = bhammer
+Module = bhammer
+
+[Settings]
+short_name = Bh
+executable = ../../bin/SPAdes-2.4.0/spades.py
+filetypes = fastq,fq
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = SPAdes error correction
+
