@@ -6,7 +6,7 @@ from plugins import BaseAssessment
 from yapsy.IPlugin import IPlugin
 
 class QuastAssessment(BaseAssessment, IPlugin):
-    def run(self, contigs):
+    def run(self, contigs, reads):
         """ 
         Build the command and run.
         Return list of file(s)

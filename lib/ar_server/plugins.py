@@ -48,9 +48,6 @@ class BasePlugin(object):
                 if kv[1] != 'True':
                     cmd_args.append(kv[1])
 
-                #cmd_human = [os.path.basename(w) for w in cmd_args]
-
-
         cmd_human = []
         for w in cmd_args:
             if w.endswith('/'):
@@ -59,7 +56,8 @@ class BasePlugin(object):
                 cmd_human.append(os.path.basename(w))
         cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
 
-        cmd_args[0] = os.path.abspath(cmd_args[0])
+        if cmd_args[0].find('..') != -1:
+            cmd_args[0] = os.path.abspath(cmd_args[0])
         self.out_module.write("Command: {}\n".format(cmd_string))
         self.out_report.write('Command: {}\n'.format(cmd_string))
         m_start_time = time.time()
@@ -112,6 +110,7 @@ class BasePlugin(object):
     def init_settings(self, settings, job_data, manager):
         self.pmanager = manager
         self.threads = 1
+        self.job_data = job_data
         self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
@@ -168,10 +167,38 @@ class BasePlugin(object):
     def update_status(self):
         pass
 
-    def write_report(self):
-        pass
+    def calculate_read_info(self, job_data=None):
+        """ 
+        Analyze subset of reads to infer:
+        - Max read length
+        - ...
+        Modifies each read library in JOB_DATA as well as returns global 
+        values.
+        """
+        if not job_data:
+            job_data = self.job_data
+        all_max_read_length = []
+        total_read_count = 0
+        for lib in job_data['initial_reads']:
+            max_read_length = -1
+            read_count = 0
+            readfiles = lib['files']
+            for r in readfiles:
+                f = open(r, 'r')
+                for line in f:
+                    read_count += 1
+                    if read_count % 4 == 2 and len(line) > max_read_length:
+                        max_read_length = len(line)
+                f.close()
+            read_count /= 4
+            lib['max_read_length'] = max_read_length
+            lib['count'] = read_count
+            all_max_read_length.append(max_read_length)
+            total_read_count += read_count
+        return max(all_max_read_length), total_read_count
+    
 
-    def estimate_insert(self, contig_file, reads, job_data, min_lines=1000):
+    def estimate_insert(self, contig_file, reads, min_lines=1000):
         """ Map READS to CONTIGS using bwa and return insert size """
         logging.info('Estimating insert size')
         min_reads = min_lines * 4
@@ -187,10 +214,12 @@ class BasePlugin(object):
             sub_file.close()
             sub_reads.append(sub_name)
             
-        job_data['initial_reads'][0]['files'] = sub_reads
-        job_data['contigs'] = [contig_file]
+        bwa_data = copy.deepcopy(self.job_data)
+        bwa_data['initial_reads'][0]['files'] = sub_reads
+        bwa_data['contigs'] = [contig_file]
+        bwa_data['out_report'] = open(os.path.join(self.outpath, 'estimate_ins.log'), 'w')
         #job_data['final_contigs'] = [contig_file]
-        samfile, _, _ = self.pmanager.run_module('bwa', job_data)
+        samfile, _, _ = self.pmanager.run_module('bwa', bwa_data)
         cmd_args = [self.tools['ins_from_sam'], samfile]
         results = subprocess.check_output(cmd_args)
         insert_size = int(float(re.split('\s|,', results)[3]))
@@ -353,20 +382,24 @@ class BaseAssessment(BasePlugin):
     INPUT = 'contigs'
     OUTPUT = 'report'
 
-    def __call__(self, settings, job_data, manager):
+    def __call__(self, settings, job_data, manager, meta=False):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
         self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data, manager)
-        contigs = job_data['final_contigs']
-        output = self.run(contigs)
+        
+        if meta: # Use all contigs for whole job
+            contigs = job_data['final_contigs']
+        else:
+            contigs = job_data['contigs']
+        output = self.run(contigs, job_data['initial_reads'])
 
         self.out_module.close()
         return output
 
     # Must implement run() method
     @abc.abstractmethod
-    def run(self, contigs):
+    def run(self, contigs, reads):
         """
         Return reports
           
@@ -389,7 +422,6 @@ class BaseAligner(BasePlugin):
         self.init_settings(settings, job_data, manager)
         contig_file = job_data['contigs'][0]
         read_records = job_data['initial_reads']
-        print read_records
         if len(read_records) > 1:
             raise NotImplementedError('Alignment of multiple libraries not impl')
         read_lib = read_records[0]
@@ -430,7 +462,7 @@ class ModuleManager():
             print "Plugin found: {}".format(plugin.name)
         
 
-    def run_module(self, module, job_data_orig, tar=False, all_data=False, reads=False):
+    def run_module(self, module, job_data_orig, tar=False, all_data=False, reads=False, meta=False):
         """
         Keyword Arguments:
         module -- name of plugin
@@ -452,7 +484,10 @@ class ModuleManager():
         plugin = self.pmanager.getPluginByName(module)
         settings = plugin.details.items('Settings')
         plugin.plugin_object.update_settings(job_data)
-        output = plugin.plugin_object(settings, job_data, self)
+        if meta:
+            output = plugin.plugin_object(settings, job_data, self, meta=True)
+        else:
+            output = plugin.plugin_object(settings, job_data, self)
         log = plugin.plugin_object.out_module.name
         if tar:
             tarfile = plugin.plugin_object.tar_output(job_data['job_id'])

@@ -203,6 +203,13 @@ class ArastConsumer:
         token = params['oauth_token']
         pipelines = params['pipeline']
 
+        #support legacy arast client
+        if len(pipelines) > 0:
+            print type(pipelines[0])
+            if type(pipelines[0]) is not list:
+                pipelines = [pipelines]
+                
+        print 'Pipe: {}'.format(pipelines)
         ### Download files (if necessary)
         datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
@@ -410,6 +417,8 @@ class ArastConsumer:
                         print cur_contigs
                         job_data['contigs'] = cur_contigs
 
+                    elif output_type == 'reads':
+                        job_data['initial_reads'] = job_data['reads']
                     if alldata: #If log was renamed
                         mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
                                 pipeline_num, pipeline_stage, module_name))
@@ -467,12 +476,16 @@ class ArastConsumer:
                 logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
             all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
                                 'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
+            self.pmanager.run_module('reapr', job_data)
+
+
             pipeline_num += 1
 
         ## ANALYSIS: Quast
         job_data['final_contigs'] = final_contigs
         job_data['params'] = [] #clear overrides from last stage
-        quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, tar=True)
+        quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
+                                                                      tar=True, meta=True)
         logfiles.append(q_log)
 
         ## CONCAT MODULE LOG FILES

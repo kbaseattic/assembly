@@ -1,6 +1,6 @@
 #! /bin/bash
 sudo apt-get update
-sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp
+sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus
 sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
@@ -93,6 +93,28 @@ tar -xvf SPAdes-2.4.0.tar.gz
 ./spades_compile.sh
 cd ..
 mv SPAdes-2.4.0/ ../bin/
+rm SPAdes-2.4.0.tar.gz
+
+#Install REAPR
+mkdir ../bin/Reapr
+wget ftp://ftp.sanger.ac.uk/pub4/resources/software/reapr/Reapr_1.0.15.tar.gz
+tar -xvf Reapr_1.0.15.tar.gz
+mv Reapr_1.0.15/* ../bin/Reapr
+cd ../bin/Reapr/
+sudo sh install.sh
+cd ../../scripts
+
+sudo cpanm install File::Basename
+sudo cpanm install File::Copy
+sudo cpanm install File::Spec
+sudo cpanm install File::Spec::Link
+sudo cpanm install Getopt::Long
+sudo cpanm install List::Util
+wget ftp://ftp.sanger.ac.uk/pub4/resources/software/smalt/smalt-0.7.4.tgz
+tar -xvf smalt-0.7.4.tgz
+cd smalt-0.7.4
+mv smalt_x86_64 ../../bin/Reapr/src/smalt
+
 
 #Install seqtk
 #git clone https://github.com/lh3/seqtk.git
