@@ -1,0 +1,13 @@
+[Core]
+Name = reapr
+Module = reapr
+
+[Settings]
+executable = ../../bin/Reapr/reapr
+filetypes = fasta,fa
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = REAPR plugin
+
