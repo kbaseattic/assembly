@@ -42,7 +42,7 @@ class SspaceScaffolder(BaseScaffolder, IPlugin):
         min_links = int(math.log(expected_links)/math.log(1.4)-11.5)
 
         ## Pair ratio A
-        #pair_ratio = 0.4
+        pair_ratio = 0.4
 
         ## Create library file
         lib_filename = os.path.join(self.outpath,
@@ -62,6 +62,8 @@ class SspaceScaffolder(BaseScaffolder, IPlugin):
         cmd_args = [self.executable, 
                     '-m', str(min_overlap),
                     '-n', str(min_merge_overlap),
+                    '-k', str(min_links),
+                    '-a', str(pair_ratio),
                     '-l', lib_filename,
                     '-s', contig_file,
                     '-b', str(job_data['job_id'])]

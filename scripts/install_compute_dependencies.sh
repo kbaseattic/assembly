@@ -42,7 +42,7 @@ cd a5
 wget http://ngopt.googlecode.com/files/ngopt_a5pipeline_linux-x64_20120518.tar.gz
 tar -xvf ngopt*
 cd ngopt*
-cp -R bin/ ../../../bin/a5/
+cp -R bin/* ../../../bin/a5/
 cd ../..
 rm -rf a5/
 
@@ -115,6 +115,11 @@ tar -xvf smalt-0.7.4.tgz
 cd smalt-0.7.4
 mv smalt_x86_64 ../../bin/Reapr/src/smalt
 
+#Install Screed
+git clone git://github.com/ged-lab/screed.git
+cd screed
+python setup.py install
+cd ..
 
 #Install seqtk
 #git clone https://github.com/lh3/seqtk.git

@@ -215,7 +215,7 @@ class BasePlugin(object):
             sub_reads.append(sub_name)
             
         bwa_data = copy.deepcopy(self.job_data)
-        bwa_data['initial_reads'][0]['files'] = sub_reads
+        bwa_data['processed_reads'][0]['files'] = sub_reads
         bwa_data['contigs'] = [contig_file]
         bwa_data['out_report'] = open(os.path.join(self.outpath, 'estimate_ins.log'), 'w')
         #job_data['final_contigs'] = [contig_file]
@@ -283,11 +283,11 @@ class BaseScaffolder(BasePlugin):
         self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data, manager)
 
-        if len(job_data['initial_reads']) > 1:
+        if len(job_data['processed_reads']) > 1:
             raise NotImplementedError
         else:
             contig_file = job_data['contigs'][0]
-        read_records = job_data['initial_reads']
+        read_records = job_data['processed_reads']
         
         output = self.run(read_records, contig_file, job_data)
 
@@ -392,7 +392,7 @@ class BaseAssessment(BasePlugin):
             contigs = job_data['final_contigs']
         else:
             contigs = job_data['contigs']
-        output = self.run(contigs, job_data['initial_reads'])
+        output = self.run(contigs, job_data['processed_reads'])
 
         self.out_module.close()
         return output
@@ -421,7 +421,7 @@ class BaseAligner(BasePlugin):
         self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data, manager)
         contig_file = job_data['contigs'][0]
-        read_records = job_data['initial_reads']
+        read_records = job_data['processed_reads']
         if len(read_records) > 1:
             raise NotImplementedError('Alignment of multiple libraries not impl')
         read_lib = read_records[0]

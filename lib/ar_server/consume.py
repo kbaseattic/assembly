@@ -229,6 +229,7 @@ class ArastConsumer:
                     'user' : params['ARASTUSER'],
                     'reads': all_files,
                     'initial_reads': all_files,
+                    'processed_reads': all_files,
                     'datapath': datapath,
                     'out_report' : self.out_report}
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
@@ -418,7 +419,7 @@ class ArastConsumer:
                         job_data['contigs'] = cur_contigs
 
                     elif output_type == 'reads':
-                        job_data['initial_reads'] = job_data['reads']
+                        job_data['processed_reads'] = job_data['reads']
                     if alldata: #If log was renamed
                         mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
                                 pipeline_num, pipeline_stage, module_name))
