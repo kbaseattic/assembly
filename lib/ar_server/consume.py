@@ -30,7 +30,7 @@ import shock
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, arasturl, config, threads):
+    def __init__(self, shockurl, arasturl, config, threads, queue):
         self.parser = SafeConfigParser()
         self.parser.read(config)
         # Load plugins
@@ -42,7 +42,11 @@ class ArastConsumer:
         self.shockuser = self.parser.get('shock','admin_user')
         self.shockpass = self.parser.get('shock','admin_pass')
         self.datapath = self.parser.get('compute','datapath')
-        self.queue = self.parser.get('rabbitmq','default_routing_key')
+        if queue:
+            self.queue = queue
+            print('Using queue:{}'.format(self.queue))
+        else:
+            self.queue = self.parser.get('rabbitmq','default_routing_key')
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
         self.metadata = meta.MetadataConnection(config, arasturl)
         self.gc_lock = multiprocessing.Lock()

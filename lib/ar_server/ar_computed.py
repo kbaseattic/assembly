@@ -22,7 +22,7 @@ import shock
 
 #with context:
 
-def start(arast_server, config, num_threads):
+def start(arast_server, config, num_threads, queue):
     # Read config file
     
     print "Reading from config file"
@@ -67,15 +67,13 @@ def start(arast_server, config, num_threads):
     workers = []
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
-        compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads)
+        compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads, queue)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
         workers.append(p)
         p.start()
         #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
     workers[0].join()
-
-
 
 
 parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command -h" for more information about a command.')
@@ -88,6 +86,8 @@ parser.add_argument("-c", "--config", help="specify configuration file",
                     action="store", required=True)
 parser.add_argument("-t", "--threads", help="specify number of worker threads",
                     action="store", required=False)
+parser.add_argument("-q", "--queue", help="specify a queue to pull from",
+                    action="store", required=False)
 
 args = parser.parse_args()
 if args.verbose:
@@ -95,9 +95,12 @@ if args.verbose:
 arasturl = ''
 if args.server:
     arasturl = args.server
-
+if args.queue:
+    queue = args.queue
+else:
+    queue = None
 if args.threads:
     num_threads = args.threads
 else:
     num_threads = None
-start(arasturl, args.config, num_threads)
+start(arasturl, args.config, num_threads, queue)
