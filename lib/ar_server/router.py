@@ -44,6 +44,12 @@ def determine_routing_key(size, params):
     #if params['version'].find('beta'):
      #   print 'Sent to testing queue'
       #  return 'jobs.test'
+    try:
+        routing_key = params['queue']
+    except:
+        pass
+    if routing_key:
+        return routing_key
     return parser.get('rabbitmq','default_routing_key')
 
 
