@@ -25,7 +25,7 @@ from ar_client.auth_token import *
 
 
 
-my_version = '0.2.3'
+my_version = '0.2.4'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -42,6 +42,7 @@ p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specif
 p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use")
 p_run.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
+p_run.add_argument("-q", "--queue", action="store", dest="queue", help=argparse.SUPPRESS)
 p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
 p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
