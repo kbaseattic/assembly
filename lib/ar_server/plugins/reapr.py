@@ -26,7 +26,7 @@ class ReaprAssessment(BaseAssessment, IPlugin):
         
         #Map with BWA and produce bam
         bwa_data = copy.deepcopy(self.job_data)
-        bwa_data['initial_reads'][0]['files'] = readfiles
+        bwa_data['processed_reads'][0]['files'] = readfiles
         bwa_data['contigs'] = [fixed_contig]
         bwa_data['out_report'] = open(os.path.join(self.outpath, 'bwa.log'), 'w')
         samfile, _, _ = self.pmanager.run_module('bwa', bwa_data)

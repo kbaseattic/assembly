@@ -134,7 +134,7 @@ class ArastConsumer:
             except:
                 logging.info(format_tb(sys.exc_info()[2]))
                 logging.info('No single files submitted!')
-            print all_files
+                
             touch(datapath)
 
         else: # download data
@@ -205,11 +205,9 @@ class ArastConsumer:
 
         #support legacy arast client
         if len(pipelines) > 0:
-            print type(pipelines[0])
             if type(pipelines[0]) is not list:
                 pipelines = [pipelines]
                 
-        print 'Pipe: {}'.format(pipelines)
         ### Download files (if necessary)
         datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
@@ -376,7 +374,6 @@ class ArastConsumer:
                 reuse_data = False
                 enable_reuse = True # KILL SWITCH
                 if enable_reuse:
-                    print module_code
                     for pipe in pipe_outputs:
                         if reuse_data:
                             break
@@ -412,14 +409,9 @@ class ArastConsumer:
                                 for file in alldata]
 
                     if output_type == 'contigs': #Assume assembly contigs
-                        cur_contigs = [asm.prefix_file(
-                                file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
-                                    for file in output]
-                        print cur_contigs
-                        job_data['contigs'] = cur_contigs
-
+                        pass
                     elif output_type == 'reads':
-                        job_data['processed_reads'] = job_data['reads']
+                        pass
                     if alldata: #If log was renamed
                         mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
                                 pipeline_num, pipeline_stage, module_name))
@@ -428,6 +420,11 @@ class ArastConsumer:
 
                 if output_type == 'contigs': #Assume assembly contigs
                     job_data['reads'] = asm.arast_reads(alldata)
+                    cur_contigs = [asm.prefix_file(
+                            file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                                for file in output]
+                    job_data['contigs'] = cur_contigs
+
                     
                 elif output_type == 'reads': #Assume preprocessing
                     if include_reads and reuse_data: # data was prefixed and moved
@@ -437,6 +434,8 @@ class ArastConsumer:
                             d['files'] = files
                             d['short_reads'] = [] + files
                     job_data['reads'] = output
+                    job_data['processed_reads'] = list(job_data['reads'])
+
                 pipeline_results += alldata
                 if pipeline_stage == num_stages: # Last stage, add contig for assessment
                     if output: #If a contig was produced
@@ -453,6 +452,7 @@ class ArastConsumer:
                 except:
                     pass
                 pipeline_stage += 1
+                
                 cur_outputs.append([module_code, output, alldata])
             pipe_elapsed_time = time.time() - pipe_start_time
             pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))

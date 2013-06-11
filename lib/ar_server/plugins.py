@@ -56,19 +56,30 @@ class BasePlugin(object):
                 cmd_human.append(os.path.basename(w))
         cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
 
-        if cmd_args[0].find('..') != -1:
+        try:
+            shell = kwargs['shell']
+        except:
+            shell = False
+        if cmd_args[0].find('..') != -1 and not shell:
             cmd_args[0] = os.path.abspath(cmd_args[0])
         self.out_module.write("Command: {}\n".format(cmd_string))
         self.out_report.write('Command: {}\n'.format(cmd_string))
         m_start_time = time.time()
+        print cmd_args
         try:
-            out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
+            #out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
+            out = ''
+            p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
+            for line in p.stdout:
+                logging.info(line)
+                self.out_module.write(line)
+            p.wait()
         except subprocess.CalledProcessError as e:
             out = 'Process Failed.\nExit Code: {}\nOutput:{}\n'.format(
                 e.returncode, e.output)
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
-        self.out_module.write(out)
+        #self.out_module.write(out)
         self.out_report.write("Process time: {}\n".format(m_ftime))
 
 

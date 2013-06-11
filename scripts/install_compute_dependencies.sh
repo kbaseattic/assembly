@@ -29,11 +29,11 @@ sudo make ki
 cp ki /usr/bin
 
 # Install BWA
-#cd ..
-#sudo git clone git://github.com/lh3/bwa.git bwa
-#cd bwa
-#sudo make
-#sudo cp bwa /usr/bin
+cd ../..
+sudo git clone git://github.com/lh3/bwa.git bwa
+cd bwa
+sudo make
+sudo cp bwa ../../bin/
 
 # Install A5
 cd ../..

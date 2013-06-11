@@ -4,7 +4,7 @@ Module = bwa
 
 [Settings]
 short_name = bwa
-executable = ../../bin/a5/bwa
+executable = ../../bin/bwa
 filetypes = fastq,fq
 
 [Documentation]

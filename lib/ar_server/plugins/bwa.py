@@ -21,31 +21,16 @@ class BwaAligner(BaseAligner, IPlugin):
         ## Align reads
         samfile = os.path.join(self.outpath,
                                os.path.basename(contig_file) + '.sam')
-        aln_file1 = os.path.join(self.outpath,
-                                 os.path.basename(reads[0]) + '.sai')
-        cmd_args = [self.executable, 'aln', contig_file, reads[0],
-                    '-f', aln_file1]
-        self.arast_popen(cmd_args)
+        cmd_args = [self.executable, 'mem', '-t', '8', contig_file, reads[0]]
         if len(reads) == 2:
-            aln_file2 = os.path.join(self.outpath,
-                                     os.path.basename(reads[1]) + '.sai')
-
-            cmd_args = [self.executable, 'aln', contig_file, reads[1],
-                        '-f', aln_file2]
-            self.arast_popen(cmd_args)
-
-        # Create SAM
-            cmd_args = [self.executable, 'sampe', contig_file, 
-                        aln_file1, aln_file2,
-                        reads[0], reads[1],
-                        '-f', samfile]
-            self.arast_popen(cmd_args)
-        else: ## Single end
-            if merged_pair:
-                raise Exception('Merged pair files not implemented')
-            cmd_args = [self.executable, 'samse', contig_file, 
-                        aln_file1, reads[0], '-f', samfile]
-            self.arast_popen(cmd_args)
+            cmd_args+=[reads[1], '>', samfile]
+            
+        else:
+            cmd_args+=['>', samfile]
+        cmd_string = ' '.join(cmd_args)
+        
+        ## Need to use shell mode since BWA doesn't specify an output file
+        self.arast_popen(cmd_string, shell=True)
 
         if not os.path.exists(samfile):
             raise Exception('Unable to complete alignment')
