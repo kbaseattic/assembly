@@ -10,6 +10,10 @@ reverse_complement = False
 
 extend = False
 minimum_overlap = 15
+a = 0.4
+m = -1
+n = -1
+k = -1
 
 [Documentation]
 Author = Chris Bun

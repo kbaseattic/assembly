@@ -232,6 +232,8 @@ class ArastConsumer:
                     'reads': all_files,
                     'initial_reads': all_files,
                     'processed_reads': all_files,
+                    'samfile': '',
+                    'bam_sorted': '',
                     'datapath': datapath,
                     'out_report' : self.out_report}
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
@@ -317,11 +319,16 @@ class ArastConsumer:
         pipe_outputs = []
         logfiles = []
         final_contigs = []
+        output_types = []
         num_pipes = len(all_pipes)
         for pipe in all_pipes:
             job_data = copy.deepcopy(job_data_global)
             job_data['out_report'] = job_data_global['out_report'] 
             pipeline, overrides = self.pmanager.parse_pipe(pipe)
+            try:
+                pipeline = pipeline.remove('none')
+            except:
+                pass
             print pipeline
             print overrides
             num_stages = len(pipeline)
@@ -378,7 +385,7 @@ class ArastConsumer:
                 reuse_data = False
                 enable_reuse = True # KILL SWITCH
                 if enable_reuse:
-                    for pipe in pipe_outputs:
+                    for k, pipe in enumerate(pipe_outputs):
                         if reuse_data:
                             break
                         if not pipe:
@@ -390,18 +397,25 @@ class ArastConsumer:
                                     break
                             except:
                                 pass
-                            if (pipe[i][0] == module_code and i == pipeline_stage - 1):
-                                #and overrides[i].items() == job_data['params']): #copy!
-                                logging.info('Found previously computed data, reusing {}.'.format(
-                                        module_code))
-                                output = [] + pipe[i][1]
-                                alldata = [] + pipe[i][2]
-                                reuse_data = True
-                                break
+                            try:
+                                if (pipe[i][0] == module_code and i == pipeline_stage - 1):
+                                    #and overrides[i].items() == job_data['params']): #copy!
+                                    logging.info('Found previously computed data, reusing {}.'.format(
+                                            module_code))
+                                    output = [] + pipe[i][1]
+                                    pfix = (k+1, i+1)
+                                    print pfix
+                                    alldata = [] + pipe[i][2]
+                                    reuse_data = True
+                                    break
+                            except: # Previous pipes may be shorter
+                                pass
+
 
                 output_type = self.pmanager.output_type(module_name)
 
                 if not reuse_data:
+                    print job_data
                     output, alldata, mod_log = self.pmanager.run_module(
                         module_name, job_data, all_data=True, reads=include_reads)
                     if not output:
@@ -412,7 +426,9 @@ class ArastConsumer:
                             file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
                                 for file in alldata]
 
+                    print output
                     if output_type == 'contigs': #Assume assembly contigs
+                        print output
                         pass
                     elif output_type == 'reads':
                         pass
@@ -422,12 +438,17 @@ class ArastConsumer:
 
 
 
-                if output_type == 'contigs': #Assume assembly contigs
+                if output_type == 'contigs' or output_type == 'scaffolds': #Assume assembly contigs
                     job_data['reads'] = asm.arast_reads(alldata)
+                    if reuse_data:
+                        p_num, p_stage = pfix
+                    else:
+                        p_num, p_stage = pipeline_num, pipeline_stage
                     cur_contigs = [asm.prefix_file(
-                            file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                            file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
                                 for file in output]
                     job_data['contigs'] = cur_contigs
+                    print cur_contigs
 
                     
                 elif output_type == 'reads': #Assume preprocessing
@@ -443,13 +464,17 @@ class ArastConsumer:
                 pipeline_results += alldata
                 if pipeline_stage == num_stages: # Last stage, add contig for assessment
                     if output: #If a contig was produced
-                        fcontigs = [asm.prefix_file(
-                                file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
-                                    for file in output]
+                        # fcontigs = [asm.prefix_file(
+                        #         file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                        #             for file in output]
+                        fcontigs = cur_contigs
                         #copy the result contig to newfile for shorter assesment name
                         rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
                                     pipeline_num, pipe_suffix)) for f in fcontigs]
-                        final_contigs += rcontigs
+                        #final_contigs += rcontigs
+                        final_contigs += fcontigs
+                        
+                        output_types.append(output_type)
                         
                 try:
                     logfiles.append(mod_log)
@@ -481,7 +506,12 @@ class ArastConsumer:
                 logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
             all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
                                 'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
-            self.pmanager.run_module('reapr', job_data)
+
+
+            ## Assessment
+            #self.pmanager.run_module('reapr', job_data)
+            #print job_data
+            #self.pmanager.run_module('ale', job_data)
 
 
             pipeline_num += 1

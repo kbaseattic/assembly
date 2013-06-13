@@ -298,7 +298,8 @@ class BaseScaffolder(BasePlugin):
             raise NotImplementedError
         else:
             contig_file = job_data['contigs'][0]
-        read_records = job_data['processed_reads']
+        #read_records = job_data['processed_reads']
+        read_records = job_data['initial_reads']
         
         output = self.run(read_records, contig_file, job_data)
 
@@ -391,7 +392,7 @@ class BaseAssessment(BasePlugin):
     """
     # Default behavior for run()
     INPUT = 'contigs'
-    OUTPUT = 'report'
+    OUTPUT = 'contigs' #for reapr used in pipe!
 
     def __call__(self, settings, job_data, manager, meta=False):
         self.run_checks(settings, job_data)
@@ -473,7 +474,9 @@ class ModuleManager():
             print "Plugin found: {}".format(plugin.name)
         
 
-    def run_module(self, module, job_data_orig, tar=False, all_data=False, reads=False, meta=False):
+    def run_module(self, module, job_data_orig, tar=False, 
+                   all_data=False, reads=False, meta=False, 
+                   overrides=True):
         """
         Keyword Arguments:
         module -- name of plugin
@@ -484,12 +487,13 @@ class ModuleManager():
           Not recommended for large read files.
 
         """
-        job_data = copy.deepcopy(job_data_orig)
-        # Pass back orig file descriptor
-        try:
-            job_data['out_report'] = job_data_orig['out_report'] 
-        except:
-            pass
+        job_data = job_data_orig
+        # job_data = copy.deepcopy(job_data_orig)
+        # # Pass back orig file descriptor
+        # try:
+        #     job_data['out_report'] = job_data_orig['out_report'] 
+        # except:
+        #     pass
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)

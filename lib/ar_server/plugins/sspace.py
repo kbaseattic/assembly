@@ -26,23 +26,32 @@ class SspaceScaffolder(BaseScaffolder, IPlugin):
         except:
             insert_size = self.estimate_insert(contig_file, read_files)
             
-        ## Min overlap for extension, decision based on A5
         genome_size = sum(astats.getLens(contig_file))
-        min_overlap = max(self.minimum_overlap, 
-                          int(math.log(genome_size, 2) + 3.99))
+        ## Min overlap for extension, decision based on A5
+        if  self.m == '-1':
 
+            min_overlap = max(self.minimum_overlap, 
+                              int(math.log(genome_size, 2) + 3.99))
+        else:
+            min_overlap = int(self.m)
         
         ## Min overlap for merging, decision based on A5
-        min_merge_overlap = int(math.log(insert_size, 2) * 1.25 + 0.99)
+        if self.n == '-1':
+            min_merge_overlap = int(math.log(insert_size, 2) * 1.25 + 0.99)
+        else:
+            min_merge_overlap = int(self.n)
 
         ## K minimal links, based on A5
-        max_read_length, read_count = self.calculate_read_info(job_data)
-        coverage = max_read_length * read_count / genome_size
-        expected_links = coverage * insert_size / max_read_length
-        min_links = int(math.log(expected_links)/math.log(1.4)-11.5)
+        if self.k == '-1':
+            max_read_length, read_count = self.calculate_read_info(job_data)
+            coverage = max_read_length * read_count / genome_size
+            expected_links = coverage * insert_size / max_read_length
+            min_links = int(math.log(expected_links)/math.log(1.4)-11.5)
+        else:
+            min_links = int(self.k)
 
         ## Pair ratio A
-        pair_ratio = 0.4
+        pair_ratio = self.a
 
         ## Create library file
         lib_filename = os.path.join(self.outpath,

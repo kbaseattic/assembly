@@ -16,7 +16,7 @@ class BwaAligner(BaseAligner, IPlugin):
         ## Index contigs using IS algorithm
         cmd_args = [self.executable, 'index', '-a', 'is', contig_file]
         logging.info("BWA Plugin: {}".format(cmd_args))
-        self.arast_popen(cmd_args)
+        self.arast_popen(cmd_args, overrides=False)
 
         ## Align reads
         samfile = os.path.join(self.outpath,
@@ -30,8 +30,9 @@ class BwaAligner(BaseAligner, IPlugin):
         cmd_string = ' '.join(cmd_args)
         
         ## Need to use shell mode since BWA doesn't specify an output file
-        self.arast_popen(cmd_string, shell=True)
+        self.arast_popen(cmd_string, shell=True, overrides=False)
 
         if not os.path.exists(samfile):
             raise Exception('Unable to complete alignment')
+        self.job_data['samfile'] = samfile
         return samfile

@@ -42,5 +42,14 @@ class ReaprAssessment(BaseAssessment, IPlugin):
         cmd_args = [self.executable, 'pipeline', fixed_contig, sortedfile, 
                     reapr_outdir]
         self.arast_popen(cmd_args)
-        return []
+
+        # Move files into root dir
+        for f in os.listdir(reapr_outdir):
+            old = os.path.join(reapr_outdir, f)
+            new = os.path.join(self.outpath, f)
+            os.rename(old, new)
+
+        self.job_data['bam_sorted'] = sortedfile
+        broken = os.path.join(self.outpath, '04.break.broken_assembly.fa')
+        return [broken]
 
