@@ -471,9 +471,7 @@ class ArastConsumer:
                         #copy the result contig to newfile for shorter assesment name
                         rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
                                     pipeline_num, pipe_suffix)) for f in fcontigs]
-                        #final_contigs += rcontigs
-                        final_contigs += fcontigs
-                        
+                        final_contigs += rcontigs
                         output_types.append(output_type)
                         
                 try:
@@ -511,6 +509,7 @@ class ArastConsumer:
             ## Assessment
             #self.pmanager.run_module('reapr', job_data)
             #print job_data
+            # TODO reapr break may be diff from final reapr align!
             #self.pmanager.run_module('ale', job_data)
 
 
@@ -518,6 +517,8 @@ class ArastConsumer:
 
         ## ANALYSIS: Quast
         job_data['final_contigs'] = final_contigs
+        job_data['contig_types'] = output_types
+        print output_types
         job_data['params'] = [] #clear overrides from last stage
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                       tar=True, meta=True)

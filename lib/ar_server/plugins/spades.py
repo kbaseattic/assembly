@@ -29,4 +29,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
                      '-o', self.outpath]
 
         self.arast_popen(cmd_args)
-        return [os.path.join(self.outpath, 'contigs.fasta')]
+        contigs = os.path.join(self.outpath, 'contigs.fasta')
+        if os.path.exists(contigs):
+            return [contigs]
+        return

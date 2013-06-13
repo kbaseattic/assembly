@@ -51,5 +51,7 @@ class ReaprAssessment(BaseAssessment, IPlugin):
 
         self.job_data['bam_sorted'] = sortedfile
         broken = os.path.join(self.outpath, '04.break.broken_assembly.fa')
-        return [broken]
+        if os.path.exists(broken):
+            return [broken]
+        return
 

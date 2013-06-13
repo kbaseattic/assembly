@@ -294,7 +294,7 @@ class BaseScaffolder(BasePlugin):
         self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data, manager)
 
-        if len(job_data['processed_reads']) > 1:
+        if len(job_data['initial_reads']) > 1:
             raise NotImplementedError
         else:
             contig_file = job_data['contigs'][0]
@@ -404,7 +404,7 @@ class BaseAssessment(BasePlugin):
             contigs = job_data['final_contigs']
         else:
             contigs = job_data['contigs']
-        output = self.run(contigs, job_data['processed_reads'])
+        output = self.run(contigs, job_data['initial_reads'])
 
         self.out_module.close()
         return output
@@ -433,7 +433,8 @@ class BaseAligner(BasePlugin):
         self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data, manager)
         contig_file = job_data['contigs'][0]
-        read_records = job_data['processed_reads']
+        #read_records = job_data['processed_reads']
+        read_records = job_data['initial_reads']
         if len(read_records) > 1:
             raise NotImplementedError('Alignment of multiple libraries not impl')
         read_lib = read_records[0]
@@ -527,7 +528,6 @@ class ModuleManager():
             plugin = self.pmanager.getPluginByName(module)
             settings = plugin.details.items('Settings')
             for kv in settings:
-                print kv
                 if kv[0] == 'short_name':
                     sn = kv[1]
                     break

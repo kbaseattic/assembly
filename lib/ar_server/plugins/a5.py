@@ -6,6 +6,7 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class A5Assembler(BaseAssembler, IPlugin):
+    OUTPUT = 'scaffolds'
     def run(self, reads):
         """ 
         Build the command and run.

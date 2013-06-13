@@ -87,13 +87,15 @@ cd ../..
 rm -rf solexa
 
 #Install Spades
+cd ../bin
 wget http://spades.bioinf.spbau.ru/release2.4.0/SPAdes-2.4.0.tar.gz
 tar -xvf SPAdes-2.4.0.tar.gz
-./SPAdes-2.4.0/
-./spades_compile.sh
+cd /SPAdes-2.4.0/
+sh spades_compile.sh
 cd ..
 mv SPAdes-2.4.0/ ../bin/
 rm SPAdes-2.4.0.tar.gz
+cd ../scripts
 
 #Install REAPR
 mkdir ../bin/Reapr

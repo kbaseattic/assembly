@@ -15,6 +15,13 @@ class QuastAssessment(BaseAssessment, IPlugin):
         cmd_args = [os.path.join(os.getcwd(),self.executable), 
                     '--min-contig', self.min_contig,
                     '-o', self.outpath]
+        scaffolds = True
+        for t in self.job_data['contig_types']:
+            if t != 'scaffolds':
+                scaffolds = False
+                break
+        if scaffolds:
+            cmd_args.append('--scaffolds')
         cmd_args += contigs
 
         self.arast_popen(cmd_args)
