@@ -66,7 +66,7 @@ rm -rf idba
 mkdir quast
 mkdir ../bin/quast
 cd quast
-wget http://downloads.sourceforge.net/project/quast/quast-2.0.tar.gz
+wget https://downloads.sourceforge.net/project/quast/quast-2.1.tar.gz
 tar -xf quast*
 cd quast*
 cp -R * ../../../bin/quast

@@ -182,7 +182,11 @@ def main():
                 for word in ls:
                     if is_filename(word):
                         files.append(word)
-
+        if args.reference:
+            for ls in args.reference:
+                for word in ls:
+                    if is_filename(word):
+                        files.append(word)
         base_files = []
         file_sizes = []
         res_ids = []

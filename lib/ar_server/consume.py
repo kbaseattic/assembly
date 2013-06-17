@@ -100,6 +100,10 @@ class ArastConsumer:
             files = data_doc['filename']
             ids = data_doc['ids']
             token = params['oauth_token']
+            try:
+                ref = data_doc['reference']
+            except:
+                pass
         else:
             self.metadata.update_job(uid, 'status', 'Invalid Data ID')
             raise Exception('Data {} does not exist on Shock Server'.format(
@@ -138,7 +142,24 @@ class ArastConsumer:
             except:
                 logging.info(format_tb(sys.exc_info()[2]))
                 logging.info('No single files submitted!')
-                
+            
+            try:
+                for r in ref:
+                    for wordpath in r:
+                        filedict = {'type':'reference', 'files':[]}    
+                        if is_filename(wordpath):
+                            baseword = os.path.basename(wordpath)
+                            filedict['files'].append(
+                                extract_file(os.path.join(filepath, baseword)))
+                        else:
+                            kv = word.split('=')
+                            filedict[kv[0]] = kv[1]
+                        all_files.append(filedict)
+            except:
+                logging.info(format_tb(sys.exc_info()[2]))
+                logging.info('No reference files submitted!')
+            
+    
             touch(datapath)
 
         else: # download data
@@ -195,6 +216,31 @@ class ArastConsumer:
             except:
                 #logging.info(format_exc(sys.exc_info()))
                 logging.info('No single end files submitted')
+
+            try:
+                for r in ref:
+                    for wordpath in r:
+                        filedict = {'type':'reference', 'files':[]}
+                        # Parse user directories
+                        try:
+                            path, word = wordpath.rsplit('/', 1)
+                            path += '/'
+                        except:
+                            word = wordpath
+                            path = ''
+
+                        if is_filename(word):
+                            baseword = os.path.basename(word)
+                            filedict['files'].append(
+                                self.download(url, user, token, ids[files.index(baseword)], filepath))
+                        else:
+                            kv = word.split('=')
+                            filedict[kv[0]] = kv[1]
+                        all_files.append(filedict)
+            except:
+                #logging.info(format_exc(sys.exc_info()))
+                logging.info('No single end files submitted')
+
         return datapath, all_files
 
 
@@ -226,16 +272,28 @@ class ArastConsumer:
         self.out_report = open(self.out_report_name, 'w')
 
         ### Create data to pass to pipeline
+        reads = []
+        reference = []
+        for fileset in allfiles:
+            if fileset['type'] == 'single' or fileset['type'] == 'paired':
+                reads.append(fileset)
+            elif fileset['type'] == 'reference':
+                reference.append(fileset)
+            else:
+                raise Exception('fileset error')
+
         job_data = {'job_id' : params['job_id'], 
                     'uid' : params['_id'],
                     'user' : params['ARASTUSER'],
-                    'reads': all_files,
-                    'initial_reads': all_files,
-                    'processed_reads': all_files,
+                    'reads': reads,
+                    'reference': reference,
+                    'initial_reads': reads,
+                    'processed_reads': reads,
                     'samfile': '',
                     'bam_sorted': '',
                     'datapath': datapath,
                     'out_report' : self.out_report}
+
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         
         self.start_time = time.time()

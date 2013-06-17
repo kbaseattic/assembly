@@ -20,8 +20,12 @@ class QuastAssessment(BaseAssessment, IPlugin):
             if t != 'scaffolds':
                 scaffolds = False
                 break
-        # if scaffolds:
-        #     cmd_args.append('--scaffolds')
+        if scaffolds and self.scaffold_mode == 'True':
+            cmd_args.append('--scaffolds')
+
+        # ref = job_data['reference']
+        # if ref:
+        #     cmd_args += ['-R', ref[0]]
         cmd_args += contigs
 
         self.arast_popen(cmd_args)
