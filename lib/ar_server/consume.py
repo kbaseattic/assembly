@@ -469,7 +469,9 @@ class ArastConsumer:
                         #             for file in output]
                         fcontigs = cur_contigs
                         #copy the result contig to newfile for shorter assesment name
-                        rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
+                        # rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
+                        #             pipeline_num, pipe_suffix)) for f in fcontigs]
+                        rcontigs = [asm.rename_file_symlink(f, 'P{}_{}'.format(
                                     pipeline_num, pipe_suffix)) for f in fcontigs]
                         final_contigs += rcontigs
                         output_types.append(output_type)
@@ -518,7 +520,6 @@ class ArastConsumer:
         ## ANALYSIS: Quast
         job_data['final_contigs'] = final_contigs
         job_data['contig_types'] = output_types
-        print output_types
         job_data['params'] = [] #clear overrides from last stage
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                       tar=True, meta=True)

@@ -108,6 +108,12 @@ def rename_file_copy(filepath, newname):
     shutil.copy(filepath, newfile)
     return newfile
 
+def rename_file_symlink(filepath, newname):
+    """ Renames the file, keeping the file extension, symlinks to new file name"""
+    f = '/' + newname + '.' + os.path.basename(filepath).rsplit('.', 1)[1]
+    newfile =  os.path.split(filepath)[0] + f
+    os.symlink(filepath, newfile)
+    return newfile
     
 
 def get_fasta(directory):

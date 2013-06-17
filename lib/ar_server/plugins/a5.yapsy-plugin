@@ -3,7 +3,7 @@ Name = a5
 Module = a5
 
 [Settings]
-executable = ../../bin/a5/a5
+executable = ../../bin/a5/a5_pipeline.pl
 filetypes = fastq,fq,fastq.bz2,fq.bz2
 
 [Documentation]
