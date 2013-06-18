@@ -48,8 +48,6 @@ def parse_pipe(pipe):
     return stages
 
 def parse_branches(pipe):
-    print 'branching pipeline'
-    print pipe
     stages = []
     flat_pipe = []
     for i in range(len(pipe)):
@@ -112,4 +110,4 @@ def expand_sweep(module):
         return [module]
 
 
-print parse_branches(my_pipe)
+#print parse_branches(my_pipe)

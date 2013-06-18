@@ -214,7 +214,7 @@ class ArastConsumer:
                             filedict[kv[0]] = kv[1]
                         all_files.append(filedict)
             except:
-                #logging.info(format_exc(sys.exc_info()))
+                logging.info(format_exc(sys.exc_info()))
                 logging.info('No single end files submitted')
 
             try:
@@ -274,7 +274,8 @@ class ArastConsumer:
         ### Create data to pass to pipeline
         reads = []
         reference = []
-        for fileset in allfiles:
+        print all_files
+        for fileset in all_files:
             if fileset['type'] == 'single' or fileset['type'] == 'paired':
                 reads.append(fileset)
             elif fileset['type'] == 'reference':
@@ -383,12 +384,6 @@ class ArastConsumer:
             job_data = copy.deepcopy(job_data_global)
             job_data['out_report'] = job_data_global['out_report'] 
             pipeline, overrides = self.pmanager.parse_pipe(pipe)
-            try:
-                pipeline = pipeline.remove('none')
-            except:
-                pass
-            print pipeline
-            print overrides
             num_stages = len(pipeline)
             pipeline_stage = 1
             pipeline_results = []
@@ -433,7 +428,6 @@ class ArastConsumer:
                 pipe_suffix += module_code
                 self.out_report.write('PIPELINE {} -- STAGE {}: {}\n'.format(
                         pipeline_num, pipeline_stage, module_name))
-                self.out_report.write('Input file(s): {}\n'.format(list_io_basenames(job_data)))
                 logging.debug('New job_data for stage {}: {}'.format(
                         pipeline_stage, job_data))
                 job_data['params'] = overrides[pipeline_stage-1].items()
@@ -458,7 +452,7 @@ class ArastConsumer:
                             try:
                                 if (pipe[i][0] == module_code and i == pipeline_stage - 1):
                                     #and overrides[i].items() == job_data['params']): #copy!
-                                    logging.info('Found previously computed data, reusing {}.'.format(
+                                    print('Found previously computed data, reusing {}.'.format(
                                             module_code))
                                     output = [] + pipe[i][1]
                                     pfix = (k+1, i+1)

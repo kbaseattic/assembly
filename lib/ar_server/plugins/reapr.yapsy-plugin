@@ -5,7 +5,7 @@ Module = reapr
 [Settings]
 executable = ../../bin/Reapr/reapr
 filetypes = fasta,fa
-a = False
+a = True
 
 [Documentation]
 Author = Chris Bun

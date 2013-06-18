@@ -80,7 +80,7 @@ class BasePlugin(object):
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
         #self.out_module.write(out)
-        self.out_report.write("Process time: {}\n".format(m_ftime))
+        self.out_report.write("Process time: {}\n\n".format(m_ftime))
 
 
     def create_directories(self, job_data):
@@ -583,18 +583,19 @@ class ModuleManager():
         # Parse param overrides
         overrides = []
         pipeline = []
+        module_num = -1
         for group in pipe:
-            module_num = -1
             for word in group.split('+'):
                 if word.lower() == 'none':
-                    continue
-                if not word.startswith('?') and self.has_plugin(word): # is module
+                    pass
+                elif not word.startswith('?') and self.has_plugin(word): # is module
+                    module_num = module_num + 1
                     pipeline.append(word)
-                    module_num += 1
                     overrides.append({})
 
                 elif word[1:-1].find('=') != -1: # is param
                     kv = word[1:].split('=')
                     overrides[module_num] = dict(overrides[module_num].items() +
                                                  dict([kv]).items())
+
         return pipeline, overrides

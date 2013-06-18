@@ -25,7 +25,7 @@ from ar_client.auth_token import *
 
 
 
-my_version = '0.2.5'
+my_version = '0.2.6'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -38,13 +38,14 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 
 # run -h
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
+data_group = p_run.add_mutually_exclusive_group()
 p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
+data_group.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
 p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use")
 p_run.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("-q", "--queue", action="store", dest="queue", help=argparse.SUPPRESS)
-p_run.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
+data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
 p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
 p_run.add_argument("--all-data", action="store_true", help="save all data for return")

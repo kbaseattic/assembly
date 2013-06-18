@@ -23,9 +23,11 @@ class QuastAssessment(BaseAssessment, IPlugin):
         if scaffolds and self.scaffold_mode == 'True':
             cmd_args.append('--scaffolds')
 
-        # ref = job_data['reference']
-        # if ref:
-        #     cmd_args += ['-R', ref[0]]
+        ref = self.job_data['reference']
+
+        if ref:
+            rfile = ref[0]['files'][0]
+            cmd_args += ['-R', rfile, '--gage']
         cmd_args += contigs
 
         self.arast_popen(cmd_args)

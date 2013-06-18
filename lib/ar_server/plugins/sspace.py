@@ -75,7 +75,9 @@ class SspaceScaffolder(BaseScaffolder, IPlugin):
                     '-a', str(pair_ratio),
                     '-l', lib_filename,
                     '-s', contig_file,
-                    '-b', str(job_data['job_id'])]
+                    '-b', str(job_data['job_id']),
+                    '-x', self.x]
+        
         self.arast_popen(cmd_args, cwd=self.outpath)
 
         final_scaffolds = os.path.join(self.outpath,
