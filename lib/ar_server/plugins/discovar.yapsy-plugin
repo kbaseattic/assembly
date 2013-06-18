@@ -8,6 +8,7 @@ executable = /usr/bin/discovar
 filetypes = fastq,fq
 dashes = 1
 contig_threshold = 300
+picard = /usr/bin/picard-tools
 
 [Documentation]
 Author = Fangfang Xia
