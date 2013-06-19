@@ -274,7 +274,6 @@ class ArastConsumer:
         ### Create data to pass to pipeline
         reads = []
         reference = []
-        print all_files
         for fileset in all_files:
             if fileset['type'] == 'single' or fileset['type'] == 'paired':
                 reads.append(fileset)
@@ -456,7 +455,6 @@ class ArastConsumer:
                                             module_code))
                                     output = [] + pipe[i][1]
                                     pfix = (k+1, i+1)
-                                    print pfix
                                     alldata = [] + pipe[i][2]
                                     reuse_data = True
                                     break
@@ -467,7 +465,6 @@ class ArastConsumer:
                 output_type = self.pmanager.output_type(module_name)
 
                 if not reuse_data:
-                    print job_data
                     output, alldata, mod_log = self.pmanager.run_module(
                         module_name, job_data, all_data=True, reads=include_reads)
                     if not output:
@@ -478,9 +475,8 @@ class ArastConsumer:
                             file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
                                 for file in alldata]
 
-                    print output
+                    
                     if output_type == 'contigs': #Assume assembly contigs
-                        print output
                         pass
                     elif output_type == 'reads':
                         pass

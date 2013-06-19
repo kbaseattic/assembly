@@ -66,7 +66,8 @@ class ReaprAssessment(BaseAssessment, IPlugin):
         fcd_cutoff = line.split('\t')[0]
         score_prefix = '03.score'
         cmd_args = [self.executable, 'score', '00.assembly.fa.gaps.gz', 
-                    undupfile, stats_prefix, fcd_cutoff, score_prefix]
+                    #undupfile, stats_prefix, fcd_cutoff, score_prefix]
+                    '00.in.bam', stats_prefix, fcd_cutoff, score_prefix]
         self.arast_popen(cmd_args, overrides=False, cwd=rpr_outpath)
 
         ## reapr break
