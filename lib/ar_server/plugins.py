@@ -209,7 +209,7 @@ class BasePlugin(object):
         return max(all_max_read_length), total_read_count
     
 
-    def estimate_insert(self, contig_file, reads, min_lines=1000):
+    def estimate_insert(self, contig_file, reads, min_lines=4000):
         """ Map READS to CONTIGS using bwa and return insert size """
         logging.info('Estimating insert size')
         min_reads = min_lines * 4
@@ -233,7 +233,7 @@ class BasePlugin(object):
         samfile, _, _ = self.pmanager.run_module('bwa', bwa_data)
         cmd_args = [self.tools['ins_from_sam'], samfile]
         results = subprocess.check_output(cmd_args)
-        insert_size = int(float(re.split('\s|,', results)[3]))
+        insert_size = int(float(re.split('\s|,', results)[9]))
         logging.info('Estimated Insert Length: {}'.format(insert_size))
         return insert_size
 
