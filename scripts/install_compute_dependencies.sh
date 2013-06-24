@@ -1,6 +1,6 @@
 #! /bin/bash
 sudo apt-get update
-sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools csh
+sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools csh pkg-config
 sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
@@ -113,6 +113,15 @@ wget ftp://ftp.sanger.ac.uk/pub4/resources/software/smalt/smalt-0.7.4.tgz
 tar -xvf smalt-0.7.4.tgz
 cd smalt-0.7.4
 mv smalt_x86_64 ../../bin/Reapr/src/smalt
+cd ..
+
+# Install Masurca
+cd ../bin/
+wget ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA-2.0.0.tar.gz
+tar -xvf MaSuRCA-2.0.0.tar.gz
+cd MaSuRCA-2.0.0/
+./install.sh
+cd ../scripts
 
 #Install Screed
 git clone git://github.com/ged-lab/screed.git

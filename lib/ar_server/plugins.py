@@ -9,6 +9,7 @@ import time
 import datetime 
 import subprocess
 import re
+import multiprocessing
 from yapsy.PluginManager import PluginManager
 
 # A-Rast modules
@@ -54,6 +55,7 @@ class BasePlugin(object):
         except:
             shell = False
 
+
         if shell:
             cmd_human = []
             for w in cmd_args:
@@ -72,9 +74,8 @@ class BasePlugin(object):
         m_start_time = time.time()
         print cmd_args
         try:
-            #out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
-            out = ''
-            p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
+            p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, 
+                                     stderr=subprocess.STDOUT, **kwargs)
             for line in p.stdout:
                 logging.info(line)
                 self.out_module.write(line)
@@ -84,7 +85,6 @@ class BasePlugin(object):
                 e.returncode, e.output)
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
-        #self.out_module.write(out)
         self.out_report.write("Process time: {}\n\n".format(m_ftime))
 
 
@@ -126,12 +126,21 @@ class BasePlugin(object):
     def init_settings(self, settings, job_data, manager):
         self.pmanager = manager
         self.threads = 1
+        self.process_cores = multiprocessing.cpu_count()
+        self.process_threads_allowed = self.process_cores
         self.job_data = job_data
         self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
         for kv in settings:
-            setattr(self, kv[0], kv[1])
+            ## set absolute paths
+            abs = os.path.abspath(kv[1])
+            print abs
+            if os.path.exists(abs) or os.path.isfile(abs):
+                setattr(self, kv[0], abs)
+            else:
+                setattr(self, kv[0], kv[1])
+
         self.extra_params = []
         for kv in job_data['params']:
             if not hasattr(self, kv[0]):
