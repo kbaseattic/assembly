@@ -113,6 +113,15 @@ wget ftp://ftp.sanger.ac.uk/pub4/resources/software/smalt/smalt-0.7.4.tgz
 tar -xvf smalt-0.7.4.tgz
 cd smalt-0.7.4
 mv smalt_x86_64 ../../bin/Reapr/src/smalt
+cd ..
+
+# Install Masurca
+cd ../bin/
+wget ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA-2.0.0.tar.gz
+tar -xvf MaSuRCA-2.0.0.tar.gz
+cd MaSuRCA-2.0.0/
+./install.sh
+cd ../scripts
 
 #Install Screed
 git clone git://github.com/ged-lab/screed.git
