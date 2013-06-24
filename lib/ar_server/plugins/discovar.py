@@ -16,7 +16,7 @@ class DiscovarAssembler(BaseAssembler, IPlugin):
 
         os.environ["MALLOC_PER_THREAD"] = "1"
 
-        cmd_args = [self.executable, 'READS='+self.outpath+'sample.bam', 'REGIONS=all', 'TMP='+self.outpath, 'OUT_HEAD='+self.outpath+'/discovar']
+        cmd_args = [self.executable, 'NUM_THREADS=4', 'READS='+self.outpath+'sample.bam', 'REGIONS=all', 'TMP='+self.outpath, 'OUT_HEAD='+self.outpath+'/discovar']
 
         logging.info("Running subprocess:{}".format(cmd_args))
         print " ".join(cmd_args)
