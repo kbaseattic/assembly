@@ -376,6 +376,7 @@ class ArastConsumer:
         all_files = []
         pipe_outputs = []
         logfiles = []
+        ale_reports = {}
         final_contigs = []
         output_types = []
         num_pipes = len(all_pipes)
@@ -560,8 +561,8 @@ class ArastConsumer:
             #self.pmanager.run_module('reapr', job_data)
             #print job_data
             # TODO reapr break may be diff from final reapr align!
-            #self.pmanager.run_module('ale', job_data)
-
+            #ale_out, _, _ = self.pmanager.run_module('ale', job_data)
+            #ale_reports[pipe_suffix] = ale_out
 
             pipeline_num += 1
 
@@ -572,6 +573,25 @@ class ArastConsumer:
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                       tar=True, meta=True)
         logfiles.append(q_log)
+        
+        ## Write out ALE scores
+        self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
+        for suffix,report in ale_reports.items():
+            try:
+                f = open(report, 'r')
+                score = f.readline()
+                f.close()
+                self.out_report.write("{}: {}\n".format(suffix, score))
+            except:
+                self.out_report.write("{}: Error\n".format(suffix))
+
+        for suffix,report in ale_reports.items():
+            self.out_report.write("\n\n{0} ALE: {1}  {0}\n".format("="*10, suffix))
+            try:
+                with open(report) as infile:
+                    self.out_report.write(infile.read())
+            except:
+                self.out_report.write("Error writing log file")
 
         ## CONCAT MODULE LOG FILES
         self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))

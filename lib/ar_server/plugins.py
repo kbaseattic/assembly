@@ -48,18 +48,23 @@ class BasePlugin(object):
                 if kv[1] != 'True':
                     cmd_args.append(kv[1])
 
-        cmd_human = []
-        for w in cmd_args:
-            if w.endswith('/'):
-                cmd_human.append(os.path.basename(w[:-1]))
-            else:
-                cmd_human.append(os.path.basename(w))
-        cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
 
         try:
             shell = kwargs['shell']
         except:
             shell = False
+
+        if shell:
+            cmd_human = []
+            for w in cmd_args:
+                if w.endswith('/'):
+                    cmd_human.append(os.path.basename(w[:-1]))
+                else:
+                    cmd_human.append(os.path.basename(w))
+            cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
+        else:
+            cmd_string = cmd_args
+
         if cmd_args[0].find('..') != -1 and not shell:
             cmd_args[0] = os.path.abspath(cmd_args[0])
         self.out_module.write("Command: {}\n".format(cmd_string))

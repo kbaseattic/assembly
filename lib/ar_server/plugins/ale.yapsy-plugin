@@ -1,0 +1,13 @@
+[Core]
+Name = ale
+Module = ale
+
+[Settings]
+executable = ../../bin/ALE/ALE
+filetypes = bam,sam,fasta,fa
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = ALE plugin
+
