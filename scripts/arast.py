@@ -209,6 +209,9 @@ def main():
                 for path in fullpaths:
                     file_sizes.append(os.path.getsize(path))
                 base_files += [os.path.basename(file) for file in fullpaths]
+            else:
+                print('File does not exist:{}'.format(f))
+                sys.exit(1)
 
         options['filename'] = base_files
         # # Send message to RPC Server

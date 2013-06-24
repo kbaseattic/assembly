@@ -6,6 +6,7 @@ Module = spades
 short_name = Sp
 executable = ../../bin/SPAdes-2.4.0/spades.py
 filetypes = fasta,fa,fastq,fq
+only_assembler = True
 
 [Documentation]
 Author = Chris Bun
