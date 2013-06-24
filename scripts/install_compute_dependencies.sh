@@ -17,9 +17,9 @@ cd velvet
 sudo make 'CATEGORIES=9' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1'
 sudo cp velveth /usr/bin
 sudo cp velvetg /usr/bin
+cd ..
 
 # Install Kiki
-cd ..
 sudo git clone git://github.com/GeneAssembly/kiki.git
 cd kiki
 sudo mkdir bin
@@ -27,16 +27,17 @@ cd bin
 sudo cmake ..
 sudo make ki
 cp ki /usr/bin
+cd ../..
 
 # Install BWA
-cd ../..
 sudo git clone git://github.com/lh3/bwa.git bwa
 cd bwa
 sudo make
 sudo cp bwa ../../bin/
+cd ..
 
 # Install A5
-cd ../..
+
 mkdir a5
 cd a5
 wget http://ngopt.googlecode.com/files/ngopt_a5pipeline_linux-x64_20120518.tar.gz
@@ -89,8 +90,8 @@ wget http://spades.bioinf.spbau.ru/release2.4.0/SPAdes-2.4.0.tar.gz
 tar -xvf SPAdes-2.4.0.tar.gz
 cd SPAdes-2.4.0/
 sh spades_compile.sh
+mv build_spades/bin/ .
 cd ..
-mv SPAdes-2.4.0/ ../bin/
 rm SPAdes-2.4.0.tar.gz
 cd ../scripts
 
