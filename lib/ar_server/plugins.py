@@ -48,15 +48,11 @@ class BasePlugin(object):
                     cmd_args.append(flag)
                 if kv[1] != 'True':
                     cmd_args.append(kv[1])
-
-
         try:
             shell = kwargs['shell']
         except:
             shell = False
-
-
-        if shell:
+        if not shell:
             cmd_human = []
             for w in cmd_args:
                 if w.endswith('/'):
@@ -135,7 +131,6 @@ class BasePlugin(object):
         for kv in settings:
             ## set absolute paths
             abs = os.path.abspath(kv[1])
-            print abs
             if os.path.exists(abs) or os.path.isfile(abs):
                 setattr(self, kv[0], abs)
             else:
@@ -245,6 +240,9 @@ class BasePlugin(object):
         bwa_data['out_report'] = open(os.path.join(self.outpath, 'estimate_ins.log'), 'w')
         #job_data['final_contigs'] = [contig_file]
         samfile, _, _ = self.pmanager.run_module('bwa', bwa_data)
+        if os.path.getsize(samfile) == 0:
+            logging.error('Error estimating insert length')
+            raise Exception('estimate ins failed')
         cmd_args = [self.tools['ins_from_sam'], samfile]
         results = subprocess.check_output(cmd_args)
         insert_size = int(float(re.split('\s|,', results)[9]))

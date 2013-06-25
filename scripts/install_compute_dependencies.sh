@@ -1,6 +1,8 @@
 #! /bin/bash
 sudo apt-get update
-sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools csh pkg-config
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get -q -y update
+sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools gcc-4.7 g++-4.7 dot csh pkg-config
 sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
@@ -17,16 +19,16 @@ cd velvet
 sudo make 'CATEGORIES=9' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1'
 sudo cp velveth /usr/bin
 sudo cp velvetg /usr/bin
+cd ..
 
 # Install Kiki
-cd ..
 sudo git clone git://github.com/GeneAssembly/kiki.git
 cd kiki
 sudo mkdir bin
 cd bin
 sudo cmake ..
 sudo make ki
-cp ki /usr/bin
+sudo cp ki /usr/bin
 
 # Install BWA
 cd ../..
@@ -45,6 +47,13 @@ cd ngopt*
 cp -R bin/* ../../../bin/a5/
 cd ../..
 rm -rf a5/
+
+# Install A6
+mkdir a6
+cd a6
+git clone https://github.com/levinas/a5.git .
+cd ..
+mv a6 ../bin/
 
 # Install IDBA toolkit
 mkdir idba
@@ -129,14 +138,34 @@ cd screed
 python setup.py install
 cd ..
 
-#Install seqtk
-#git clone https://github.com/lh3/seqtk.git
-#cd seqtk
-#make
-#cp seqtk ../../bin/
-#cd ..
-#rm -rf seqtk
+#Install Discovar
+mkdir discovar
+cd discovar
+wget ftp://ftp.broadinstitute.org/pub/crd/Discovar/latest_source_code/LATEST_VERSION.tar.gz
+tar xf LATEST_VERSION.tar.gz
+sudo rm /usr/bin/gcc /usr/bin/g++
+sudo ln -s /usr/bin/gcc-4.7 /usr/bin/gcc
+sudo ln -s /usr/bin/g++-4.7 /usr/bin/g++
+cd discovar*
+./configure
+make
+sudo cp src/Discovar /usr/bin/discovar
+cd ../..
+# rm -rf discovar
 
+#Install seqtk
+cd ../bin/
+git clone https://github.com/lh3/seqtk.git
+cd seqtk
+make
+cd ..
+
+#Install FastX
+mkdir fastx_toolkit
+cd fastx_toolkit
+wget http://hannonlab.cshl.edu/fastx_toolkit/fastx_toolkit_0.0.13_binaries_Linux_2.6_amd64.tar.bz2
+tar -xvf fastx_toolkit_0.0.13_binaries_Linux_2.6_amd64.tar.bz2
+cd ../../scripts
 
 #cd ../bin/
 #wget http://standardized-velvet-assembly-report.googlecode.com/svn/trunk/mergePairs.py

@@ -14,14 +14,24 @@ class DiscovarAssembler(BaseAssembler, IPlugin):
 
         self.fastq_to_bam(reads)
 
-        cmd_args = [self.executable, 'READS='+self.outpath+'sample.bam', 'REGIONS=all', 'TMP='+self.outpath, 'OUT_HEAD='+self.outpath+'/discovar']
-        print ' '.join(cmd_args)
-        cmd_string = ' '.join(cmd_args)
-        self.arast_popen(cmd_string, shell=True)        
+        os.environ["MALLOC_PER_THREAD"] = "1"
+
+        cmd_args = [self.executable, 'NUM_THREADS=4', 'READS='+self.outpath+'sample.bam', 'REGIONS=all', 'TMP='+self.outpath, 'OUT_HEAD='+self.outpath+'/discovar']
+
+        logging.info("Running subprocess:{}".format(cmd_args))
+        print " ".join(cmd_args)
+        self.arast_popen(cmd_args)        
+
+        contigs = glob.glob(self.outpath + '/*.final.fasta')
+        if not contigs:
+            #raise Exception("No contigs")
+            print "No contigs"
+        return contigs
 
 
     def fastq_to_bam(self, reads):
-        cmd_args = [self.picard, 'FastqToSam', 'V=Illumina', 'SM=sample', 'O='+self.outpath+'/sample.bam']
+        # cmd_args = [self.picard, 'FastqToSam', 'V=Illumina', 'O='+self.outpath+'/sample.bam', 'SM=sample']
+        cmd_args = [self.picard, 'FastqToSam', 'V=Standard', 'O='+self.outpath+'/sample.bam', 'SM=sample']
         for d in reads:
             if d['type'] == 'paired':
                 read1 = d['files'][0]
@@ -34,7 +44,8 @@ class DiscovarAssembler(BaseAssembler, IPlugin):
 
         if len(cmd_args) == 1:
             raise Exception("No paired-end reads")
-              
+
         logging.info("Running subprocess:{}".format(cmd_args))
+        print " ".join(cmd_args)
         self.arast_popen(cmd_args)        
                     

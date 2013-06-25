@@ -1,0 +1,17 @@
+[Core]
+Name = filter_by_length
+Module = filter_by_length
+
+[Settings]
+short_name = ftr
+seqtk_bin = ../../bin/seqtk
+fastx_bin = ../../bin/fastx_toolkit/bin/fastx_trimmer
+filetypes = fasta,fa,fastq,fq
+min = 150
+max = 200
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = filter_by_length plugin
+
