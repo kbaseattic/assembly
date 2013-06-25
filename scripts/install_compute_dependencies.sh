@@ -130,13 +130,18 @@ python setup.py install
 cd ..
 
 #Install seqtk
-#git clone https://github.com/lh3/seqtk.git
-#cd seqtk
-#make
-#cp seqtk ../../bin/
-#cd ..
-#rm -rf seqtk
+cd ../bin/
+git clone https://github.com/lh3/seqtk.git
+cd seqtk
+make
+cd ..
 
+#Install FastX
+mkdir fastx_toolkit
+cd fastx_toolkit
+wget http://hannonlab.cshl.edu/fastx_toolkit/fastx_toolkit_0.0.13_binaries_Linux_2.6_amd64.tar.bz2
+tar -xvf fastx_toolkit_0.0.13_binaries_Linux_2.6_amd64.tar.bz2
+cd ../../scripts
 
 #cd ../bin/
 #wget http://standardized-velvet-assembly-report.googlecode.com/svn/trunk/mergePairs.py

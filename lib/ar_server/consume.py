@@ -289,8 +289,7 @@ class ArastConsumer:
                     'reference': reference,
                     'initial_reads': reads,
                     'processed_reads': reads,
-                    'samfile': '',
-                    'bam_sorted': '',
+                    'pipeline_data': {},
                     'datapath': datapath,
                     'out_report' : self.out_report}
 

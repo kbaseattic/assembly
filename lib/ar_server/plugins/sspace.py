@@ -61,7 +61,7 @@ class SspaceScaffolder(BaseScaffolder, IPlugin):
         lib_data += read_files
         lib_data.append(insert_size)
         # insert error ratio
-        lib_data.append('0.2')
+        lib_data.append('0.95')
         print lib_data
         for word in lib_data:
             lib_file.write(str(word) + ' ')
