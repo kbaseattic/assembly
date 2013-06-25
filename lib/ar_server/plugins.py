@@ -9,6 +9,7 @@ import time
 import datetime 
 import subprocess
 import re
+import multiprocessing
 from yapsy.PluginManager import PluginManager
 
 # A-Rast modules
@@ -48,18 +49,24 @@ class BasePlugin(object):
                 if kv[1] != 'True':
                     cmd_args.append(kv[1])
 
-        cmd_human = []
-        for w in cmd_args:
-            if w.endswith('/'):
-                cmd_human.append(os.path.basename(w[:-1]))
-            else:
-                cmd_human.append(os.path.basename(w))
-        cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
 
         try:
             shell = kwargs['shell']
         except:
             shell = False
+
+
+        if shell:
+            cmd_human = []
+            for w in cmd_args:
+                if w.endswith('/'):
+                    cmd_human.append(os.path.basename(w[:-1]))
+                else:
+                    cmd_human.append(os.path.basename(w))
+            cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
+        else:
+            cmd_string = cmd_args
+
         if cmd_args[0].find('..') != -1 and not shell:
             cmd_args[0] = os.path.abspath(cmd_args[0])
         self.out_module.write("Command: {}\n".format(cmd_string))
@@ -67,9 +74,8 @@ class BasePlugin(object):
         m_start_time = time.time()
         print cmd_args
         try:
-            #out = subprocess.check_output(cmd_args, stderr=subprocess.STDOUT, **kwargs)
-            out = ''
-            p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
+            p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, 
+                                     stderr=subprocess.STDOUT, **kwargs)
             for line in p.stdout:
                 logging.info(line)
                 self.out_module.write(line)
@@ -79,7 +85,6 @@ class BasePlugin(object):
                 e.returncode, e.output)
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
-        #self.out_module.write(out)
         self.out_report.write("Process time: {}\n\n".format(m_ftime))
 
 
@@ -121,12 +126,21 @@ class BasePlugin(object):
     def init_settings(self, settings, job_data, manager):
         self.pmanager = manager
         self.threads = 1
+        self.process_cores = multiprocessing.cpu_count()
+        self.process_threads_allowed = self.process_cores
         self.job_data = job_data
         self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
         for kv in settings:
-            setattr(self, kv[0], kv[1])
+            ## set absolute paths
+            abs = os.path.abspath(kv[1])
+            print abs
+            if os.path.exists(abs) or os.path.isfile(abs):
+                setattr(self, kv[0], abs)
+            else:
+                setattr(self, kv[0], kv[1])
+
         self.extra_params = []
         for kv in job_data['params']:
             if not hasattr(self, kv[0]):
@@ -209,7 +223,7 @@ class BasePlugin(object):
         return max(all_max_read_length), total_read_count
     
 
-    def estimate_insert(self, contig_file, reads, min_lines=1000):
+    def estimate_insert(self, contig_file, reads, min_lines=4000):
         """ Map READS to CONTIGS using bwa and return insert size """
         logging.info('Estimating insert size')
         min_reads = min_lines * 4
@@ -233,7 +247,7 @@ class BasePlugin(object):
         samfile, _, _ = self.pmanager.run_module('bwa', bwa_data)
         cmd_args = [self.tools['ins_from_sam'], samfile]
         results = subprocess.check_output(cmd_args)
-        insert_size = int(float(re.split('\s|,', results)[3]))
+        insert_size = int(float(re.split('\s|,', results)[9]))
         logging.info('Estimated Insert Length: {}'.format(insert_size))
         return insert_size
 

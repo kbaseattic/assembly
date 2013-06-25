@@ -1,0 +1,26 @@
+[Core]
+Name = masurca
+Module = masurca
+
+[Settings]
+executable = ../../bin/MaSuRCA-2.0.0/bin/runSRCA.pl
+jellyfish_path = ../../bin/MaSuRCA-2.0.0/bin
+sr_path = ../../bin/MaSuRCA-2.0.0/bin
+ca_path = ../../bin/MaSuRCA-2.0.0/CA/Linux-amd64/bin
+
+graph_kmer_size = auto
+use_linking_mates = auto
+limit_jump_coverage = 60
+ca_parameters = ovlMerSize=30 cgwErrorRate=0.25 ovlMemory=4GB
+kmer_count_threshold = 1
+num_threads = auto
+jf_size = 100000000
+do_homopolymer_trim = 0
+
+filetypes = fasta,fa,fastq,fq
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = IDBA assembler plugin
+

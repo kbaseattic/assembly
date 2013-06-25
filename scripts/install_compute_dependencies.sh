@@ -1,6 +1,6 @@
 #! /bin/bash
 sudo apt-get update
-sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools
+sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools csh pkg-config
 sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
@@ -63,15 +63,12 @@ cd ../..
 rm -rf idba
 
 #Install QUAST
-mkdir quast
 mkdir ../bin/quast
-cd quast
 wget https://downloads.sourceforge.net/project/quast/quast-2.1.tar.gz
-tar -xf quast*
-cd quast*
-cp -R * ../../../bin/quast
-cd ../..
-rm -rf quast
+tar -xf quast-2.1.tar.gz
+cd quast-2.1/
+cp -R * ../../bin/quast
+cd ..
 
 #Install SolexaQA
 mkdir solexa
@@ -79,7 +76,7 @@ mkdir ../bin/solexa
 cd solexa
 wget http://sourceforge.net/projects/solexaqa/files/src/SolexaQA_v.2.1.zip
 unzip SolexaQA_v.2.1.zip
-cd Solexa*
+cd SolexaQA_v.2.1/
 cp * ../../../bin/solexa
 chmod +x ../../../bin/solexa/DynamicTrim.pl
 chmod +x ../../../bin/solexa/LengthSort.pl
@@ -90,7 +87,7 @@ rm -rf solexa
 cd ../bin
 wget http://spades.bioinf.spbau.ru/release2.4.0/SPAdes-2.4.0.tar.gz
 tar -xvf SPAdes-2.4.0.tar.gz
-cd /SPAdes-2.4.0/
+cd SPAdes-2.4.0/
 sh spades_compile.sh
 cd ..
 mv SPAdes-2.4.0/ ../bin/
@@ -116,6 +113,15 @@ wget ftp://ftp.sanger.ac.uk/pub4/resources/software/smalt/smalt-0.7.4.tgz
 tar -xvf smalt-0.7.4.tgz
 cd smalt-0.7.4
 mv smalt_x86_64 ../../bin/Reapr/src/smalt
+cd ..
+
+# Install Masurca
+cd ../bin/
+wget ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA-2.0.0.tar.gz
+tar -xvf MaSuRCA-2.0.0.tar.gz
+cd MaSuRCA-2.0.0/
+./install.sh
+cd ../scripts
 
 #Install Screed
 git clone git://github.com/ged-lab/screed.git
@@ -124,13 +130,18 @@ python setup.py install
 cd ..
 
 #Install seqtk
-#git clone https://github.com/lh3/seqtk.git
-#cd seqtk
-#make
-#cp seqtk ../../bin/
-#cd ..
-#rm -rf seqtk
+cd ../bin/
+git clone https://github.com/lh3/seqtk.git
+cd seqtk
+make
+cd ..
 
+#Install FastX
+mkdir fastx_toolkit
+cd fastx_toolkit
+wget http://hannonlab.cshl.edu/fastx_toolkit/fastx_toolkit_0.0.13_binaries_Linux_2.6_amd64.tar.bz2
+tar -xvf fastx_toolkit_0.0.13_binaries_Linux_2.6_amd64.tar.bz2
+cd ../../scripts
 
 #cd ../bin/
 #wget http://standardized-velvet-assembly-report.googlecode.com/svn/trunk/mergePairs.py

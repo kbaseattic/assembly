@@ -25,11 +25,14 @@ class SpadesAssembler(BaseAssembler, IPlugin):
                     raise Exception('Spades module file error')
             elif lib['type'] == 'single':
                 cmd_args += ['-s', lib['files'][0]]
-        cmd_args += ['--only-assembler',
-                     '-o', self.outpath]
+        if self.only_assembler == 'True':
+            cmd_args.append('--only-assembler')
+        cmd_args += ['-o', self.outpath]
 
         self.arast_popen(cmd_args)
-        contigs = os.path.join(self.outpath, 'contigs.fasta')
+        #contigs = os.path.join(self.outpath, 'contigs.fasta')
+        contigs = os.path.join(self.outpath, 'scaffolds.fasta')
+
         if os.path.exists(contigs):
             return [contigs]
         return

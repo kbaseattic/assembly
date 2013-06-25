@@ -35,15 +35,23 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
         cpath = os.path.join(self.outpath, 'corrected')
         file_info = open(os.path.join(cpath, 'dataset.info'))
         
+        starting_reads = list(reads)
         processed_reads = []
+        for lib in starting_reads:
+            if lib['type'] == 'paired':
+                paired_lib = lib
+                break
+            elif lib['type'] == 'single':
+                if len(lib) > 2:
+                    logging.warning("Bhammer: metadata may be lost!")
         for line in file_info:
             l = line.split('\t')
             if l[0] == 'paired_reads':
                 paired_files = re.split('\"|\s', l[1])
                 p1 = os.path.join(cpath, paired_files[1])
                 p2 = os.path.join(cpath, paired_files[3])
-                processed_reads.append({'files': [p1, p2],
-                                        'type': 'paired'})
+                paired_lib['files'] = [p1, p2]
+                processed_reads.append(paired_lib)
             elif l[0] == 'single_reads':
                 single_file = os.path.join(cpath,
                                            re.split('\"|\s', l[1])[1])

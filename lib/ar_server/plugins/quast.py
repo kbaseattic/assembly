@@ -14,7 +14,8 @@ class QuastAssessment(BaseAssessment, IPlugin):
         
         cmd_args = [os.path.join(os.getcwd(),self.executable), 
                     '--min-contig', self.min_contig,
-                    '-o', self.outpath]
+                    '-o', self.outpath,
+                    '--gene-finding']
         scaffolds = True
         for t in self.job_data['contig_types']:
             if t != 'scaffolds':

@@ -274,7 +274,6 @@ class ArastConsumer:
         ### Create data to pass to pipeline
         reads = []
         reference = []
-        print all_files
         for fileset in all_files:
             if fileset['type'] == 'single' or fileset['type'] == 'paired':
                 reads.append(fileset)
@@ -290,8 +289,7 @@ class ArastConsumer:
                     'reference': reference,
                     'initial_reads': reads,
                     'processed_reads': reads,
-                    'samfile': '',
-                    'bam_sorted': '',
+                    'pipeline_data': {},
                     'datapath': datapath,
                     'out_report' : self.out_report}
 
@@ -377,6 +375,7 @@ class ArastConsumer:
         all_files = []
         pipe_outputs = []
         logfiles = []
+        ale_reports = {}
         final_contigs = []
         output_types = []
         num_pipes = len(all_pipes)
@@ -456,7 +455,6 @@ class ArastConsumer:
                                             module_code))
                                     output = [] + pipe[i][1]
                                     pfix = (k+1, i+1)
-                                    print pfix
                                     alldata = [] + pipe[i][2]
                                     reuse_data = True
                                     break
@@ -467,7 +465,6 @@ class ArastConsumer:
                 output_type = self.pmanager.output_type(module_name)
 
                 if not reuse_data:
-                    print job_data
                     output, alldata, mod_log = self.pmanager.run_module(
                         module_name, job_data, all_data=True, reads=include_reads)
                     if not output:
@@ -478,9 +475,8 @@ class ArastConsumer:
                             file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
                                 for file in alldata]
 
-                    print output
+                    
                     if output_type == 'contigs': #Assume assembly contigs
-                        print output
                         pass
                     elif output_type == 'reads':
                         pass
@@ -564,8 +560,8 @@ class ArastConsumer:
             #self.pmanager.run_module('reapr', job_data)
             #print job_data
             # TODO reapr break may be diff from final reapr align!
-            #self.pmanager.run_module('ale', job_data)
-
+            #ale_out, _, _ = self.pmanager.run_module('ale', job_data)
+            #ale_reports[pipe_suffix] = ale_out
 
             pipeline_num += 1
 
@@ -576,6 +572,25 @@ class ArastConsumer:
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                       tar=True, meta=True)
         logfiles.append(q_log)
+        
+        ## Write out ALE scores
+        self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
+        for suffix,report in ale_reports.items():
+            try:
+                f = open(report, 'r')
+                score = f.readline()
+                f.close()
+                self.out_report.write("{}: {}\n".format(suffix, score))
+            except:
+                self.out_report.write("{}: Error\n".format(suffix))
+
+        for suffix,report in ale_reports.items():
+            self.out_report.write("\n\n{0} ALE: {1}  {0}\n".format("="*10, suffix))
+            try:
+                with open(report) as infile:
+                    self.out_report.write(infile.read())
+            except:
+                self.out_report.write("Error writing log file")
 
         ## CONCAT MODULE LOG FILES
         self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
