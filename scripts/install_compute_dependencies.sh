@@ -1,6 +1,8 @@
 #! /bin/bash
 sudo apt-get update
-sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools csh pkg-config
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get -q -y update
+sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools gcc-4.7 g++-4.7 dot csh pkg-config
 sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
@@ -17,16 +19,16 @@ cd velvet
 sudo make 'CATEGORIES=9' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1'
 sudo cp velveth /usr/bin
 sudo cp velvetg /usr/bin
+cd ..
 
 # Install Kiki
-cd ..
 sudo git clone git://github.com/GeneAssembly/kiki.git
 cd kiki
 sudo mkdir bin
 cd bin
 sudo cmake ..
 sudo make ki
-cp ki /usr/bin
+sudo cp ki /usr/bin
 
 # Install BWA
 cd ../..
@@ -128,6 +130,21 @@ git clone git://github.com/ged-lab/screed.git
 cd screed
 python setup.py install
 cd ..
+
+#Install Discovar
+mkdir discovar
+cd discovar
+wget ftp://ftp.broadinstitute.org/pub/crd/Discovar/latest_source_code/LATEST_VERSION.tar.gz
+tar xf LATEST_VERSION.tar.gz
+sudo rm /usr/bin/gcc /usr/bin/g++
+sudo ln -s /usr/bin/gcc-4.7 /usr/bin/gcc
+sudo ln -s /usr/bin/g++-4.7 /usr/bin/g++
+cd discovar*
+./configure
+make
+sudo cp src/Discovar /usr/bin/discovar
+cd ../..
+# rm -rf discovar
 
 #Install seqtk
 cd ../bin/
