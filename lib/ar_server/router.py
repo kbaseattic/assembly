@@ -136,7 +136,7 @@ def on_request(ch, method, props, body):
 
                 if docs:
                     for doc in docs[n:]:
-                        row = [doc['job_id'], str(doc['data_id']), doc['status'],]
+                        row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
 
                         try:
                             row.append(str(doc['computation_time']))
