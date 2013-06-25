@@ -26,16 +26,9 @@ class SgaPreprocessor(BasePreprocessor, IPlugin):
                     cmd_args += ['-m', self.min_length]
                 if self.permute_ambiguous:
                     cmd_args.append('--permute-ambiguous')
-                # if file_set['type'] == 'paired':
-                #     cmd_args += ['-p', '1']
-                # elif file_set['type'] == 'single':
-                #     cmd_args += ['-p', '0']                
                 files = file_set['files']                    
                 # Get file name for prefix
                 cmd_args.append('-o')
-                # if len(files) == 2:
-                #     base = os.path.basename(files[0]).split('.')[0][:-1]
-                # else:
                 base = os.path.basename(f).split('.')[0]
                 pp_file = os.path.join(self.outpath,
                                        "{}.pp.fastq".format(base))
@@ -47,6 +40,5 @@ class SgaPreprocessor(BasePreprocessor, IPlugin):
                 self.arast_popen(cmd_args, cwd=self.outpath)
                 new_file_set['files'].append(pp_file)
             processed_reads.append(new_file_set)
-        print processed_reads
         return processed_reads
 
