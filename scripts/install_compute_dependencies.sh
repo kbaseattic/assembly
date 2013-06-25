@@ -46,6 +46,13 @@ cp -R bin/* ../../../bin/a5/
 cd ../..
 rm -rf a5/
 
+# Install A6
+mkdir a6
+cd a6
+git clone https://github.com/levinas/a5.git .
+cd ..
+mv a6 ../bin/
+
 # Install IDBA toolkit
 mkdir idba
 cd idba
