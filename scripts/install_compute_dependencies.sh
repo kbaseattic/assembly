@@ -2,7 +2,7 @@
 sudo apt-get update
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get -q -y update
-sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools gcc-4.7 g++-4.7 dot csh pkg-config
+sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools gcc-4.7 g++-4.7 dot csh pkg-config sparsehash libboost-all-dev
 sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
@@ -130,7 +130,7 @@ wget ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA-2.0.0.tar.gz
 tar -xvf MaSuRCA-2.0.0.tar.gz
 cd MaSuRCA-2.0.0/
 ./install.sh
-cd ../scripts
+cd ../../scripts
 
 #Install Screed
 git clone git://github.com/ged-lab/screed.git
@@ -165,7 +165,15 @@ mkdir fastx_toolkit
 cd fastx_toolkit
 wget http://hannonlab.cshl.edu/fastx_toolkit/fastx_toolkit_0.0.13_binaries_Linux_2.6_amd64.tar.bz2
 tar -xvf fastx_toolkit_0.0.13_binaries_Linux_2.6_amd64.tar.bz2
-cd ../../scripts
+cd ..
+
+#install gam-ngs
+git clone https://github.com/vice87/gam-ngs.git
+cd gam-ngs
+mkdir build
+cd build
+cmake ..
+make
 
 #cd ../bin/
 #wget http://standardized-velvet-assembly-report.googlecode.com/svn/trunk/mergePairs.py

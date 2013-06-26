@@ -12,25 +12,51 @@ class VelvetAssembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [self.velveth, self.outpath, self.hash_length]
-        print reads
         paired_count = 1                    
+        single_count = 1
+        pair_data = {}
         for d in reads:
-            read1 = d['files'][0]
-            cmd_args.append('-' + infer_filetype(read1))
-            if d['type'] == 'paired':
-                cmd_args.append('-' + 'shortPaired' + str(paired_count))
-                paired_count += 1
-            try:
-                read2 = d['files'][1] # If 2 files
-                cmd_args.append(read1)
-                cmd_args.append(read2)
-            except:
-                cmd_args.append(read1)
+            if paired_count == 1:
+                p_suffix = ''
+            else:
+                p_suffix = str(single_count)
+            if single_count == 1:
+                s_suffix = ''
+            else:
+                s_suffix = str(single_count)
 
+            read1 = d['files'][0]
+
+            if d['type'] == 'paired':
+                cmd_args.append('-' + 'shortPaired' + p_suffix)
+                cmd_args.append('-' + infer_filetype(read1))
+                paired_count += 1
+                try:
+                    read2 = d['files'][1] # If 2 files
+                    cmd_args.append('-separate')
+                    cmd_args.append(read1)
+                    cmd_args.append(read2)
+                except:
+                    cmd_args.append(read1)
+
+                try:
+                    pair_data[p_suffix] = (d['insert'], d['stdev'])
+                except:
+                    pass
+            elif d['type'] == 'single':
+                cmd_args.append('-' + 'short' + s_suffix)
+                cmd_args.append('-' + infer_filetype(read1))
+                cmd_args.append(read1)
+                single_count += 1
+                
         logging.info("Running subprocess:{}".format(cmd_args))
         self.arast_popen(cmd_args)        
-        cmd_args = [self.velvetg, self.outpath]
-        logging.info("Running subprocess:{}".format(cmd_args))
+        cmd_args = [self.velvetg, self.outpath, '-exp_cov', 'auto']
+        for suf in pair_data.keys():
+            insert = pair_data[suf][0]
+            stdev = pair_data[suf][1]
+            cmd_args += ['-ins_length{}'.format(suf), insert, 
+                         '-ins_length{}_sd'.format(suf), stdev]
         self.arast_popen(cmd_args)        
         contigs = [self.outpath + '/contigs.fa']
         if not os.path.exists(contigs[0]):

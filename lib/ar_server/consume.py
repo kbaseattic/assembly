@@ -521,7 +521,8 @@ class ArastConsumer:
                         #             pipeline_num, pipe_suffix)) for f in fcontigs]
                         rcontigs = [asm.rename_file_symlink(f, 'P{}_{}'.format(
                                     pipeline_num, pipe_suffix)) for f in fcontigs]
-                        final_contigs += rcontigs
+                        contig_data = {'files': rcontigs, 'name': pipe_suffix, 'alignment_bam': []}
+                        final_contigs.append(contig_data)
                         output_types.append(output_type)
                         
                 try:
@@ -565,8 +566,14 @@ class ArastConsumer:
 
             pipeline_num += 1
 
-        ## ANALYSIS: Quast
         job_data['final_contigs'] = final_contigs
+        # mfiles,_,_ = self.pmanager.run_module('gam_ngs', job_data)
+
+        # for m in mfiles:
+        #     job_data['final_contigs'].append({'files':[m]})
+
+        ## ANALYSIS: Quast
+
         job_data['contig_types'] = output_types
         job_data['params'] = [] #clear overrides from last stage
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
@@ -616,8 +623,12 @@ class ArastConsumer:
             return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
                             all_files,'{}_all_data.tar.gz'.format(job_data['job_id'])), analysis, summary
         else:
+            contig_files = []
+            for data in final_contigs:
+                for f in data['files']:
+                    contig_files.append(os.path.realpath(f))
             return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                final_contigs, '{}_contigs.tar.gz'.format(
+                                contig_files, '{}_contigs.tar.gz'.format(
                     job_data['job_id'])), analysis, summary
 
     def upload(self, url, user, token, file):
