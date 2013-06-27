@@ -1,8 +1,7 @@
 #! /bin/bash
-sudo apt-get update
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get -q -y update
-sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools gcc-4.7 g++-4.7 dot csh pkg-config sparsehash libboost-all-dev
+sudo apt-get -y install python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools gcc-4.7 g++-4.7 graphviz csh pkg-config sparsehash libboost-all-dev
 sudo pip install pika
 sudo pip install python-daemon
 sudo pip install pymongo
