@@ -75,7 +75,7 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
         cf.close()
 
         self.arast_popen([self.executable, config_fname], cwd=self.outpath)
-        self.arast_popen(['bash', os.path.join(self.outpath, 'assemble.sh')], cwd=self.outpath)
+        self.arast_popen('bash {}'.format(os.path.join(self.outpath, 'assemble.sh')), cwd=self.outpath, shell=True)
 
         try:
             mv_scaffolds = os.path.join(self.outpath, 'genome.scf.fasta')

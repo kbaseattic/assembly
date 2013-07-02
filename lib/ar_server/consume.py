@@ -487,17 +487,26 @@ class ArastConsumer:
 
 
                 if output_type == 'contigs' or output_type == 'scaffolds': #Assume assembly contigs
-                    job_data['reads'] = asm.arast_reads(alldata)
                     if reuse_data:
                         p_num, p_stage = pfix
                     else:
                         p_num, p_stage = pipeline_num, pipeline_stage
+
+                    # If plugin returned scaffolds
+                    if type(output) is tuple and len(output) == 2:
+                        out_contigs = output[0]
+                        out_scaffolds = output[1]
+                        cur_scaffolds = [asm.prefix_file(
+                                file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
+                                    for file in out_scaffolds]
+                    else:
+                        out_contigs = output
                     cur_contigs = [asm.prefix_file(
                             file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
-                                for file in output]
+                                for file in out_contigs]
+                        
+                    job_data['reads'] = asm.arast_reads(alldata)
                     job_data['contigs'] = cur_contigs
-                    print cur_contigs
-
                     
                 elif output_type == 'reads': #Assume preprocessing
                     if include_reads and reuse_data: # data was prefixed and moved
@@ -512,15 +521,16 @@ class ArastConsumer:
                 pipeline_results += alldata
                 if pipeline_stage == num_stages: # Last stage, add contig for assessment
                     if output: #If a contig was produced
-                        # fcontigs = [asm.prefix_file(
-                        #         file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
-                        #             for file in output]
                         fcontigs = cur_contigs
-                        #copy the result contig to newfile for shorter assesment name
-                        # rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
-                        #             pipeline_num, pipe_suffix)) for f in fcontigs]
                         rcontigs = [asm.rename_file_symlink(f, 'P{}_{}'.format(
                                     pipeline_num, pipe_suffix)) for f in fcontigs]
+                        try:
+                            rscaffolds = [asm.rename_file_symlink(f, 'P{}_{}_{}'.format(
+                                        pipeline_num, pipe_suffix, 'scaff')) for f in cur_scaffolds]
+                            scaffold_data = {'files': rscaffolds, 'name': pipe_suffix}
+                            final_scaffolds.append(scaffold_data)
+                        except:
+                            pass
                         contig_data = {'files': rcontigs, 'name': pipe_suffix, 'alignment_bam': []}
                         final_contigs.append(contig_data)
                         output_types.append(output_type)
@@ -534,10 +544,6 @@ class ArastConsumer:
                 cur_outputs.append([module_code, output, alldata])
             pipe_elapsed_time = time.time() - pipe_start_time
             pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
-
-            bwa = False
-            if bwa:
-                aln_result, _, aln_log = self.pmanager.run_module('bwa', job_data)
 
             if not output:
                 self.out_report.write('ERROR: No contigs produced. See module log\n')
@@ -567,8 +573,11 @@ class ArastConsumer:
             pipeline_num += 1
 
         job_data['final_contigs'] = final_contigs
+        try:
+            job_data['final_scaffolds'] = final_scaffolds
+        except:
+            job_data['final_scaffolds'] = []
         # mfiles,_,_ = self.pmanager.run_module('gam_ngs', job_data)
-
         # for m in mfiles:
         #     job_data['final_contigs'].append({'files':[m]})
 
@@ -578,6 +587,17 @@ class ArastConsumer:
         job_data['params'] = [] #clear overrides from last stage
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                       tar=True, meta=True)
+        if job_data['final_scaffolds']:
+            print 'Found scaffolds'
+            print job_data['final_scaffolds']
+            scaff_data = dict(job_data)
+            scaff_data['final_contigs'] = job_data['final_scaffolds']
+            scaff_report, scaff_tar, _, scaff_log = self.pmanager.run_module('quast', scaff_data, 
+                                                                      tar=True, meta=True)
+            scaffold_quast = True
+        else:
+            scaffold_quast = False
+
         logfiles.append(q_log)
         
         ## Write out ALE scores
@@ -613,6 +633,12 @@ class ArastConsumer:
         analysis = quast_tar.rsplit('/', 1)[0] + '/{}_analysis.tar.gz'.format(job_data['job_id'])
         summary = quast_report[0]
         os.rename(quast_tar, analysis)
+        if scaffold_quast:
+            analysis = scaff_tar.rsplit('/', 1)[0] + '/{}_scaff_qst.tar.gz'.format(job_data['job_id'])
+            #summary = quast_report[0]
+            os.rename(quast_tar, analysis)
+
+
 
         if not contigs_only:
             if len(all_files) == 1:

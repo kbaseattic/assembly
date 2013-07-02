@@ -31,7 +31,8 @@ class DiscovarAssembler(BaseAssembler, IPlugin):
 
     def fastq_to_bam(self, reads):
         # cmd_args = [self.picard, 'FastqToSam', 'V=Illumina', 'O='+self.outpath+'/sample.bam', 'SM=sample']
-        cmd_args = [self.picard, 'FastqToSam', 'V=Standard', 'O='+self.outpath+'/sample.bam', 'SM=sample']
+        cmd_args = [self.picard, 'FastqToSam','TMP_DIR='+self.outpath, 
+                    'V=Standard', 'O='+self.outpath+'/sample.bam', 'SM=sample']
         for d in reads:
             if d['type'] == 'paired':
                 read1 = d['files'][0]
