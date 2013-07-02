@@ -313,14 +313,14 @@ class ArastConsumer:
             try:
                 for p in pipelines:
                     self.pmanager.validate_pipe(p)
-                result_tar, analysis, summary= self.run_pipeline(pipelines, job_data, contigs_only=contigs)
-                try:
-                    res = self.upload(url, user, token, result_tar)
-                except IOError:
-                    raise Exception('No Results')
-                download_ids['pipeline'] = res['D']['id']
-                res = self.upload(url, user, token, analysis)
-                download_ids['analysis'] = res['D']['id']
+
+                result_files, summary= self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                for f in result_files:
+                    print f
+                    fname = os.path.basename(f).split('.')[0]
+                    res = self.upload(url, user, token, f)
+                    download_ids[fname] = res['D']['id']
+
                 status += "pipeline [success] "
                 self.out_report.write("Pipeline completed successfully\n")
             except:
@@ -345,9 +345,9 @@ class ArastConsumer:
         os.remove(self.out_report_name)
         shutil.move(new_report.name, self.out_report_name)
         res = self.upload(url, user, token, self.out_report_name)
+        download_ids['report'] = res['D']['id']
 
         # Get location
-        download_ids['report'] = res['D']['id']
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'status', status)
 
@@ -377,6 +377,7 @@ class ArastConsumer:
         logfiles = []
         ale_reports = {}
         final_contigs = []
+        final_scaffolds = []
         output_types = []
         num_pipes = len(all_pipes)
         for pipe in all_pipes:
@@ -527,8 +528,9 @@ class ArastConsumer:
                         try:
                             rscaffolds = [asm.rename_file_symlink(f, 'P{}_{}_{}'.format(
                                         pipeline_num, pipe_suffix, 'scaff')) for f in cur_scaffolds]
-                            scaffold_data = {'files': rscaffolds, 'name': pipe_suffix}
-                            final_scaffolds.append(scaffold_data)
+                            if rscaffolds:
+                                scaffold_data = {'files': rscaffolds, 'name': pipe_suffix}
+                                final_scaffolds.append(scaffold_data)
                         except:
                             pass
                         contig_data = {'files': rcontigs, 'name': pipe_suffix, 'alignment_bam': []}
@@ -630,32 +632,25 @@ class ArastConsumer:
                 self.out_report.write("Error writing log file")
 
         ## Format Returns
-        analysis = quast_tar.rsplit('/', 1)[0] + '/{}_analysis.tar.gz'.format(job_data['job_id'])
+        ctg_analysis = quast_tar.rsplit('/', 1)[0] + '/{}_ctg_qst.tar.gz'.format(job_data['job_id'])
         summary = quast_report[0]
-        os.rename(quast_tar, analysis)
+        os.rename(quast_tar, ctg_analysis)
+        return_files = [ctg_analysis]
         if scaffold_quast:
-            analysis = scaff_tar.rsplit('/', 1)[0] + '/{}_scaff_qst.tar.gz'.format(job_data['job_id'])
+            scf_analysis = scaff_tar.rsplit('/', 1)[0] + '/{}_scf_qst.tar.gz'.format(job_data['job_id'])
             #summary = quast_report[0]
-            os.rename(quast_tar, analysis)
+            os.rename(scaff_tar, scf_analysis)
+            return_files.append(scf_analysis)
 
+        contig_files = []
+        for data in final_contigs + final_scaffolds:
+            for f in data['files']:
+                contig_files.append(os.path.realpath(f))
 
-
-        if not contigs_only:
-            if len(all_files) == 1:
-                return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                    [all_files[0]],'{}_assemblies.tar.gz'.format(
-                        job_data['job_id'])), analysis, summary
-
-            return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                            all_files,'{}_all_data.tar.gz'.format(job_data['job_id'])), analysis, summary
-        else:
-            contig_files = []
-            for data in final_contigs:
-                for f in data['files']:
-                    contig_files.append(os.path.realpath(f))
-            return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                contig_files, '{}_contigs.tar.gz'.format(
-                    job_data['job_id'])), analysis, summary
+        return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
+                            contig_files, '{}_assemblies.tar.gz'.format(
+                job_data['job_id'])))
+        return return_files, summary
 
     def upload(self, url, user, token, file):
         files = {}
