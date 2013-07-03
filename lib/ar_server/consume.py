@@ -19,6 +19,7 @@ import tarfile
 import subprocess
 #from yapsy.PluginManager import PluginManager
 from plugins import ModuleManager
+from job import ArastJob
 from multiprocessing import current_process as proc
 from traceback import format_tb, format_exc
 
@@ -282,7 +283,7 @@ class ArastConsumer:
             else:
                 raise Exception('fileset error')
 
-        job_data = {'job_id' : params['job_id'], 
+        job_data = ArastJob({'job_id' : params['job_id'], 
                     'uid' : params['_id'],
                     'user' : params['ARASTUSER'],
                     'reads': reads,
@@ -291,7 +292,7 @@ class ArastConsumer:
                     'processed_reads': reads,
                     'pipeline_data': {},
                     'datapath': datapath,
-                    'out_report' : self.out_report}
+                    'out_report' : self.out_report})
 
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         
@@ -359,7 +360,7 @@ class ArastConsumer:
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
         self.metadata.update_job(uid, 'computation_time', ftime)
 
-    def run_pipeline(self, pipes, job_data_global, contigs_only=True):
+    def run_pipeline(self, pipes, job_data, contigs_only=True):
         """
         Runs all pipelines in list PIPES
         """
@@ -380,9 +381,10 @@ class ArastConsumer:
         output_types = []
         num_pipes = len(all_pipes)
         for pipe in all_pipes:
-            job_data = copy.deepcopy(job_data_global)
-            job_data['out_report'] = job_data_global['out_report'] 
+            #job_data = copy.deepcopy(job_data_global)
+            #job_data['out_report'] = job_data_global['out_report'] 
             pipeline, overrides = self.pmanager.parse_pipe(pipe)
+            job_data.add_pipeline(pipeline_num, pipeline)
             num_stages = len(pipeline)
             pipeline_stage = 1
             pipeline_results = []
@@ -391,6 +393,9 @@ class ArastConsumer:
             pipe_suffix = '' # filename code for indiv pipes
             pipe_start_time = time.time()
             pipe_alive = True
+
+            # Store data record for pipeline
+
             for module_name in pipeline:
                 if not pipe_alive:
                     self.out_report.write('\n{0} Module Failure, Killing Pipe {0}'.format(
@@ -430,7 +435,7 @@ class ArastConsumer:
                 logging.debug('New job_data for stage {}: {}'.format(
                         pipeline_stage, job_data))
                 job_data['params'] = overrides[pipeline_stage-1].items()
-
+                module_start_time = time.time()
                 ## RUN MODULE
                 # Check if output data exists
                 reuse_data = False
@@ -456,6 +461,10 @@ class ArastConsumer:
                                     output = [] + pipe[i][1]
                                     pfix = (k+1, i+1)
                                     alldata = [] + pipe[i][2]
+                                    job_data.get_pipeline(pipeline_num).get_module(
+                                        pipeline_stage)['elapsed_time'] = time.time(
+                                        job_data.get_pipeline(i).get_module(
+                                                pipeline_stage)['elapsed_time'])
                                     reuse_data = True
                                     break
                             except: # Previous pipes may be shorter
@@ -474,8 +483,9 @@ class ArastConsumer:
                     alldata = [asm.prefix_file_move(
                             file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
                                 for file in alldata]
-
-                    
+                    module_elapsed_time = time.time() - module_start_time
+                    job_data.get_pipeline(pipeline_num).get_module(
+                        pipeline_stage)['elapsed_time'] = module_elapsed_time
                     if output_type == 'contigs': #Assume assembly contigs
                         pass
                     elif output_type == 'reads':
@@ -487,7 +497,7 @@ class ArastConsumer:
 
 
                 if output_type == 'contigs' or output_type == 'scaffolds': #Assume assembly contigs
-                    job_data['reads'] = asm.arast_reads(alldata)
+                    #job_data['reads'] = asm.arast_reads(alldata)
                     if reuse_data:
                         p_num, p_stage = pfix
                     else:
@@ -525,6 +535,9 @@ class ArastConsumer:
                         final_contigs.append(contig_data)
                         output_types.append(output_type)
                         
+
+                
+
                 try:
                     logfiles.append(mod_log)
                 except:
@@ -534,7 +547,7 @@ class ArastConsumer:
                 cur_outputs.append([module_code, output, alldata])
             pipe_elapsed_time = time.time() - pipe_start_time
             pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
-
+            job_data.get_pipeline(pipeline_num)['elapsed_time'] = pipe_elapsed_time
             bwa = False
             if bwa:
                 aln_result, _, aln_log = self.pmanager.run_module('bwa', job_data)
@@ -561,9 +574,9 @@ class ArastConsumer:
             #self.pmanager.run_module('reapr', job_data)
             #print job_data
             # TODO reapr break may be diff from final reapr align!
-            #ale_out, _, _ = self.pmanager.run_module('ale', job_data)
-            #ale_reports[pipe_suffix] = ale_out
-
+            ale_out, _, _ = self.pmanager.run_module('ale', job_data)
+            job_data.get_pipeline(pipeline_num).import_ale(ale_out)
+            ale_reports[pipe_suffix] = ale_out
             pipeline_num += 1
 
         job_data['final_contigs'] = final_contigs
@@ -579,7 +592,9 @@ class ArastConsumer:
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                       tar=True, meta=True)
         logfiles.append(q_log)
-        
+        job_data.import_quast(quast_report[0])
+        print job_data
+
         ## Write out ALE scores
         self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
         for suffix,report in ale_reports.items():
@@ -613,7 +628,7 @@ class ArastConsumer:
         analysis = quast_tar.rsplit('/', 1)[0] + '/{}_analysis.tar.gz'.format(job_data['job_id'])
         summary = quast_report[0]
         os.rename(quast_tar, analysis)
-
+        job_data.plot_ale()
         if not contigs_only:
             if len(all_files) == 1:
                 return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
