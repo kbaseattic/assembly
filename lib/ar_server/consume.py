@@ -288,8 +288,9 @@ class ArastConsumer:
                     'user' : params['ARASTUSER'],
                     'reads': reads,
                     'reference': reference,
-                    'initial_reads': reads,
-                    'processed_reads': reads,
+                    'initial_reads': list(reads),
+                    'raw_reads': copy.deepcopy(reads),
+                    'processed_reads': list(reads),
                     'pipeline_data': {},
                     'datapath': datapath,
                     'out_report' : self.out_report})
@@ -314,14 +315,14 @@ class ArastConsumer:
             try:
                 for p in pipelines:
                     self.pmanager.validate_pipe(p)
-                result_tar, analysis, summary= self.run_pipeline(pipelines, job_data, contigs_only=contigs)
-                try:
-                    res = self.upload(url, user, token, result_tar)
-                except IOError:
-                    raise Exception('No Results')
-                download_ids['pipeline'] = res['D']['id']
-                res = self.upload(url, user, token, analysis)
-                download_ids['analysis'] = res['D']['id']
+
+                result_files, summary= self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                for f in result_files:
+                    print f
+                    fname = os.path.basename(f).split('.')[0]
+                    res = self.upload(url, user, token, f)
+                    download_ids[fname] = res['D']['id']
+
                 status += "pipeline [success] "
                 self.out_report.write("Pipeline completed successfully\n")
             except:
@@ -346,9 +347,9 @@ class ArastConsumer:
         os.remove(self.out_report_name)
         shutil.move(new_report.name, self.out_report_name)
         res = self.upload(url, user, token, self.out_report_name)
+        download_ids['report'] = res['D']['id']
 
         # Get location
-        download_ids['report'] = res['D']['id']
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'status', status)
 
@@ -378,6 +379,7 @@ class ArastConsumer:
         logfiles = []
         ale_reports = {}
         final_contigs = []
+        final_scaffolds = []
         output_types = []
         num_pipes = len(all_pipes)
         for pipe in all_pipes:
@@ -389,6 +391,12 @@ class ArastConsumer:
             pipeline_stage = 1
             pipeline_results = []
             cur_outputs = []
+
+            # Reset job data 
+            job_data['reads'] = copy.deepcopy(job_data['raw_reads'])
+            job_data['processed_reads'] = []
+            print job_data
+
             self.out_report.write('\n{0} Pipeline {1}: {2} {0}\n'.format('='*15, pipeline_num, pipe))
             pipe_suffix = '' # filename code for indiv pipes
             pipe_start_time = time.time()
@@ -461,15 +469,15 @@ class ArastConsumer:
                                     output = [] + pipe[i][1]
                                     pfix = (k+1, i+1)
                                     alldata = [] + pipe[i][2]
+                                    reuse_data = True
                                     job_data.get_pipeline(pipeline_num).get_module(
                                         pipeline_stage)['elapsed_time'] = time.time(
                                         job_data.get_pipeline(i).get_module(
                                                 pipeline_stage)['elapsed_time'])
-                                    reuse_data = True
+                                        
                                     break
                             except: # Previous pipes may be shorter
                                 pass
-
 
                 output_type = self.pmanager.output_type(module_name)
 
@@ -494,20 +502,27 @@ class ArastConsumer:
                         mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
                                 pipeline_num, pipeline_stage, module_name))
 
-
-
                 if output_type == 'contigs' or output_type == 'scaffolds': #Assume assembly contigs
-                    #job_data['reads'] = asm.arast_reads(alldata)
                     if reuse_data:
                         p_num, p_stage = pfix
                     else:
                         p_num, p_stage = pipeline_num, pipeline_stage
+
+                    # If plugin returned scaffolds
+                    if type(output) is tuple and len(output) == 2:
+                        out_contigs = output[0]
+                        out_scaffolds = output[1]
+                        cur_scaffolds = [asm.prefix_file(
+                                file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
+                                    for file in out_scaffolds]
+                    else:
+                        out_contigs = output
                     cur_contigs = [asm.prefix_file(
                             file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
-                                for file in output]
+                                for file in out_contigs]
+                        
+                    #job_data['reads'] = asm.arast_reads(alldata)
                     job_data['contigs'] = cur_contigs
-                    print cur_contigs
-
                     
                 elif output_type == 'reads': #Assume preprocessing
                     if include_reads and reuse_data: # data was prefixed and moved
@@ -522,20 +537,20 @@ class ArastConsumer:
                 pipeline_results += alldata
                 if pipeline_stage == num_stages: # Last stage, add contig for assessment
                     if output: #If a contig was produced
-                        # fcontigs = [asm.prefix_file(
-                        #         file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
-                        #             for file in output]
                         fcontigs = cur_contigs
-                        #copy the result contig to newfile for shorter assesment name
-                        # rcontigs = [asm.rename_file_copy(f, 'P{}_{}'.format(
-                        #             pipeline_num, pipe_suffix)) for f in fcontigs]
                         rcontigs = [asm.rename_file_symlink(f, 'P{}_{}'.format(
                                     pipeline_num, pipe_suffix)) for f in fcontigs]
+                        try:
+                            rscaffolds = [asm.rename_file_symlink(f, 'P{}_{}_{}'.format(
+                                        pipeline_num, pipe_suffix, 'scaff')) for f in cur_scaffolds]
+                            if rscaffolds:
+                                scaffold_data = {'files': rscaffolds, 'name': pipe_suffix}
+                                final_scaffolds.append(scaffold_data)
+                        except:
+                            pass
                         contig_data = {'files': rcontigs, 'name': pipe_suffix, 'alignment_bam': []}
                         final_contigs.append(contig_data)
                         output_types.append(output_type)
-                        
-
                 
 
                 try:
@@ -548,53 +563,73 @@ class ArastConsumer:
             pipe_elapsed_time = time.time() - pipe_start_time
             pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
             job_data.get_pipeline(pipeline_num)['elapsed_time'] = pipe_elapsed_time
-            bwa = False
-            if bwa:
-                aln_result, _, aln_log = self.pmanager.run_module('bwa', job_data)
 
             if not output:
                 self.out_report.write('ERROR: No contigs produced. See module log\n')
-                pipe_outputs.append([])
             else:
-                pipe_outputs.append(cur_outputs)
+
+                ## Assessment
+                #self.pmanager.run_module('reapr', job_data)
+                #print job_data
+                # TODO reapr break may be diff from final reapr align!
+                ale_out, _, _ = self.pmanager.run_module('ale', job_data)
+                if ale_out:
+                    job_data.get_pipeline(pipeline_num).import_ale(ale_out)
+                    ale_reports[pipe_suffix] = ale_out
+                pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], 
+                                                               job_data['job_id'],
+                                                               pipeline_num)
+                try:
+                    os.makedirs(pipeline_datapath)
+                except:
+                    logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
+                all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
+                                    'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
+
             self.out_report.write('Pipeline {} total time: {}\n\n'.format(pipeline_num, pipe_ftime))
-
-            pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], job_data['job_id'],
-                                                           pipeline_num)
-
-            try:
-                os.makedirs(pipeline_datapath)
-            except:
-                logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
-            all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
-                                'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
-
-
-            ## Assessment
-            #self.pmanager.run_module('reapr', job_data)
-            #print job_data
-            # TODO reapr break may be diff from final reapr align!
-            ale_out, _, _ = self.pmanager.run_module('ale', job_data)
-            job_data.get_pipeline(pipeline_num).import_ale(ale_out)
-            ale_reports[pipe_suffix] = ale_out
+            job_data.get_pipeline(pipeline_num)['name'] = pipe_suffix
+            pipe_outputs.append(cur_outputs)
             pipeline_num += 1
 
         job_data['final_contigs'] = final_contigs
+        try:
+            job_data['final_scaffolds'] = final_scaffolds
+        except:
+            job_data['final_scaffolds'] = []
         # mfiles,_,_ = self.pmanager.run_module('gam_ngs', job_data)
-
         # for m in mfiles:
         #     job_data['final_contigs'].append({'files':[m]})
 
         ## ANALYSIS: Quast
-
         job_data['contig_types'] = output_types
         job_data['params'] = [] #clear overrides from last stage
         quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                       tar=True, meta=True)
-        logfiles.append(q_log)
-        job_data.import_quast(quast_report[0])
-        print job_data
+        if job_data['final_scaffolds']:
+            print 'Found scaffolds'
+            print job_data['final_scaffolds']
+            scaff_data = dict(job_data)
+            scaff_data['final_contigs'] = job_data['final_scaffolds']
+            scaff_report, scaff_tar, _, scaff_log = self.pmanager.run_module('quast', scaff_data, 
+                                                                      tar=True, meta=True)
+            scaffold_quast = True
+        else:
+            scaffold_quast = False
 
+        logfiles.append(q_log)
+
+        ## Add reference assessment
+        if job_data['reference']:
+            ref_data = dict(job_data)
+            ref_data['contigs'] = job_data['reference'][0]['files']
+            ref_ale_out, _, _ = self.pmanager.run_module('ale', ref_data)
+            if ref_ale_out:
+                job_data.add_pipeline(-1, [])
+                job_data.get_pipeline(-1).import_ale(ref_ale_out)
+                job_data.get_pipeline(-1)['name'] = 'REF'
+                
+        job_data.import_quast(quast_report[0])
+        
         ## Write out ALE scores
         self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
         for suffix,report in ale_reports.items():
@@ -606,13 +641,13 @@ class ArastConsumer:
             except:
                 self.out_report.write("{}: Error\n".format(suffix))
 
-        for suffix,report in ale_reports.items():
-            self.out_report.write("\n\n{0} ALE: {1}  {0}\n".format("="*10, suffix))
-            try:
-                with open(report) as infile:
-                    self.out_report.write(infile.read())
-            except:
-                self.out_report.write("Error writing log file")
+        # for suffix,report in ale_reports.items():
+        #     self.out_report.write("\n\n{0} ALE: {1}  {0}\n".format("="*10, suffix))
+        #     try:
+        #         with open(report) as infile:
+        #             self.out_report.write(infile.read())
+        #     except:
+        #         self.out_report.write("Error writing log file")
 
         ## CONCAT MODULE LOG FILES
         self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
@@ -625,26 +660,29 @@ class ArastConsumer:
                 self.out_report.write("Error writing log file")
 
         ## Format Returns
-        analysis = quast_tar.rsplit('/', 1)[0] + '/{}_analysis.tar.gz'.format(job_data['job_id'])
+        ctg_analysis = quast_tar.rsplit('/', 1)[0] + '/{}_ctg_qst.tar.gz'.format(job_data['job_id'])
         summary = quast_report[0]
-        os.rename(quast_tar, analysis)
-        job_data.plot_ale()
-        if not contigs_only:
-            if len(all_files) == 1:
-                return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                    [all_files[0]],'{}_assemblies.tar.gz'.format(
-                        job_data['job_id'])), analysis, summary
+        os.rename(quast_tar, ctg_analysis)
+        return_files = [ctg_analysis]
+        ale_plot = job_data.plot_ale()
+        if ale_plot:
+            return_files.append(ale_plot)
+        if scaffold_quast:
+            scf_analysis = scaff_tar.rsplit('/', 1)[0] + '/{}_scf_qst.tar.gz'.format(job_data['job_id'])
+            #summary = quast_report[0]
+            os.rename(scaff_tar, scf_analysis)
+            return_files.append(scf_analysis)
 
-            return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                            all_files,'{}_all_data.tar.gz'.format(job_data['job_id'])), analysis, summary
-        else:
-            contig_files = []
-            for data in final_contigs:
-                for f in data['files']:
-                    contig_files.append(os.path.realpath(f))
-            return asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                                contig_files, '{}_contigs.tar.gz'.format(
-                    job_data['job_id'])), analysis, summary
+        contig_files = []
+        for data in final_contigs + final_scaffolds:
+            for f in data['files']:
+                contig_files.append(os.path.realpath(f))
+
+        return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
+                            contig_files, '{}_assemblies.tar.gz'.format(
+                job_data['job_id'])))
+        return return_files, summary
+
 
     def upload(self, url, user, token, file):
         files = {}

@@ -268,6 +268,10 @@ class BaseAssembler(BasePlugin):
         self.init_settings(settings, job_data, manager)
         valid_files = self.get_valid_reads(job_data)
         output = self.run(valid_files)
+        if type(output) is tuple and len(output) == 2:
+            contigs = output[0]
+            scaffolds = output[1]
+            return contigs, scaffolds
         self.out_module.close()
         return output
 
@@ -416,6 +420,7 @@ class BaseAssessment(BasePlugin):
         
         if meta: # Use all contigs for whole job
             contigs = job_data['final_contigs']
+            
         else:
             contigs = job_data['contigs']
         output = self.run(contigs, job_data['initial_reads'])

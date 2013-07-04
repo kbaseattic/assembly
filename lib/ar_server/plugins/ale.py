@@ -29,3 +29,4 @@ class AleAssessment(BaseAssessment, IPlugin):
         if os.path.exists(report):
             return report
 
+

@@ -14,7 +14,7 @@ limit_jump_coverage = 60
 ca_parameters = ovlMerSize=30 cgwErrorRate=0.25 ovlMemory=4GB
 kmer_count_threshold = 1
 num_threads = auto
-jf_size = 100000000
+jf_size = 2000000000
 do_homopolymer_trim = 0
 
 filetypes = fasta,fa,fastq,fq

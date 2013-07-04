@@ -47,7 +47,9 @@ class ArastJob(dict):
         fig = plt.figure()
         plt.bar(xlocations, n_scores, width=width)
         plt.xticks(xlocations + width/2, names)
-        plt.yticks(range(0, new_max + 10))
+        plt.xlim(0, xlocations[-1]+width*2)
+        plt.title("Relative ALE Scores")
+        plt.yticks(range(0, new_max + 10, 10))
         ale_fig = os.path.join(self['datapath'], str(self['job_id']), 'ale.png')
         plt.savefig(ale_fig)
         return ale_fig
@@ -56,8 +58,8 @@ class ArastJob(dict):
     def export(self):
         pass
 
-    def import_quast(self, qreport, reference=False):
-        if reference:
+    def import_quast(self, qreport):
+        if self['reference']:
             n50_line = 14
         else:
             n50_line = 12
