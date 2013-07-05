@@ -74,9 +74,12 @@ rm -rf idba
 
 #Install QUAST
 mkdir ../bin/quast
-wget https://downloads.sourceforge.net/project/quast/quast-2.1.tar.gz
-tar -xf quast-2.1.tar.gz
-cd quast-2.1/
+wget https://downloads.sourceforge.net/project/quast/quast-2.2.tar.gz
+tar -xf quast-2.2.tar.gz
+cd quast-2.2/
+# wget https://downloads.sourceforge.net/project/quast/quast-2.1.tar.gz
+# tar -xf quast-2.1.tar.gz
+# cd quast-2.1/
 cp -R * ../../bin/quast
 cd ..
 
