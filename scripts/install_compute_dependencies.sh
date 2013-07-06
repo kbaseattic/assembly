@@ -175,6 +175,19 @@ mkdir build
 cd build
 cmake ..
 make
+cd ../..
+
+# ALE
+git clone https://github.com/sc932/ALE.git
+cd ALE/src
+make
+mv * ..
+cd ../..
+
+#BOWTIE
+wget http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.1.0/bowtie2-2.1.0-linux-x86_64.zip
+unzip bowtie2-2.1.0-linux-x86_64.zip
+cd ../scripts
 
 #cd ../bin/
 #wget http://standardized-velvet-assembly-report.googlecode.com/svn/trunk/mergePairs.py
