@@ -24,7 +24,7 @@ class SspaceScaffolder(BaseScaffolder, IPlugin):
         try:
             insert_size = int(reads['insert'])
         except:
-            insert_size = self.estimate_insert(contig_file, read_files)
+            insert_size, _ = self.estimate_insert_stdev(contig_file, read_files)
             
         genome_size = sum(astats.getLens(contig_file))
         ## Min overlap for extension, decision based on A5

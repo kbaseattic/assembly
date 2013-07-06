@@ -5,7 +5,7 @@ Module = quast
 [Settings]
 executable = ../../bin/quast/quast.py
 filetypes = fasta,fa
-min_contig = 200
+min_contig = 500
 scaffold_mode = False
 
 [Documentation]

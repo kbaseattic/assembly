@@ -1,0 +1,14 @@
+[Core]
+Name = bowtie2
+Module = bowtie2
+
+[Settings]
+executable = ../../bin/bowtie2-2.1.0/bowtie2
+build_bin = ../../bin/bowtie2-2.1.0/bowtie2-build
+filetypes = fastq,fq
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = Bowtie2
+

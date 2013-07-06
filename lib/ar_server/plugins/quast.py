@@ -29,7 +29,13 @@ class QuastAssessment(BaseAssessment, IPlugin):
         if ref:
             rfile = ref[0]['files'][0]
             cmd_args += ['-R', rfile, '--gage']
-        cmd_args += contigs
+
+        contig_files = []
+        for data in contigs:
+            for f in data['files']:
+                contig_files.append(f)
+
+        cmd_args += contig_files
 
         self.arast_popen(cmd_args)
         

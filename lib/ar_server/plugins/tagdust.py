@@ -16,17 +16,31 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
         for file_set in reads:
             new_file_set = file_set
             new_files = []
+            td_unsynced_files = []
+            td_synced_files = []
             for f in file_set['files']:
                 cmd_args = [os.path.join(os.getcwd(), self.executable), '-s', '-o']
                 lib_file = os.path.join(os.getcwd(), self.library)
                 if not os.path.exists(lib_file):
                     raise Exception('TagDust: lib file missing!')
                 fixes = os.path.basename(f).rsplit('.', 1)
-                td_file = os.path.join(self.outpath, fixes[0] + '.tagdust.' + fixes[1])
+                td_file = os.path.join(self.outpath, fixes[0] + '.td.' + fixes[1])
+                synced_file = os.path.join(self.outpath, fixes[0] + '.td_sync.' + fixes[1])
                 cmd_args += [td_file, os.path.join(os.getcwd(), self.library), f]
                 logging.info("TagDust Plugin: {}".format(cmd_args))
                 self.arast_popen(cmd_args, cwd=self.outpath)
-                new_files.append(td_file)
+                td_unsynced_files.append(td_file)
+                td_synced_files.append(synced_file)
+
+            if file_set['type'] == 'paired' and len(td_unsynced_files) == 2:
+                #sync
+                cmd_args = [self.sync, file_set['files'][0], 
+                            td_unsynced_files[0], td_unsynced_files[1],
+                            td_synced_files[0], td_synced_files[1]]
+                self.arast_popen(cmd_args, cwd=self.outpath)
+                new_files += td_synced_files
+            else:
+                new_files += td_unsynced_files
             new_file_set['files'] = new_files
             processed_reads.append(new_file_set)
         return processed_reads

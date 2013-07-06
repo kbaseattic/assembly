@@ -11,6 +11,6 @@ hash_length = 29
 
 [Documentation]
 Author = Chris Bun
-Version = 0.1
+Version = 0.2
 Description = Velvet assembler plugin
 

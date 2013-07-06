@@ -1,0 +1,14 @@
+[Core]
+Name = gam_ngs
+Module = gam_ngs
+
+[Settings]
+gam_create = ../../bin/gam-ngs/bin/gam-create
+gam_merge = ../../bin/gam-ngs/bin/gam-merge
+filetypes = fasta,fa
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = GAM-NGS plugin
+

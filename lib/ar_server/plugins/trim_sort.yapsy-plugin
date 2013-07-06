@@ -8,9 +8,8 @@ bin_dynamictrim = ../../bin/solexa/DynamicTrim.pl
 bin_lengthsort = ../../bin/solexa/LengthSort.pl
 filetypes = fastq,fq
 
-probcutoff = 0.5
-length = 75
-
+probcutoff = 0.05
+length = 25
 
 [Documentation]
 Author = Chris Bun

@@ -48,15 +48,11 @@ class BasePlugin(object):
                     cmd_args.append(flag)
                 if kv[1] != 'True':
                     cmd_args.append(kv[1])
-
-
         try:
             shell = kwargs['shell']
         except:
             shell = False
-
-
-        if shell:
+        if not shell:
             cmd_human = []
             for w in cmd_args:
                 if w.endswith('/'):
@@ -135,7 +131,6 @@ class BasePlugin(object):
         for kv in settings:
             ## set absolute paths
             abs = os.path.abspath(kv[1])
-            print abs
             if os.path.exists(abs) or os.path.isfile(abs):
                 setattr(self, kv[0], abs)
             else:
@@ -223,7 +218,7 @@ class BasePlugin(object):
         return max(all_max_read_length), total_read_count
     
 
-    def estimate_insert(self, contig_file, reads, min_lines=4000):
+    def estimate_insert_stdev(self, contig_file, reads, min_lines=4000):
         """ Map READS to CONTIGS using bwa and return insert size """
         logging.info('Estimating insert size')
         min_reads = min_lines * 4
@@ -244,12 +239,17 @@ class BasePlugin(object):
         bwa_data['contigs'] = [contig_file]
         bwa_data['out_report'] = open(os.path.join(self.outpath, 'estimate_ins.log'), 'w')
         #job_data['final_contigs'] = [contig_file]
-        samfile, _, _ = self.pmanager.run_module('bwa', bwa_data)
+        samfiles, _, _ = self.pmanager.run_module('bwa', bwa_data)
+        samfile = samfiles[0]
+        if os.path.getsize(samfile) == 0:
+            logging.error('Error estimating insert length')
+            raise Exception('estimate ins failed')
         cmd_args = [self.tools['ins_from_sam'], samfile]
         results = subprocess.check_output(cmd_args)
         insert_size = int(float(re.split('\s|,', results)[9]))
+        stdev = int(float(re.split('\=|\s', results)[-2]))
         logging.info('Estimated Insert Length: {}'.format(insert_size))
-        return insert_size
+        return insert_size, stdev
 
     
 class BaseAssembler(BasePlugin):
@@ -268,6 +268,10 @@ class BaseAssembler(BasePlugin):
         self.init_settings(settings, job_data, manager)
         valid_files = self.get_valid_reads(job_data)
         output = self.run(valid_files)
+        if type(output) is tuple and len(output) == 2:
+            contigs = output[0]
+            scaffolds = output[1]
+            return contigs, scaffolds
         self.out_module.close()
         return output
 
@@ -416,9 +420,11 @@ class BaseAssessment(BasePlugin):
         
         if meta: # Use all contigs for whole job
             contigs = job_data['final_contigs']
+            
         else:
             contigs = job_data['contigs']
-        output = self.run(contigs, job_data['initial_reads'])
+        a_reads = copy.deepcopy(job_data['raw_reads'])
+        output = self.run(contigs, a_reads)
 
         self.out_module.close()
         return output
@@ -428,6 +434,33 @@ class BaseAssessment(BasePlugin):
     def run(self, contigs, reads):
         """
         Return reports
+          
+        """
+        return
+
+class BaseMetaAssembler(BasePlugin):
+    """
+
+    """
+    # Default behavior for run()
+    INPUT = 'contigs'
+    OUTPUT = 'contigs'
+
+    def __call__(self, settings, job_data, manager):
+        self.run_checks(settings, job_data)
+        logging.info("{} Settings: {}".format(self.name, settings))
+        self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data, manager)
+        contigs = job_data['final_contigs']
+        output = self.run(contigs)
+        self.out_module.close()
+        return output
+
+    # Must implement run() method
+    @abc.abstractmethod
+    def run(self, contigs):
+        """
+        Return contigs
           
         """
         return
@@ -461,7 +494,7 @@ class BaseAligner(BasePlugin):
         output = self.run(contig_file, read_files, merged_pair)
 
         self.out_module.close()
-        return output
+        return [output] #TODO return multiple samfiles for each library
 
     # Must implement run() method
     @abc.abstractmethod
