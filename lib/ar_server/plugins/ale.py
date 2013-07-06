@@ -17,7 +17,6 @@ class AleAssessment(BaseAssessment, IPlugin):
         if bamfile == '':
             #Map with BWA and produce bam
             bwa_data = dict(self.job_data)
-            bwa_data['processed_reads'][0]['files'] = reads[0]['files']
             bwa_data['contigs'] = contigs
             bwa_data['out_report'] = open(os.path.join(self.outpath, 'ale_bwa.log'), 'w')
             samfiles, _, _ = self.pmanager.run_module('bowtie2', bwa_data)

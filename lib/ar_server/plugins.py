@@ -423,7 +423,8 @@ class BaseAssessment(BasePlugin):
             
         else:
             contigs = job_data['contigs']
-        output = self.run(contigs, job_data['initial_reads'])
+        a_reads = copy.deepcopy(job_data['raw_reads'])
+        output = self.run(contigs, a_reads)
 
         self.out_module.close()
         return output
