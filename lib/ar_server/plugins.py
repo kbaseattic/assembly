@@ -317,8 +317,7 @@ class BaseScaffolder(BasePlugin):
         else:
             contig_file = job_data['contigs'][0]
         #read_records = job_data['processed_reads']
-        read_records = job_data['initial_reads']
-        
+        read_records = copy.deepcopy(job_data['initial_reads'])
         output = self.run(read_records, contig_file, job_data)
 
         self.out_module.close()

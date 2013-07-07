@@ -18,7 +18,6 @@ class FilterByLengthPreprocessor(BasePreprocessor, IPlugin):
             new_files = []
             for f in file_set['files']:
                 fixes = os.path.basename(f).rsplit('.', 1)
-                print f
                 try:
                     qnum = get_qual_encoding(f).split('phred')[1]
                 except:
@@ -28,8 +27,9 @@ class FilterByLengthPreprocessor(BasePreprocessor, IPlugin):
                 cmd_string = '{} seq -L {} {} | {} -Q{} -l {} > {}'.format(
                     self.seqtk_bin, self.min, f, 
                     self.fastx_bin, qnum, self.max, filtered_file)
-                print cmd_string
                 self.arast_popen(cmd_string, cwd=self.outpath, shell=True)
+                if os.path.getsize(filtered_file) == 0:
+                    raise Exception('Error trimming')
                 new_files.append(filtered_file)
             new_file_set['files'] = new_files
             processed_reads.append(new_file_set)
