@@ -27,7 +27,7 @@ class Bowtie2Aligner(BaseAligner, IPlugin):
             cmd_args += ['-U', reads[0]]
         else:
             raise Exception('Bowtie plugin error')
-        self.arast_popen(cmd_args)
+        self.arast_popen(cmd_args, overrides=False)
 
         if not os.path.exists(samfile):
             raise Exception('Unable to complete alignment')
