@@ -1,0 +1,13 @@
+[Core]
+Name = a6
+Module = a6
+
+[Settings]
+executable = ../../bin/a6/bin/a5
+filetypes = fastq,fq,fastq.bz2,fq.bz2
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = A6 pipeline plugin
+
