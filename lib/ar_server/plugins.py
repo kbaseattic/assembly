@@ -123,7 +123,8 @@ class BasePlugin(object):
         self.pmanager = manager
         self.threads = 1
         self.process_cores = multiprocessing.cpu_count()
-        self.process_threads_allowed = self.process_cores
+        self.arast_threads = int(manager.threads)
+        self.process_threads_allowed = str(self.process_cores / self.arast_threads)
         self.job_data = job_data
         self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
@@ -507,6 +508,7 @@ class BaseAligner(BasePlugin):
 
 class ModuleManager():
     def __init__(self, threads):
+        self.threads = threads
         self.pmanager = PluginManager()
         self.pmanager.setPluginPlaces(["plugins"])
         self.pmanager.collectPlugins()
