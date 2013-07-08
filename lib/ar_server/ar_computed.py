@@ -63,7 +63,6 @@ def start(arast_server, config, num_threads, queue):
     if res is not None:
         print " [x] Shock connection successful"
 
-
     workers = []
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i

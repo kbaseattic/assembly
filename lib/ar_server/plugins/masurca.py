@@ -84,8 +84,10 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
             contigs = os.path.join(self.outpath, 'CA', '10-gapclose','genome.ctg.fasta')
             mv_contigs = os.path.join(self.outpath, 'genome.ctg.fasta')
             os.rename(contigs, mv_contigs)
-            if os.path.exists(mv_scaffolds):
-                return [mv_scaffolds]
+            if os.path.exists(mv_contigs):
+                return [mv_contigs]
+            # if os.path.exists(mv_scaffolds):
+            #     return [mv_scaffolds]
         except:
             pass
         return []

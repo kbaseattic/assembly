@@ -4,7 +4,7 @@ Module = filter_by_length
 
 [Settings]
 short_name = ftr
-seqtk_bin = ../../bin/seqtk
+seqtk_bin = ../../bin/seqtk/seqtk
 fastx_bin = ../../bin/fastx_toolkit/bin/fastx_trimmer
 filetypes = fasta,fa,fastq,fq
 min = 150

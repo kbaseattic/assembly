@@ -13,7 +13,8 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
 
         """
         processed_reads = []
-        for file_set in reads:
+        raw_reads = self.job_data['raw_reads']
+        for i, file_set in enumerate(reads):
             new_file_set = file_set
             new_files = []
             td_unsynced_files = []
@@ -34,7 +35,11 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
 
             if file_set['type'] == 'paired' and len(td_unsynced_files) == 2:
                 #sync
-                cmd_args = [self.sync, file_set['files'][0], 
+                print i
+                print raw_reads
+                raw_file = raw_reads[i]['files'][0]
+                #cmd_args = [self.sync, file_set['files'][0]
+                cmd_args = [self.sync, raw_file, 
                             td_unsynced_files[0], td_unsynced_files[1],
                             td_synced_files[0], td_synced_files[1]]
                 self.arast_popen(cmd_args, cwd=self.outpath)

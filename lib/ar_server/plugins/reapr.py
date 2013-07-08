@@ -30,7 +30,7 @@ class ReaprAssessment(BaseAssessment, IPlugin):
         bwa_data['contigs'] = [fixed_contig]
         bwa_data['out_report'] = open(os.path.join(self.outpath, 'bwa.log'), 'w')
         samfiles, _, _ = self.pmanager.run_module('bwa', bwa_data)
-        samfile = samfile[0]
+        samfile = samfiles[0]
         bamfile = samfile.replace('.sam', '.bam')
         cmd_args = ['samtools', 'view',
                     '-bSho', bamfile, samfile]

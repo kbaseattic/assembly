@@ -123,7 +123,8 @@ class BasePlugin(object):
         self.pmanager = manager
         self.threads = 1
         self.process_cores = multiprocessing.cpu_count()
-        self.process_threads_allowed = self.process_cores
+        self.arast_threads = int(manager.threads)
+        self.process_threads_allowed = str(self.process_cores / self.arast_threads)
         self.job_data = job_data
         self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
@@ -317,8 +318,7 @@ class BaseScaffolder(BasePlugin):
         else:
             contig_file = job_data['contigs'][0]
         #read_records = job_data['processed_reads']
-        read_records = job_data['initial_reads']
-        
+        read_records = copy.deepcopy(job_data['initial_reads'])
         output = self.run(read_records, contig_file, job_data)
 
         self.out_module.close()
@@ -423,7 +423,8 @@ class BaseAssessment(BasePlugin):
             
         else:
             contigs = job_data['contigs']
-        output = self.run(contigs, job_data['initial_reads'])
+        a_reads = copy.deepcopy(job_data['raw_reads'])
+        output = self.run(contigs, a_reads)
 
         self.out_module.close()
         return output
@@ -507,6 +508,7 @@ class BaseAligner(BasePlugin):
 
 class ModuleManager():
     def __init__(self, threads):
+        self.threads = threads
         self.pmanager = PluginManager()
         self.pmanager.setPluginPlaces(["plugins"])
         self.pmanager.collectPlugins()
