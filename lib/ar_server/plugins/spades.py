@@ -28,7 +28,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         if self.only_assembler == 'True':
             cmd_args.append('--only-assembler')
         cmd_args += ['-o', self.outpath]
-
+        cmd_args += ['-t', self.process_threads_allowed]  # number of threads = 4
         self.arast_popen(cmd_args)
         contigs = os.path.join(self.outpath, 'contigs.fasta')
         #contigs = os.path.join(self.outpath, 'scaffolds.fasta')
