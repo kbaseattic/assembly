@@ -20,7 +20,8 @@ class Bowtie2Aligner(BaseAligner, IPlugin):
 
         ## Align reads
         samfile = os.path.join(self.outpath, 'align.sam')
-        cmd_args = [self.executable, '-x', prefix, '-S', samfile]
+        cmd_args = [self.executable, '-x', prefix, '-S', samfile,
+                    '-p', self.process_threads_allowed]
         if len(reads) == 2:
             cmd_args += ['-1', reads[0], '-2', reads[1]]
         elif len(reads) == 1:
