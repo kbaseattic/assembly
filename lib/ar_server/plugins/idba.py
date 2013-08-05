@@ -12,7 +12,7 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         """
 	d = reads[0]
         cwd = os.getcwd()
-        cmd_args = [os.path.join(cwd, self.bin_idba_mod)]
+        cmd_args = [os.path.join(cwd, self.bin_idba_ud)]
         read_file = d['files'][0]
         if d['type'] == 'paired':
             if len(d['files']) == 2 :

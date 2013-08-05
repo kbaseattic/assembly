@@ -20,7 +20,7 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
             td_unsynced_files = []
             td_synced_files = []
             for f in file_set['files']:
-                cmd_args = [os.path.join(os.getcwd(), self.executable), '-s', '-o']
+                cmd_args = [os.path.join(os.getcwd(), self.executable), '-f', '0.05', '-s', '-o']
                 lib_file = os.path.join(os.getcwd(), self.library)
                 if not os.path.exists(lib_file):
                     raise Exception('TagDust: lib file missing!')
