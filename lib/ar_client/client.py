@@ -55,7 +55,6 @@ class Client:
         self.port = 8000 ## change
         self.url = url + ':{}'.format(self.port)
         self.user = user
-        #self.password = password
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),
                         'Content-type': 'application/json', 
@@ -99,6 +98,19 @@ class Client:
         r = requests.get(url, headers=self.headers)
         return r.text
 
+    def get_available_modules(self):
+        url = 'http://{}/module/all/avail/'.format(self.url, self.user)
+        r = requests.get(url, headers=self.headers)
+        return r.text
+
+    def kill_jobs(self, job_id=None):
+        if job_id:
+            url = 'http://{}/user/{}/job/{}/kill'.format(self.url, self.user, job_id)
+        else:
+            url = 'http://{}/user/{}/job/all/kill'.format(
+                self.url, self.user)
+        r = requests.get(url, headers=self.headers)
+        return r.text
 
 
 class Shock:

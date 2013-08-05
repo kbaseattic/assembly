@@ -25,12 +25,11 @@ from ar_client.auth_token import *
 
 
 
-my_version = '0.2.6'
+my_version = '0.2.7'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
 parser.add_argument('-c', '--config', action="store", help='Specify config file')
-parser.add_argument('-u', '--ARASTUSER', help='Overrules env ARASTUSER')
 parser.add_argument("-v", "--verbose", action="store_true", help="Verbose")
 parser.add_argument('--version', action='version', version='%(prog)s ' + my_version)
 
@@ -56,6 +55,11 @@ p_stat.add_argument("-j", "--job", action="store", help="get status of specific 
 p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
 p_stat.add_argument("-n", dest="stat_n", action="store", default=15, type=int, help="specify number of records to show")
 
+p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
+
+p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
+p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
+p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs")
 
 # get
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
@@ -82,7 +86,7 @@ def upload(files):
     return ids
 
 def main():
-    global ARASTURL, ARASTUSER, ARASTPASSWORD, aclient
+    global aclient
     
     clientlog = logging.getLogger('client')
     clientlog.setLevel(logging.INFO)
@@ -97,7 +101,6 @@ def main():
     options = vars(args)
     
     options['version'] = my_version
-    #cparser = SafeConfigParser()
 
     if args.verbose:
         clientlog.setLevel(logging.DEBUG)
@@ -214,8 +217,8 @@ def main():
                 sys.exit(1)
 
         options['filename'] = base_files
+
         # # Send message to RPC Server
-        #options['ARASTUSER'] = ARASTUSER
         options['ids'] = res_ids
         options['file_sizes'] = file_sizes
         del options['ARASTURL']
@@ -224,7 +227,6 @@ def main():
         response = aclient.submit_job(rpc_body)
         print response
         clientlog.debug(" [.] Response: %r" % (response))
-
 
     elif args.command == 'stat':
         while True:
@@ -242,14 +244,17 @@ def main():
         except:
             print 'Invalid job id'
 
-global ARASTUSER, ARASTPASSWORD
+    elif args.command == 'avail':
+        try:
+            print aclient.get_available_modules()
+        except:
+            print 'Error getting available modules'
+
+    elif args.command == 'kill':
+        print aclient.kill_jobs(args.job)
 
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1
-
-
-
-
 
 if __name__ == '__main__':
     main()
