@@ -265,6 +265,7 @@ def start(config_file):
     ##### CherryPy ######
     root = Root()
     root.user = UserResource()
+    root.module = ModuleResource()
     root.shock = ShockResource({"shockurl": get_upload_url()})
     
     conf = {
@@ -303,12 +304,16 @@ class JobResource:
         return route_job(json.dumps(params))
 
     @cherrypy.expose
+    def kill(self, userid=None, job_id=None):
+        print 'kill'
+        return 'KILL not implemented'
+
+    @cherrypy.expose
     def default(self, job_id, *args, **kwargs):
         if len(args) == 0: # /user/USER/job/JOBID/
             pass
         else:
             resource = args[0]
-
         try:
             userid = kwargs['userid']
         except:
@@ -318,10 +323,12 @@ class JobResource:
             return self.get_shock_node(userid, job_id)
         elif resource == 'status':
             return self.status(job_id=job_id, userid=userid)
-
+        elif resource == 'kill':
+            return self.kill(job_id=job_id)
+        else:
+            return resource
     @cherrypy.expose
     def status(self, **kwargs):
-        print 'status'
         try:
             job_id = kwargs['job_id']
         except:
@@ -385,13 +392,24 @@ class UserResource(object):
             return self.default
         raise AttributeError("%r object has no attribute %r" % (self.__class__.__name__, name))
 
-
         
 class StatusResource:
     def current(self):
         json_request = cherrypy.request.body.read()
         return route_job(json_request)
 
+class ModuleResource:
+    @cherrypy.expose
+    def default(self, module_name, *args, **kwargs):
+        print module_name
+        if len(args) == 0: # /module/
+            pass
+        else:
+            resource = args[0]
+        if resource == 'avail':
+            return 'Available Modules'
+        return module_name
+        
 class ShockResource(object):
 
     def __init__(self, content):
