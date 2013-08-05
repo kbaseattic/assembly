@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name = "ar_client",
-    version = "0.2.5",
+    version = "0.2.7",
     author = "Chris Bun",
     author_email = "chrisbun@gmail.com",
     description = ("A commandline client for the KBASE Assembly Service"),
