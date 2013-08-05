@@ -572,10 +572,10 @@ class ArastConsumer:
                 #self.pmanager.run_module('reapr', job_data)
                 #print job_data
                 # TODO reapr break may be diff from final reapr align!
-                ale_out, _, _ = self.pmanager.run_module('ale', job_data)
-                if ale_out:
-                    job_data.get_pipeline(pipeline_num).import_ale(ale_out)
-                    ale_reports[pipe_suffix] = ale_out
+                # ale_out, _, _ = self.pmanager.run_module('ale', job_data)
+                # if ale_out:
+                #     job_data.get_pipeline(pipeline_num).import_ale(ale_out)
+                #     ale_reports[pipe_suffix] = ale_out
                 pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], 
                                                                job_data['job_id'],
                                                                pipeline_num)
@@ -596,7 +596,7 @@ class ArastConsumer:
             job_data['final_scaffolds'] = final_scaffolds
         except:
             job_data['final_scaffolds'] = []
-        # mfiles,_,_ = self.pmanager.run_module('gam_ngs', job_data)
+        #mfiles,_,_ = self.pmanager.run_module('gam_ngs', job_data)
         # for m in mfiles:
         #     job_data['final_contigs'].append({'files':[m]})
 
@@ -619,27 +619,27 @@ class ArastConsumer:
         logfiles.append(q_log)
 
         ## Add reference assessment
-        if job_data['reference']:
-            ref_data = dict(job_data)
-            ref_data['contigs'] = job_data['reference'][0]['files']
-            ref_ale_out, _, _ = self.pmanager.run_module('ale', ref_data)
-            if ref_ale_out:
-                job_data.add_pipeline(-1, [])
-                job_data.get_pipeline(-1).import_ale(ref_ale_out)
-                job_data.get_pipeline(-1)['name'] = 'REF'
+        # if job_data['reference']:
+        #     ref_data = dict(job_data)
+        #     ref_data['contigs'] = job_data['reference'][0]['files']
+        #     ref_ale_out, _, _ = self.pmanager.run_module('ale', ref_data)
+        #     if ref_ale_out:
+        #         job_data.add_pipeline(-1, [])
+        #         job_data.get_pipeline(-1).import_ale(ref_ale_out)
+        #         job_data.get_pipeline(-1)['name'] = 'REF'
                 
         job_data.import_quast(quast_report[0])
         
         ## Write out ALE scores
-        self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
-        for suffix,report in ale_reports.items():
-            try:
-                f = open(report, 'r')
-                score = f.readline()
-                f.close()
-                self.out_report.write("{}: {}\n".format(suffix, score))
-            except:
-                self.out_report.write("{}: Error\n".format(suffix))
+        # self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
+        # for suffix,report in ale_reports.items():
+        #     try:
+        #         f = open(report, 'r')
+        #         score = f.readline()
+        #         f.close()
+        #         self.out_report.write("{}: {}\n".format(suffix, score))
+        #     except:
+        #         self.out_report.write("{}: Error\n".format(suffix))
 
         # for suffix,report in ale_reports.items():
         #     self.out_report.write("\n\n{0} ALE: {1}  {0}\n".format("="*10, suffix))
@@ -664,9 +664,9 @@ class ArastConsumer:
         summary = quast_report[0]
         os.rename(quast_tar, ctg_analysis)
         return_files = [ctg_analysis]
-        ale_plot = job_data.plot_ale()
-        if ale_plot:
-            return_files.append(ale_plot)
+        # ale_plot = job_data.plot_ale()
+        # if ale_plot:
+        #     return_files.append(ale_plot)
         if scaffold_quast:
             scf_analysis = scaff_tar.rsplit('/', 1)[0] + '/{}_scf_qst.tar.gz'.format(job_data['job_id'])
             #summary = quast_report[0]
