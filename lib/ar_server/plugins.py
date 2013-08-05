@@ -43,7 +43,10 @@ class BasePlugin(object):
                     dashes += '-'
                 flag = '{}{}'.format(dashes, kv[0])
                 if kv[1] == 'False':
-                    cmd_args.remove(flag)
+                    try:
+                        cmd_args.remove(flag)
+                    except:
+                        pass
                 else:
                     cmd_args.append(flag)
                 if kv[1] != 'True':

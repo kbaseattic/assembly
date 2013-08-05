@@ -51,7 +51,8 @@ class VelvetAssembler(BaseAssembler, IPlugin):
                 
         logging.info("Running subprocess:{}".format(cmd_args))
         self.arast_popen(cmd_args)        
-        cmd_args = [self.velvetg, self.outpath, '-exp_cov', 'auto']
+        cmd_args = [self.velvetg, self.outpath, '-exp_cov', 'auto',
+                    '-scaffolding', 'no']
         for suf in pair_data.keys():
             insert = pair_data[suf][0]
             stdev = pair_data[suf][1]
