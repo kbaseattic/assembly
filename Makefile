@@ -128,10 +128,10 @@ deploy-dir:
 	if [ ! -d $(LIB_PYTHON) ] ; then mkdir -p $(LIB_PYTHON) ; fi
 
 install-dep:
-	sh ./scripts/install_server_dependencies.sh
+	sh ./scripts/install-server-dependencies.sh
 
 install-client-dep:
-	sh ./scripts/install_client_dependencies.sh
+	sh ./scripts/install-client-dependencies.sh
 
 deploy-mongo:
 	mkdir -p /data/db

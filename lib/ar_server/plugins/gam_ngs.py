@@ -69,10 +69,10 @@ class GamNgsAssembler(BaseMetaAssembler, IPlugin):
         a2_name = asm2['name']
         merge_name = a1_name + '_gam_' + a2_name
         merge_prefix = os.path.join(self.outpath, merge_name)
-        cmd_args = [self.gam_create, '--master-bam', asm1['file'], '--slave-bam', asm2['file'],
+        cmd_args = [self.bin_create, '--master-bam', asm1['file'], '--slave-bam', asm2['file'],
                     '--output', merge_prefix]
         self.arast_popen(cmd_args)
-        cmd_args = [self.gam_merge, '--master-bam', asm1['file'], '--slave-bam', asm2['file'],
+        cmd_args = [self.bin_merge, '--master-bam', asm1['file'], '--slave-bam', asm2['file'],
                     '--master-fasta', asm1['contigs'], '--slave-fasta', asm2['contigs'],
                     '--blocks-file', merge_prefix + '.blocks',
                     '--output', merge_prefix]

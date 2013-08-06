@@ -4,7 +4,7 @@ Module = bhammer
 
 [Settings]
 short_name = Bh
-executable = ../../bin/SPAdes-2.4.0/spades.py
+executable = ../../bin/spades/spades.py
 filetypes = fastq,fq
 
 [Documentation]
