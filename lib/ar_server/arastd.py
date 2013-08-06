@@ -18,16 +18,32 @@ import router
 #import router2 as router
 from ConfigParser import SafeConfigParser
 
-import shock
+import shock 
 import cloud 
 
-def start(config_file):
+def start(config_file, mongo_host=None, mongo_port=None,
+          rabbit_host=None, rabbit_port=None, deploy_config=None):
     # Read config file
     cparser = SafeConfigParser()
-    cparser.read(config_file)
+
+    if deploy_config:
+        cparser.read(deploy_config)
+        print " [.] Found Deployment Config.  Using settings."
+    else:
+        cparser.read(config_file)
+
+    if not mongo_host:
+        mongo_host = cparser.get('assembly', 'mongo_host')
+    if not mongo_port:
+        mongo_port = cparser.get('assembly', 'mongo_port')
+    if not rabbit_host:
+        rabbit_host = cparser.get('assembly', 'rabbitmq_host')
+    if not rabbit_port:
+        rabbit_port = cparser.get('assembly', 'rabbitmq_port')
+
     print " [.] Starting Assembly Service Control Server"
-    print " [.] MongoDB port: %s" % cparser.get('meta','mongo.port')
-    print " [.] RabbitMQ port: %s" % cparser.get('rabbitmq','port')
+    print " [.] MongoDB port: " + mongo_port
+    print " [.] RabbitMQ port: " + rabbit_port
     
     # Check MongoDB status
     try:
@@ -38,38 +54,47 @@ def start(config_file):
         logging.error("MongoDB connection error!")
         sys.exit()
     print " [x] MongoDB connection successful."
-    # Check RabbitMQ status
-        #TODO
-        
-    # print " [.] Connecting to Shock server..."
-    # url = "http://%s" % cparser.get('shock', 'host')
-    # res = shock.get(url, cparser.get('shock','admin_user'),
-    #           cparser.get('shock','admin_pass'))
-    
-    # if res is not None:
-    #     print " [x] Shock connection successful"
-    # Start RPC server
 
-    router.start(config_file)
+    router.start(config_file, mongo_host=mongo_host, mongo_port=mongo_port,
+                 rabbit_host=rabbit_host, rabbit_port=rabbit_port)
 
 def tear_down():
     print "Tear down"
     sys.exit()
 
-parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
+parser = argparse.ArgumentParser(prog='arastd')
 
 parser.add_argument("-v", "--verbose", help="increase output verbosity",
                     action="store_true")
 parser.add_argument("-p", "--pidfile", help="Process ID file",
                     action="store")
-parser.add_argument("-s", "--shock", help="specify the shock server url",
-                    action="store_true")
+parser.add_argument("--shock-host", help="specify the shock server url",
+                    action="store")
+parser.add_argument("--mongo-host", help="specify the mongodb url",
+                    action="store")
+parser.add_argument("--mongo-port", help="specify the mongodb port",
+                    action="store")
+parser.add_argument("--rabbit-host", help="specify the rabbitmq url",
+                    action="store")
+parser.add_argument("--rabbit-port", help="specify the rabbitmq port",
+                    action="store")
+parser.add_argument("--logfile", help="specify the logfile",
+                    action="store")
+parser.add_argument("--deploy-config", help="specify the deployment-specific config",
+                    action="store")
 parser.add_argument("-c", "--config", help="specify the config file",
                     action="store", required=True)
 
 args = parser.parse_args()
+if args.logfile:
+    logfile = args.logfile
+else:
+    logfile = 'ar_server.log'
+
 if args.verbose:
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG, filename=logfile, stream=sys.stdout)
+else:
+    logging.basicConfig(level=logging.DEBUG, filename=logfile)
 
 try:
     os_user = os.environ.get('OS_AUTH_USER')
@@ -115,4 +140,5 @@ if cloud_control:
         #monitor.launch_node()
         pass
 
-start(args.config)
+start(args.config, mongo_host=args.mongo_host, mongo_port=args.mongo_port,
+      rabbit_host=args.rabbit_host, rabbit_port=args.rabbit_port, deploy_config=args.deploy_config)

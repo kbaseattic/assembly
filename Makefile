@@ -1,19 +1,10 @@
 TOP_DIR = ../..
 DEPLOY_RUNTIME ?= /kb/runtime
 TARGET ?= /kb/deployment
-
-# configurable variables
 SERVICE = assembly
 SERVICE_NAME = assembly
-SERVICE_DIR = assembly
-SERVICE_PORT = 5672
-SERVICE_EXEC = arastd.py
-
-# TPAGE_ARGS = --define kb_top=$(TARGET) \
-# 	--define kb_runtime=$(DEPLOY_RUNTIME) \
-# 	--define kb_service_name=$(SERVICE) \
-# 	--define kb_service_port=$(SERVICE_PORT) \
-# 	--define kb_psgi=$(SERVICE_NAME).psgi
+SERVICE_DIR = $(TARGET)/services/$(SERVICE)
+VAR_DIR = $(SERVICE_DIR)/var
 
 include $(TOP_DIR)/tools/Makefile.common
 
@@ -120,7 +111,7 @@ deploy-docs:
 	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
 	cp doc/*.png $(TARGET)/services/$(SERVICE)/webroot/.
 
-deploy-service: install-dep create-scripts deploy-mongo
+deploy-service: install-dep install-service-scripts deploy-mongo
 redeploy-service: clean install-dep create-scripts deploy-mongo
 deploy-compute: install-dep
 
@@ -132,6 +123,9 @@ install-dep:
 
 install-client-dep:
 	sh ./scripts/install_client_dependencies.sh
+
+install-service-scripts:
+	cp ./scripts/start_service $(SERVICE_DIR)
 
 deploy-mongo:
 	mkdir -p /data/db
