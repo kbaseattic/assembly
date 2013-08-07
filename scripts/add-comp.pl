@@ -1,5 +1,7 @@
 #! /usr/bin/env perl
 
+# This script can be run from any directory
+
 use strict;
 use Carp;
 use Cwd;
