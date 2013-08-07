@@ -7,3 +7,5 @@ sudo cpanm install Data::Dumper
 sudo cpanm install File::Basename
 sudo cpanm install File::Copy
 sudo cpanm install Getopt::Long
+
+sudo pip install pika python-daemon pymongo requests yapsy numpy biopython
