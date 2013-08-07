@@ -25,7 +25,6 @@ def start(config_file, mongo_host=None, mongo_port=None,
           rabbit_host=None, rabbit_port=None, deploy_config=None):
     # Read config file
     cparser = SafeConfigParser()
-
     if deploy_config:
         cparser.read(deploy_config)
         print " [.] Found Deployment Config.  Using settings."
@@ -88,6 +87,10 @@ parser.add_argument("-c", "--config", help="specify the config file",
 args = parser.parse_args()
 if args.logfile:
     logfile = args.logfile
+    try:
+        os.makedirs(os.path.basepath(logfile))
+    except:
+        pass
 else:
     logfile = 'ar_server.log'
 
