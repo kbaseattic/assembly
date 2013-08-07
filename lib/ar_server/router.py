@@ -253,13 +253,13 @@ def authenticate_request():
         raise cherrypy.HTTPError(403, 'Failed Authorization')
     
 
-def start(config_file):
+def start(config_file, mongo_host=None, mongo_port=None,
+          rabbit_host=None, rabbit_port=None):
     global parser, metadata
     logging.basicConfig(level=logging.DEBUG)
 
     parser = SafeConfigParser()
     parser.read(config_file)
-    mongo_host = parser.get('meta', 'mongo.host')
     metadata = meta.MetadataConnection(config_file, mongo_host)
 
     ##### CherryPy ######
@@ -279,18 +279,6 @@ def start(config_file):
     #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.quickstart(root, '/', conf)
     ###### DOES IT AUTH EVERY REQUEST??? ########
-
-    # # TODO remove this ######
-    # connection = pika.BlockingConnection(pika.ConnectionParameters(
-    #         host='localhost'))
-    # channel = connection.channel()
-    # channel.queue_declare(queue='rpc_queue')
-    # channel.basic_qos(prefetch_count=1)
-    # channel.basic_consume(on_request, queue='rpc_queue')
-    # print " [x] Awaiting RPC requests..."
-    # channel.start_consuming()
-    ##### REMOVE #######
-
     
 
 class JobResource:
