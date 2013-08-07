@@ -3,7 +3,7 @@ Name = ale
 Module = ale
 
 [Settings]
-executable = ../../bin/ALE/ALE
+executable = ../../bin/ale/ALE
 filetypes = bam,sam,fasta,fa
 
 [Documentation]

@@ -3,8 +3,8 @@ Name = gam_ngs
 Module = gam_ngs
 
 [Settings]
-gam_create = ../../bin/gam-ngs/bin/gam-create
-gam_merge = ../../bin/gam-ngs/bin/gam-merge
+bin_create = ../../bin/gam-ngs/bin/gam-create
+bin_merge = ../../bin/gam-ngs/bin/gam-merge
 filetypes = fasta,fa
 
 [Documentation]

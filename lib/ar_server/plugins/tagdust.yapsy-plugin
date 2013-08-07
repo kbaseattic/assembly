@@ -4,9 +4,9 @@ Module = tagdust
 
 [Settings]
 short_name = tag
-executable = ../../bin/a5/tagdust
+executable = ../../bin/a6/tagdust
 filetypes = fasta,fa,fastq,fq
-library = ../../bin/adapter.fasta
+library = ../../bin/a6/adapter.fasta
 sync = ../../bin/sync_paired_end_reads.py
 
 

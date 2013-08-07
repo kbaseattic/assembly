@@ -4,8 +4,8 @@ Module = velvet
 
 [Settings]
 short_name = vt
-velvetg = /usr/bin/velvetg
-velveth = /usr/bin/velveth
+bin_velvetg = ../../bin/velvetg
+bin_velveth = ../../bin/velveth
 filetypes = fasta,fa,fastq,fq
 hash_length = 29
 
