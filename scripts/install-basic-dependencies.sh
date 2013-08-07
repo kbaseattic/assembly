@@ -1,6 +1,6 @@
 #! /bin/bash
 
-sudo apt-get -y install cpanminus
+sudo apt-get -y install cpanminus cmake
 
 sudo cpanm install Cwd
 sudo cpanm install Data::Dumper
