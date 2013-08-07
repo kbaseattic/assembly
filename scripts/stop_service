@@ -10,8 +10,5 @@ WORKER_CONFIG=$KB_PYTHON_PATH/ar_server/ar_compute.conf
 LIB_DIR=$KB_PYTHON_PATH/ar_server/
 VAR_DIR=$KB_PYTHON_PATH/../var/
 
-python $LIB_DIR/arastd.py --config $AR_CONFIG --deploy-config $KB_DEPLOYMENT_CONFIG --logfile $VAR_DIR/log/ar_server.log &
-echo $! > $VAR_DIR/ar_server.pid
-python $LIB_DIR/ar_computed.py -c $WORKER_CONFIG -q test -s localhost &
-echo $! > $VAR_DIR/ar_testworker.pid
-
+kill $(cat $VAR_DIR/ar_server.pid)
+kill $(cat $VAR_DIR/ar_testworker.pid)

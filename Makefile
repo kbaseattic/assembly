@@ -111,9 +111,14 @@ deploy-docs:
 	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
 	cp doc/*.png $(TARGET)/services/$(SERVICE)/webroot/.
 
-deploy-service: install-service-scripts deploy-mongo
+deploy-service: install_dep install-service-scripts deploy-mongo deploy-testworker
+
 redeploy-service: clean install-dep create-scripts deploy-mongo
 deploy-compute: install-dep
+
+deploy-testworker:
+	./install-perl-dependencies.sh
+	./add-comp.pl kiki velvet
 
 deploy-dir:
 	if [ ! -d $(LIB_PYTHON) ] ; then mkdir -p $(LIB_PYTHON) ; fi
