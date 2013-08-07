@@ -78,7 +78,7 @@ test-service:
 
 # Deployment
 
-deploy: deploy-client
+deploy: deploy-client deploy-service
 
 # deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
 deploy-client: install-client-dep deploy-libs deploy-scripts deploy-docs
@@ -111,7 +111,7 @@ deploy-docs:
 	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
 	cp doc/*.png $(TARGET)/services/$(SERVICE)/webroot/.
 
-deploy-service: install-dep install-service-scripts deploy-mongo
+deploy-service: install-service-scripts deploy-mongo
 redeploy-service: clean install-dep create-scripts deploy-mongo
 deploy-compute: install-dep
 

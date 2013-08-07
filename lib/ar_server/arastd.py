@@ -27,7 +27,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
     cparser = SafeConfigParser()
     if deploy_config:
         cparser.read(deploy_config)
-        print " [.] Found Deployment Config.  Using settings."
+        print " [.] Found Deployment Config: {}".format(deploy_config)
     else:
         cparser.read(config_file)
 
@@ -46,8 +46,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
     
     # Check MongoDB status
     try:
-        connection = pymongo.Connection(cparser.get('meta','mongo.host'))
-                      
+        connection = pymongo.Connection(mongo_host)
         logging.info("MongoDB Info: %s" % connection.server_info())
     except:
         logging.error("MongoDB connection error!")
@@ -88,9 +87,10 @@ args = parser.parse_args()
 if args.logfile:
     logfile = args.logfile
     try:
-        os.makedirs(os.path.basepath(logfile))
+        os.makedirs(os.path.dirname(logfile))
     except:
         pass
+
 else:
     logfile = 'ar_server.log'
 
