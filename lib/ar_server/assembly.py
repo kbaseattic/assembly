@@ -261,7 +261,7 @@ def arast_reads(filelist):
 
 
 parser = SafeConfigParser()
-parser.read('arast.conf')
-basepath = get_default('basepath')
+#parser.read('arast.conf')
+#basepath = get_default('basepath')
 #metadata = meta.MetadataConnection(parser.get('meta','mongo.remote.host'))
 
