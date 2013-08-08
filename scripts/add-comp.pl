@@ -37,7 +37,7 @@ Compute server components:
       screed       - Screed assembly statistics library (git)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
-      spades       - SPAdes assembler (v2.4)
+      spades       - SPAdes assembler (v2.5)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -246,11 +246,13 @@ sub install_solexa {
 }
 
 sub install_spades {
-    my $dir = 'SPAdes-2.4.0';
+    my $dir = 'SPAdes-2.5.0';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release2.4.0');
-    run("cd $dir; sh spades_compile.sh");
-    run("cp -r -T $dir $dest_dir/spades");
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release2.5.0');
+    chdir($dir);
+    run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
+    run("chmod 755 install/bin/spades.py");
+    run("cp -r -T install $dest_dir/spades");
 }
 
 sub install_velvet {
