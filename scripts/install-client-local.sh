@@ -9,7 +9,7 @@ if [ $# -ne 1 ] ; then
     exit 1
 fi
 
-src=$(cd $(dirname scripts/arast.py); pwd)
+src=$(cd $(dirname $0); pwd)
 dst=$1
 
 if [ ! -d "$dst" ] ; then
