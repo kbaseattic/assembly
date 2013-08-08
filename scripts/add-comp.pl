@@ -251,6 +251,7 @@ sub install_spades {
     download($dir, $file, 'http://spades.bioinf.spbau.ru/release2.4.0');
     run("cd $dir; sh spades_compile.sh");
     run("cp -r -T $dir $dest_dir/spades");
+    run("cp -r -T $dir/build_spades/bin $dest_dir/spades/bin");
 }
 
 sub install_velvet {
