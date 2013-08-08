@@ -62,7 +62,7 @@ sub run {
     my $assembler = shift;
     my $file_inputs = shift;
     my $jobid;
-    my $command = "ar_run -s $ENV{ARASTURL} -a $assembler $file_inputs -m \"$assembler run command on $file_inputs\"";
+    my $command = "ar-run -s $ENV{ARASTURL} -a $assembler $file_inputs -m \"$assembler run command on $file_inputs\"";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
@@ -73,7 +73,7 @@ sub run {
 
 sub stat_try {
     my $env = shift;
-    my $command = "ar_stat -s $env";
+    my $command = "ar-stat -s $env";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
@@ -84,7 +84,7 @@ sub get {
     my $done;
     print "Waiting for job $jobid to complete.";
     while (1) {
-	my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
+	my $stat = `ar-stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
         if ($stat =~ /success/i) {
             $done = 1;
             print " [done]\n";
@@ -99,7 +99,7 @@ sub get {
     print " [done]\n";
     
     if ($done) {
-        my $command = "ar_get -s $ENV{ARASTURL} -j $jobid";
+        my $command = "ar-get -s $ENV{ARASTURL} -j $jobid";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
@@ -113,7 +113,7 @@ sub get {
 }
 
 sub login {
-    my $command = "ar_login";
+    my $command = "ar-login";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;

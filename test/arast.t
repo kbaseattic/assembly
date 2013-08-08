@@ -23,7 +23,7 @@ teardown();
 # write your tests as subroutnes, add the sub name to @tests
 
 sub login {
-    my $command = "ar_login";
+    my $command = "ar-login";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
@@ -31,7 +31,7 @@ sub login {
 
 sub run {
     my $jobid;
-    my $command = "ar_run -s $ENV{ARASTURL} -a kiki -f smg.fa";
+    my $command = "ar-run -s $ENV{ARASTURL} -a kiki -f smg.fa";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
@@ -43,7 +43,7 @@ sub run {
 }
 
 sub stat {
-    my $command = "ar_stat -s $ENV{ARASTURL}";
+    my $command = "ar-stat -s $ENV{ARASTURL}";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
@@ -51,18 +51,18 @@ sub stat {
 
 sub get {
     my $jobid;
-    my $command = "ar_run -s $ENV{ARASTURL}  -a kiki -f smg.fa";
+    my $command = "ar-run -s $ENV{ARASTURL}  -a kiki -f smg.fa";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
     chomp($jobid);
     $jobid = $1 if $jobid =~ /(\d+)/;
 
-    `ar_stat -s $ENV{ARASTURL}`;
+    `ar-stat -s $ENV{ARASTURL}`;
     print "Waiting for job to complete.";
     my $done;
     while (1) {
-        my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
+        my $stat = `ar-stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
         if ($stat =~ /success/i) {
             $done = 1;
             print " [done]\n";
@@ -77,14 +77,14 @@ sub get {
 
     if ($done) {
         print "Get results for completed job $jobid..\n";
-        $command = "ar_get -s $ENV{ARASTURL} -j $jobid";
+        $command = "ar-get -s $ENV{ARASTURL} -j $jobid";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
     }
 
     my $invalid_id = '999999999999999999';
-    my $stat = `ar_get -s $ENV{ARASTURL} -j $invalid_id`;
+    my $stat = `ar-get -s $ENV{ARASTURL} -j $invalid_id`;
     if ($stat =~ /invalid/) {
         print "Correctly identified invalid job\n";
     }
