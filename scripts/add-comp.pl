@@ -66,7 +66,6 @@ $tmp_dir     = make_tmp_dir($tmp_dir);
 for my $c (@comps) {
     if (!$supported{$c}) { print "Warning: $c not supported.\n"; next; }
     my $found = check_if_installed($c);
-    $found = 0;
     if ($found) { print "Found component $c, skipping...\n"; next; }
 
     print "Installing $c...\n";
@@ -252,6 +251,7 @@ sub install_spades {
     download($dir, $file, 'http://spades.bioinf.spbau.ru/release2.5.0');
     chdir($dir);
     run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
+    run("chmod 755 install/bin/spades.py");
     run("cp -r -T install $dest_dir/spades");
 }
 
