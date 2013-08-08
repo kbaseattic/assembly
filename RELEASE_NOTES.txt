@@ -4,6 +4,25 @@ This service allows users to assemble genomes and metagenomes with
 their choice of assembly algorithm.  Currently supports single
 microbial genome assembly using velvet, kiki, and/or A5.
 
+VERSION: 0.1.0 (Released 08/08/2013)
+--------------------------------------
+NEW FEATURES:
+- Support for reference files (quality assessment)
+- ~20 new pipeline modules
+- Support for paired-end insert size settings
+- Support for compressed files
+- RESTful API
+- Assembly evalution/viz generated
+
+UPDATED FEATURES / MAJOR BUG FIXES:
+- Verbose job reports / module logs
+- Major backend robustness
+- CLI client: file integrity checks
+- CLI client: Now using REST commands (fewer dependencies)
+
+---
+
+
 VERSION: 0.0.2 (Released 02/04/2013)
 --------------------------------------
 NEW FEATURES:
