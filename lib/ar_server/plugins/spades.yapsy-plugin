@@ -4,7 +4,7 @@ Module = spades
 
 [Settings]
 short_name = Sp
-executable = ../../bin/spades/spades.py
+executable = ../../bin/spades/bin/spades.py
 filetypes = fasta,fa,fastq,fq
 only_assembler = True
 read_length = short

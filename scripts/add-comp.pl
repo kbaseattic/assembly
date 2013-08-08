@@ -37,7 +37,7 @@ Compute server components:
       screed       - Screed assembly statistics library (git)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
-      spades       - SPAdes assembler (v2.4)
+      spades       - SPAdes assembler (v2.5)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -66,6 +66,7 @@ $tmp_dir     = make_tmp_dir($tmp_dir);
 for my $c (@comps) {
     if (!$supported{$c}) { print "Warning: $c not supported.\n"; next; }
     my $found = check_if_installed($c);
+    $found = 0;
     if ($found) { print "Found component $c, skipping...\n"; next; }
 
     print "Installing $c...\n";
@@ -246,12 +247,12 @@ sub install_solexa {
 }
 
 sub install_spades {
-    my $dir = 'SPAdes-2.4.0';
+    my $dir = 'SPAdes-2.5.0';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release2.4.0');
-    run("cd $dir; sh spades_compile.sh");
-    run("cp -r -T $dir $dest_dir/spades");
-    run("cp -r -T $dir/build_spades/bin $dest_dir/spades/bin");
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release2.5.0');
+    chdir($dir);
+    run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
+    run("cp -r -T install $dest_dir/spades");
 }
 
 sub install_velvet {
