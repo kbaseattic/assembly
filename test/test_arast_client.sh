@@ -25,11 +25,11 @@ function message {
 
 
 message "Login with Tester's ID"
-ar_login
+ar-login
 
 message "Check queue status"
 # arast -s $ARASTURL stat
-ar_stat
+ar-stat
 
 mkdir -p tmpdir
 cd tmpdir
@@ -40,12 +40,12 @@ rm -f smg.fa
 wget http://www.mcs.anl.gov/~fangfang/test/smg.fa
 
 message "Submit synthetic  metagenome for kiki assembly"
-export jobid=`ar_run -a kiki -f smg.fa`
+export jobid=`ar-run -a kiki -f smg.fa`
 echo "Job id = $jobid"
 
 message "Check job status"
 sleep 2
-ar_stat
+ar-stat
 sleep 5
 
 message "Wait 90s for job to finish and download results"
@@ -53,9 +53,9 @@ sleep 90
 
 message "Check job status again"
 sleep 2
-ar_stat
+ar-stat
 sleep 3
 
-ar_get -j $jobid
+ar-get -j $jobid
 
 message "Tests Complete: PASSED"
