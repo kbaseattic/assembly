@@ -16,8 +16,8 @@ my $testCount = 0;
 my @assemblers = qw(kiki velvet); #kiki velvet
 my @files = (
              "-f /mnt/smg.fa", 
-             "-f bad_file_input.fa", 
-             "-f /mnt/smg.fa bad_file_input.fa",  
+             "-f /mnt/bad_file_input.fa", 
+             "-f /mnt/smg.fa /mnt/bad_file_input.fa",  
              "-f /mnt/SUB328463_1.fastq", 
              "--pair /mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
              "-f /mnt/smg.fa /mnt/SUB328463_1.fastq"
@@ -157,6 +157,13 @@ sub setup {
         my $command_5 = "sudo bzip2 -d /mnt/SUB328463_2.fastq.bz2";
         eval {!system("$command_5 > /dev/null") or die $!;};
         diag("unable to run $command_5") if $@;
+    }
+    unless  (-e "/mnt/bad_file_input.fa") {
+	#get bad fasta file to testing
+        print "Download /mnt/bad_file_input.fa\n"; 
+        my $command_6 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/bad_file_input.fa";
+        eval {!system("$command_6 > /dev/null") or die $!;};
+        diag("unable to run $command_6") if $@;
     }
     # need to add more files types in here.
 }
