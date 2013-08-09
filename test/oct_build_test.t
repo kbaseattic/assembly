@@ -103,7 +103,7 @@ sub get {
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
-        my @results = map { $jobid ."_". $_ } qw(analysis.tar.gz assemblies.tar.gz report.txt);
+        my @results = map { $jobid ."_". $_ } qw(ctg_qst.tar.gz assemblies.tar.gz report.txt);
         return @results unless $@;
     } else {
         $testCount--;
