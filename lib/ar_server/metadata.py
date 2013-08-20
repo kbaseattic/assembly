@@ -104,7 +104,7 @@ class MetadataConnection:
     def list_jobs(self, user):
         r = []
         jobs = self.get_jobs()
-        for j in jobs.find({'ARASTUSER':user}):
+        for j in jobs.find({'ARASTUSER':user}).sort('job_id', 1):
             r.append(j)
         return r
 
