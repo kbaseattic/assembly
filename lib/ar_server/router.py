@@ -29,7 +29,7 @@ def send_message(body, routingKey):
             host='localhost'))
     channel = connection.channel()
     channel.queue_declare(queue=routingKey, durable=True)
-    channel.basic_qos(prefetch_count=1)
+    #channel.basic_qos(prefetch_count=1)
     channel.basic_publish(exchange = '',
                           routing_key=routingKey,
                           body=body,
@@ -37,6 +37,26 @@ def send_message(body, routingKey):
                           delivery_mode=2)) #persistant message
     logging.debug(" [x] Sent to queue: %r: %r" % (routingKey, body))
     connection.close()
+
+def send_kill_message(user, job_id):
+    """ Place the kill request on the correct job queue """
+    ## Set status to killed if not running yet. Otherwise, send.
+    job_doc = metadata.get_job(user, job_id)
+    uid = job_doc['_id']
+    if job_doc['status'] == 'queued':
+        metadata.update_job(uid, 'status', 'Terminated')
+    else:
+        msg = json.dumps({'user':user, 'job_id':job_id})
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+                host='localhost'))
+        channel = connection.channel()
+        channel.exchange_declare(exchange='kill',
+                                 type='fanout')
+        channel.basic_publish(exchange = 'kill',
+                              routing_key='',
+                              body=msg,)
+        logging.debug(" [x] Sent to kill exchange: %r" % (job_id))
+        connection.close()
 
 
 def determine_routing_key(size, params):
@@ -72,6 +92,7 @@ def route_job(body):
     logging.info("Inserting job record: %s" % client_params)
     metadata.update_job(uid, 'status', 'queued')
     p = dict(client_params)
+    metadata.update_job(uid, 'message', p['message'])
     msg = json.dumps(p)
     send_message(msg, routing_key)
     response = str(job_id)
@@ -206,7 +227,6 @@ def on_request(ch, method, props, body):
 
 
 def authenticate_request():
-    print 'authorization'
     print cherrypy.request.headers
     try:
         token = cherrypy.request.headers['Authorization']
@@ -220,14 +240,12 @@ def authenticate_request():
         user = m.group(1)
     else:
         raise cherrypyHTTPError(403, 'Bad Token')
-    print user
     auth_info = metadata.get_auth_info(user)
     if auth_info:
         # Check exp date
         auth_time_str = auth_info['token_time']
         atime = datetime.datetime.strptime(auth_time_str, '%Y-%m-%d %H:%M:%S.%f')
         ctime = datetime.datetime.today()
-        print 'found auth'
         globus_user = user
         print auth_info
         if (ctime - atime).seconds > 15*60: # 15 min auth token
@@ -237,7 +255,6 @@ def authenticate_request():
             metadata.update_auth_info(globus_user, token, str(ctime))
             
     else:
-        print 'auth first time'
         nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
         globus_user = nexus.authenticate_user(token)
         if globus_user:
@@ -245,26 +262,25 @@ def authenticate_request():
                                       str(datetime.datetime.today()))
         else:
             raise Exception ('problem authorizing with nexus')
-        
     try:
-        #cherrypy.request.params['globus_user'] = globus_user
-        print globus_user
+        return globus_user
     except:
         raise cherrypy.HTTPError(403, 'Failed Authorization')
     
 
-def start(config_file):
+def start(config_file, mongo_host=None, mongo_port=None,
+          rabbit_host=None, rabbit_port=None):
     global parser, metadata
     logging.basicConfig(level=logging.DEBUG)
 
     parser = SafeConfigParser()
     parser.read(config_file)
-    mongo_host = parser.get('meta', 'mongo.host')
     metadata = meta.MetadataConnection(config_file, mongo_host)
 
     ##### CherryPy ######
     root = Root()
     root.user = UserResource()
+    root.module = ModuleResource()
     root.shock = ShockResource({"shockurl": get_upload_url()})
     
     conf = {
@@ -278,29 +294,22 @@ def start(config_file):
     #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.quickstart(root, '/', conf)
     ###### DOES IT AUTH EVERY REQUEST??? ########
-
-    # # TODO remove this ######
-    # connection = pika.BlockingConnection(pika.ConnectionParameters(
-    #         host='localhost'))
-    # channel = connection.channel()
-    # channel.queue_declare(queue='rpc_queue')
-    # channel.basic_qos(prefetch_count=1)
-    # channel.basic_consume(on_request, queue='rpc_queue')
-    # print " [x] Awaiting RPC requests..."
-    # channel.start_consuming()
-    ##### REMOVE #######
-
     
 
 class JobResource:
 
     @cherrypy.expose
     def new(self, userid=None):
-        authenticate_request()
+        userid = authenticate_request()
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
         return route_job(json.dumps(params))
+
+    @cherrypy.expose
+    def kill(self, userid=None, job_id=None):
+        send_kill_message(userid, job_id)
+        return 'Kill request sent for job {}'.format(job_id)
 
     @cherrypy.expose
     def default(self, job_id, *args, **kwargs):
@@ -308,7 +317,6 @@ class JobResource:
             pass
         else:
             resource = args[0]
-
         try:
             userid = kwargs['userid']
         except:
@@ -318,10 +326,13 @@ class JobResource:
             return self.get_shock_node(userid, job_id)
         elif resource == 'status':
             return self.status(job_id=job_id, userid=userid)
-
+        elif resource == 'kill':
+            user = authenticate_request()
+            return self.kill(job_id=job_id, userid=user)
+        else:
+            return resource
     @cherrypy.expose
     def status(self, **kwargs):
-        print 'status'
         try:
             job_id = kwargs['job_id']
         except:
@@ -343,12 +354,15 @@ class JobResource:
             pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
             if docs:
                 for doc in docs[-records:]:
-                    row = [doc['job_id'], str(doc['data_id']), doc['status'],]
+                    row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
                     try:
                         row.append(str(doc['computation_time']))
+                    except:
+                        row += ['']
+                    try:
                         row.append(str(doc['message']))
                     except:
-                        row += ['','']
+                        row += ['']
                     pt.add_row(row)
                 return pt.get_string() + "\n"
 
@@ -385,13 +399,24 @@ class UserResource(object):
             return self.default
         raise AttributeError("%r object has no attribute %r" % (self.__class__.__name__, name))
 
-
         
 class StatusResource:
     def current(self):
         json_request = cherrypy.request.body.read()
         return route_job(json_request)
 
+class ModuleResource:
+    @cherrypy.expose
+    def default(self, module_name, *args, **kwargs):
+        print module_name
+        if len(args) == 0: # /module/
+            pass
+        else:
+            resource = args[0]
+        if resource == 'avail':
+            return 'Available Modules'
+        return module_name
+        
 class ShockResource(object):
 
     def __init__(self, content):
@@ -399,7 +424,6 @@ class ShockResource(object):
 
     @cherrypy.expose
     def index(self):
-        print 'shock'
         return json.dumps(self.content)
 
 

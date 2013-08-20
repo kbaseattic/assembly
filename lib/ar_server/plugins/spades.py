@@ -27,6 +27,17 @@ class SpadesAssembler(BaseAssembler, IPlugin):
                 cmd_args += ['-s', lib['files'][0]]
         if self.only_assembler == 'True':
             cmd_args.append('--only-assembler')
+
+        if self.read_length == 'medium' or self.read_length == '150':
+            cmd_args += ['-k', '21,33,55,77']
+
+        if self.read_length == 'medium2' or self.read_length == '200':
+            cmd_args += ['-k', '21,33,55,77,99']
+
+        if self.read_length == 'long' or self.read_length == '250':
+            cmd_args += ['-k', '21,33,55,77,99,127']
+
+
         cmd_args += ['-o', self.outpath]
         cmd_args += ['-t', self.process_threads_allowed]  # number of threads = 4
         self.arast_popen(cmd_args)

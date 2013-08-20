@@ -1,0 +1,20 @@
+#!/bin/bash
+
+export KB_TOP=${KB_TOP:-/kb/deployment}
+export KB_SERVICE_NAME=${KB_SERVICE_NAME:-assembly}
+export KB_DEPLOYMENT_CONFIG=${KB_DEPLOYMENT_CONFIG:-$KB_TOP/modules/$KB_SERVICE_NAME/deploy.cfg}
+export KB_SERVICE_DIR=${KB_SERVICE_NAME:-$KB_TOP/services/$KB_SERVICE_NAME}
+
+AR_CONFIG=$KB_PYTHON_PATH/ar_server/arast.conf
+WORKER_CONFIG=$KB_PYTHON_PATH/ar_server/ar_compute.conf
+LIB_DIR=$KB_PYTHON_PATH/ar_server/
+VAR_DIR=$KB_PYTHON_PATH/../var/
+
+cd $LIB_DIR
+
+python $LIB_DIR/arastd.py --config $AR_CONFIG --deploy-config $KB_DEPLOYMENT_CONFIG --logfile $VAR_DIR/log/ar_server.log &
+echo $! > $VAR_DIR/ar_server.pid
+
+python $LIB_DIR/ar_computed.py -c $WORKER_CONFIG -q test -s localhost &
+echo $! > $VAR_DIR/ar_testworker.pid
+

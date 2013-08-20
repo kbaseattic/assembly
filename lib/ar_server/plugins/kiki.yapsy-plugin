@@ -4,7 +4,7 @@ Module = kiki
 
 [Settings]
 short_name = ki
-executable = /usr/bin/ki
+executable = ../../bin/ki
 filetypes = fasta,fa,fastq,fq
 dashes = 1
 k = 29

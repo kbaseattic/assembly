@@ -31,11 +31,12 @@ import shock
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, arasturl, config, threads, queue):
+    def __init__(self, shockurl, arasturl, config, threads, queue, kill_queue, job_list):
         self.parser = SafeConfigParser()
         self.parser.read(config)
+        self.job_list = job_list
         # Load plugins
-        self.pmanager = ModuleManager(threads)
+        self.pmanager = ModuleManager(threads, kill_queue, job_list)
 
     # Set up environment
         self.shockurl = shockurl
@@ -296,7 +297,7 @@ class ArastConsumer:
                     'out_report' : self.out_report})
 
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
-        
+        self.job_list.append(job_data)
         self.start_time = time.time()
         self.done_flag = threading.Event()
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
@@ -332,7 +333,11 @@ class ArastConsumer:
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
 
+
         # Format report
+        for i, job in enumerate(self.job_list):
+            if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
+                self.job_list.pop(i)
         self.done_flag.set()
         new_report = open('{}.tmp'.format(self.out_report_name), 'w')
         try:
@@ -352,7 +357,6 @@ class ArastConsumer:
         # Get location
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'status', status)
-
 
         print '=========== JOB COMPLETE ============'
 
@@ -572,10 +576,10 @@ class ArastConsumer:
                 #self.pmanager.run_module('reapr', job_data)
                 #print job_data
                 # TODO reapr break may be diff from final reapr align!
-                ale_out, _, _ = self.pmanager.run_module('ale', job_data)
-                if ale_out:
-                    job_data.get_pipeline(pipeline_num).import_ale(ale_out)
-                    ale_reports[pipe_suffix] = ale_out
+                # ale_out, _, _ = self.pmanager.run_module('ale', job_data)
+                # if ale_out:
+                #     job_data.get_pipeline(pipeline_num).import_ale(ale_out)
+                #     ale_reports[pipe_suffix] = ale_out
                 pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], 
                                                                job_data['job_id'],
                                                                pipeline_num)
@@ -596,7 +600,7 @@ class ArastConsumer:
             job_data['final_scaffolds'] = final_scaffolds
         except:
             job_data['final_scaffolds'] = []
-        # mfiles,_,_ = self.pmanager.run_module('gam_ngs', job_data)
+        #mfiles,_,_ = self.pmanager.run_module('gam_ngs', job_data)
         # for m in mfiles:
         #     job_data['final_contigs'].append({'files':[m]})
 
@@ -619,27 +623,27 @@ class ArastConsumer:
         logfiles.append(q_log)
 
         ## Add reference assessment
-        if job_data['reference']:
-            ref_data = dict(job_data)
-            ref_data['contigs'] = job_data['reference'][0]['files']
-            ref_ale_out, _, _ = self.pmanager.run_module('ale', ref_data)
-            if ref_ale_out:
-                job_data.add_pipeline(-1, [])
-                job_data.get_pipeline(-1).import_ale(ref_ale_out)
-                job_data.get_pipeline(-1)['name'] = 'REF'
+        # if job_data['reference']:
+        #     ref_data = dict(job_data)
+        #     ref_data['contigs'] = job_data['reference'][0]['files']
+        #     ref_ale_out, _, _ = self.pmanager.run_module('ale', ref_data)
+        #     if ref_ale_out:
+        #         job_data.add_pipeline(-1, [])
+        #         job_data.get_pipeline(-1).import_ale(ref_ale_out)
+        #         job_data.get_pipeline(-1)['name'] = 'REF'
                 
         job_data.import_quast(quast_report[0])
         
         ## Write out ALE scores
-        self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
-        for suffix,report in ale_reports.items():
-            try:
-                f = open(report, 'r')
-                score = f.readline()
-                f.close()
-                self.out_report.write("{}: {}\n".format(suffix, score))
-            except:
-                self.out_report.write("{}: Error\n".format(suffix))
+        # self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
+        # for suffix,report in ale_reports.items():
+        #     try:
+        #         f = open(report, 'r')
+        #         score = f.readline()
+        #         f.close()
+        #         self.out_report.write("{}: {}\n".format(suffix, score))
+        #     except:
+        #         self.out_report.write("{}: Error\n".format(suffix))
 
         # for suffix,report in ale_reports.items():
         #     self.out_report.write("\n\n{0} ALE: {1}  {0}\n".format("="*10, suffix))
@@ -664,9 +668,9 @@ class ArastConsumer:
         summary = quast_report[0]
         os.rename(quast_tar, ctg_analysis)
         return_files = [ctg_analysis]
-        ale_plot = job_data.plot_ale()
-        if ale_plot:
-            return_files.append(ale_plot)
+        # ale_plot = job_data.plot_ale()
+        # if ale_plot:
+        #     return_files.append(ale_plot)
         if scaffold_quast:
             scf_analysis = scaff_tar.rsplit('/', 1)[0] + '/{}_scf_qst.tar.gz'.format(job_data['job_id'])
             #summary = quast_report[0]
@@ -710,22 +714,30 @@ class ArastConsumer:
         logging.basicConfig(format=("%(asctime)s %s %(levelname)-8s %(message)s",proc().name))
         print proc().name, ' [*] Fetching job...'
 
+        channel.basic_qos(prefetch_count=1)
         channel.basic_consume(self.callback,
-                              queue=self.queue,
-                              no_ack=True) #change?
+                              queue=self.queue)
+
 
         channel.start_consuming()
 
     def callback(self, ch, method, properties, body):
         print " [*] %r:%r" % (method.routing_key, body)
-        try:
-            self.compute(body)
-        except:
-            params = json.loads(body)
-            print sys.exc_info()
-            status = "[FAIL] {}".format(format_tb(sys.exc_info()[2]))
-            print logging.error(status)
-            self.metadata.update_job(params['job_id'], 'status', status)
+        params = json.loads(body)
+        job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
+        uid = job_doc['_id']
+        ## Check if job was not killed
+        if job_doc['status'] == 'Terminated':
+            print 'Job {} was killed, skipping'.format(params['job_id'])
+        else:
+            try:
+                self.compute(body)
+            except:
+                print sys.exc_info()
+                status = "[FAIL] {}".format(format_tb(sys.exc_info()[2]))
+                print logging.error(status)
+                self.metadata.update_job(uid, 'status', status)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def start(self):
         self.fetch_job()
