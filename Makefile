@@ -14,7 +14,7 @@ include $(TOP_DIR)/tools/Makefile.common
 TOOLS_DIR = $(TOP_DIR)/tools
 WRAP_PERL_TOOL = wrap_perl
 WRAP_PERL_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PERL_TOOL).sh
-SRC_PERL = $(wildcard scripts/*.pl)
+SRC_PERL = $(wildcard scripts/ar-*.pl)
 WRAP_PYTHON_TOOL = wrap_python
 WRAP_PYTHON_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PYTHON_TOOL).sh
 SRC_PYTHON = $(wildcard scripts/*.py)
@@ -78,7 +78,7 @@ test-service:
 
 # Deployment
 
-deploy: deploy-client
+deploy: deploy-client deploy-service
 
 # deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
 deploy-client: install-client-dep deploy-libs deploy-scripts deploy-docs
@@ -111,18 +111,23 @@ deploy-docs:
 	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
 	cp doc/*.png $(TARGET)/services/$(SERVICE)/webroot/.
 
-deploy-service: install-dep install-service-scripts deploy-mongo
+deploy-service: install-dep install-service-scripts deploy-mongo deploy-testworker
+
 redeploy-service: clean install-dep create-scripts deploy-mongo
 deploy-compute: install-dep
+
+deploy-testworker:
+	./scripts/install-basic-dependencies.sh
+	./scripts/add-comp.pl kiki velvet
 
 deploy-dir:
 	if [ ! -d $(LIB_PYTHON) ] ; then mkdir -p $(LIB_PYTHON) ; fi
 
 install-dep:
-	sh ./scripts/install_server_dependencies.sh
+	sh ./scripts/install-server-dependencies.sh
 
 install-client-dep:
-	sh ./scripts/install_client_dependencies.sh
+	sh ./scripts/install-client-dependencies.sh
 
 install-service-scripts:
 	cp ./scripts/start_service $(SERVICE_DIR)

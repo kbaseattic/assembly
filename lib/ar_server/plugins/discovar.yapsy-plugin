@@ -4,7 +4,7 @@ Module = discovar
 
 [Settings]
 short_name = discovar
-executable = /usr/bin/discovar
+executable = ../../bin/discovar
 filetypes = fastq,fq
 dashes = 1
 contig_threshold = 300

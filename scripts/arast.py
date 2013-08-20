@@ -139,8 +139,8 @@ def main():
         # print >> sys.stderr, "Logged in as: {}".format(a_user)
     else:
         print("Please authenticate with Globus Online")
-        a_user = raw_input("Globus Login: ")
-        a_pass = getpass.getpass(prompt="Globus Password: ")
+        a_user = raw_input("KBase Login: ")
+        a_pass = getpass.getpass(prompt="KBase Password: ")
         globus_map = get_token(a_user, a_pass)
         a_token = globus_map['access_token']
         try:

@@ -3,10 +3,10 @@ Name = masurca
 Module = masurca
 
 [Settings]
-executable = ../../bin/MaSuRCA-2.0.0/bin/runSRCA.pl
-jellyfish_path = ../../bin/MaSuRCA-2.0.0/bin
-sr_path = ../../bin/MaSuRCA-2.0.0/bin
-ca_path = ../../bin/MaSuRCA-2.0.0/CA/Linux-amd64/bin
+executable = ../../bin/masurca/bin/runSRCA.pl
+jellyfish_path = ../../bin/masurca/bin
+sr_path = ../../bin/masurca/bin
+ca_path = ../../bin/masurca/CA/Linux-amd64/bin
 
 graph_kmer_size = auto
 use_linking_mates = auto

@@ -3,7 +3,7 @@ Name = reapr
 Module = reapr
 
 [Settings]
-executable = ../../bin/Reapr/reapr
+executable = ../../bin/reapr/reapr
 filetypes = fasta,fa
 a = True
 

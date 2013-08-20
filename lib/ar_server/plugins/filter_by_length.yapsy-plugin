@@ -5,13 +5,15 @@ Module = filter_by_length
 [Settings]
 short_name = ftr
 seqtk_bin = ../../bin/seqtk/seqtk
-fastx_bin = ../../bin/fastx_toolkit/bin/fastx_trimmer
+sync_bin = ../../bin/sync_paired_end_reads.py
+# fastx_bin = ../../bin/fastx_toolkit/fastx_trimmer
 filetypes = fasta,fa,fastq,fq
-min = 150
-max = 200
+min = 250
+end = 200
+sync = True
 
 [Documentation]
 Author = Chris Bun
-Version = 0.1
+Version = 0.2
 Description = filter_by_length plugin
 
