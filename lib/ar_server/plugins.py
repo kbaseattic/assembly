@@ -159,6 +159,8 @@ class BasePlugin(object):
                 setattr(self, kv[0], kv[1])
 
         self.extra_params = []
+        self.insert_info = self.get_insert_info(self.job_data['initial_reads'])
+
         for kv in job_data['params']:
             if not hasattr(self, kv[0]):
                 self.extra_params.append(kv)
@@ -182,6 +184,21 @@ class BasePlugin(object):
         # TODO Check binary exists
         # TODO Check data is valid
         pass
+
+    def get_insert_info(self, libs):
+        """ Returns a list of tuples for initial read insert and stdev info 
+        eg [(100, 20), (500, 50), ()]"""
+        libs_info = []
+        for lib in libs:
+            if lib['type'] == 'paired':
+                try: 
+                    ins_sd = (lib['insert'], lib['stdev'])
+                except:
+                    ins_sd = ()
+            elif lib['type'] == 'single':
+                ins_sd = ()
+            libs_info.append(ins_sd)
+        return libs_info
 
     def setname(self, name):
         self.name = name
