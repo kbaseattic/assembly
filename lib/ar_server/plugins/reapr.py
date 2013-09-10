@@ -7,6 +7,7 @@ from plugins import BaseAssessment
 from yapsy.IPlugin import IPlugin
 
 class ReaprAssessment(BaseAssessment, IPlugin):
+    OUTPUT = 'contigs'
     def run(self, contigs, reads):
         """ 
         Build the command and run.

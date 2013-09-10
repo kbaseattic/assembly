@@ -127,7 +127,7 @@ install-dep:
 	sh ./scripts/install-server-dependencies.sh
 
 install-client-dep:
-	sh ./scripts/install-client-dependencies.sh
+	# sh ./scripts/install-client-dependencies.sh
 
 install-service-scripts:
 	cp ./scripts/start_service $(SERVICE_DIR)
