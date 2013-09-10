@@ -88,6 +88,10 @@ def route_job(body):
         client_params['data_id'] = data_id
         
     client_params['job_id'] = job_id
+
+    ## Check that user queue limit is not reached
+    
+
     uid = metadata.insert_job(client_params)
     logging.info("Inserting job record: %s" % client_params)
     metadata.update_job(uid, 'status', 'queued')
@@ -268,6 +272,13 @@ def authenticate_request():
         raise cherrypy.HTTPError(403, 'Failed Authorization')
     
 
+def CORS():
+    cherrypy.response.headers["Access-Control-Allow-Origin"] = "*"
+    cherrypy.response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    cherrypy.response.headers["Access-Control-Allow-Headers"] = "X-Requested-With"
+
+
+
 def start(config_file, mongo_host=None, mongo_port=None,
           rabbit_host=None, rabbit_port=None):
     global parser, metadata
@@ -283,6 +294,8 @@ def start(config_file, mongo_host=None, mongo_port=None,
     root.module = ModuleResource()
     root.shock = ShockResource({"shockurl": get_upload_url()})
     
+    #cherrypy.tools.CORS = cherrypy.Tool('before_finalize', CORS)
+
     conf = {
         'global': {
             'server.socket_host': '0.0.0.0',
@@ -292,6 +305,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
     }
 
     #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
+    cherrypy.request.hooks.attach('before_finalize', CORS)
     cherrypy.quickstart(root, '/', conf)
     ###### DOES IT AUTH EVERY REQUEST??? ########
     
@@ -379,19 +393,25 @@ class JobResource:
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
 
+class FilesResource:
+    @cherrypy.expose
+    def default(self, userid=None):
+        return '{}s files!'.format(userid)
+        pass
+
         
 class UserResource(object):
-
     @cherrypy.expose
     def new():
         pass
 
     @cherrypy.expose
     def default(self):
-        print 'user default'
-        pass
+        print 'user'
+        return 'user default ok'
 
     default.job = JobResource()
+    default.files = FilesResource()
 
     def __getattr__(self, name):
         if name is not ('_cp_config'): #assume username
@@ -399,7 +419,7 @@ class UserResource(object):
             return self.default
         raise AttributeError("%r object has no attribute %r" % (self.__class__.__name__, name))
 
-        
+
 class StatusResource:
     def current(self):
         json_request = cherrypy.request.body.read()
