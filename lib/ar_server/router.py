@@ -276,6 +276,7 @@ def CORS():
     cherrypy.response.headers["Access-Control-Allow-Origin"] = "*"
     cherrypy.response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     cherrypy.response.headers["Access-Control-Allow-Headers"] = "X-Requested-With"
+    cherrypy.response.headers["Content-Type"] = "application/json"
 
 
 
@@ -396,8 +397,8 @@ class JobResource:
 class FilesResource:
     @cherrypy.expose
     def default(self, userid=None):
+        testResponse = {}
         return '{}s files!'.format(userid)
-        pass
 
         
 class UserResource(object):
@@ -427,14 +428,11 @@ class StatusResource:
 
 class ModuleResource:
     @cherrypy.expose
-    def default(self, module_name, *args, **kwargs):
+    def default(self, module_name="avail", *args, **kwargs):
         print module_name
-        if len(args) == 0: # /module/
-            pass
-        else:
-            resource = args[0]
-        if resource == 'avail':
-            return 'Available Modules'
+        if module_name == 'avail':
+            with open(parser.get('web', 'ar_modules')) as outfile:
+                return outfile.read()
         return module_name
         
 class ShockResource(object):
@@ -443,7 +441,7 @@ class ShockResource(object):
         self.content = content
 
     @cherrypy.expose
-    def index(self):
+    def default(self):
         return json.dumps(self.content)
 
 
