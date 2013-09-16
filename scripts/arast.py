@@ -80,9 +80,9 @@ def upload(files):
             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
              #res = curl_post_file(url, f)
             res = aclient.upload_data_shock(f)
-            ids.append(res['D']['id'])
-            if res["E"] is not None:
-                sys.exit("Shock: err from server: %s" % res["E"][0])
+            ids.append(res['data']['id'])
+            if res["error"] is not None:
+                sys.exit("Shock: err from server: %s" % res["error"][0])
     return ids
 
 def main():

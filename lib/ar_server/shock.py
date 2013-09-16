@@ -15,7 +15,7 @@ def download(url, node_id, outdir):
     print r
     print r.text
     res = json.loads(r.text)
-    filename = res['D']['file']['name']
+    filename = res['data']['file']['name']
     durl = url + "/node/%s?download" % node_id
     try:
         os.makedirs(outdir)
@@ -56,7 +56,7 @@ def curl_download_file(url, node_id, token, outdir=None):
 
 
     r = subprocess.check_output(cmd)
-    filename = json.loads(r)['D']['file']['name']
+    filename = json.loads(r)['data']['file']['name']
     if outdir:
         try:
             os.makedirs(outdir)
@@ -96,7 +96,7 @@ class Shock:
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
         r = subprocess.check_output(cmd)
         print r
-        filename = json.loads(r)['D']['file']['name']
+        filename = json.loads(r)['data']['file']['name']
         if outdir:
             try:
                 os.makedirs(outdir)

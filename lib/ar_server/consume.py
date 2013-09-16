@@ -322,7 +322,7 @@ class ArastConsumer:
                     print f
                     fname = os.path.basename(f).split('.')[0]
                     res = self.upload(url, user, token, f)
-                    download_ids[fname] = res['D']['id']
+                    download_ids[fname] = res['data']['id']
 
                 status += "pipeline [success] "
                 self.out_report.write("Pipeline completed successfully\n")
@@ -352,7 +352,7 @@ class ArastConsumer:
         os.remove(self.out_report_name)
         shutil.move(new_report.name, self.out_report_name)
         res = self.upload(url, user, token, self.out_report_name)
-        download_ids['report'] = res['D']['id']
+        download_ids['report'] = res['data']['id']
 
         # Get location
         self.metadata.update_job(uid, 'result_data', download_ids)

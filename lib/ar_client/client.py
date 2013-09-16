@@ -132,7 +132,7 @@ class Shock:
         cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
         r = subprocess.check_output(cmd)
-        filename = json.loads(r)['D']['file']['name']
+        filename = json.loads(r)['data']['file']['name']
         if outdir:
             try:
                 os.makedirs(outdir)
