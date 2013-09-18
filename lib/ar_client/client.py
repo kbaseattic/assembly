@@ -120,8 +120,12 @@ class Shock:
         self.token = token
 
     def curl_post_file(self, filename):
-        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-               '-X', 'POST', '-F', 'upload=@{}'.format(filename),
+        
+        # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+        #        '-X', 'POST', '-F', 'upload=@{}'.format(filename),
+        #        '{}node/'.format(self.shockurl)]
+
+        cmd = ['curl','-X', 'POST', '-F', 'upload=@{}'.format(filename),
                '{}node/'.format(self.shockurl)]
 
         ret = subprocess.check_output(cmd)
