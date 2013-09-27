@@ -25,7 +25,7 @@ from ar_client.auth_token import *
 
 
 
-my_version = '0.2.7'
+my_version = '0.2.8'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')

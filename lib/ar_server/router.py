@@ -275,7 +275,8 @@ def authenticate_request():
 def CORS():
     cherrypy.response.headers["Access-Control-Allow-Origin"] = "*"
     cherrypy.response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    cherrypy.response.headers["Access-Control-Allow-Headers"] = "X-Requested-With"
+#    cherrypy.response.headers["Access-Control-Allow-Headers"] = "X-Requested-With"
+    cherrypy.response.headers["Access-Control-Allow-Headers"] = "Authorization, origin, content-type, accept"
     cherrypy.response.headers["Content-Type"] = "application/json"
 
 
@@ -315,6 +316,7 @@ class JobResource:
 
     @cherrypy.expose
     def new(self, userid=None):
+        print 'new'
         userid = authenticate_request()
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
@@ -335,6 +337,7 @@ class JobResource:
         try:
             userid = kwargs['userid']
         except:
+            print 'here'
             raise cherrypyHTTPError(403)
 
         if resource == 'shock_node':
