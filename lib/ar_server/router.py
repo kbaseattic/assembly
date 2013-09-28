@@ -231,7 +231,6 @@ def on_request(ch, method, props, body):
 
 
 def authenticate_request():
-    print cherrypy.request.headers
     try:
         token = cherrypy.request.headers['Authorization']
     except:
@@ -267,6 +266,8 @@ def authenticate_request():
         else:
             raise Exception ('problem authorizing with nexus')
     try:
+        if globus_user is None:
+            return user
         return globus_user
     except:
         raise cherrypy.HTTPError(403, 'Failed Authorization')
@@ -316,11 +317,12 @@ class JobResource:
 
     @cherrypy.expose
     def new(self, userid=None):
-        print 'new'
         userid = authenticate_request()
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
+        print 'routing'
+        print params
         return route_job(json.dumps(params))
 
     @cherrypy.expose
@@ -337,7 +339,6 @@ class JobResource:
         try:
             userid = kwargs['userid']
         except:
-            print 'here'
             raise cherrypyHTTPError(403)
 
         if resource == 'shock_node':
@@ -366,11 +367,18 @@ class JobResource:
             try: 
                 records = int(kwargs['records'])
             except:
-                records = 15
+                records = 100
 
             docs = metadata.list_jobs(kwargs['userid'])
             pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
             if docs:
+
+                try:
+                    if kwargs['format'] == 'json':
+                        return json.dumps(list(reversed(docs[-records:]))); 
+                except:
+                    print '[.] CLI request status'
+
                 for doc in docs[-records:]:
                     row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
                     try:
