@@ -69,7 +69,8 @@ def curl_download_file(url, node_id, token, outdir=None):
     d_url = '{}/node/{}?download'.format(url, node_id)
     cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
            '-o', filename, d_url]
-
+    
+    print "-".join(cmd) # FIXME: temp
     p = subprocess.Popen(cmd, cwd=outdir)
     p.wait()
     print "File downloaded: {}/{}".format(outdir, filename)
