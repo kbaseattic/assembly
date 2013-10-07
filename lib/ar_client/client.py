@@ -80,6 +80,24 @@ class Client:
             #print sys.exc_info()
             raise Exception("Error retrieving results")
         return 
+
+    def get_assemblies(self, job_id=None, asm_id=None, stdout=False):
+        if not job_id:
+            raise NotImplementedError('Job id required')
+        # Get node id
+        res = requests.get('http://{}/user/{}/job/{}/assembly'.format(
+                self.url, self.user, job_id), headers=self.headers)
+
+        # Download files
+        try:
+            nodes_map = json.loads(res.text)
+            for node_id in nodes_map.values():
+                self.shock.curl_download_file(node_id)
+        except:
+            #print traceback.format_tb(sys.exc_info()[2])
+            #print sys.exc_info()
+            raise Exception("Error retrieving results")
+        return 
         
     def upload_data_shock(self, filename):
         return self.shock.curl_post_file(filename)

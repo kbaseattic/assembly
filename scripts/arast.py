@@ -23,9 +23,9 @@ import ar_client.client as client
 import ar_client.config as conf
 from ar_client.auth_token import *
 
+import traceback
 
-
-my_version = '0.2.8'
+my_version = '0.2.9'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -64,6 +64,7 @@ p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs
 # get
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
 p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, required=True, help="specify which job data to get")
+p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=False, const=True, help="Get assemblies only")
 
 p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
@@ -239,10 +240,20 @@ def main():
                 time.sleep(2)			
 
     elif args.command == 'get':
-        try:
-            aclient.get_job_data(args.job_id[0])
-        except:
-            print 'Invalid job id'
+        if args.assembly:
+            try:
+                if type(args.assembly) is int:
+                    aclient.get_assemblies(job_id=args.job_id[0], asm_id=args.assembly)
+                else:
+                    aclient.get_assemblies(job_id=args.job_id[0])
+            except:
+                print traceback.format_tb(sys.exc_info()[2])
+                print sys.exc_info()
+        else:
+            try:
+                aclient.get_job_data(args.job_id[0])
+            except:
+                print 'Invalid job id'
 
     elif args.command == 'avail':
         try:
