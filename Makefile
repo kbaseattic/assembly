@@ -78,7 +78,8 @@ test-service:
 
 # Deployment
 
-deploy: deploy-client deploy-service
+deploy: deploy-client
+# deploy: deploy-client deploy-service
 
 # deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
 deploy-client: install-client-dep deploy-libs deploy-scripts deploy-docs
@@ -127,7 +128,7 @@ install-dep:
 	sh ./scripts/install-server-dependencies.sh
 
 install-client-dep:
-	# sh ./scripts/install-client-dependencies.sh
+	sh ./scripts/install-client-dependencies.sh
 
 install-service-scripts:
 	cp ./scripts/start_service $(SERVICE_DIR)

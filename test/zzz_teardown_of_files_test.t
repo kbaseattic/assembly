@@ -37,7 +37,12 @@ sub teardown {
         eval {!system("$command > /dev/null") or die $!;};
         diag("unable to run $command") if $@;
     } 
-    my $command = "sudo rm /mnt/*_report.txt /mnt/*_assemblies.tar.gz /mnt/*_analysis.tar.gz"; 
+    if (-e "/mnt/bad_file_input.fa") {
+        my $command = "sudo rm /mnt/bad_file_input.fa"; 
+        eval {!system("$command > /dev/null") or die $!;};
+        diag("unable to run $command") if $@;
+    } 
+    my $command = "sudo rm -f /mnt/*_report.txt /mnt/*_assemblies.tar.gz /mnt/*_ctg_qst.tar.gz"; 
     eval {!system("$command > /dev/null") or die $!;}; 
     diag("unable to run $command") if $@; 
 

@@ -16,8 +16,8 @@ my $testCount = 0;
 my @assemblers = qw(kiki velvet); #kiki velvet
 my @files = (
              "-f /mnt/smg.fa", 
-             "-f bad_file_input.fa", 
-             "-f /mnt/smg.fa bad_file_input.fa",  
+             "-f /mnt/bad_file_input.fa", 
+             "-f /mnt/smg.fa /mnt/bad_file_input.fa",  
              "-f /mnt/SUB328463_1.fastq", 
              "--pair /mnt/SUB328463_1.fastq /mnt/SUB328463_2.fastq", 
              "-f /mnt/smg.fa /mnt/SUB328463_1.fastq"
@@ -62,7 +62,7 @@ sub run {
     my $assembler = shift;
     my $file_inputs = shift;
     my $jobid;
-    my $command = "ar_run -s $ENV{ARASTURL} -a $assembler $file_inputs -m \"$assembler run command on $file_inputs\"";
+    my $command = "ar-run -s $ENV{ARASTURL} -a $assembler $file_inputs -m \"$assembler run command on $file_inputs\"";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
@@ -73,7 +73,7 @@ sub run {
 
 sub stat_try {
     my $env = shift;
-    my $command = "ar_stat -s $env";
+    my $command = "ar-stat -s $env";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
@@ -84,7 +84,7 @@ sub get {
     my $done;
     print "Waiting for job $jobid to complete.";
     while (1) {
-	my $stat = `ar_stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
+	my $stat = `ar-stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
         if ($stat =~ /success/i) {
             $done = 1;
             print " [done]\n";
@@ -99,11 +99,11 @@ sub get {
     print " [done]\n";
     
     if ($done) {
-        my $command = "ar_get -s $ENV{ARASTURL} -j $jobid";
+        my $command = "ar-get -s $ENV{ARASTURL} -j $jobid";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
-        my @results = map { $jobid ."_". $_ } qw(analysis.tar.gz assemblies.tar.gz report.txt);
+        my @results = map { $jobid ."_". $_ } qw(ctg_qst.tar.gz assemblies.tar.gz report.txt);
         return @results unless $@;
     } else {
         $testCount--;
@@ -113,7 +113,7 @@ sub get {
 }
 
 sub login {
-    my $command = "ar_login";
+    my $command = "ar-login";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
@@ -157,6 +157,13 @@ sub setup {
         my $command_5 = "sudo bzip2 -d /mnt/SUB328463_2.fastq.bz2";
         eval {!system("$command_5 > /dev/null") or die $!;};
         diag("unable to run $command_5") if $@;
+    }
+    unless  (-e "/mnt/bad_file_input.fa") {
+	#get bad fasta file to testing
+        print "Download /mnt/bad_file_input.fa\n"; 
+        my $command_6 = "sudo wget -P /mnt/ http://www.mcs.anl.gov/~fangfang/test/bad_file_input.fa";
+        eval {!system("$command_6 > /dev/null") or die $!;};
+        diag("unable to run $command_6") if $@;
     }
     # need to add more files types in here.
 }
