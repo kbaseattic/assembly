@@ -343,6 +343,10 @@ class JobResource:
 
         if resource == 'shock_node':
             return self.get_shock_node(userid, job_id)
+        elif resource == 'assembly':
+            return self.get_assembly_nodes(userid, job_id)
+        elif resource == 'report':
+            return 'Report placeholder'
         elif resource == 'status':
             return self.status(job_id=job_id, userid=userid)
         elif resource == 'kill':
@@ -404,6 +408,18 @@ class JobResource:
         except:
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
+
+    def get_assembly_nodes(self, userid=None, job_id=None):
+        if not job_id:
+            raise cherrypy.HTTPError(403)
+        doc = metadata.get_job(userid, job_id)
+        try:
+            result_data = doc['contig_ids']
+        except:
+            raise cherrypy.HTTPError(500)
+        return json.dumps(result_data)
+
+
 
 class FilesResource:
     @cherrypy.expose
