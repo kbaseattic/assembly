@@ -45,7 +45,7 @@ class ArastJob(dict):
         xlocations = na.array(range(len(n_scores))) + 0.5
         width = 0.5
         fig = plt.figure()
-        plt.bar(xlocations, n_scores, width=width)
+        plt.bar(xlocations, n_scores, width=width, linewidth=0, color='#CC99FF')
         plt.xticks(xlocations + width/2, names)
         plt.xlim(0, xlocations[-1]+width*2)
         plt.title("Relative ALE Scores")
