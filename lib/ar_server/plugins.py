@@ -75,6 +75,12 @@ class BasePlugin(object):
         try:
             p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, 
                                      stderr=subprocess.STDOUT, **kwargs)
+            while p.poll() is None:
+                if self.killed():
+                    p.terminate()
+                    raise Exception('Terminated by user')
+                time.sleep(5)
+
             for line in p.stdout:
                 logging.info(line)
                 self.out_module.write(line)
@@ -85,6 +91,18 @@ class BasePlugin(object):
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
         self.out_report.write("Process time: {}\n\n".format(m_ftime))
+
+    def killed(self):
+        """ Check the kill queue to see if job should be killed """
+        kl = self.pmanager.kill_list
+        my_user = self.job_data['user']
+        my_jobid = self.job_data['job_id']
+        
+        for i,kr in enumerate(kl):
+            if my_user == kr['user'] and str(my_jobid) == kr['job_id']:
+                kl.pop(i)
+                return True
+        return False
 
 
     def create_directories(self, job_data):
@@ -141,6 +159,8 @@ class BasePlugin(object):
                 setattr(self, kv[0], kv[1])
 
         self.extra_params = []
+        self.insert_info = self.get_insert_info(self.job_data['initial_reads'])
+
         for kv in job_data['params']:
             if not hasattr(self, kv[0]):
                 self.extra_params.append(kv)
@@ -164,6 +184,21 @@ class BasePlugin(object):
         # TODO Check binary exists
         # TODO Check data is valid
         pass
+
+    def get_insert_info(self, libs):
+        """ Returns a list of tuples for initial read insert and stdev info 
+        eg [(100, 20), (500, 50), ()]"""
+        libs_info = []
+        for lib in libs:
+            if lib['type'] == 'paired':
+                try: 
+                    ins_sd = (lib['insert'], lib['stdev'])
+                except:
+                    ins_sd = ()
+            elif lib['type'] == 'single':
+                ins_sd = ()
+            libs_info.append(ins_sd)
+        return libs_info
 
     def setname(self, name):
         self.name = name
@@ -510,8 +545,10 @@ class BaseAligner(BasePlugin):
 
 
 class ModuleManager():
-    def __init__(self, threads):
+    def __init__(self, threads, kill_list, job_list):
         self.threads = threads
+        self.kill_list = kill_list
+        self.job_list = job_list # Running jobs
         self.pmanager = PluginManager()
         self.pmanager.setPluginPlaces(["plugins"])
         self.pmanager.collectPlugins()

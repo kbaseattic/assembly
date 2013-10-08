@@ -2,6 +2,7 @@ import glob
 import logging
 import os
 import re
+import yaml
 from plugins import BasePreprocessor
 from yapsy.IPlugin import IPlugin
 
@@ -32,22 +33,45 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
         self.arast_popen(cmd_args)
 
         # Get processed reads
-        cpath = os.path.join(self.outpath, 'corrected')
-        file_info = open(os.path.join(cpath, 'dataset.info'))
-        
+
         processed_reads = []
-        for line in file_info:
-            l = line.split('\t')
-            if l[0] == 'paired_reads':
-                paired_files = re.split('\"|\s', l[1])
-                p1 = os.path.join(cpath, paired_files[1])
-                p2 = os.path.join(cpath, paired_files[3])
-                processed_reads.append({'files': [p1, p2],
-                                        'type': 'paired'})
-            elif l[0] == 'single_reads':
-                single_file = os.path.join(cpath,
-                                           re.split('\"|\s', l[1])[1])
-                processed_reads.append({'files': [single_file],
-                                        'type': 'single'})
+        cpath = os.path.join(self.outpath, 'corrected')
+        
+        # Older versions of spades
+        if os.path.exists(os.path.join(cpath, 'dataset.info')):
+            file_info = open(os.path.join(cpath, 'dataset.info'))
+
+            for line in file_info:
+                l = line.split('\t')
+                if l[0] == 'paired_reads':
+                    paired_files = re.split('\"|\s', l[1])
+                    p1 = os.path.join(cpath, paired_files[1])
+                    p2 = os.path.join(cpath, paired_files[3])
+                    processed_reads.append({'files': [p1, p2],
+                                            'type': 'paired'})
+                elif l[0] == 'single_reads':
+                    single_file = os.path.join(cpath,
+                                               re.split('\"|\s', l[1])[1])
+                    processed_reads.append({'files': [single_file],
+                                            'type': 'single'})
+        # Newer versions of spades
+        elif os.path.exists(os.path.join(cpath, 'corrected.yaml')):
+            info_file = open(os.path.join(cpath, 'corrected.yaml'))
+            cor = yaml.load(info_file)[0]
+            if 'left reads' in cor and 'right reads' in cor:
+                for i,left in enumerate(cor['left reads']):
+                    pair_info = {'files': [left, cor['right reads'][i]],
+                                 'type': 'paired'}
+                    
+                    # ## Try to preserve initial insert info if avail
+                    # try:
+                    #     pair_info['insert'] =  self.insert_info[i][0]
+                    #     pair_info['stdev'] =  self.insert_info[i][1]
+                    # except:
+                    #     pass
+                    processed_reads.append(pair_info)
+            if 'single reads' in cor:
+                for single in cor['single reads']:
+                    processed_reads.append({'files': [single], 'type': 'single'})
 
         return processed_reads

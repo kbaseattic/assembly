@@ -15,7 +15,7 @@ def download(url, node_id, outdir):
     print r
     print r.text
     res = json.loads(r.text)
-    filename = res['D']['file']['name']
+    filename = res['data']['file']['name']
     durl = url + "/node/%s?download" % node_id
     try:
         os.makedirs(outdir)
@@ -51,12 +51,17 @@ def get(url, user='assembly', password='service1234'):
 
 
 def curl_download_file(url, node_id, token, outdir=None):
-    cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
+    print 'downloading'
+    # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
+    #        '-X', 'GET', '{}/node/{}'.format(url, node_id)]
+
+    cmd = ['curl',
            '-X', 'GET', '{}/node/{}'.format(url, node_id)]
 
+    print cmd
 
     r = subprocess.check_output(cmd)
-    filename = json.loads(r)['D']['file']['name']
+    filename = json.loads(r)['data']['file']['name']
     if outdir:
         try:
             os.makedirs(outdir)
@@ -67,9 +72,13 @@ def curl_download_file(url, node_id, token, outdir=None):
     else:
         outdir = os.getcwd()
     d_url = '{}/node/{}?download'.format(url, node_id)
-    cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
-           '-o', filename, d_url]
+    # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
+    #        '-o', filename, d_url]
 
+    cmd = ['curl', 
+           '-o', filename, d_url]
+    
+    print "-".join(cmd) # FIXME: temp
     p = subprocess.Popen(cmd, cwd=outdir)
     p.wait()
     print "File downloaded: {}/{}".format(outdir, filename)
@@ -82,9 +91,13 @@ class Shock:
         self.token = token
 
     def curl_post_file(self, filename):
-        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+        cmd = ['curl', 
                '-X', 'POST', '-F', 'upload=@{}'.format(filename),
                '{}node/'.format(self.shockurl)]
+
+        # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+        #        '-X', 'POST', '-F', 'upload=@{}'.format(filename),
+        #        '{}node/'.format(self.shockurl)]
 
         ret = subprocess.check_output(cmd)
         res = json.loads(ret)
@@ -92,11 +105,12 @@ class Shock:
         return res
 
     def curl_download_file(self, node_id, outdir=None):
-        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+        cmd = ['curl', 
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+        print cmd
         r = subprocess.check_output(cmd)
         print r
-        filename = json.loads(r)['D']['file']['name']
+        filename = json.loads(r)['data']['file']['name']
         if outdir:
             try:
                 os.makedirs(outdir)
@@ -107,7 +121,7 @@ class Shock:
         else:
             outdir = os.getcwd()
         d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
-        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+        cmd = ['curl', 
                '-o', filename, d_url]
 
         p = subprocess.Popen(cmd, cwd=outdir)

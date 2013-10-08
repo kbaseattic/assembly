@@ -23,9 +23,9 @@ import ar_client.client as client
 import ar_client.config as conf
 from ar_client.auth_token import *
 
+import traceback
 
-
-my_version = '0.2.7'
+my_version = '0.3.0'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -40,8 +40,8 @@ p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', hel
 data_group = p_run.add_mutually_exclusive_group()
 p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
 data_group.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use")
-p_run.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline")
+p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
+p_run.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline. None will invoke automatic mode")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("-q", "--queue", action="store", dest="queue", help=argparse.SUPPRESS)
 data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
@@ -64,6 +64,8 @@ p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs
 # get
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
 p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, required=True, help="specify which job data to get")
+p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=False, const=True, help="Get assemblies only")
+p_get.add_argument("--stdout", action="store_true", help="Print assembly to stdout")
 
 p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
@@ -80,9 +82,9 @@ def upload(files):
             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
              #res = curl_post_file(url, f)
             res = aclient.upload_data_shock(f)
-            ids.append(res['D']['id'])
-            if res["E"] is not None:
-                sys.exit("Shock: err from server: %s" % res["E"][0])
+            ids.append(res['data']['id'])
+            if res["error"] is not None:
+                sys.exit("Shock: err from server: %s" % res["error"][0])
     return ids
 
 def main():
@@ -171,6 +173,9 @@ def main():
         if args.assemblers:
             args.pipeline = [(" ".join(args.assemblers))]
 
+        if not args.pipeline: # auto
+            args.pipeline = 'auto'
+
         if not ((args.pipeline) and (args.data_id or args.pair or args.single)):
             parser.print_usage()
             sys.exit()
@@ -239,10 +244,20 @@ def main():
                 time.sleep(2)			
 
     elif args.command == 'get':
-        try:
-            aclient.get_job_data(args.job_id[0])
-        except:
-            print 'Invalid job id'
+        if args.assembly:
+            try:
+                if type(args.assembly) is int:
+                    aclient.get_assemblies(job_id=args.job_id[0], asm_id=args.assembly, stdout=args.stdout)
+                else:
+                    aclient.get_assemblies(job_id=args.job_id[0], stdout=args.stdout)
+            except:
+                print traceback.format_tb(sys.exc_info()[2])
+                print sys.exc_info()
+        else:
+            try:
+                aclient.get_job_data(args.job_id[0])
+            except:
+                print 'Invalid job id'
 
     elif args.command == 'avail':
         try:

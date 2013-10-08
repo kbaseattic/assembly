@@ -17,13 +17,13 @@ class MetadataConnection:
         self.db = self.parser.get('meta', 'mongo.db')
         self.collection = self.parser.get('meta', 'mongo.collection')
         self.auth_collection = self.parser.get('meta', 'mongo.collection.auth')
-
+        
+        # Connect
+        self.connection = pymongo.Connection(self.host, self.port)
+        self.database = self.connection[self.db]
     def get_jobs(self):
         """Fetch approriate database and collection for jobs."""
-        connection = pymongo.Connection(self.host, self.port)
-        database = connection[self.db]
-        jobs = database[self.collection]
-        return jobs
+        return self.database[self.collection]
 
     def insert_job(self, data):
         jobs = self.get_jobs()
@@ -104,7 +104,7 @@ class MetadataConnection:
     def list_jobs(self, user):
         r = []
         jobs = self.get_jobs()
-        for j in jobs.find({'ARASTUSER':user}):
+        for j in jobs.find({'ARASTUSER':user}).sort('job_id', 1):
             r.append(j)
         return r
 

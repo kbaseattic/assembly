@@ -31,11 +31,12 @@ import shock
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, arasturl, config, threads, queue):
+    def __init__(self, shockurl, arasturl, config, threads, queue, kill_queue, job_list):
         self.parser = SafeConfigParser()
         self.parser.read(config)
+        self.job_list = job_list
         # Load plugins
-        self.pmanager = ModuleManager(threads)
+        self.pmanager = ModuleManager(threads, kill_queue, job_list)
 
     # Set up environment
         self.shockurl = shockurl
@@ -296,13 +297,15 @@ class ArastConsumer:
                     'out_report' : self.out_report})
 
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
-        
+        self.job_list.append(job_data)
         self.start_time = time.time()
         self.done_flag = threading.Event()
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
         timer_thread.start()
         
         download_ids = {}
+        contig_ids = {}
+
         url = "http://%s" % (self.shockurl)
         url += '/node'
         try:
@@ -311,17 +314,27 @@ class ArastConsumer:
             include_all_data = False
         contigs = not include_all_data
         status = ''
+
+        ## TODO CHANGE: default pipeline
+        default_pipe = ['velvet']
+
         if pipelines:
             try:
+                if pipelines == ['auto']:
+                    pipelines = [default_pipe,]
                 for p in pipelines:
                     self.pmanager.validate_pipe(p)
 
-                result_files, summary= self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                result_files, summary, contig_files = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
                 for f in result_files:
-                    print f
                     fname = os.path.basename(f).split('.')[0]
                     res = self.upload(url, user, token, f)
-                    download_ids[fname] = res['D']['id']
+                    download_ids[fname] = res['data']['id']
+                    
+                for c in contig_files:
+                    fname = os.path.basename(c).split('.')[0]
+                    res = self.upload(url, user, token, c)
+                    contig_ids[fname] = res['data']['id']
 
                 status += "pipeline [success] "
                 self.out_report.write("Pipeline completed successfully\n")
@@ -332,7 +345,11 @@ class ArastConsumer:
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
 
+
         # Format report
+        for i, job in enumerate(self.job_list):
+            if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
+                self.job_list.pop(i)
         self.done_flag.set()
         new_report = open('{}.tmp'.format(self.out_report_name), 'w')
         try:
@@ -347,12 +364,12 @@ class ArastConsumer:
         os.remove(self.out_report_name)
         shutil.move(new_report.name, self.out_report_name)
         res = self.upload(url, user, token, self.out_report_name)
-        download_ids['report'] = res['D']['id']
+        download_ids['report'] = res['data']['id']
 
         # Get location
         self.metadata.update_job(uid, 'result_data', download_ids)
+        self.metadata.update_job(uid, 'contig_ids', contig_ids)
         self.metadata.update_job(uid, 'status', status)
-
 
         print '=========== JOB COMPLETE ============'
 
@@ -681,7 +698,7 @@ class ArastConsumer:
         return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
                             contig_files, '{}_assemblies.tar.gz'.format(
                 job_data['job_id'])))
-        return return_files, summary
+        return return_files, summary, contig_files
 
 
     def upload(self, url, user, token, file):
@@ -710,22 +727,30 @@ class ArastConsumer:
         logging.basicConfig(format=("%(asctime)s %s %(levelname)-8s %(message)s",proc().name))
         print proc().name, ' [*] Fetching job...'
 
+        channel.basic_qos(prefetch_count=1)
         channel.basic_consume(self.callback,
-                              queue=self.queue,
-                              no_ack=True) #change?
+                              queue=self.queue)
+
 
         channel.start_consuming()
 
     def callback(self, ch, method, properties, body):
         print " [*] %r:%r" % (method.routing_key, body)
-        try:
-            self.compute(body)
-        except:
-            params = json.loads(body)
-            print sys.exc_info()
-            status = "[FAIL] {}".format(format_tb(sys.exc_info()[2]))
-            print logging.error(status)
-            self.metadata.update_job(params['job_id'], 'status', status)
+        params = json.loads(body)
+        job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
+        uid = job_doc['_id']
+        ## Check if job was not killed
+        if job_doc['status'] == 'Terminated':
+            print 'Job {} was killed, skipping'.format(params['job_id'])
+        else:
+            try:
+                self.compute(body)
+            except:
+                print sys.exc_info()
+                status = "[FAIL] {}".format(format_tb(sys.exc_info()[2]))
+                print logging.error(status)
+                self.metadata.update_job(uid, 'status', status)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def start(self):
         self.fetch_job()

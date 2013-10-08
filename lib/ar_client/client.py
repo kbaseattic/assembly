@@ -80,6 +80,31 @@ class Client:
             #print sys.exc_info()
             raise Exception("Error retrieving results")
         return 
+
+    def get_assemblies(self, job_id=None, asm_id=None, stdout=False):
+        if not job_id:
+            raise NotImplementedError('Job id required')
+        # Get node id
+        res = requests.get('http://{}/user/{}/job/{}/assembly'.format(
+                self.url, self.user, job_id), headers=self.headers)
+
+        # Download files
+        try:
+            nodes_map = json.loads(res.text)
+
+            if stdout: # Get first one and print
+                asm_file = self.shock.curl_download_file(nodes_map.values()[0])
+                with open(asm_file) as f:
+                    for line in f:
+                        print line
+            else:
+                for node_id in nodes_map.values():
+                    self.shock.curl_download_file(node_id)
+        except:
+            #print traceback.format_tb(sys.exc_info()[2])
+            #print sys.exc_info()
+            raise Exception("Error retrieving results")
+        return 
         
     def upload_data_shock(self, filename):
         return self.shock.curl_post_file(filename)
@@ -120,8 +145,12 @@ class Shock:
         self.token = token
 
     def curl_post_file(self, filename):
-        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-               '-X', 'POST', '-F', 'upload=@{}'.format(filename),
+        
+        # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+        #        '-X', 'POST', '-F', 'upload=@{}'.format(filename),
+        #        '{}node/'.format(self.shockurl)]
+
+        cmd = ['curl','-X', 'POST', '-F', 'upload=@{}'.format(filename),
                '{}node/'.format(self.shockurl)]
 
         ret = subprocess.check_output(cmd)
@@ -132,7 +161,7 @@ class Shock:
         cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
         r = subprocess.check_output(cmd)
-        filename = json.loads(r)['D']['file']['name']
+        filename = json.loads(r)['data']['file']['name']
         if outdir:
             try:
                 os.makedirs(outdir)

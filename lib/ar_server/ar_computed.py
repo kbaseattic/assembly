@@ -9,6 +9,7 @@ import argparse
 import sys
 import daemon
 import logging
+import json
 import pymongo
 import multiprocessing
 import pika
@@ -21,6 +22,9 @@ import shock
 #TODO change to log file
 
 #with context:
+mgr = multiprocessing.Manager()
+job_list = mgr.list()
+kill_list = mgr.list()
 
 def start(arast_server, config, num_threads, queue):
     # Read config file
@@ -63,16 +67,50 @@ def start(arast_server, config, num_threads, queue):
     if res is not None:
         print " [x] Shock connection successful"
 
+
+    ## Start Monitor Thread
+    kill_process = multiprocessing.Process(name='killd', target=start_kill_monitor,
+                                           args=(arasturl,))
+    kill_process.start()
+
     workers = []
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
-        compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads, queue)
+        compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads, 
+                                        queue, kill_list, job_list)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
         workers.append(p)
         p.start()
-        #self.fetch_job(self.parser.get('rabbitmq','job.medium'))
     workers[0].join()
+
+def start_kill_monitor(arasturl):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host = arasturl))
+    channel = connection.channel()
+    channel.exchange_declare(exchange='kill',
+                             type='fanout')
+    result = channel.queue_declare(exclusive=True)
+    queue_name = result.method.queue
+    channel.queue_bind(exchange='kill',
+                       queue=queue_name)
+    print ' [*] Waiting for kill commands'
+    channel.basic_consume(kill_callback,
+                          queue=queue_name,
+                          no_ack=True)
+
+    channel.start_consuming()
+
+def kill_callback(ch, method, properties, body):
+        print " [x] %r" % (body,)
+        kill_request = json.loads(body)
+        print 'job_list:', job_list
+        for job_data in job_list:
+            if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
+                print 'on this node'
+                kill_list.append(kill_request)
+
+
 
 
 parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command -h" for more information about a command.')
