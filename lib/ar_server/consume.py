@@ -314,8 +314,14 @@ class ArastConsumer:
             include_all_data = False
         contigs = not include_all_data
         status = ''
+
+        ## TODO CHANGE: default pipeline
+        default_pipe = ['velvet']
+
         if pipelines:
             try:
+                if pipelines == ['auto']:
+                    pipelines = [default_pipe,]
                 for p in pipelines:
                     self.pmanager.validate_pipe(p)
 
