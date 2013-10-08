@@ -91,8 +91,15 @@ class Client:
         # Download files
         try:
             nodes_map = json.loads(res.text)
-            for node_id in nodes_map.values():
-                self.shock.curl_download_file(node_id)
+
+            if stdout: # Get first one and print
+                asm_file = self.shock.curl_download_file(nodes_map.values()[0])
+                with open(asm_file) as f:
+                    for line in f:
+                        print line
+            else:
+                for node_id in nodes_map.values():
+                    self.shock.curl_download_file(node_id)
         except:
             #print traceback.format_tb(sys.exc_info()[2])
             #print sys.exc_info()
