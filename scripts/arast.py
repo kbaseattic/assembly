@@ -65,6 +65,7 @@ p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
 p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, required=True, help="specify which job data to get")
 p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=False, const=True, help="Get assemblies only")
+p_get.add_argument("--stdout", action="store_true", help="Print assembly to stdout")
 
 p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
@@ -243,9 +244,9 @@ def main():
         if args.assembly:
             try:
                 if type(args.assembly) is int:
-                    aclient.get_assemblies(job_id=args.job_id[0], asm_id=args.assembly)
+                    aclient.get_assemblies(job_id=args.job_id[0], asm_id=args.assembly, stdout=args.stdout)
                 else:
-                    aclient.get_assemblies(job_id=args.job_id[0])
+                    aclient.get_assemblies(job_id=args.job_id[0], stdout=args.stdout)
             except:
                 print traceback.format_tb(sys.exc_info()[2])
                 print sys.exc_info()
