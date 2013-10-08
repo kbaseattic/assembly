@@ -457,7 +457,7 @@ class ModuleResource:
     @cherrypy.expose
     def default(self, module_name="avail", *args, **kwargs):
         print module_name
-        if module_name == 'avail':
+        if module_name == 'avail' or module_name == 'all':
             with open(parser.get('web', 'ar_modules')) as outfile:
                 return outfile.read()
         return module_name

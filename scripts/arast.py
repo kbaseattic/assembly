@@ -25,7 +25,7 @@ from ar_client.auth_token import *
 
 import traceback
 
-my_version = '0.3.0'
+my_version = '0.3.1'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -261,7 +261,9 @@ def main():
 
     elif args.command == 'avail':
         try:
-            print aclient.get_available_modules()
+            mods = json.loads(aclient.get_available_modules())
+            for mod in mods:
+                print mod['module']
         except:
             print 'Error getting available modules'
 
