@@ -88,20 +88,20 @@ class Shock:
         self.shockurl = shockurl
         self.user = user
         self.token = token
+        self.attrs = {'user': user}
 
-    def curl_post_file(self, filename):
-        cmd = ['curl', 
-               '-X', 'POST', '-F', 'upload=@{}'.format(filename),
-               '{}node/'.format(self.shockurl)]
+    def upload_reads(self, filename):
+        return self._curl_post_file(filename, filetype='reads')
 
-        # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-        #        '-X', 'POST', '-F', 'upload=@{}'.format(filename),
-        #        '{}node/'.format(self.shockurl)]
+    def upload_contigs(self, filename):
+        return self._curl_post_file(filename, filetype='contigs')
 
-        ret = subprocess.check_output(cmd)
-        res = json.loads(ret)
-        print res
-        return res
+    def upload_results(self, filename):
+        return self._curl_post_file(filename, filetype='reads')
+
+    def upload_misc(self, filename, ftype):
+        return self._curl_post_file(filename, filetype=ftype)
+
 
     def curl_download_file(self, node_id, outdir=None):
         cmd = ['curl', 
@@ -132,3 +132,25 @@ class Shock:
             return downloaded
         else:
             raise Exception ('Data does not exist')
+
+    def create_attr_file(self, attrs, outname):
+        """ Writes to attr OUTFILE from dict of attrs """ 
+        outjson = os.path.join(os.getcwd(), outname) + ".json"
+        with open(outjson, 'w') as f:
+            f.write(json.dumps(attrs))
+        return outjson
+
+    ######## Internal Methods ##############
+
+    def _curl_post_file(self, filename, filetype=''):
+        tmp_attr = dict(self.attrs)
+        tmp_attr['filetype'] = filetype
+        attr_file = self.create_attr_file(tmp_attr, 'attrs')
+        cmd = ['curl', 
+               '-X', 'POST', 
+               '-F', 'attributes=@{}'.format(attr_file),
+               '-F', 'upload=@{}'.format(filename),
+               '{}node/'.format(self.shockurl)]
+        ret = subprocess.check_output(cmd)
+        res = json.loads(ret)
+        return res
