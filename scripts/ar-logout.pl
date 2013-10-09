@@ -9,7 +9,7 @@ my $usage = <<End_of_Usage;
 
 Usage: ar_logout  [-h] 
 
-Log out.
+Log out in shell.
 
 End_of_Usage
 
