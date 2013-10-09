@@ -7,19 +7,16 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_stat [-h] [-w] [-d [FILES] | -j STAT_JOB] [-n STAT_N] [-s server_addr]
+Usage: ar-stat [-h] [-w] [-d [FILES] | -j STAT_JOB] [-n STAT_N] [-s server_addr]
 
 Query status of running jobs
 
-optional arguments:
+Optional arguments:
   -h, --help            show this help message and exit
-  -w, --watch           monitor in realtime
-  -d [FILES], --data [FILES]
-                        list latest or data-id specific files
-  -j STAT_JOB, --job STAT_JOB
-                        display job status
+  -j JOB, --job JOB     get status of specific job
   -n STAT_N             specify number of records to show
   -s server_addr        specify ARAST server address
+  -w, --watch           monitor in realtime (only works in Linus and Mac shell)
 
 End_of_Usage
 
