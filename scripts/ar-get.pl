@@ -7,17 +7,18 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_get [-h] -j JOB_ID [-a [ASSEMBLERS [ASSEMBLERS ...]]] [-s server_addr]
+Usage: ar_get [-h] -j JOB_ID [-a [ASSEMBLY]] [--stdout] [-s server_addr]
 
 Download result data
 
-optional arguments:
+Optional arguments:
   -h, --help            show this help message and exit
   -j JOB_ID, --job JOB_ID
                         specify which job data to get
-  -a [ASSEMBLERS [ASSEMBLERS ...]], --assemblers [ASSEMBLERS [ASSEMBLERS ...]]
-                        specify which assembly data to get
+  -a [ASSEMBLY], --assembly [ASSEMBLY]
+                        get assemblies only
   -s server_addr        specify ARAST server address
+  --stdout              print assembly to stdout
 
 End_of_Usage
 
