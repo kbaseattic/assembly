@@ -7,18 +7,12 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_get [-h] -j JOB_ID [-a [ASSEMBLY]] [--stdout] [-s server_addr]
+Usage: ar_avail [-h]
 
-Download result data
+List available AssemblyRAST modules
 
 Optional arguments:
-  -h, --help            show this help message and exit
-  -j JOB_ID, --job JOB_ID
-                        specify which job data to get
-  -a [ASSEMBLY], --assembly [ASSEMBLY]
-                        get assembled contigs only
-  -s server_addr        specify ARAST server address
-  --stdout              print assembled contigs in FASTA to stdout
+  -h, --help  show this help message and exit
 
 End_of_Usage
 
@@ -41,5 +35,5 @@ if ($help) {
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-system "$arast get @ARGV";
+system "$arast avail @ARGV";
                     
