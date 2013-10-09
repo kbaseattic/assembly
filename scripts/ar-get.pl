@@ -49,8 +49,10 @@ system "$arast get -j $jobid @ARGV";
                     
 if ($ENV{KB_RUNNING_IN_IRIS}) {
     my $dir = "AR$jobid";
-    system "mkdir -p $dir";
-    system "tar xf $jobid\_ctg_qst.tar.gz -C $dir";
-    system "tar xf $jobid\_assemblies.tar.gz -C $dir";
-    print "Contig FASTA files and reports saved in $dir\n";
+    my @tarballs = map { $jobid . "_$_" } qw(ctg_qst.tar.gz assemblies.tar.gz);
+    for my $f (@tarballs) {
+        system "mkdir -p $dir";
+        system "tar xf $f -C $dir";
+    }
+    print "Contig FASTA files and reports saved in $dir\n" if @tarballs > 0;
 }
