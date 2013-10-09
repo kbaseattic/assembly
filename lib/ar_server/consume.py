@@ -304,6 +304,8 @@ class ArastConsumer:
         timer_thread.start()
         
         download_ids = {}
+        contig_ids = {}
+
         url = "http://%s" % (self.shockurl)
         url += '/node'
         try:
@@ -312,17 +314,27 @@ class ArastConsumer:
             include_all_data = False
         contigs = not include_all_data
         status = ''
+
+        ## TODO CHANGE: default pipeline
+        default_pipe = ['velvet']
+
         if pipelines:
             try:
+                if pipelines == ['auto']:
+                    pipelines = [default_pipe,]
                 for p in pipelines:
                     self.pmanager.validate_pipe(p)
 
-                result_files, summary= self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                result_files, summary, contig_files = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
                 for f in result_files:
-                    print f
                     fname = os.path.basename(f).split('.')[0]
                     res = self.upload(url, user, token, f)
                     download_ids[fname] = res['data']['id']
+                    
+                for c in contig_files:
+                    fname = os.path.basename(c).split('.')[0]
+                    res = self.upload(url, user, token, c)
+                    contig_ids[fname] = res['data']['id']
 
                 status += "pipeline [success] "
                 self.out_report.write("Pipeline completed successfully\n")
@@ -356,6 +368,7 @@ class ArastConsumer:
 
         # Get location
         self.metadata.update_job(uid, 'result_data', download_ids)
+        self.metadata.update_job(uid, 'contig_ids', contig_ids)
         self.metadata.update_job(uid, 'status', status)
 
         print '=========== JOB COMPLETE ============'
@@ -685,7 +698,7 @@ class ArastConsumer:
         return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
                             contig_files, '{}_assemblies.tar.gz'.format(
                 job_data['job_id'])))
-        return return_files, summary
+        return return_files, summary, contig_files
 
 
     def upload(self, url, user, token, file):
