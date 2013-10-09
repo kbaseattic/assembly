@@ -7,7 +7,7 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_avail [-h]
+Usage: ar-avail [-h]
 
 List available AssemblyRAST modules
 
