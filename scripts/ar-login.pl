@@ -7,7 +7,7 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_login  [-h]
+Usage: ar-login  [-h]
 
 Authenticate in shell with username and password, or switch account if already logged in.
 
