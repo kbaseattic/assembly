@@ -30,6 +30,7 @@ sub login {
 }
 
 sub avail {
+    print "List available assembler and preprocessing modules..\n";
     my $command = "ar-avail -s $ENV{ARASTURL}";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
