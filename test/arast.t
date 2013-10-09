@@ -84,8 +84,14 @@ sub get {
     }
 
     if ($done) {
-        print "Get results for completed job $jobid..\n";
+        print "Get full results for completed job $jobid..\n";
         $command = "ar-get -s $ENV{ARASTURL} -j $jobid";
+        eval {!system($command) or die $!;};
+        ok(!$@, (caller(0))[3]);
+        diag("unable to run $command") if $@;
+
+        print "Get assembled contigs in FASTA for completed job $jobid..\n";
+        $command = "ar-get -s $ENV{ARASTURL} -j $jobid -a --stdout > contigs_$jobid.fa";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
