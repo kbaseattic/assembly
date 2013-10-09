@@ -7,7 +7,7 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_get [-h] -j JOB_ID [-a [ASSEMBLY]] [--stdout] [-s server_addr]
+Usage: ar-get [-h] -j JOB_ID [-a [ASSEMBLY]] [--stdout] [-s server_addr]
 
 Download result data
 

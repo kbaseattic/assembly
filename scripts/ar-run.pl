@@ -7,7 +7,7 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_run  [-h] [-f [SINGLE [SINGLE ...]]] [-r [REFERENCE [REFERENCE ...]]]
+Usage: ar-run  [-h] [-f [SINGLE [SINGLE ...]]] [-r [REFERENCE [REFERENCE ...]]]
                     [-a [ASSEMBLERS [ASSEMBLERS ...]]] [-p [PIPELINE [PIPELINE ...]]]
                     [--pair [PAIR [PAIR ...]]] [--single [SINGLE [SINGLE ...]]] 
                     [-m MESSAGE] [--data DATA_ID]
