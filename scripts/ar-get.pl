@@ -24,15 +24,19 @@ End_of_Usage
 
 my $help;
 my $server;
+my $jobid;
 
 my $rc = GetOptions("h|help" => \$help,
-                    "s=s" => \$server);
+                    "s=s" => \$server,
+                    "j|job=i" => \$jobid);
 
 $rc or die $usage;
 if ($help) {
     print $usage;
     exit 0;
 }
+
+$jobid or die $usage;
 
 # my $target = $ENV{HOME}. "/kb/assembly";
 # my $arast  = "ar_client/ar_client/ar_client.py";
@@ -41,7 +45,9 @@ if ($help) {
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-system "$arast get @ARGV";
+system "$arast get -j $jobid @ARGV";
                     
-if () {
+if ($ENV{KB_RUNNING_IN_IRIS}) {
+    system "tar xf $jobid\_ctg_qst.tar.gz";
+    system "tar xf $jobid\_assemblies.tar.gz";
 }
