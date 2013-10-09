@@ -49,7 +49,7 @@ system "$arast get -j $jobid @ARGV";
                     
 if ($ENV{KB_RUNNING_IN_IRIS}) {
     my $dir = "AR$jobid";
-    my @tarballs = map { $jobid . "_$_" } qw(ctg_qst.tar.gz assemblies.tar.gz);
+    my @tarballs = grep { -s $_ } map { $jobid . "_$_" } qw(ctg_qst.tar.gz assemblies.tar.gz);
     for my $f (@tarballs) {
         system "mkdir -p $dir";
         system "tar xf $f -C $dir";
