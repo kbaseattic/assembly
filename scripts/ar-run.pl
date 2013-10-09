@@ -7,30 +7,32 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_run  [-h] [-f [SINGLE [SINGLE ...]]]
-                    [-a [PIPELINE [PIPELINE ...]]]
-                    [-p [PIPELINE [PIPELINE ...]]] [-m MESSAGE]
-                    [--data DATA_ID] [--pair [PAIR [PAIR ...]]]
-                    [--single [SINGLE [SINGLE ...]]]
+Usage: ar_run  [-h] [-f [SINGLE [SINGLE ...]]] [-r [REFERENCE [REFERENCE ...]]]
+                    [-a [ASSEMBLERS [ASSEMBLERS ...]]] [-p [PIPELINE [PIPELINE ...]]]
+                    [--pair [PAIR [PAIR ...]]] [--single [SINGLE [SINGLE ...]]] 
+                    [-m MESSAGE] [--data DATA_ID]
                     [-s server_addr]
 
 Run an Assembly RAST job
 
-optional arguments:
+Optional arguments:
   -h, --help            show this help message and exit
+  -a [ASSEMBLERS [ASSEMBLERS ...]], --assemblers [ASSEMBLERS [ASSEMBLERS ...]]
+                        specify assemblers to use. None will invoke automatic mode
   -f [SINGLE [SINGLE ...]]
                         specify sequence file(s)
-  -a [PIPELINE [PIPELINE ...]], --assemblers [PIPELINE [PIPELINE ...]]
-  -p [PIPELINE [PIPELINE ...]], --pipeline [PIPELINE [PIPELINE ...]]
-                        Pipeline
   -m MESSAGE, --message MESSAGE
                         Attach a description to job
+  -p [PIPELINE [PIPELINE ...]], --pipeline [PIPELINE [PIPELINE ...]]
+                        invoke a pipeline. None will invoke automatic mode
+  -r [REFERENCE [REFERENCE ...]], --reference [REFERENCE [REFERENCE ...]]
+                        specify sequence file(s)
+  -s server_addr        Specify ARAST server address
   --data DATA_ID        Reuse uploaded data
   --pair [PAIR [PAIR ...]]
                         Specify a paired-end library and parameters
   --single [SINGLE [SINGLE ...]]
                         Specify a single end file and parameters
-  -s server_addr        Specify ARAST server address
 
 End_of_Usage
 
