@@ -16,7 +16,7 @@ Optional arguments:
   -j JOB_ID, --job JOB_ID
                         specify which job data to get
   -a [ASSEMBLY], --assembly [ASSEMBLY]
-                        get assembled contigs only
+                        get contigs for the i-th assembly only
   -s server_addr        specify ARAST server address
   --stdout              print assembled contigs in FASTA to stdout
 
