@@ -7,7 +7,7 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar_logout  [-h] 
+Usage: ar-logout  [-h] 
 
 Log out in shell.
 
