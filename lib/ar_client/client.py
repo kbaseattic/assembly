@@ -150,24 +150,17 @@ class Shock:
         #        '-X', 'POST', '-F', 'upload=@{}'.format(filename),
         #        '{}node/'.format(self.shockurl)]
 
-        if "KB_RUNNING_IN_IRIS" in os.environ:
-            cmd = ['curl','-s','-X', 'POST', '-F', 'upload=@{}'.format(filename),
-                   '{}node/'.format(self.shockurl)]
-        else:
-            cmd = ['curl','-X', 'POST', '-F', 'upload=@{}'.format(filename),
-                   '{}node/'.format(self.shockurl)]
+        cmd = ['curl','-X', 'POST', '-F', 'upload=@{}'.format(filename),
+               '{}node/'.format(self.shockurl)]
 
         ret = subprocess.check_output(cmd)
         res = json.loads(ret)
         return res
 
     def curl_download_file(self, node_id, outdir=None):
-        if "KB_RUNNING_IN_IRIS" in os.environ:
-            cmd = ['curl', '-s', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-                   '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
-        else:
-            cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-                   '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+               '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+
         r = subprocess.check_output(cmd)
         filename = json.loads(r)['data']['file']['name']
         if outdir:
