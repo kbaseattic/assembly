@@ -95,6 +95,7 @@ sub get {
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
+        $testCount++;
     }
 
     my $invalid_id = '999999999999999999';
