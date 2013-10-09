@@ -16,7 +16,7 @@ Optional arguments:
   -j JOB, --job JOB     get status of specific job
   -n STAT_N             specify number of records to show
   -s server_addr        specify ARAST server address
-  -w, --watch           monitor in realtime (only works in Linus and Mac shell)
+  -w, --watch           monitor in realtime (only works in Linux and Mac shell)
 
 End_of_Usage
 
