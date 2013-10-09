@@ -181,8 +181,13 @@ class Shock:
         else:
             outdir = os.getcwd()
         d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
-        cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-               '-o', filename, d_url]
+
+        if "KB_RUNNING_IN_IRIS" in os.environ:
+            cmd = ['curl', '-s', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+                   '-o', filename, d_url]
+        else:
+            cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
+                   '-o', filename, d_url]
 
         p = subprocess.Popen(cmd, cwd=outdir)
         p.wait()
