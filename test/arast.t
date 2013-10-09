@@ -10,7 +10,7 @@ $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 my $testCount = 0;
 
 # keep adding tests to this list
-my @tests = qw(setup run stat get prep);
+my @tests = qw(setup avail run stat get prep);
 
 foreach my $test (@tests) {
     &$test();
@@ -24,6 +24,13 @@ teardown();
 
 sub login {
     my $command = "ar-login";
+    eval {!system($command) or die $!;};
+    ok(!$@, (caller(0))[3]);
+    diag("could not execute $command") if $@;
+}
+
+sub avail {
+    my $command = "ar-avail -s $ENV{ARASTURL}";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
