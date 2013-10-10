@@ -121,7 +121,7 @@ class Client:
             url = 'http://{}/user/{}/job/status?records={}'.format(
                 self.url, self.user, stat_n)
         r = requests.get(url, headers=self.headers)
-        return r.text
+        return r.content
 
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
