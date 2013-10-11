@@ -71,12 +71,11 @@ class Client:
         # Get node id
         res = requests.get('http://{}/user/{}/job/{}/shock_node'.format(
                 self.url, self.user, job_id), headers=self.headers)
-
         # Download files
         try:
             nodes_map = json.loads(res.text)
             for node_id in nodes_map.values():
-                self.shock.curl_download_file(node_id)
+                self.shock.download_file(node_id)
         except:
             #print traceback.format_tb(sys.exc_info()[2])
             #print sys.exc_info()
@@ -114,7 +113,7 @@ class Client:
     def submit_job(self, data):
         url = 'http://{}/user/{}/job/new'.format(self.url, self.user)
         r = requests.post(url, data=data, headers=self.headers)
-        return r.text
+        return r.content
 
     def get_job_status(self, stat_n, job_id=None):
         if job_id:
@@ -123,12 +122,12 @@ class Client:
             url = 'http://{}/user/{}/job/status?records={}'.format(
                 self.url, self.user, stat_n)
         r = requests.get(url, headers=self.headers)
-        return r.text
+        return r.content
 
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
         r = requests.get(url, headers=self.headers)
-        return r.text
+        return r.content
 
     def kill_jobs(self, job_id=None):
         if job_id:
@@ -137,47 +136,5 @@ class Client:
             url = 'http://{}/user/{}/job/all/kill'.format(
                 self.url, self.user)
         r = requests.get(url, headers=self.headers)
-        return r.text
+        return r.content
 
-
-# class Shock:
-#     def __init__(self, shockurl, user, token):
-#         self.shockurl = shockurl
-#         self.user = user
-#         self.token = token
-
-#     def curl_post_file(self, filename):
-        
-#         # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-#         #        '-X', 'POST', '-F', 'upload=@{}'.format(filename),
-#         #        '{}node/'.format(self.shockurl)]
-
-#         cmd = ['curl','-X', 'POST', '-F', 'upload=@{}'.format(filename),
-#                '{}node/'.format(self.shockurl)]
-
-#         ret = subprocess.check_output(cmd)
-#         res = json.loads(ret)
-#         return res
-
-#     def curl_download_file(self, node_id, outdir=None):
-#         cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-#                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
-#         r = subprocess.check_output(cmd)
-#         filename = json.loads(r)['data']['file']['name']
-#         if outdir:
-#             try:
-#                 os.makedirs(outdir)
-#             except:
-#                 pass
-#                 #raise Exception('Unable to create download directory:\n{}'.format(outdir))
-
-#         else:
-#             outdir = os.getcwd()
-#         d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
-#         cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-#                '-o', filename, d_url]
-
-#         p = subprocess.Popen(cmd, cwd=outdir)
-#         p.wait()
-#         print "File downloaded: {}/{}".format(outdir, filename)
-#         return os.path.join(outdir, filename)
