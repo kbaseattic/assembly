@@ -333,7 +333,7 @@ class ArastConsumer:
                     
                 for c in contig_files:
                     fname = os.path.basename(c).split('.')[0]
-                    res = self.upload(url, user, token, c)
+                    res = self.upload(url, user, token, c, filetype='contigs')
                     contig_ids[fname] = res['data']['id']
 
                 status += "pipeline [success] "
@@ -701,12 +701,15 @@ class ArastConsumer:
         return return_files, summary, contig_files
 
 
-    def upload(self, url, user, token, file):
+    def upload(self, url, user, token, file, filetype='default'):
         files = {}
         files["file"] = (os.path.basename(file), open(file, 'rb'))
         logging.debug("Message sent to shock on upload: %s" % files)
         sclient = shock.Shock(url, user, token)
-        res = sclient.curl_post_file(file)
+        if filetype == 'default':
+            res = sclient.upload_misc(file, 'default')
+        elif filetype == 'contigs':
+            res = sclient.upload_contigs(file)
         return res
 
     def download(self, url, user, token, node_id, outdir):
