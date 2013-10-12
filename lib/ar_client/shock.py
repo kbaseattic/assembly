@@ -7,82 +7,82 @@ import os
 import subprocess
 import StringIO
 
-# def download(url, node_id, outdir):
-#     logging.info("Downloading id: %s" % node_id)
-#     u = url
-#     u += "/node/%s" % node_id
-#     print u
-#     r = get(u)
-#     print r
-#     print r.text
-#     res = json.loads(r.text)
-#     filename = res['data']['file']['name']
-#     durl = url + "/node/%s?download" % node_id
-#     try:
-#         os.makedirs(outdir)
-#     except:
-#         pass
-#     dfile = outdir + filename
-#     print dfile
-#     r = get(durl)
-#     with open(dfile, "wb") as code:
-#         code.write(r.content)
-#     logging.info("File downloaded: %s" % dfile)
-#     print "File downloaded: %s" % dfile
-#     return dfile
+def download(url, node_id, outdir):
+    logging.info("Downloading id: %s" % node_id)
+    u = url
+    u += "/node/%s" % node_id
+    print u
+    r = get(u)
+    print r
+    print r.text
+    res = json.loads(r.text)
+    filename = res['data']['file']['name']
+    durl = url + "/node/%s?download" % node_id
+    try:
+        os.makedirs(outdir)
+    except:
+        pass
+    dfile = outdir + filename
+    print dfile
+    r = get(durl)
+    with open(dfile, "wb") as code:
+        code.write(r.content)
+    logging.info("File downloaded: %s" % dfile)
+    print "File downloaded: %s" % dfile
+    return dfile
 
-# def post(url, files, user, password):
-# 	r = None
-# 	if user and password:
-#             r = requests.post(url, auth=(user, password), files=files)
-# 	else:
-#             r = requests.post(url, files=files)
+def post(url, files, user, password):
+	r = None
+	if user and password:
+            r = requests.post(url, auth=(user, password), files=files)
+	else:
+            r = requests.post(url, files=files)
 
-#         res = json.loads(r.text)
-#         logging.info(r.text)
-# 	return res
+        res = json.loads(r.text)
+        logging.info(r.text)
+	return res
 
 
-# def get(url, user='assembly', password='service1234'):
+def get(url, user='assembly', password='service1234'):
     
-#     r = None
-#     r = requests.get(url, auth=(user, password), timeout=20)       
+    r = None
+    r = requests.get(url, auth=(user, password), timeout=20)       
 
-#     return r
+    return r
 
 
-# def curl_download_file(url, node_id, token, outdir=None):
-#     print 'downloading'
-#     # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
-#     #        '-X', 'GET', '{}/node/{}'.format(url, node_id)]
+def curl_download_file(url, node_id, token, outdir=None):
+    print 'downloading'
+    # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
+    #        '-X', 'GET', '{}/node/{}'.format(url, node_id)]
 
-#     cmd = ['curl',
-#            '-X', 'GET', '{}/node/{}'.format(url, node_id)]
+    cmd = ['curl',
+           '-X', 'GET', '{}/node/{}'.format(url, node_id)]
 
-#     print cmd
+    print cmd
 
-#     r = subprocess.check_output(cmd)
-#     filename = json.loads(r)['data']['file']['name']
-#     if outdir:
-#         try:
-#             os.makedirs(outdir)
-#         except:
-#             pass
-#             #raise Exception('Unable to create download directory:\n{}'.format(outdir))
+    r = subprocess.check_output(cmd)
+    filename = json.loads(r)['data']['file']['name']
+    if outdir:
+        try:
+            os.makedirs(outdir)
+        except:
+            pass
+            #raise Exception('Unable to create download directory:\n{}'.format(outdir))
         
-#     else:
-#         outdir = os.getcwd()
-#     d_url = '{}/node/{}?download'.format(url, node_id)
-#     # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
-#     #        '-o', filename, d_url]
+    else:
+        outdir = os.getcwd()
+    d_url = '{}/node/{}?download'.format(url, node_id)
+    # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
+    #        '-o', filename, d_url]
 
-#     cmd = ['curl', 
-#            '-o', filename, d_url]
+    cmd = ['curl', 
+           '-o', filename, d_url]
 
-#     p = subprocess.Popen(cmd, cwd=outdir)
-#     p.wait()
-#     print "File downloaded: {}/{}".format(outdir, filename)
-#     return os.path.join(outdir, filename)
+    p = subprocess.Popen(cmd, cwd=outdir)
+    p.wait()
+    print "File downloaded: {}/{}".format(outdir, filename)
+    return os.path.join(outdir, filename)
 
 class Shock:
     def __init__(self, shockurl, user, token):
