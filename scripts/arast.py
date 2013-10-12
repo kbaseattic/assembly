@@ -85,6 +85,9 @@ def upload(files):
             ids.append(res['data']['id'])
             if res["error"] is not None:
                 sys.exit("Shock: err from server: %s" % res["error"][0])
+            else:
+                sys.stderr.write( "Uploaded: %s...\n" % os.path.basename(f))
+
     return ids
 
 def main():

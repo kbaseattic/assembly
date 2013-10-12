@@ -92,8 +92,20 @@ class Shock:
         self.token = token
         self.attrs = {'user': user}
 
+<<<<<<< HEAD
     def upload_reads(self, filename):
         return self._post_file(filename, filetype='reads')
+=======
+    def curl_post_file(self, filename):
+        if "KB_RUNNING_IN_IRIS" in os.environ:
+            cmd = ['curl', 
+                   '-X', '-s', 'POST', '-F', 'upload=@{}'.format(filename),
+                   '{}node/'.format(self.shockurl)]
+        else: 
+            cmd = ['curl', 
+                   '-X', 'POST', '-F', 'upload=@{}'.format(filename),
+                   '{}node/'.format(self.shockurl)]
+>>>>>>> 34a61bf574cb5693c53c3e2e5403a5fcc2bd289b
 
     def upload_contigs(self, filename):
         return self._post_file(filename, filetype='contigs')
@@ -106,8 +118,18 @@ class Shock:
 
 
     def curl_download_file(self, node_id, outdir=None):
+<<<<<<< HEAD
         cmd = ['curl', 
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+=======
+        if "KB_RUNNING_IN_IRIS" in os.environ:
+            cmd = ['curl', 
+                   '-X', '-s', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+        else:
+            cmd = ['curl', 
+                   '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+        print cmd
+>>>>>>> 34a61bf574cb5693c53c3e2e5403a5fcc2bd289b
         r = subprocess.check_output(cmd)
         filename = json.loads(r)['data']['file']['name']
         if outdir:

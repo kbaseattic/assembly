@@ -137,4 +137,3 @@ class Client:
                 self.url, self.user)
         r = requests.get(url, headers=self.headers)
         return r.content
-
