@@ -7,16 +7,12 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar-stat [-h] [-w] [-d [FILES] | -j STAT_JOB] [-n STAT_N] [-s server_addr]
+Usage: ar-avail [-h]
 
-Query status of running jobs
+List available AssemblyRAST modules
 
 Optional arguments:
-  -h, --help            show this help message and exit
-  -j JOB, --job JOB     get status of specific job
-  -n STAT_N             specify number of records to show
-  -s server_addr        specify ARAST server address
-  -w, --watch           monitor in realtime (only works in Linux and Mac shell)
+  -h, --help  show this help message and exit
 
 End_of_Usage
 
@@ -34,11 +30,10 @@ if ($help) {
 
 # my $target = $ENV{HOME}. "/kb/assembly";
 # my $arast  = "ar_client/ar_client/ar_client.py";
-# system "$target/$arast stat @ARGV";
-
+# system "$target/$arast get @ARGV";
 
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-system "$arast stat @ARGV";
+system "$arast avail @ARGV";
                     

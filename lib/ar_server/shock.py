@@ -5,6 +5,7 @@ import requests
 import json
 import os
 import subprocess
+import StringIO
 
 def download(url, node_id, outdir):
     logging.info("Downloading id: %s" % node_id)
@@ -89,27 +90,42 @@ class Shock:
         self.shockurl = shockurl
         self.user = user
         self.token = token
+        self.attrs = {'user': user}
+
+
+    def upload_reads(self, filename):
+        return self._post_file(filename, filetype='reads')
 
     def curl_post_file(self, filename):
-        cmd = ['curl', 
-               '-X', 'POST', '-F', 'upload=@{}'.format(filename),
-               '{}node/'.format(self.shockurl)]
+        if "KB_RUNNING_IN_IRIS" in os.environ:
+            cmd = ['curl', 
+                   '-X', '-s', 'POST', '-F', 'upload=@{}'.format(filename),
+                   '{}node/'.format(self.shockurl)]
+        else: 
+            cmd = ['curl', 
+                   '-X', 'POST', '-F', 'upload=@{}'.format(filename),
+                   '{}node/'.format(self.shockurl)]
 
-        # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(self.token),
-        #        '-X', 'POST', '-F', 'upload=@{}'.format(filename),
-        #        '{}node/'.format(self.shockurl)]
+    def upload_contigs(self, filename):
+        return self._post_file(filename, filetype='contigs')
 
-        ret = subprocess.check_output(cmd)
-        res = json.loads(ret)
-        print res
-        return res
+    def upload_results(self, filename):
+        return self._post_file(filename, filetype='reads')
+
+    def upload_misc(self, filename, ftype):
+        return self._post_file(filename, filetype=ftype)
+
 
     def curl_download_file(self, node_id, outdir=None):
-        cmd = ['curl', 
-               '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+        if "KB_RUNNING_IN_IRIS" in os.environ:
+            cmd = ['curl', 
+                   '-X', '-s', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+        else:
+            cmd = ['curl', 
+                   '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
         print cmd
+
         r = subprocess.check_output(cmd)
-        print r
         filename = json.loads(r)['data']['file']['name']
         if outdir:
             try:
@@ -133,3 +149,75 @@ class Shock:
             return downloaded
         else:
             raise Exception ('Data does not exist')
+
+    def download_file(self, node_id, outdir=None):
+        r = requests.get('{}/node/{}'.format(self.shockurl, node_id))
+        filename = json.loads(r.content)['data']['file']['name']
+        
+        if outdir:
+            try:
+                os.makedirs(outdir)
+            except:
+                pass
+        else:
+            outdir = os.getcwd()
+
+        d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
+        r = requests.get(d_url, stream=True)
+        downloaded = os.path.join(outdir, filename)
+        with open(downloaded, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        if os.path.exists(downloaded):
+            print "File downloaded: {}".format(downloaded)
+            return downloaded
+        else:
+            raise Exception ('Data does not exist')
+
+
+    def create_attr_file(self, attrs, outname):
+        """ Writes to attr OUTFILE from dict of attrs """ 
+        outjson = os.path.join(os.getcwd(), outname) + ".json"
+        with open(outjson, 'w') as f:
+            f.write(json.dumps(attrs))
+        return outjson
+
+        
+
+    ######## Internal Methods ##############
+    def _create_attr_mem(self, attrs):
+        """ Create in mem filehandle """
+        return StringIO.StringIO(json.dumps(attrs))
+
+    def _post_file(self, filename, filetype=''):
+        """ Upload using requests """
+        tmp_attr = dict(self.attrs)
+        tmp_attr['filetype'] = filetype
+        attr_fd = self._create_attr_mem(tmp_attr)
+
+        with open(filename) as f:
+            files = {'upload': f, 
+                     'attributes': attr_fd}
+            r = requests.post('{}node/'.format(self.shockurl), files=files)
+
+        attr_fd.close()
+        res = json.loads(r.text)
+        logging.info(r.text)
+        print r.text
+	return res
+
+    def _curl_post_file(self, filename, filetype=''):
+        tmp_attr = dict(self.attrs)
+        tmp_attr['filetype'] = filetype
+        attr_file = self.create_attr_file(tmp_attr, 'attrs')
+        cmd = ['curl', 
+               '-X', 'POST', 
+               '-F', 'attributes=@{}'.format(attr_file),
+               '-F', 'upload=@{}'.format(filename),
+               '{}node/'.format(self.shockurl)]
+        ret = subprocess.check_output(cmd)
+        res = json.loads(ret)
+        return res

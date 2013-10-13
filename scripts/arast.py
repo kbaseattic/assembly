@@ -25,7 +25,7 @@ from ar_client.auth_token import *
 
 import traceback
 
-my_version = '0.3.0'
+my_version = '0.3.2'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -85,6 +85,9 @@ def upload(files):
             ids.append(res['data']['id'])
             if res["error"] is not None:
                 sys.exit("Shock: err from server: %s" % res["error"][0])
+            else:
+                sys.stderr.write( "Uploaded: %s...\n" % os.path.basename(f))
+
     return ids
 
 def main():
@@ -126,35 +129,42 @@ def main():
             print >> sys.stderr, '[x] Logged out'
             sys.exit()
 
-    # Check if user file exists
-    if os.path.exists(oauth_file):
-        token_date_str = oauth_parser.get('auth', 'token_date')
-        tdate = datetime.datetime.strptime(token_date_str, '%Y-%m-%d').date()
-        cdate = datetime.date.today()
-        if (cdate - tdate).days > expiration:
-            reauthorize = True
+    if "KB_RUNNING_IN_IRIS" in os.environ:
+        if "KB_AUTH_TOKEN" in os.environ and "KB_AUTH_USER_ID" in os.environ:
+            a_user = os.environ["KB_AUTH_USER_ID"]
+            a_token = os.environ["KB_AUTH_TOKEN"]
         else:
-            reauthorize = False
-    if not reauthorize:
-        a_user = oauth_parser.get('auth', 'user')
-        a_token = oauth_parser.get('auth', 'token')
-        # print >> sys.stderr, "Logged in as: {}".format(a_user)
+            print("Please log in")
     else:
-        print("Please authenticate with KBase credentials")
-        a_user = raw_input("KBase Login: ")
-        a_pass = getpass.getpass(prompt="KBase Password: ")
-        globus_map = get_token(a_user, a_pass)
-        a_token = globus_map['access_token']
-        try:
-            os.makedirs(user_dir)
-        except:
-            pass
-        uparse = SafeConfigParser()
-        uparse.add_section('auth')
-        uparse.set('auth', 'user', a_user)
-        uparse.set('auth', 'token', a_token)
-        uparse.set('auth', 'token_date', str(datetime.date.today()))
-        uparse.write(open(oauth_file, 'wb'))
+        # Check if user file exists
+        if os.path.exists(oauth_file):
+            token_date_str = oauth_parser.get('auth', 'token_date')
+            tdate = datetime.datetime.strptime(token_date_str, '%Y-%m-%d').date()
+            cdate = datetime.date.today()
+            if (cdate - tdate).days > expiration:
+                reauthorize = True
+            else:
+                reauthorize = False
+        if not reauthorize:
+            a_user = oauth_parser.get('auth', 'user')
+            a_token = oauth_parser.get('auth', 'token')
+            # print >> sys.stderr, "Logged in as: {}".format(a_user)
+        else:
+            print("Please authenticate with KBase credentials")
+            a_user = raw_input("KBase Login: ")
+            a_pass = getpass.getpass(prompt="KBase Password: ")
+            globus_map = get_token(a_user, a_pass)
+            a_token = globus_map['access_token']
+            try:
+                os.makedirs(user_dir)
+            except:
+                pass
+            uparse = SafeConfigParser()
+            uparse.add_section('auth')
+            uparse.set('auth', 'user', a_user)
+            uparse.set('auth', 'token', a_token)
+            uparse.set('auth', 'token_date', str(datetime.date.today()))
+            uparse.write(open(oauth_file, 'wb'))
 
     if args.command == 'login':
         print "Logged in"
@@ -261,7 +271,9 @@ def main():
 
     elif args.command == 'avail':
         try:
-            print aclient.get_available_modules()
+            mods = json.loads(aclient.get_available_modules())
+            for mod in mods:
+                print mod['module']
         except:
             print 'Error getting available modules'
 

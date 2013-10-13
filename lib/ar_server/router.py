@@ -231,9 +231,12 @@ def on_request(ch, method, props, body):
 
 
 def authenticate_request():
+    if cherrypy.request.method == 'OPTIONS':
+        return 'OPTIONS'
     try:
         token = cherrypy.request.headers['Authorization']
     except:
+        print "Auth error"
         raise cherrypy.HTTPError(403)
     
     #parse out username
@@ -242,6 +245,7 @@ def authenticate_request():
     if m:
         user = m.group(1)
     else:
+        print "Auth error"
         raise cherrypyHTTPError(403, 'Bad Token')
     auth_info = metadata.get_auth_info(user)
     if auth_info:
@@ -318,11 +322,11 @@ class JobResource:
     @cherrypy.expose
     def new(self, userid=None):
         userid = authenticate_request()
+        if userid == 'OPTIONS':
+            return ('New Job Request')
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
-        print 'routing'
-        print params
         return route_job(json.dumps(params))
 
     @cherrypy.expose
@@ -457,7 +461,7 @@ class ModuleResource:
     @cherrypy.expose
     def default(self, module_name="avail", *args, **kwargs):
         print module_name
-        if module_name == 'avail':
+        if module_name == 'avail' or module_name == 'all':
             with open(parser.get('web', 'ar_modules')) as outfile:
                 return outfile.read()
         return module_name
