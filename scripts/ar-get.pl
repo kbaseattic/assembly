@@ -11,8 +11,7 @@ Usage: ar-get [-h] -j JOB_ID [-a [ASSEMBLY]] [--stdout] [-s server_addr]
 
 Download result data
 
-Arguments:
-
+Mandatory arguments:
   -j JOB_ID, --job JOB_ID
                         specify which job data to get
 
