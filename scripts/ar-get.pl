@@ -11,10 +11,12 @@ Usage: ar-get [-h] -j JOB_ID [-a [ASSEMBLY]] [--stdout] [-s server_addr]
 
 Download result data
 
-Optional arguments:
-  -h, --help            show this help message and exit
+Mandatory arguments:
   -j JOB_ID, --job JOB_ID
                         specify which job data to get
+
+Optional arguments:
+  -h, --help            show this help message and exit
   -a [ASSEMBLY], --assembly [ASSEMBLY]
                         get contigs for the i-th assembly only
   -s server_addr        specify ARAST server address

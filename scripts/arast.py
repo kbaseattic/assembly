@@ -120,22 +120,29 @@ def main():
     oauth_parser.read(oauth_file)
     reauthorize = True
 
-    if args.command == 'logout' or args.command == 'login':
-        try:
-            os.remove(oauth_file)
-        except:
-            pass
-        if args.command == 'logout':
-            print >> sys.stderr, '[x] Logged out'
-            sys.exit()
-
     if "KB_RUNNING_IN_IRIS" in os.environ:
-        if "KB_AUTH_TOKEN" in os.environ and "KB_AUTH_USER_ID" in os.environ:
+        if args.command == 'logout' or args.command == 'login':
+            print "Please use the IRIS controls to log in/out"
+            sys.exit()
+        if "KB_AUTH_TOKEN" in os.environ and "KB_AUTH_USER_ID" in os.environ and \
+                len(os.environ["KB_AUTH_USER_ID"]) > 0 and \
+                len(os.environ["KB_AUTH_TOKEN"]) > 0 :
             a_user = os.environ["KB_AUTH_USER_ID"]
             a_token = os.environ["KB_AUTH_TOKEN"]
         else:
-            print("Please log in")
+            print "Please authenticate with KBase credentials"
+            sys.exit()
+
     else:
+        if args.command == 'logout' or args.command == 'login':
+            try:
+                os.remove(oauth_file)
+            except:
+                pass
+            if args.command == 'logout':
+                print >> sys.stderr, '[x] Logged out'
+                sys.exit()
+    
         # Check if user file exists
         if os.path.exists(oauth_file):
             token_date_str = oauth_parser.get('auth', 'token_date')
