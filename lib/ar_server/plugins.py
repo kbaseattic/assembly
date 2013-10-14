@@ -7,6 +7,7 @@ import uuid
 import sys
 import time
 import datetime 
+import signal
 import subprocess
 import re
 import multiprocessing
@@ -74,10 +75,10 @@ class BasePlugin(object):
         print cmd_args
         try:
             p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, 
-                                     stderr=subprocess.STDOUT, **kwargs)
+                                     stderr=subprocess.STDOUT, preexec_fn=os.setsid, **kwargs)
             while p.poll() is None:
                 if self.killed():
-                    p.terminate()
+                    os.killpg(p.pid, signal.SIGTERM)
                     raise Exception('Terminated by user')
                 time.sleep(5)
 

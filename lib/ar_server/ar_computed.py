@@ -5,6 +5,8 @@ Arast Daemon
 The Arast daemon runs on the control node.
 
 """
+import os
+
 import argparse
 import sys
 import daemon
@@ -14,7 +16,6 @@ import pymongo
 import multiprocessing
 import pika
 from ConfigParser import SafeConfigParser
-
 import consume
 import shock
 
@@ -80,8 +81,10 @@ def start(arast_server, config, num_threads, queue):
                                         queue, kill_list, job_list)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
+
         workers.append(p)
         p.start()
+
     workers[0].join()
 
 def start_kill_monitor(arasturl):

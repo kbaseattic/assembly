@@ -106,6 +106,10 @@ class ArastConsumer:
                 ref = data_doc['reference']
             except:
                 pass
+            try:
+                urls = data_doc['urls']
+            except:
+                pass
         else:
             self.metadata.update_job(uid, 'status', 'Invalid Data ID')
             raise Exception('Data {} does not exist on Shock Server'.format(
@@ -144,6 +148,8 @@ class ArastConsumer:
             except:
                 logging.info(format_tb(sys.exc_info()[2]))
                 logging.info('No single files submitted!')
+
+
             
             try:
                 for r in ref:
