@@ -134,6 +134,9 @@ def main():
             sys.exit()
 
     if args.command == 'logout' or args.command == 'login':
+        if "KB_RUNNING_IN_IRIS" in os.environ:
+            print "Please use the IRIS controls to log in/out"
+        else:
         try:
             os.remove(oauth_file)
         except:
