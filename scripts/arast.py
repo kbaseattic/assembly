@@ -121,22 +121,19 @@ def main():
     reauthorize = True
 
     if "KB_RUNNING_IN_IRIS" in os.environ:
+        if args.command == 'logout' or args.command == 'login':
+            print "Please use the IRIS controls to log in/out"
+            sys.exit()
         if "KB_AUTH_TOKEN" in os.environ and "KB_AUTH_USER_ID" in os.environ and \
                 len(os.environ["KB_AUTH_USER_ID"]) > 0 and \
                 len(os.environ["KB_AUTH_TOKEN"]) > 0 :
             a_user = os.environ["KB_AUTH_USER_ID"]
             a_token = os.environ["KB_AUTH_TOKEN"]
         else:
-            if args.command == 'logout' or args.command == 'login':
-                print "Please use the IRIS controls to log in/out"
-            else:
-                print "Please authenticate with KBase credentials"
+            print "Please authenticate with KBase credentials"
             sys.exit()
 
     if args.command == 'logout' or args.command == 'login':
-        if "KB_RUNNING_IN_IRIS" in os.environ:
-            print "Please use the IRIS controls to log in/out"
-        else:
         try:
             os.remove(oauth_file)
         except:
