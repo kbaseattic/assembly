@@ -188,7 +188,13 @@ class Shock:
         attr_fd.close()
         res = json.loads(r.text)
         logging.info(r.text)
-        print r.text
+        try:
+            if res['status'] == 200:
+                print "Upload complete"
+            else:
+                print "Upload error: {}".format(res['status'])
+        except: 
+            print "Upload error"
 	return res
 
     def _curl_post_file(self, filename, filetype=''):

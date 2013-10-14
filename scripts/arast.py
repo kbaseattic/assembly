@@ -140,7 +140,7 @@ def main():
         a_token = oauth_parser.get('auth', 'token')
         # print >> sys.stderr, "Logged in as: {}".format(a_user)
     else:
-        print("Please authenticate with Globus Online")
+        print("Please authenticate with KBase")
         a_user = raw_input("KBase Login: ")
         a_pass = getpass.getpass(prompt="KBase Password: ")
         globus_map = get_token(a_user, a_pass)
