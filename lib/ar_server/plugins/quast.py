@@ -45,5 +45,7 @@ class QuastAssessment(BaseAssessment, IPlugin):
                 all_files.append(os.path.join(root, file))
                 
         report = os.path.join(self.outpath, 'report.txt')
+        if not os.path.exists(report):
+            raise Exception('No valid contigs')
         return [report]
 
