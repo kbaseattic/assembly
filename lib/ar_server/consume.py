@@ -300,7 +300,8 @@ class ArastConsumer:
                     'processed_reads': list(reads),
                     'pipeline_data': {},
                     'datapath': datapath,
-                    'out_report' : self.out_report})
+                    'out_report' : self.out_report,
+                    'logfiles': []})
 
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         self.job_list.append(job_data)
@@ -353,6 +354,7 @@ class ArastConsumer:
 
 
         # Format report
+
         for i, job in enumerate(self.job_list):
             if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
                 self.job_list.pop(i)
@@ -364,8 +366,21 @@ class ArastConsumer:
         except:
             new_report.write('No Summary File Generated!\n\n\n')
         self.out_report.close()
+        print job_data['logfiles']
         with open(self.out_report_name) as old:
             new_report.write(old.read())
+
+
+            for log in job_data['logfiles']:
+                new_report.write("\n\n{0} Begin Module {0}\n".format("="*10))
+                try:
+                    with open(log) as infile:
+                        new_report.write(infile.read())
+                except:
+                    new_report.write("Error writing log file")
+
+
+
         new_report.close()
         os.remove(self.out_report_name)
         shutil.move(new_report.name, self.out_report_name)
@@ -576,10 +591,11 @@ class ArastConsumer:
                         output_types.append(output_type)
                 
 
-                try:
-                    logfiles.append(mod_log)
-                except:
-                    pass
+                # try:
+                #     logfiles.append(mod_log)
+                #     logfiles.append(mod_log)
+                # except:
+                #     pass
                 pipeline_stage += 1
                 
                 cur_outputs.append([module_code, output, alldata])

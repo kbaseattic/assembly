@@ -151,6 +151,7 @@ class BasePlugin(object):
         self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
+        job_data['logfiles'].append(self.out_module.name)
         for kv in settings:
             ## set absolute paths
             abs = os.path.abspath(kv[1])
@@ -278,8 +279,10 @@ class BasePlugin(object):
         bwa_data['processed_reads'][0]['files'] = sub_reads
         bwa_data['contigs'] = [contig_file]
         bwa_data['out_report'] = open(os.path.join(self.outpath, 'estimate_ins.log'), 'w')
+
         #job_data['final_contigs'] = [contig_file]
-        samfiles, _, _ = self.pmanager.run_module('bwa', bwa_data)
+        samfiles, _, bwa_log = self.pmanager.run_module('bwa', bwa_data)
+        self.job_data['logfiles'].append(bwa_log)
         samfile = samfiles[0]
         if os.path.getsize(samfile) == 0:
             logging.error('Error estimating insert length')
@@ -353,7 +356,7 @@ class BaseScaffolder(BasePlugin):
         self.init_settings(settings, job_data, manager)
 
         if len(job_data['initial_reads']) > 1:
-            raise NotImplementedError
+            raise Exception('Cannot scaffold with single end')
         else:
             contig_file = job_data['contigs'][0]
         #read_records = job_data['processed_reads']
