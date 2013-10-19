@@ -134,8 +134,7 @@ class Shock:
 
     def download_file(self, node_id, outdir=None):
         r = requests.get('{}/node/{}'.format(self.shockurl, node_id))
-        filename = json.loads(r.content)['data']['file']['name']
-        
+        filename = json.loads(r.content)['data']['file']['name'].split('/')[-1]
         if outdir:
             try:
                 os.makedirs(outdir)
@@ -145,8 +144,8 @@ class Shock:
             outdir = os.getcwd()
 
         d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
-        r = requests.get(d_url, stream=True)
         downloaded = os.path.join(outdir, filename)
+        r = requests.get(d_url, stream=True)
         with open(downloaded, 'wb') as f:
             for chunk in r.iter_content(chunk_size=1024): 
                 if chunk: # filter out keep-alive new chunks
