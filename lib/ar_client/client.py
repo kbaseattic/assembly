@@ -75,14 +75,14 @@ class Client:
         try:
             nodes_map = json.loads(res.text)
             for node_id in nodes_map.values():
-                self.shock.download_file(node_id)
+                self.shock.download_file(node_id, outdir=outdir)
         except:
-            #print traceback.format_tb(sys.exc_info()[2])
-            #print sys.exc_info()
+            print traceback.format_tb(sys.exc_info()[2])
+            print sys.exc_info()
             raise Exception("Error retrieving results")
         return 
 
-    def get_assemblies(self, job_id=None, asm_id=None, stdout=False):
+    def get_assemblies(self, job_id=None, asm_id=None, stdout=False, outdir=None):
         if not job_id:
             raise NotImplementedError('Job id required')
         # Get node id
@@ -92,18 +92,17 @@ class Client:
         # Download files
         try:
             nodes_map = json.loads(res.text)
-
             if stdout: # Get first one and print
-                asm_file = self.shock.curl_download_file(nodes_map.values()[0])
+                asm_file = self.shock.download_file(nodes_map.values()[0], outdir=outdir)
                 with open(asm_file) as f:
                     for line in f:
                         print line
             else:
                 for node_id in nodes_map.values():
-                    self.shock.curl_download_file(node_id)
+                    self.shock.download_file(node_id, outdir=outdir)
         except:
-            #print traceback.format_tb(sys.exc_info()[2])
-            #print sys.exc_info()
+            print traceback.format_tb(sys.exc_info()[2])
+            print sys.exc_info()
             raise Exception("Error retrieving results")
         return 
         

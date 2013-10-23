@@ -25,7 +25,7 @@ from ar_client.auth_token import *
 
 import traceback
 
-my_version = '0.3.2'
+my_version = '0.3.3'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -39,6 +39,7 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
 data_group = p_run.add_mutually_exclusive_group()
 p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
+p_run.add_argument("-u", "--urls",  action="append",  nargs='*', help="specify url(s) of sequence file")
 data_group.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
 p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
 p_run.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline. None will invoke automatic mode")
@@ -66,6 +67,7 @@ p_get = subparsers.add_parser('get', description='Download result data', help='d
 p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, required=True, help="specify which job data to get")
 p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=False, const=True, help="Get assemblies only")
 p_get.add_argument("--stdout", action="store_true", help="Print assembly to stdout")
+p_get.add_argument("-o", "--outdir", action="store", help="Download to specified dir")
 
 p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
@@ -193,7 +195,7 @@ def main():
         if not args.pipeline: # auto
             args.pipeline = 'auto'
 
-        if not ((args.pipeline) and (args.data_id or args.pair or args.single)):
+        if not ((args.pipeline) and (args.data_id or args.pair or args.single or args.urls)):
             parser.print_usage()
             sys.exit()
 
@@ -264,15 +266,15 @@ def main():
         if args.assembly:
             try:
                 if type(args.assembly) is int:
-                    aclient.get_assemblies(job_id=args.job_id[0], asm_id=args.assembly, stdout=args.stdout)
+                    aclient.get_assemblies(job_id=args.job_id[0], asm_id=args.assembly, stdout=args.stdout, outdir=args.outdir)
                 else:
-                    aclient.get_assemblies(job_id=args.job_id[0], stdout=args.stdout)
+                    aclient.get_assemblies(job_id=args.job_id[0], stdout=args.stdout, outdir=args.outdir)
             except:
                 print traceback.format_tb(sys.exc_info()[2])
                 print sys.exc_info()
         else:
             try:
-                aclient.get_job_data(args.job_id[0])
+                aclient.get_job_data(job_id=args.job_id[0], outdir=args.outdir)
             except:
                 print 'Invalid job id'
 
