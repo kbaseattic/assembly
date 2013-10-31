@@ -10,7 +10,10 @@ import datetime
 import subprocess
 import re
 import multiprocessing
+import signal
 from yapsy.PluginManager import PluginManager
+from threading  import Thread
+from Queue import Queue, Empty
 
 # A-Rast modules
 import assembly
@@ -36,6 +39,8 @@ class BasePlugin(object):
         """
         Set overrides to FALSE if flags should not be applied to this binary.
         """
+
+
         if overrides:
             for kv in self.extra_params:
                 dashes = '-'
@@ -74,17 +79,31 @@ class BasePlugin(object):
         print cmd_args
         try:
             p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, 
-                                     stderr=subprocess.STDOUT, **kwargs)
+                                     stderr=subprocess.STDOUT, preexec_fn=os.setsid, **kwargs)
+
+            ## Module Logging Thread
+            q = Queue()
+            t = Thread(target=handle_output, args=(p.stdout, q))
+            t.daemon = True # thread dies with the program
+            t.start()
+
+            ## Poll for kill requests
             while p.poll() is None:
                 if self.killed():
-                    p.terminate()
+                    os.killpg(p.pid, signal.SIGTERM)
                     raise Exception('Terminated by user')
+                
+                ## Flush STDOUT to logs
+                while True:
+                    try:  line = q.get_nowait() # or q.get(timeout=.1)
+                    except Empty:
+                        break
+                    else: # got line
+                        logging.info(line)
+                        self.out_module.write(line)
                 time.sleep(5)
-
-            for line in p.stdout:
-                logging.info(line)
-                self.out_module.write(line)
             p.wait()
+
         except subprocess.CalledProcessError as e:
             out = 'Process Failed.\nExit Code: {}\nOutput:{}\n'.format(
                 e.returncode, e.output)
@@ -687,3 +706,11 @@ class ModuleManager():
                                                  dict([kv]).items())
 
         return pipeline, overrides
+
+
+##### Helper Functions ######
+def handle_output(out, q):
+    for line in iter(out.readline, b''):
+        q.put(line)
+    out.close()
+
