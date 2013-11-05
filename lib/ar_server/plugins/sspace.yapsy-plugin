@@ -4,7 +4,7 @@ Module = sspace
 
 [Settings]
 short_name = Ss
-executable = ../../bin/a5/SSPACE/SSPACE
+executable = ../../bin/a5/bin/SSPACE/SSPACE
 filetypes = fasta,fa,fastq,fq
 reverse_complement = False
 
