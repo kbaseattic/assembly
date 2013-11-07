@@ -106,8 +106,8 @@ class Client:
             raise Exception("Error retrieving results")
         return 
         
-    def upload_data_shock(self, filename):
-        return self.shock.upload_reads(filename)
+    def upload_data_shock(self, filename, curl=False):
+        return self.shock.upload_reads(filename, curl=curl)
 
     def submit_job(self, data):
         url = 'http://{}/user/{}/job/new'.format(self.url, self.user)

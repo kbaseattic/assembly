@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import StringIO
+import time
 
 def download(url, node_id, outdir):
     logging.info("Downloading id: %s" % node_id)
@@ -78,8 +79,7 @@ def curl_download_file(url, node_id, token, outdir=None):
 
     cmd = ['curl', 
            '-o', filename, d_url]
-    
-    print "-".join(cmd) # FIXME: temp
+
     p = subprocess.Popen(cmd, cwd=outdir)
     p.wait()
     print "File downloaded: {}/{}".format(outdir, filename)
@@ -92,39 +92,30 @@ class Shock:
         self.token = token
         self.attrs = {'user': user}
 
-
-    def upload_reads(self, filename):
+    def upload_reads(self, filename, curl=False):
+        if curl:
+            return self._curl_post_file(filename, filetype='reads')
         return self._post_file(filename, filetype='reads')
 
-    def curl_post_file(self, filename):
-        if "KB_RUNNING_IN_IRIS" in os.environ:
-            cmd = ['curl', 
-                   '-X', '-s', 'POST', '-F', 'upload=@{}'.format(filename),
-                   '{}node/'.format(self.shockurl)]
-        else: 
-            cmd = ['curl', 
-                   '-X', 'POST', '-F', 'upload=@{}'.format(filename),
-                   '{}node/'.format(self.shockurl)]
-
-    def upload_contigs(self, filename):
+    def upload_contigs(self, filename, curl=False):
+        if curl:
+            return self._curl_post_file(filename, filetype='contigs')
         return self._post_file(filename, filetype='contigs')
 
-    def upload_results(self, filename):
+    def upload_results(self, filename, curl=False):
+        if curl:
+            return self._curl_post_file(filename, filetype='reads')
         return self._post_file(filename, filetype='reads')
 
-    def upload_misc(self, filename, ftype):
+    def upload_misc(self, filename, ftype, curl=False):
+        if curl:
+            return self._curl_post_file(filename, filetype=ftype)
         return self._post_file(filename, filetype=ftype)
 
 
     def curl_download_file(self, node_id, outdir=None):
-        if "KB_RUNNING_IN_IRIS" in os.environ:
-            cmd = ['curl', 
-                   '-X', '-s', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
-        else:
-            cmd = ['curl', 
-                   '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
-        print cmd
-
+        cmd = ['curl', 
+               '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
         r = subprocess.check_output(cmd)
         filename = json.loads(r)['data']['file']['name']
         if outdir:
@@ -196,11 +187,17 @@ class Shock:
         tmp_attr = dict(self.attrs)
         tmp_attr['filetype'] = filetype
         attr_fd = self._create_attr_mem(tmp_attr)
+        r = None
+        files = None
+        try:
+            with open(filename) as f:
+                files = {'upload': f, 
+                         'attributes': attr_fd}
+                r = requests.post('{}node/'.format(self.shockurl), files=files)
 
-        with open(filename) as f:
-            files = {'upload': f, 
-                     'attributes': attr_fd}
-            r = requests.post('{}node/'.format(self.shockurl), files=files)
+        except:
+            print "ERROR: python-requests error, try with --curl flag"
+            return
 
         attr_fd.close()
         res = json.loads(r.text)

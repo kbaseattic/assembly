@@ -39,7 +39,7 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
 data_group = p_run.add_mutually_exclusive_group()
 p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("-u", "--urls",  action="append",  nargs='*', help="specify url(s) of sequence file")
+#p_run.add_argument("-u", "--urls",  action="append",  nargs='*', help="specify url(s) of sequence file")
 data_group.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
 p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
 p_run.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline. None will invoke automatic mode")
@@ -48,7 +48,8 @@ p_run.add_argument("-q", "--queue", action="store", dest="queue", help=argparse.
 data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
 p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
-p_run.add_argument("--all-data", action="store_true", help="save all data for return")
+#p_run.add_argument("--all-data", action="store_true", help="save all data for return")
+p_run.add_argument("--curl", action="store_true", help="Use curl for http requests")
 
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
@@ -73,7 +74,7 @@ p_logout = subparsers.add_parser('logout', description='Log out', help='log out'
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
 
 # upload all files in list, return list of ids
-def upload(files):
+def upload(files, curl=False):
     ids = []
     for f in files:
         # check if file exists
@@ -83,7 +84,7 @@ def upload(files):
         else:
             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
              #res = curl_post_file(url, f)
-            res = aclient.upload_data_shock(f)
+            res = aclient.upload_data_shock(f, curl=curl)
             ids.append(res['data']['id'])
             if res["error"] is not None:
                 sys.exit("Shock: err from server: %s" % res["error"][0])
@@ -218,10 +219,17 @@ def main():
         base_files = []
         file_sizes = []
         res_ids = []
+        
+        curl = False
+        try:
+            curl = args.curl
+        except:
+            pass
+
         for f in files:
             #Check file or dir
             if os.path.isfile(f):
-                res_ids += upload([f,])
+                res_ids += upload([f,], curl=curl)
                 file_sizes.append(os.path.getsize(f))
                 base_files.append(os.path.basename(f))
             elif os.path.isdir(f):
