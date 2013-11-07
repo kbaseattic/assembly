@@ -7,6 +7,7 @@ import os
 import subprocess
 import StringIO
 import time
+import tempfile
 
 def download(url, node_id, outdir):
     logging.info("Downloading id: %s" % node_id)
@@ -170,9 +171,10 @@ class Shock:
 
     def create_attr_file(self, attrs, outname):
         """ Writes to attr OUTFILE from dict of attrs """ 
-        outjson = os.path.join(os.getcwd(), outname) + ".json"
-        with open(outjson, 'w') as f:
-            f.write(json.dumps(attrs))
+        f = tempfile.NamedTemporaryFile(delete=False)
+        outjson = f.name
+        f.write(json.dumps(attrs))
+        f.close()
         return outjson
 
         
