@@ -295,7 +295,8 @@ class BasePlugin(object):
             sub_reads.append(sub_name)
             
         bwa_data = copy.deepcopy(self.job_data)
-        bwa_data['processed_reads'][0]['files'] = sub_reads
+        #bwa_data['processed_reads'][0]['files'] = sub_reads
+        bwa_data['initial_reads'][0]['files'] = sub_reads
         bwa_data['contigs'] = [contig_file]
         bwa_data['out_report'] = open(os.path.join(self.outpath, 'estimate_ins.log'), 'w')
 
