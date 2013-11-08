@@ -400,213 +400,220 @@ class ArastConsumer:
         output_types = []
         num_pipes = len(all_pipes)
         for pipe in all_pipes:
-            #job_data = copy.deepcopy(job_data_global)
-            #job_data['out_report'] = job_data_global['out_report'] 
-            pipeline, overrides = self.pmanager.parse_pipe(pipe)
-            job_data.add_pipeline(pipeline_num, pipeline)
-            num_stages = len(pipeline)
-            pipeline_stage = 1
-            pipeline_results = []
-            cur_outputs = []
 
-            # Reset job data 
-            job_data['reads'] = copy.deepcopy(job_data['raw_reads'])
-            job_data['processed_reads'] = []
-            print job_data
+            try:
 
-            self.out_report.write('\n{0} Pipeline {1}: {2} {0}\n'.format('='*15, pipeline_num, pipe))
-            pipe_suffix = '' # filename code for indiv pipes
-            pipe_start_time = time.time()
-            pipe_alive = True
+                #job_data = copy.deepcopy(job_data_global)
+                #job_data['out_report'] = job_data_global['out_report'] 
+                pipeline, overrides = self.pmanager.parse_pipe(pipe)
+                job_data.add_pipeline(pipeline_num, pipeline)
+                num_stages = len(pipeline)
+                pipeline_stage = 1
+                pipeline_results = []
+                cur_outputs = []
 
-            # Store data record for pipeline
+                # Reset job data 
+                job_data['reads'] = copy.deepcopy(job_data['raw_reads'])
+                job_data['processed_reads'] = []
+                print job_data
 
-            for module_name in pipeline:
-                if not pipe_alive:
-                    self.out_report.write('\n{0} Module Failure, Killing Pipe {0}'.format(
-                            'X'*10))
-                    break
-                module_code = '' # unique code for data reuse
-                print '\n\n{0} Running module: {1} {2}'.format(
-                    '='*20, module_name, '='*(35-len(module_name)))
-                self.garbage_collect(self.datapath, job_data['user'], 2147483648) # 2GB
+                self.out_report.write('\n{0} Pipeline {1}: {2} {0}\n'.format('='*15, pipeline_num, pipe))
+                pipe_suffix = '' # filename code for indiv pipes
+                pipe_start_time = time.time()
+                pipe_alive = True
 
-                ## PROGRESS CALCULATION
-                pipes_complete = (pipeline_num - 1) / float(num_pipes)
-                stage_complete = (pipeline_stage - 1) / float(num_stages)
-                pct_segment = 1.0 / num_pipes
-                stage_complete *= pct_segment
-                total_complete = pipes_complete + stage_complete
-                cur_state = 'Running: [{}%]'.format(int(total_complete * 100))
-                self.metadata.update_job(job_data['uid'], 'status', cur_state)
-                if module_name.lower() == 'none':
-                    continue
+                # Store data record for pipeline
 
-                ## LOG REPORT For now, module code is 1st and last letter
-                short_name = self.pmanager.get_short_name(module_name)
-                if short_name:
-                    #pipe_suffix += short_name.capitalize()
-                    module_code += short_name.capitalize()
-                else:
-                    #pipe_suffix += module_name[0].upper() + module_name[-1]
-                    module_code += module_name[0].upper() + module_name[-1]
-                mod_overrides =  overrides[pipeline_stage - 1]
-                for k in mod_overrides.keys():
-                            #pipe_suffix += '_{}{}'.format(k[0], par[k])
-                    module_code += '_{}{}'.format(k[0], mod_overrides[k])
-                pipe_suffix += module_code
-                self.out_report.write('PIPELINE {} -- STAGE {}: {}\n'.format(
-                        pipeline_num, pipeline_stage, module_name))
-                logging.debug('New job_data for stage {}: {}'.format(
-                        pipeline_stage, job_data))
-                job_data['params'] = overrides[pipeline_stage-1].items()
-                module_start_time = time.time()
-                ## RUN MODULE
-                # Check if output data exists
-                reuse_data = False
-                enable_reuse = True # KILL SWITCH
-                if enable_reuse:
-                    for k, pipe in enumerate(pipe_outputs):
-                        if reuse_data:
+                for module_name in pipeline:
+                    if not pipe_alive:
+                        self.out_report.write('\n{0} Module Failure, Killing Pipe {0}'.format(
+                                'X'*10))
+                        break
+                    module_code = '' # unique code for data reuse
+                    print '\n\n{0} Running module: {1} {2}'.format(
+                        '='*20, module_name, '='*(35-len(module_name)))
+                    self.garbage_collect(self.datapath, job_data['user'], 2147483648) # 2GB
+
+                    ## PROGRESS CALCULATION
+                    pipes_complete = (pipeline_num - 1) / float(num_pipes)
+                    stage_complete = (pipeline_stage - 1) / float(num_stages)
+                    pct_segment = 1.0 / num_pipes
+                    stage_complete *= pct_segment
+                    total_complete = pipes_complete + stage_complete
+                    cur_state = 'Running: [{}%]'.format(int(total_complete * 100))
+                    self.metadata.update_job(job_data['uid'], 'status', cur_state)
+                    if module_name.lower() == 'none':
+                        continue
+
+                    ## LOG REPORT For now, module code is 1st and last letter
+                    short_name = self.pmanager.get_short_name(module_name)
+                    if short_name:
+                        #pipe_suffix += short_name.capitalize()
+                        module_code += short_name.capitalize()
+                    else:
+                        #pipe_suffix += module_name[0].upper() + module_name[-1]
+                        module_code += module_name[0].upper() + module_name[-1]
+                    mod_overrides =  overrides[pipeline_stage - 1]
+                    for k in mod_overrides.keys():
+                                #pipe_suffix += '_{}{}'.format(k[0], par[k])
+                        module_code += '_{}{}'.format(k[0], mod_overrides[k])
+                    pipe_suffix += module_code
+                    self.out_report.write('PIPELINE {} -- STAGE {}: {}\n'.format(
+                            pipeline_num, pipeline_stage, module_name))
+                    logging.debug('New job_data for stage {}: {}'.format(
+                            pipeline_stage, job_data))
+                    job_data['params'] = overrides[pipeline_stage-1].items()
+                    module_start_time = time.time()
+                    ## RUN MODULE
+                    # Check if output data exists
+                    reuse_data = False
+                    enable_reuse = True # KILL SWITCH
+                    if enable_reuse:
+                        for k, pipe in enumerate(pipe_outputs):
+                            if reuse_data:
+                                break
+                            if not pipe:
+                                continue
+                            # Check that all previous pipes match
+                            for i in range(pipeline_stage):
+                                try:
+                                    if not pipe[i][0] == cur_outputs[i][0]:
+                                        break
+                                except:
+                                    pass
+                                try:
+                                    if (pipe[i][0] == module_code and i == pipeline_stage - 1):
+                                        #and overrides[i].items() == job_data['params']): #copy!
+                                        print('Found previously computed data, reusing {}.'.format(
+                                                module_code))
+                                        output = [] + pipe[i][1]
+                                        pfix = (k+1, i+1)
+                                        alldata = [] + pipe[i][2]
+                                        reuse_data = True
+                                        job_data.get_pipeline(pipeline_num).get_module(
+                                            pipeline_stage)['elapsed_time'] = time.time(
+                                            job_data.get_pipeline(i).get_module(
+                                                    pipeline_stage)['elapsed_time'])
+
+                                        break
+                                except: # Previous pipes may be shorter
+                                    pass
+
+                    output_type = self.pmanager.output_type(module_name)
+
+                    if not reuse_data:
+                        output, alldata, mod_log = self.pmanager.run_module(
+                            module_name, job_data, all_data=True, reads=include_reads)
+                        if not output:
+                            pipe_alive = False
                             break
-                        if not pipe:
-                            continue
-                        # Check that all previous pipes match
-                        for i in range(pipeline_stage):
+                        # Prefix outfiles with pipe stage, only assemblers
+                        alldata = [asm.prefix_file_move(
+                                file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
+                                    for file in alldata]
+                        module_elapsed_time = time.time() - module_start_time
+                        job_data.get_pipeline(pipeline_num).get_module(
+                            pipeline_stage)['elapsed_time'] = module_elapsed_time
+                        if output_type == 'contigs': #Assume assembly contigs
+                            pass
+                        elif output_type == 'reads':
+                            pass
+                        if alldata: #If log was renamed
+                            mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
+                                    pipeline_num, pipeline_stage, module_name))
+
+                    if output_type == 'contigs' or output_type == 'scaffolds': #Assume assembly contigs
+                        if reuse_data:
+                            p_num, p_stage = pfix
+                        else:
+                            p_num, p_stage = pipeline_num, pipeline_stage
+
+                        # If plugin returned scaffolds
+                        if type(output) is tuple and len(output) == 2:
+                            out_contigs = output[0]
+                            out_scaffolds = output[1]
+                            cur_scaffolds = [asm.prefix_file(
+                                    file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
+                                        for file in out_scaffolds]
+                        else:
+                            out_contigs = output
+                        cur_contigs = [asm.prefix_file(
+                                file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
+                                    for file in out_contigs]
+
+                        #job_data['reads'] = asm.arast_reads(alldata)
+                        job_data['contigs'] = cur_contigs
+
+                    elif output_type == 'reads': #Assume preprocessing
+                        if include_reads and reuse_data: # data was prefixed and moved
+                            for d in output:
+                                files = [asm.prefix_file(f, "P{}_S{}_{}".format(
+                                            pipeline_num, pipeline_stage, module_name)) for f in d['files']]
+                                d['files'] = files
+                                d['short_reads'] = [] + files
+                        job_data['reads'] = output
+                        job_data['processed_reads'] = list(job_data['reads'])
+
+                    pipeline_results += alldata
+                    if pipeline_stage == num_stages: # Last stage, add contig for assessment
+                        if output: #If a contig was produced
+                            fcontigs = cur_contigs
+                            rcontigs = [asm.rename_file_symlink(f, 'P{}_{}'.format(
+                                        pipeline_num, pipe_suffix)) for f in fcontigs]
                             try:
-                                if not pipe[i][0] == cur_outputs[i][0]:
-                                    break
+                                rscaffolds = [asm.rename_file_symlink(f, 'P{}_{}_{}'.format(
+                                            pipeline_num, pipe_suffix, 'scaff')) for f in cur_scaffolds]
+                                if rscaffolds:
+                                    scaffold_data = {'files': rscaffolds, 'name': pipe_suffix}
+                                    final_scaffolds.append(scaffold_data)
                             except:
                                 pass
-                            try:
-                                if (pipe[i][0] == module_code and i == pipeline_stage - 1):
-                                    #and overrides[i].items() == job_data['params']): #copy!
-                                    print('Found previously computed data, reusing {}.'.format(
-                                            module_code))
-                                    output = [] + pipe[i][1]
-                                    pfix = (k+1, i+1)
-                                    alldata = [] + pipe[i][2]
-                                    reuse_data = True
-                                    job_data.get_pipeline(pipeline_num).get_module(
-                                        pipeline_stage)['elapsed_time'] = time.time(
-                                        job_data.get_pipeline(i).get_module(
-                                                pipeline_stage)['elapsed_time'])
-                                        
-                                    break
-                            except: # Previous pipes may be shorter
-                                pass
+                            contig_data = {'files': rcontigs, 'name': pipe_suffix, 'alignment_bam': []}
+                            final_contigs.append(contig_data)
+                            output_types.append(output_type)
 
-                output_type = self.pmanager.output_type(module_name)
 
-                if not reuse_data:
-                    output, alldata, mod_log = self.pmanager.run_module(
-                        module_name, job_data, all_data=True, reads=include_reads)
-                    if not output:
-                        pipe_alive = False
-                        break
-                    # Prefix outfiles with pipe stage, only assemblers
-                    alldata = [asm.prefix_file_move(
-                            file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
-                                for file in alldata]
-                    module_elapsed_time = time.time() - module_start_time
-                    job_data.get_pipeline(pipeline_num).get_module(
-                        pipeline_stage)['elapsed_time'] = module_elapsed_time
-                    if output_type == 'contigs': #Assume assembly contigs
+                    try:
+                        logfiles.append(mod_log)
+                    except:
                         pass
-                    elif output_type == 'reads':
-                        pass
-                    if alldata: #If log was renamed
-                        mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
-                                pipeline_num, pipeline_stage, module_name))
+                    pipeline_stage += 1
 
-                if output_type == 'contigs' or output_type == 'scaffolds': #Assume assembly contigs
-                    if reuse_data:
-                        p_num, p_stage = pfix
-                    else:
-                        p_num, p_stage = pipeline_num, pipeline_stage
+                    cur_outputs.append([module_code, output, alldata])
+                pipe_elapsed_time = time.time() - pipe_start_time
+                pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
+                job_data.get_pipeline(pipeline_num)['elapsed_time'] = pipe_elapsed_time
 
-                    # If plugin returned scaffolds
-                    if type(output) is tuple and len(output) == 2:
-                        out_contigs = output[0]
-                        out_scaffolds = output[1]
-                        cur_scaffolds = [asm.prefix_file(
-                                file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
-                                    for file in out_scaffolds]
-                    else:
-                        out_contigs = output
-                    cur_contigs = [asm.prefix_file(
-                            file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
-                                for file in out_contigs]
-                        
-                    #job_data['reads'] = asm.arast_reads(alldata)
-                    job_data['contigs'] = cur_contigs
-                    
-                elif output_type == 'reads': #Assume preprocessing
-                    if include_reads and reuse_data: # data was prefixed and moved
-                        for d in output:
-                            files = [asm.prefix_file(f, "P{}_S{}_{}".format(
-                                        pipeline_num, pipeline_stage, module_name)) for f in d['files']]
-                            d['files'] = files
-                            d['short_reads'] = [] + files
-                    job_data['reads'] = output
-                    job_data['processed_reads'] = list(job_data['reads'])
+                if not output:
+                    self.out_report.write('ERROR: No contigs produced. See module log\n')
+                else:
 
-                pipeline_results += alldata
-                if pipeline_stage == num_stages: # Last stage, add contig for assessment
-                    if output: #If a contig was produced
-                        fcontigs = cur_contigs
-                        rcontigs = [asm.rename_file_symlink(f, 'P{}_{}'.format(
-                                    pipeline_num, pipe_suffix)) for f in fcontigs]
-                        try:
-                            rscaffolds = [asm.rename_file_symlink(f, 'P{}_{}_{}'.format(
-                                        pipeline_num, pipe_suffix, 'scaff')) for f in cur_scaffolds]
-                            if rscaffolds:
-                                scaffold_data = {'files': rscaffolds, 'name': pipe_suffix}
-                                final_scaffolds.append(scaffold_data)
-                        except:
-                            pass
-                        contig_data = {'files': rcontigs, 'name': pipe_suffix, 'alignment_bam': []}
-                        final_contigs.append(contig_data)
-                        output_types.append(output_type)
-                
+                    ## Assessment
+                    #self.pmanager.run_module('reapr', job_data)
+                    #print job_data
+                    # TODO reapr break may be diff from final reapr align!
+                    # ale_out, _, _ = self.pmanager.run_module('ale', job_data)
+                    # if ale_out:
+                    #     job_data.get_pipeline(pipeline_num).import_ale(ale_out)
+                    #     ale_reports[pipe_suffix] = ale_out
+                    pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], 
+                                                                   job_data['job_id'],
+                                                                   pipeline_num)
+                    try:
+                        os.makedirs(pipeline_datapath)
+                    except:
+                        logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
+                    all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
+                                        'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
 
-                try:
-                    logfiles.append(mod_log)
-                except:
-                    pass
-                pipeline_stage += 1
-                
-                cur_outputs.append([module_code, output, alldata])
-            pipe_elapsed_time = time.time() - pipe_start_time
-            pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
-            job_data.get_pipeline(pipeline_num)['elapsed_time'] = pipe_elapsed_time
+                self.out_report.write('Pipeline {} total time: {}\n\n'.format(pipeline_num, pipe_ftime))
+                job_data.get_pipeline(pipeline_num)['name'] = pipe_suffix
+                pipe_outputs.append(cur_outputs)
+                pipeline_num += 1
 
-            if not output:
-                self.out_report.write('ERROR: No contigs produced. See module log\n')
-            else:
-
-                ## Assessment
-                #self.pmanager.run_module('reapr', job_data)
-                #print job_data
-                # TODO reapr break may be diff from final reapr align!
-                # ale_out, _, _ = self.pmanager.run_module('ale', job_data)
-                # if ale_out:
-                #     job_data.get_pipeline(pipeline_num).import_ale(ale_out)
-                #     ale_reports[pipe_suffix] = ale_out
-                pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], 
-                                                               job_data['job_id'],
-                                                               pipeline_num)
-                try:
-                    os.makedirs(pipeline_datapath)
-                except:
-                    logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
-                all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
-                                    'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
-
-            self.out_report.write('Pipeline {} total time: {}\n\n'.format(pipeline_num, pipe_ftime))
-            job_data.get_pipeline(pipeline_num)['name'] = pipe_suffix
-            pipe_outputs.append(cur_outputs)
-            pipeline_num += 1
+            except:
+                print "ERROR: Pipeline #{} Failed".format(pipeline_num)
+                pipeline_num += 1
 
         job_data['final_contigs'] = final_contigs
         try:
