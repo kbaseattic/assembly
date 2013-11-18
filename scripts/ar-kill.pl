@@ -7,12 +7,13 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar-avail [-h]
+usage: arast kill [-h] [-j JOB] [-a]
 
-List available AssemblyRAST modules
+Send a kill signal to jobs
 
-Optional arguments:
-  -h, --help  show this help message and exit
+optional arguments:
+  -h, --help         show this help message and exit
+  -j JOB, --job JOB  kill specific job
 
 End_of_Usage
 
@@ -30,10 +31,10 @@ if ($help) {
 
 # my $target = $ENV{HOME}. "/kb/assembly";
 # my $arast  = "ar_client/ar_client/ar_client.py";
-# system "$target/$arast avail @ARGV";
+# system "$target/$arast kill @ARGV";
 
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-system "$arast avail @ARGV";
+system "$arast kill @ARGV";
                     
