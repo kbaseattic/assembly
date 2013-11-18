@@ -399,11 +399,10 @@ class ArastConsumer:
         final_contigs = []
         final_scaffolds = []
         output_types = []
+        exceptions = []
         num_pipes = len(all_pipes)
         for pipe in all_pipes:
-
             try:
-
                 #job_data = copy.deepcopy(job_data_global)
                 #job_data['out_report'] = job_data_global['out_report'] 
                 pipeline, overrides = self.pmanager.parse_pipe(pipe)
@@ -614,6 +613,7 @@ class ArastConsumer:
 
             except:
                 print "ERROR: Pipeline #{} Failed".format(pipeline_num)
+                exceptions.append(str(sys.exc_info()[1]))
                 pipeline_num += 1
 
         job_data['final_contigs'] = final_contigs
@@ -628,8 +628,19 @@ class ArastConsumer:
         ## ANALYSIS: Quast
         job_data['contig_types'] = output_types
         job_data['params'] = [] #clear overrides from last stage
-        quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
-                                                                      tar=True, meta=True)
+
+        try: #Try to assess, otherwise report pipeline errors
+            quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
+                                                                          tar=True, meta=True)
+        except:
+            if exceptions:
+                if len(exceptions) > 1:
+                    raise Exception('Multiple Errors')
+                else:
+                    raise Exception(exceptions[0])
+            else:
+                raise Exception('No valid contigs')
+
         if job_data['final_scaffolds']:
             print 'Found scaffolds'
             print job_data['final_scaffolds']
