@@ -294,7 +294,8 @@ class ArastConsumer:
                     'processed_reads': list(reads),
                     'pipeline_data': {},
                     'datapath': datapath,
-                    'out_report' : self.out_report})
+                    'out_report' : self.out_report,
+                    'logfiles': []})
 
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         self.job_list.append(job_data)
