@@ -45,7 +45,7 @@ def send_kill_message(user, job_id):
     uid = job_doc['_id']
     if job_doc['status'] == 'queued':
         metadata.update_job(uid, 'status', 'Terminated')
-    else:
+    elif re.search("Running", job_doc['status']):
         msg = json.dumps({'user':user, 'job_id':job_id})
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host='localhost'))
@@ -57,7 +57,8 @@ def send_kill_message(user, job_id):
                               body=msg,)
         logging.debug(" [x] Sent to kill exchange: %r" % (job_id))
         connection.close()
-
+    else:
+        return "Invalid Job ID"
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
@@ -333,7 +334,9 @@ class JobResource:
     def kill(self, userid=None, job_id=None):
         if userid == 'OPTIONS':
             return ('New kill Request') # To handle initial html OPTIONS requess
-        send_kill_message(userid, job_id)
+        k = send_kill_message(userid, job_id)
+        if k:
+            return k
         return 'Kill request sent for job {}'.format(job_id)
 
     @cherrypy.expose
