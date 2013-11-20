@@ -14,6 +14,7 @@ import time
 import datetime 
 import socket
 import multiprocessing
+import re
 import threading
 import tarfile
 import subprocess
@@ -164,7 +165,8 @@ class ArastConsumer:
     
             touch(datapath)
 
-        else: # download data
+        ## Data does not exist on current compute node
+        else:
             self.metadata.update_job(uid, 'status', 'Data transfer')
             os.makedirs(filepath)
 
@@ -185,14 +187,25 @@ class ArastConsumer:
                     for word in l:
                         if is_filename(word):
                             baseword = os.path.basename(word)
-                            filedict['files'].append(
-                                self.download(url, user, token, ids[files.index(baseword)], filepath))
-                        else:
+                            dl = self.download(url, user, token, 
+                                               ids[files.index(baseword)], filepath)
+                            if shock.parse_handle(dl): #Shock handle, get real data
+                                logging.info('Found shock handle, getting real data...')
+                                s_addr, s_id = shock.parse_handle(dl)
+                                s_url = 'http://{}'.format(s_addr)
+                                real_file = self.download(s_url, user, token, 
+                                                          s_id, filepath)
+                                filedict['files'].append(real_file)
+                            else:
+                                filedict['files'].append(
+                                    self.download(url, user, token, 
+                                                  ids[files.index(baseword)], filepath))
+                        elif re.search('=', word):
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
                     all_files.append(filedict)
             except:
-                #logging.info(format_exc(sys.exc_info()))
+                logging.info(format_exc(sys.exc_info()))
                 logging.info('No paired files submitted')
 
             try:
@@ -209,9 +222,19 @@ class ArastConsumer:
 
                         if is_filename(word):
                             baseword = os.path.basename(word)
-                            filedict['files'].append(
-                                self.download(url, user, token, ids[files.index(baseword)], filepath))
-                        else:
+                            dl = self.download(url, user, token, 
+                                               ids[files.index(baseword)], filepath)
+                            if shock.parse_handle(dl): #Shock handle, get real data
+                                logging.info('Found shock handle, getting real data...')
+                                s_addr, s_id = shock.parse_handle(dl)
+                                s_url = 'http://{}'.format(s_addr)
+                                real_file = self.download(s_url, user, token, 
+                                                          s_id, filepath)
+                                filedict['files'].append(real_file)
+                            else:
+                                filedict['files'].append(
+                                    self.download(url, user, token, ids[files.index(baseword)], filepath))
+                        elif re.search('=', word):
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
                         all_files.append(filedict)
@@ -233,9 +256,19 @@ class ArastConsumer:
 
                         if is_filename(word):
                             baseword = os.path.basename(word)
-                            filedict['files'].append(
-                                self.download(url, user, token, ids[files.index(baseword)], filepath))
-                        else:
+                            dl = self.download(url, user, token, 
+                                               ids[files.index(baseword)], filepath)
+                            if shock.parse_handle(dl): #Shock handle, get real data
+                                logging.info('Found shock handle, getting real data...')
+                                s_addr, s_id = shock.parse_handle(dl)
+                                s_url = 'http://{}'.format(s_addr)
+                                real_file = self.download(s_url, user, token, 
+                                                          s_id, filepath)
+                                filedict['files'].append(real_file)
+                            else:
+                                filedict['files'].append(
+                                    self.download(url, user, token, ids[files.index(baseword)], filepath))
+                        elif re.search('=', word):
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
                         all_files.append(filedict)
