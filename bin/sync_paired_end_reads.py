@@ -58,15 +58,15 @@ def sync_paired_end_reads(original, reads_a, reads_b, synced_a, synced_b):
     """
     # This matches 1, 2, or 3 preceded by / _ or whitespace. Its rightmost
     # match in a header line is used to identify the read pair.
-    sep = re.compile('[\s_/][123]')
+    sep = re.compile('[\s_/][123]?')
 
     def next_record(fh):
         return [fh.readline().strip() for i in range(4)]
 
     def head(record):
-        return sep.split(record[0])[:-1]
+        return sep.split(record[0])[0]
 
-    headers = (sep.split(x.strip())[:-1] for i, x in enumerate(original)
+    headers = (sep.split(x.strip())[0] for i, x in enumerate(original)
                if not (i % 4))
 
     filtered_a = filtered_b = kept = 0
