@@ -15,6 +15,8 @@ import json
 import pymongo
 import multiprocessing
 import pika
+import requests
+
 from ConfigParser import SafeConfigParser
 import consume
 import shock
@@ -33,9 +35,14 @@ def start(arast_server, config, num_threads, queue):
     print "Reading from config file"
     cparser = SafeConfigParser()
     cparser.read(config)
-    shockurl = cparser.get('shock', 'host')
-    shockuser = cparser.get('shock','admin_user')
-    shockpass = cparser.get('shock','admin_pass')
+    
+    ## Retrieve shock url from arast server
+    shockurl = json.loads(requests.get('http://{}:8000/shock'.format(arast_server)).text)['shockurl']
+    try:
+
+        print ' [.] Retrieved shock url: {}'.format(shockurl)
+    except:
+        shockurl = cparser.get('shock', 'host')
     arasturl =  cparser.get('meta','mongo.host')
     if not num_threads:
         num_threads =  cparser.get('compute','threads')
