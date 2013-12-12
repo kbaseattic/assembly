@@ -18,8 +18,8 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         logging.info("Running subprocess:{}".format(cmd_args))
 
         print " ".join(cmd_args)
-        print self.arast_popen(cmd_args, stdout=subprocess.PIPE, env=smrt_env).stdout.read()
-        subprocess.Popen(cmd_args, env=smrt_env)
+        print subprocess.Popen(cmd_args, stdout=subprocess.PIPE, env=smrt_env).stdout.read()
+        # self.arast_popen(cmd_args, env=smrt_env)
         
 
 
@@ -31,8 +31,6 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         for line in lines:
             k, v = line.split('=', 1)
             env[k] = v
-
-        print env
 
         return env
         
