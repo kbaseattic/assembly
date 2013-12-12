@@ -21,8 +21,8 @@ class PacbioAssembler(BaseAssembler, IPlugin):
 
 
     def get_smrt_env(self):
-        source_cmd = ['source', self.setup, ';', 'printenv' ];
-        proc = subprocess.Popen(source_cmd, stdout=subprocess.PIPE, shell=True, executable='/bin/bash')
+        source_cmd = " ".join(['source', self.setup, ';', 'printenv' ]);
+        proc = subprocess.Popen([source_cmd], stdout=subprocess.PIPE, shell=True, executable='/bin/bash')
         lines = proc.stdout.readlines()
         print lines
         
