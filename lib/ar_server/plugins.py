@@ -430,6 +430,31 @@ class BasePreprocessor(BasePlugin):
         """
         return
 
+class BaseAnalyzer(BasePlugin):
+    """
+    Sequence analysis plugin.  Input should be a list of library dicts
+
+    """
+    # Default behavior for run()
+    INPUT = 'reads'
+    OUTPUT = 'report'
+
+    def __call__(self, settings, job_data, manager):
+        self.run_checks(settings, job_data)
+        logging.info("{} Settings: {}".format(self.name, settings))
+        self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data, manager)
+        valid_files = self.get_valid_reads(job_data)
+        output = self.run(valid_files)
+
+        self.out_module.close()
+        return output
+
+    # Must implement run() method
+    @abc.abstractmethod
+    def run(self, libraries):
+        return
+
 
 class BasePostprocessor(BasePlugin):
     """

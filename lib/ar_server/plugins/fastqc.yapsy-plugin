@@ -1,0 +1,13 @@
+[Core]
+Name = fastqc
+Module = fastqc
+
+[Settings]
+executable = ../../bin/FastQC/fastqc
+filetypes = fastq,fq
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = FastQC
+
