@@ -18,8 +18,9 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         logging.info("Running subprocess:{}".format(cmd_args))
 
         print " ".join(cmd_args)
-
-        self.arast_popen(cmd_args, env=smrt_env)
+        print self.arast_popen(cmd_args, stdout=subprocess.PIPE, env=smrt_env).stdout.read()
+        subprocess.Popen(cmd_args, env=smrt_env)
+        
 
 
     def get_smrt_env(self):
