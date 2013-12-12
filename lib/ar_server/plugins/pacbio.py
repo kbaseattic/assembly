@@ -12,8 +12,18 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         Return list of contig file(s)
         """
         
+        get_smrt_env()
+
         cmd_args = [self.executable, '-help']
         logging.info("Running subprocess:{}".format(cmd_args))
         print " ".join(cmd_args)
         self.arast_popen(cmd_args)        
 
+
+    def get_smrt_env(self):
+        source_cmd = ['source', self.setup, ';', 'printenv' ];
+        proc = subprocess.Popen(source_cmd, stdout=subprocess.PIPE, shell=True, executable='/bin/bash')
+        lines = proc.stdout.readlines()
+        print lines
+        
+        

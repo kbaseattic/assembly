@@ -4,7 +4,8 @@ Module = pacbio
 
 [Settings]
 short_name = pb
-executable = ../../bin/smrt/install/smrtanalysis-2.1.1.128549/analysis/bin/smrtpipe.py
+# executable = ../../bin/smrt/install/smrtanalysis-2.1.1.128549/analysis/bin/smrtpipe.py
+executable = smrtpipe.py
 filetypes = h5,fastq,fq
 dashes = 1
 contig_threshold = 500
