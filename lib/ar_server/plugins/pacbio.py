@@ -20,10 +20,10 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         self.arast_popen(cmd_args)        
 
 
-    def get_smrt_env(self):
-        source_cmd = ['source', self.setup, ';', 'printenv' ];
-        proc = subprocess.Popen(source_cmd, stdout=subprocess.PIPE, shell=True, executable='/bin/bash')
-        lines = proc.stdout.readlines()
-        print lines
+def get_smrt_env():
+    source_cmd = ['source', self.setup, ';', 'printenv' ];
+    proc = subprocess.Popen(source_cmd, stdout=subprocess.PIPE, shell=True, executable='/bin/bash')
+    lines = proc.stdout.readlines()
+    print lines
         
         
