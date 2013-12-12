@@ -31,8 +31,6 @@ kill_list = mgr.list()
 
 def start(arast_server, config, num_threads, queue):
     # Read config file
-    print config
-    print "Reading from config file"
     cparser = SafeConfigParser()
     cparser.read(config)
 

@@ -360,8 +360,9 @@ class ArastConsumer:
                     self.pmanager.validate_pipe(p)
 
                 result_files, summary, contig_files = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
-                for f in result_files:
-                    fname = os.path.basename(f).split('.')[0]
+                for i, f in enumerate(result_files):
+                    #fname = os.path.basename(f).split('.')[0]
+                    fname = str(i)
                     res = self.upload(url, user, token, f)
                     download_ids[fname] = res['data']['id']
                     
@@ -378,7 +379,6 @@ class ArastConsumer:
                 print traceback
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
-
 
         # Format report
         for i, job in enumerate(self.job_list):
@@ -586,10 +586,12 @@ class ArastConsumer:
                                 d['short_reads'] = [] + files
                         job_data['reads'] = output
                         job_data['processed_reads'] = list(job_data['reads'])
-
-                    pipeline_results += alldata
+                        
+                    else: # Generic return, don't use in further stages
+                        pipeline_results += output
+                        logging.info('Generic plugin output: {}'.format(output))
                     if pipeline_stage == num_stages: # Last stage, add contig for assessment
-                        if output: #If a contig was produced
+                        if output and output_type == 'contigs': #If a contig was produced
                             fcontigs = cur_contigs
                             rcontigs = [asm.rename_file_symlink(f, 'P{}_{}'.format(
                                         pipeline_num, pipe_suffix)) for f in fcontigs]
@@ -636,8 +638,11 @@ class ArastConsumer:
                         os.makedirs(pipeline_datapath)
                     except:
                         logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
-                    all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
-                                        'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
+
+                    # all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
+                    #                     'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
+
+                    all_files += pipeline_results
 
                 self.out_report.write('Pipeline {} total time: {}\n\n'.format(pipeline_num, pipe_ftime))
                 job_data.get_pipeline(pipeline_num)['name'] = pipe_suffix
@@ -646,6 +651,7 @@ class ArastConsumer:
 
             except:
                 print "ERROR: Pipeline #{} Failed".format(pipeline_num)
+                print format_exc(sys.exc_info())
                 exceptions.append(str(sys.exc_info()[1]))
                 pipeline_num += 1
 
@@ -662,17 +668,21 @@ class ArastConsumer:
         job_data['contig_types'] = output_types
         job_data['params'] = [] #clear overrides from last stage
 
-        try: #Try to assess, otherwise report pipeline errors
-            quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
-                                                                          tar=True, meta=True)
-        except:
-            if exceptions:
-                if len(exceptions) > 1:
-                    raise Exception('Multiple Errors')
+        if 'contigs' in output_types or 'scaffolds' in output_types:
+            try: #Try to assess, otherwise report pipeline errors
+                quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
+                                                                              tar=True, meta=True)
+                logfiles.append(q_log)
+            except:
+                if exceptions:
+                    if len(exceptions) > 1:
+                        raise Exception('Multiple Errors')
+                    else:
+                        raise Exception(exceptions[0])
                 else:
-                    raise Exception(exceptions[0])
-            else:
-                raise Exception('No valid contigs')
+                    raise Exception('No valid contigs')
+        else:
+            quast_report, quast_tar = '',''
 
         if job_data['final_scaffolds']:
             print 'Found scaffolds'
@@ -685,7 +695,7 @@ class ArastConsumer:
         else:
             scaffold_quast = False
 
-        logfiles.append(q_log)
+
 
         ## Add reference assessment
         # if job_data['reference']:
@@ -696,9 +706,12 @@ class ArastConsumer:
         #         job_data.add_pipeline(-1, [])
         #         job_data.get_pipeline(-1).import_ale(ref_ale_out)
         #         job_data.get_pipeline(-1)['name'] = 'REF'
-                
-        job_data.import_quast(quast_report[0])
-        
+            
+        try:    
+            job_data.import_quast(quast_report[0])
+        except:
+            print 'No Quast Report'
+
         ## Write out ALE scores
         # self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
         # for suffix,report in ale_reports.items():
@@ -730,9 +743,14 @@ class ArastConsumer:
 
         ## Format Returns
         ctg_analysis = quast_tar.rsplit('/', 1)[0] + '/{}_ctg_qst.tar.gz'.format(job_data['job_id'])
-        summary = quast_report[0]
-        os.rename(quast_tar, ctg_analysis)
-        return_files = [ctg_analysis]
+        try:
+            summary = quast_report[0]
+            os.rename(quast_tar, ctg_analysis)
+            return_files = [ctg_analysis]
+        except:
+            summary = ''
+            return_files = []
+
         # ale_plot = job_data.plot_ale()
         # if ale_plot:
         #     return_files.append(ale_plot)
@@ -747,9 +765,13 @@ class ArastConsumer:
             for f in data['files']:
                 contig_files.append(os.path.realpath(f))
 
-        return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-                            contig_files, '{}_assemblies.tar.gz'.format(
-                job_data['job_id'])))
+        return_files += all_files
+        if contig_files:
+            return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
+                                             contig_files, '{}_assemblies.tar.gz'.format(
+                        job_data['job_id'])))
+        print "return files: {}".format(return_files)
+
         return return_files, summary, contig_files
 
 
