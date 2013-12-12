@@ -609,8 +609,23 @@ class ModuleManager():
             plugin.threads = threads
             self.plugins.append(plugin.name)
             plugin.plugin_object.setname(plugin.name)
-            print "Plugin found: {}".format(plugin.name)
-        
+
+            ## Check for installed binaries
+            executable = ''
+            try:
+                settings = plugin.details.items('Settings')
+                for kv in settings:
+                    if kv[0] == 'executable':
+                        executable = kv[1]
+                        if os.path.exists(executable):
+                            print "Plugin found: {}".format(plugin.name)
+                            break
+                        else:
+                            raise Exception()
+                    ## TODO detect binaries not in "executable" setting
+            except:
+                raise Exception('[ERROR]: {} -- Binary does not exist -- {}'.format(plugin.name, executable))
+
 
     def run_module(self, module, job_data_orig, tar=False, 
                    all_data=False, reads=False, meta=False, 
@@ -661,6 +676,18 @@ class ModuleManager():
         return self.pmanager.getPluginByName(module).plugin_object.INPUT
 
     def get_short_name(self, module):
+        try:
+            plugin = self.pmanager.getPluginByName(module)
+            settings = plugin.details.items('Settings')
+            for kv in settings:
+                if kv[0] == 'short_name':
+                    sn = kv[1]
+                    break
+            return sn
+        except:
+            return None
+
+    def get_executable(self, module):
         try:
             plugin = self.pmanager.getPluginByName(module)
             settings = plugin.details.items('Settings')
