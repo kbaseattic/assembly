@@ -19,6 +19,8 @@ Options:
 
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
+      regular      - regular components (modules to be deployed on all compute nodes)
+      special      - special components (large modules: acbio, allpaths-lg, etc)
       all          - all components
 
       a5           - A5 pipeline (v.20120518)
@@ -32,6 +34,7 @@ Compute server components:
       idba         - IDBA_UD assembler (v1.1.0)
       kiki         - Kiki assembler (git)
       masurca      - MaSuRCA assembler (v2.0.0)
+      pacbio       - SMRT Analysis Software (v2.1.1)
       quast        - QUAST assembly evaluator (v2.2)
       reapr        - REAPR reference-free evaluator (v1.0.15)
       screed       - Screed assembly statistics library (git)
@@ -42,7 +45,7 @@ Compute server components:
 
 Examples:
       sudo add-comp.pl basic velvet spades
-      sudo add-comp.pl -t /space/tmp -d /usr/bin all
+      sudo add-comp.pl -t /space/tmp -d /usr/bin regular
 
 End_of_Usage
 
@@ -54,9 +57,25 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help) { print $usage; exit 0 }
 
-my @all_comps = qw (basic a5 a6 ale bowtie bwa discovar fastx gam_ngs idba kiki masurca quast reapr screed seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastx gam_ngs idba kiki masurca quast reapr screed seqtk solexa spades velvet); 
+my @special_comps = qw (pacbio);
+my @all_comps = (@regular_comps, @special_comps);
 my %supported = map { $_ => 1 } @all_comps;
-my @comps = @ARGV; @comps = @all_comps if join(' ', @comps) =~ /\ball\b/;
+
+my @comps;
+# my @comps = @ARGV; @comps = @all_comps if join(' ', @comps) =~ /\ball\b/;
+for (@ARGV) {
+    if (/\ball\b/) {
+        @comps = @all_comps; last;
+    } elsif (/\bregular\b/) {
+        @comps = (@comps, @regular_comps);
+    } elsif (/\bspecial\b/) {
+        @comps = (@comps, @special_comps);
+    } else {
+        push @comps, $_;
+    }
+}
+
 
 my $curr_dir = cwd();
 my $base_dir = dirname(Cwd::abs_path($0));
@@ -83,7 +102,7 @@ for my $c (@comps) {
 # TODO: python: fallback: strip path prefix and check exe in path
 
 sub install_template {
-    # we are in the $tmp_dir 
+    # we are in the $tmp_dir directory 
     # 1. download source files
     # 2. compile
     # 3. copy executables to $dest_dir
@@ -186,6 +205,35 @@ sub install_masurca {
     download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA');
     run("cd $dir; ./install.sh");
     run("cp -r -T $dir $dest_dir/masurca");
+}
+
+sub install_pacbio {
+    # verify_user("smrtanalysis");
+
+    my $dir = 'smrtanalysis-2.1.1';
+    my $file = '2tqk61';
+    my $url = 'http://programs.pacificbiosciences.com/l/1652/2013-11-05';
+    # download($dir, $file, $url);
+
+    # current configurations
+    # 
+    # directories
+    #   tmpdir   -> /mnt/tmp           # chmod 777 /mnt/tmp
+    #   userdata -> /space/smrtdata    # mkdir -p /space/smrtdata; chown ubuntu:ubuntu /space/smrtdata;
+    #                                    ln -s /space/smrtdata $AR_DIR/bin/smrt/userdata                                     
+    # 
+    # SMRT Analysis user:     ubuntu
+    # MySQL user/password:    root/root
+    # Job management system:  NONE
+    # Max parallel processes: 28
+    # TMP directory symlink:  /mnt/tmp
+
+    my $dest = "$dest_dir/smrt";
+    run("mkdir -p $dest");
+    run("bash $file --rootdir $dest");
+
+    # source $AR_DIR/bin/smrt/install/smrtanalysis-2.1.1.128549/etc/setup.sh
+    # https://github.com/PacificBiosciences/SMRT-Analysis/wiki/SMRT-Pipe-Reference-Guide-v2.1
 }
 
 sub install_quast {
@@ -328,6 +376,12 @@ sub make_tmp_dir {
     $dir ||= "/mnt/tmp";
     run("mkdir -p $dir");
     return $dir;
+}
+
+sub verify_user {
+    my ($user) = @_;
+    my $rc = system "id -u $user >/dev/null 2>/dev/null";
+    run("sudo useradd -m $user 2>/dev/null") if $rc;
 }
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }

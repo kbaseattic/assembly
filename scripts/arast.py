@@ -229,7 +229,7 @@ def main():
         for f in files:
             #Check file or dir
             if os.path.isfile(f):
-                res_ids += upload([f,], curl=curl)
+                res_ids += upload([f], curl=curl)
                 file_sizes.append(os.path.getsize(f))
                 base_files.append(os.path.basename(f))
             elif os.path.isdir(f):
