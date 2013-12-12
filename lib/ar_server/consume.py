@@ -364,7 +364,6 @@ class ArastConsumer:
                     #fname = os.path.basename(f).split('.')[0]
                     fname = str(i)
                     res = self.upload(url, user, token, f)
-                    print 'uploaded {}: {}'.format(f, res['data']['id'])
                     download_ids[fname] = res['data']['id']
                     
                 for c in contig_files:
@@ -381,8 +380,6 @@ class ArastConsumer:
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
 
-        print 'download id'
-        print download_ids
         # Format report
         for i, job in enumerate(self.job_list):
             if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
