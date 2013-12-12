@@ -30,6 +30,9 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         for line in lines:
             k, v = line.split('=', 1)
             env[k] = v
+
         print env
+
+        return env
         
         
