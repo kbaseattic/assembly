@@ -49,9 +49,10 @@ Examples:
 
 End_of_Usage
 
-my ($help, $dest_dir, $tmp_dir);
+my ($help, $dest_dir, $tmp_dir, $force_reinstall);
 
 GetOptions( 'd|dest=s' => \$dest_dir,
+            'f|force'  => \$force_reinstall,
             't|tmp=s'  => \$tmp_dir,
             'h|help'   => \$help);
 
@@ -84,7 +85,7 @@ $tmp_dir     = make_tmp_dir($tmp_dir);
 
 for my $c (@comps) {
     if (!$supported{$c}) { print "Warning: $c not supported.\n"; next; }
-    my $found = check_if_installed($c);
+    my $found = !$force_reinstall && check_if_installed($c);
     if ($found) { print "Found component $c, skipping...\n"; next; }
 
     print "Installing $c...\n";
@@ -208,14 +209,10 @@ sub install_masurca {
 }
 
 sub install_pacbio {
-    # verify_user("smrtanalysis");
-
-    run("cpanm Statistics::Descriptive");
-
     my $dir = 'smrtanalysis-2.1.1';
     my $file = '2tqk61';
     my $url = 'http://programs.pacificbiosciences.com/l/1652/2013-11-05';
-    # download($dir, $file, $url);
+    download($dir, $file, $url);
 
     # current configurations
     # 
@@ -229,10 +226,15 @@ sub install_pacbio {
     # Job management system:  NONE
     # Max parallel processes: 28
     # TMP directory symlink:  /mnt/tmp
-
     my $dest = "$dest_dir/smrt";
     run("mkdir -p $dest");
     run("bash $file --rootdir $dest");
+
+    # install patch
+    $file = 'smrtanalysis-2.1.1-patch-0.1.run';
+    $url = 'http://files.pacb.com/software/smrtanalysis/2.1.1';
+    download($dir, $file, $url);
+    run("bash $dest_dir/smrt/admin/bin/smrtupdater --force $file");
 
     # source $AR_DIR/bin/smrt/install/smrtanalysis-2.1.1.128549/etc/setup.sh
     # https://github.com/PacificBiosciences/SMRT-Analysis/wiki/SMRT-Pipe-Reference-Guide-v2.1
