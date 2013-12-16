@@ -210,6 +210,8 @@ sub install_masurca {
 sub install_pacbio {
     # verify_user("smrtanalysis");
 
+    run("cpanm Statistics::Descriptive");
+
     my $dir = 'smrtanalysis-2.1.1';
     my $file = '2tqk61';
     my $url = 'http://programs.pacificbiosciences.com/l/1652/2013-11-05';
