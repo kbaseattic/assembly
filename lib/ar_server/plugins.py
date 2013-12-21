@@ -603,8 +603,11 @@ class ModuleManager():
         self.pmanager.collectPlugins()
         self.pmanager.locatePlugins()
         self.plugins = ['none']
-        if len(self.pmanager.getAllPlugins()) == 0:
+        num_plugins = len(self.pmanager.getAllPlugins())
+        if  num_plugins == 0:
             raise Exception("No Plugins Found!")
+
+        plugins = []
         for plugin in self.pmanager.getAllPlugins():
             plugin.threads = threads
             self.plugins.append(plugin.name)
@@ -615,17 +618,18 @@ class ModuleManager():
             try:
                 settings = plugin.details.items('Settings')
                 for kv in settings:
-                    if kv[0] == 'executable':
-                        executable = kv[1]
+                    executable = kv[1]
+                    if executable.find('/') != -1 : #Hackish "looks like a file"
                         if os.path.exists(executable):
-                            print "Plugin found: {}".format(plugin.name)
+                            logging.info("Found file: {}".format(executable))
                             break
                         else:
                             raise Exception()
                     ## TODO detect binaries not in "executable" setting
             except:
                 raise Exception('[ERROR]: {} -- Binary does not exist -- {}'.format(plugin.name, executable))
-
+            plugins.append(plugin.name)
+        print "Plugins found [{}]: {}".format(num_plugins, sorted(plugins))
 
     def run_module(self, module, job_data_orig, tar=False, 
                    all_data=False, reads=False, meta=False, 
