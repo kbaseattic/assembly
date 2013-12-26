@@ -766,6 +766,18 @@ class ArastConsumer:
                 contig_files.append(os.path.realpath(f))
 
         return_files += all_files
+        ## Deduplicate
+        seen = set()
+        for f in return_files:
+            seen.add(f)
+        return_files = [f for f in seen]
+
+        if exceptions:
+            if len(exceptions) > 1:
+                raise Exception('Multiple Errors')
+            else:
+                raise Exception(exceptions[0])
+
         if contig_files:
             return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
                                              contig_files, '{}_assemblies.tar.gz'.format(
