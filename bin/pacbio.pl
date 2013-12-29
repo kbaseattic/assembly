@@ -189,8 +189,9 @@ sub form_smrt_cmd {
     # my $smrt_cmd = 'smrtpipe.py --version';
     # my $smrt_cmd = 'smrtpipe.py --examples';
     # my $smrt_cmd = 'smrtpipe.py --output /mnt/tmp/test';
+    # my $smrt_cmd = 'smrtpipe.py --recover --param=pipeline.xml xml:input.xml';
 
-    my $smrt_cmd = 'smrtpipe.py --recover --param=pipeline.xml xml:input.xml';
+    my $smrt_cmd = 'smrtpipe.py --param=pipeline.xml xml:input.xml';
     my @cmd = ('bash', '-c', "source $setup_sh && $smrt_cmd"); 
     # print STDERR '\@cmd = '. Dumper(\@cmd);
     
