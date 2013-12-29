@@ -86,6 +86,19 @@ def curl_download_file(url, node_id, token, outdir=None):
     print "File downloaded: {}/{}".format(outdir, filename)
     return os.path.join(outdir, filename)
 
+def parse_handle(sn_handle):
+    handle_parts = sn_handle.split('.')
+    if handle_parts[-1] == 'shock': # Is shock file
+        shockfile = open(sn_handle)
+        shockinfo = json.loads(shockfile.read())
+        try:
+            shock_id = shockinfo['id']
+            shock_url = shockinfo['url']
+            return shock_url, shock_id
+        except:
+            return False
+    return False
+
 class Shock:
     def __init__(self, shockurl, user, token):
         self.shockurl = shockurl

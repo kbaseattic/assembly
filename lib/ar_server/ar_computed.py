@@ -15,6 +15,8 @@ import json
 import pymongo
 import multiprocessing
 import pika
+import requests
+
 from ConfigParser import SafeConfigParser
 import consume
 import shock
@@ -29,13 +31,16 @@ kill_list = mgr.list()
 
 def start(arast_server, config, num_threads, queue):
     # Read config file
-    print config
-    print "Reading from config file"
     cparser = SafeConfigParser()
     cparser.read(config)
-    shockurl = cparser.get('shock', 'host')
-    shockuser = cparser.get('shock','admin_user')
-    shockpass = cparser.get('shock','admin_pass')
+
+    print " [.] Starting Assembly Service Compute Node"    
+    ## Retrieve shock url from arast server
+    try:
+        shockurl = json.loads(requests.get('http://{}:8000/shock'.format(arast_server)).text)['shockurl']
+        print ' [.] Retrieved Shock URL: {}'.format(shockurl)
+    except:
+        shockurl = cparser.get('shock', 'host')
     arasturl =  cparser.get('meta','mongo.host')
     if not num_threads:
         num_threads =  cparser.get('compute','threads')
@@ -43,7 +48,7 @@ def start(arast_server, config, num_threads, queue):
     mongo_port = int(cparser.get('meta','mongo.port'))
     if arast_server != '':
         arasturl = arast_server
-    print " [.] Starting Assembly Service Compute Node"
+
     print " [.] AssemblyRAST host: %s" % arasturl
     print " [.] MongoDB port: %s" % cparser.get('meta','mongo.port')
     print " [.] RabbitMQ port: %s" % cparser.get('rabbitmq','port')
@@ -57,17 +62,25 @@ def start(arast_server, config, num_threads, queue):
         logging.error("MongoDB connection error: %s" % sys.exc_info()[0])
         sys.exit()
     print " [x] MongoDB connection successful."
+
     # Check RabbitMQ status
         #TODO
         
     print " [.] Connecting to Shock server..."
-    url = "http://%s" % cparser.get('shock', 'host')
-    res = shock.get(url, cparser.get('shock','admin_user'),
-              cparser.get('shock','admin_pass'))
+    url = "http://{}".format(shockurl)
+    res = shock.get(url)
     
     if res is not None:
         print " [x] Shock connection successful"
+    else:
+        raise Exception("Shock connection error: {}".format(shockurl))
 
+    ## Check data write permissions
+    datapath = cparser.get('compute', 'datapath')
+    if os.access(datapath, os.W_OK):
+        print ' [.] Storage path -- {} : OKAY'.format(datapath)
+    else:
+        raise Exception(' [.] Storage path -- {} : ERROR'.format(datapath))
 
     ## Start Monitor Thread
     kill_process = multiprocessing.Process(name='killd', target=start_kill_monitor,

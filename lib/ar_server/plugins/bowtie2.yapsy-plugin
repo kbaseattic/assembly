@@ -3,8 +3,8 @@ Name = bowtie2
 Module = bowtie2
 
 [Settings]
-executable = ../../bin/bowtie2-2.1.0/bowtie2
-build_bin = ../../bin/bowtie2-2.1.0/bowtie2-build
+executable = ../../bin/bowtie/bowtie2
+build_bin = ../../bin/bowtie/bowtie2-build
 filetypes = fastq,fq
 
 [Documentation]

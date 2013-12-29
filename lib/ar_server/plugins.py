@@ -430,6 +430,31 @@ class BasePreprocessor(BasePlugin):
         """
         return
 
+class BaseAnalyzer(BasePlugin):
+    """
+    Sequence analysis plugin.  Input should be a list of library dicts
+
+    """
+    # Default behavior for run()
+    INPUT = 'reads'
+    OUTPUT = 'report'
+
+    def __call__(self, settings, job_data, manager):
+        self.run_checks(settings, job_data)
+        logging.info("{} Settings: {}".format(self.name, settings))
+        self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data, manager)
+        valid_files = self.get_valid_reads(job_data)
+        output = self.run(valid_files)
+
+        self.out_module.close()
+        return output
+
+    # Must implement run() method
+    @abc.abstractmethod
+    def run(self, libraries):
+        return
+
 
 class BasePostprocessor(BasePlugin):
     """
@@ -578,14 +603,33 @@ class ModuleManager():
         self.pmanager.collectPlugins()
         self.pmanager.locatePlugins()
         self.plugins = ['none']
-        if len(self.pmanager.getAllPlugins()) == 0:
+        num_plugins = len(self.pmanager.getAllPlugins())
+        if  num_plugins == 0:
             raise Exception("No Plugins Found!")
+
+        plugins = []
         for plugin in self.pmanager.getAllPlugins():
             plugin.threads = threads
             self.plugins.append(plugin.name)
             plugin.plugin_object.setname(plugin.name)
-            print "Plugin found: {}".format(plugin.name)
-        
+
+            ## Check for installed binaries
+            executable = ''
+            try:
+                settings = plugin.details.items('Settings')
+                for kv in settings:
+                    executable = kv[1]
+                    if executable.find('/') != -1 : #Hackish "looks like a file"
+                        if os.path.exists(executable):
+                            logging.info("Found file: {}".format(executable))
+                            break
+                        else:
+                            raise Exception()
+                    ## TODO detect binaries not in "executable" setting
+            except:
+                raise Exception('[ERROR]: {} -- Binary does not exist -- {}'.format(plugin.name, executable))
+            plugins.append(plugin.name)
+        print "Plugins found [{}]: {}".format(num_plugins, sorted(plugins))
 
     def run_module(self, module, job_data_orig, tar=False, 
                    all_data=False, reads=False, meta=False, 
@@ -636,6 +680,18 @@ class ModuleManager():
         return self.pmanager.getPluginByName(module).plugin_object.INPUT
 
     def get_short_name(self, module):
+        try:
+            plugin = self.pmanager.getPluginByName(module)
+            settings = plugin.details.items('Settings')
+            for kv in settings:
+                if kv[0] == 'short_name':
+                    sn = kv[1]
+                    break
+            return sn
+        except:
+            return None
+
+    def get_executable(self, module):
         try:
             plugin = self.pmanager.getPluginByName(module)
             settings = plugin.details.items('Settings')
