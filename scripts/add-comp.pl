@@ -29,6 +29,7 @@ Compute server components:
       bowtie       - Bowtie aligner (v2.1)
       bwa          - BWA aligner (git)
       discovar     - Discovar assembler (FTP latest)
+      fastqc       - FastQC quality control (v0.10.1)
       fastx        - FastX preprocessing toolkit (v0.0.13)
       gam_ngs      - GAM-NGS assembler merger (git)
       idba         - IDBA_UD assembler (v1.1.0)
@@ -58,7 +59,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastx gam_ngs idba kiki masurca quast reapr screed seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki masurca quast reapr screed seqtk solexa spades velvet); 
 my @special_comps = qw (pacbio);
 my @all_comps = (@regular_comps, @special_comps);
 my %supported = map { $_ => 1 } @all_comps;
@@ -163,6 +164,14 @@ sub install_discovar {
     download($dir, $file, 'ftp://ftp.broadinstitute.org/pub/crd/Discovar/latest_source_code');
     run("mv discovar-* $dir");
     run("cd $dir; ./configure; make; cp src/Discovar $dest_dir/discovar");
+}
+
+sub install_fastqc {
+    my $dir = 'FastQC';
+    my $file = 'fastqc_v0.10.1.zip';
+    download($dir, $file, 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc');
+    run("unzip $file");
+    run("cp -r $dir $dest_dir/");
 }
 
 sub install_fastx {
