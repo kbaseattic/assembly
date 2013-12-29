@@ -12,26 +12,15 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         Return list of contig file(s)
         """
         
-        smrt_env = self.get_smrt_env()
+        cmd_args = [self.executable]
+        cmd_args += self.get_files(reads)
 
-        cmd_args = [self.executable, '-help']
-        logging.info("Running subprocess:{}".format(cmd_args))
+        cmd_args.append('-o')
+        cmd_args.append(self.outpath + '/pacbio')
 
-        print " ".join(cmd_args)
-        print subprocess.Popen(cmd_args, stdout=subprocess.PIPE, env=smrt_env).stdout.read()
-        # self.arast_popen(cmd_args, env=smrt_env)
-        
+        self.arast_popen(cmd_args)
 
+        contigs = self.outpath + 'contigs.fa'
 
-    def get_smrt_env(self):
-        source_cmd = " ".join(['source', self.setup, ';', 'printenv' ]);
-        proc = subprocess.Popen([source_cmd], stdout=subprocess.PIPE, shell=True, executable='/bin/bash')
-        lines = proc.stdout.readlines()
-        env = os.environ.copy()
-        for line in lines:
-            k, v = line.split('=', 1)
-            env[k] = v
-
-        return env
-        
+        return contigs
         
