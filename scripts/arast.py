@@ -59,6 +59,12 @@ p_stat.add_argument("-n", dest="stat_n", action="store", default=15, type=int, h
 
 p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
 
+p_upload = subparsers.add_parser('upload', description='Upload a read set', help='Upload a read library or set of libraries, returns a data ID for future use')
+p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
+p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
+p_upload.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
+
+
 p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
 p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
 p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs")
@@ -189,14 +195,14 @@ def main():
     file_sizes = []
     file_list = []
     # Format into separate pipelines
-    if args.command == "run":
+    if args.command == "run" or args.command == "upload":
         if args.assemblers:
             args.pipeline = [(" ".join(args.assemblers))]
 
-        if not args.pipeline: # auto
+        if not args.pipeline and args.command == "run": # auto
             args.pipeline = 'auto'
 
-        if not ((args.pipeline) and (args.data_id or args.pair or args.single or args.urls)):
+        if not ((args.pipeline or args.command == 'upload') and (args.data_id or args.pair or args.single or args.urls)):
             parser.print_usage()
             sys.exit()
 
