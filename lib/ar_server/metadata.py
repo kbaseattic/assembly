@@ -91,7 +91,6 @@ class MetadataConnection:
             logging.error("Data %s does not exist" % data_id)
         return job
 
-
     def update_job(self, job_id, field, value):
         jobs = self.get_jobs()
         jobs.update({'_id' : job_id},
