@@ -114,6 +114,12 @@ class Client:
         r = requests.post(url, data=data, headers=self.headers)
         return r.content
 
+    def submit_data(self, data):
+        print("Registering data upload")
+        url = 'http://{}/user/{}/data/new'.format(self.url, self.user)
+        r = requests.post(url, data=data, headers=self.headers)
+        return r.content
+
     def get_job_status(self, stat_n, job_id=None):
         if job_id:
             url = 'http://{}/user/{}/job/{}/status'.format(self.url, self.user, job_id)

@@ -25,7 +25,7 @@ from ar_client.auth_token import *
 
 import traceback
 
-my_version = '0.3.4'
+my_version = '0.3.5'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -58,6 +58,14 @@ p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realt
 p_stat.add_argument("-n", dest="stat_n", action="store", default=15, type=int, help="specify number of records to show")
 
 p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
+
+p_upload = subparsers.add_parser('upload', description='Upload a read set', help='Upload a read library or set of libraries, returns a data ID for future use')
+p_upload.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
+p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
+p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
+p_upload.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
+p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
+
 
 p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
 p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
@@ -189,14 +197,23 @@ def main():
     file_sizes = []
     file_list = []
     # Format into separate pipelines
-    if args.command == "run":
-        if args.assemblers:
-            args.pipeline = [(" ".join(args.assemblers))]
+    if args.command == "run" or args.command == "upload":
+        if args.command == "run":
+            if args.assemblers:
+                args.pipeline = [(" ".join(args.assemblers))]
 
-        if not args.pipeline: # auto
-            args.pipeline = 'auto'
+            if not args.pipeline: # auto
+                args.pipeline = 'auto'
 
-        if not ((args.pipeline) and (args.data_id or args.pair or args.single or args.urls)):
+            if not args.pipeline:
+                parser.print_usage()
+                sys.exit()
+
+            if not (args.data_id or args.pair or args.single):
+                parser.print_usage()
+                sys.exit()
+
+        if args.command == "upload" and not (args.pair or args.single):
             parser.print_usage()
             sys.exit()
 
@@ -249,14 +266,18 @@ def main():
                 sys.exit(1)
 
         options['filename'] = base_files
-
-        # # Send message to RPC Server
         options['ids'] = res_ids
         options['file_sizes'] = file_sizes
+
+        # # Send message to RPC Server
         del options['ARASTURL']
         rpc_body = json.dumps(options, sort_keys=True)
         clientlog.debug(" [x] Sending message: %r" % (rpc_body))
-        response = aclient.submit_job(rpc_body)
+
+        if args.command == "run":
+            response = aclient.submit_job(rpc_body)
+        if args.command == "upload":
+            response = aclient.submit_data(rpc_body)
         print response
         clientlog.debug(" [.] Response: %r" % (response))
 
