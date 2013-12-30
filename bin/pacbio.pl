@@ -47,7 +47,7 @@ sub form_smrt_cmd {
     $setup_sh && -s $setup_sh or die "Cannot find setup.sh: $setup_sh\n";
 
     # my $file = '/space/ar-compute/assembly-rast/bin/smrt/current/common/test/primary/lambda/Analysis_Results/m120404_104101_00114_c100318002550000001523015908241265_s1_p0.bas.h5';
-    my $file = shift @ARGV;
+    my $file = @ARGV;
 
     run("mkdir -p $out_dir") if ! -d $out_dir;
     chdir($out_dir);
@@ -57,8 +57,12 @@ sub form_smrt_cmd {
     print F '<?xml version="1.0"?>
 <pacbioAnalysisInputs>
   <dataReferences>
-    <url ref="run:0000000-0000"><location>'.$file.'</location></url>
-  </dataReferences>
+';
+    my $i = 0;
+    for (@files) {
+        print F '    <url ref="run:0000000-000'.$i++.'"><location>'.$file.'</location></url>'."\n";
+    }
+    print F '  </dataReferences>
 </pacbioAnalysisInputs>
 ';
     close(F);
@@ -99,48 +103,6 @@ sub form_smrt_cmd {
 # </smrtpipeSettings>
 # ';
 
-    print F '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<smrtpipeSettings>
-    <protocol id="ARAST_HGAP2">
-        <param name="otfReference"><value>reference</value></param>
-        <param name="deferRefCheck"><value>True</value></param>
-    </protocol>
-    <module id="P_Fetch" />
-    <module id="P_Filter" >
-        <param name="minLength"><value>100</value></param>
-        <param name="minSubReadLength"><value>500</value></param>
-        <param name="readScore"><value>0.80</value></param>
-    </module>
-    <module id="P_PreAssemblerDagcon">
-        <param name="computeLengthCutoff"><value>true</value></param>
-        <param name="minLongReadLength"><value>3500</value></param>
-        <param name="targetChunks"><value>6</value></param>
-        <param name="splitBestn"><value>11</value></param>
-        <param name="totalBestn"><value>24</value></param>
-        <param name="blasrOpts"><value> -noSplitSubreads -minReadLength 200 -maxScore -1000 -maxLCPLength 16 </value></param>
-    </module>
-    <module id="P_CeleraAssembler">
-        <param name="genomeSize"><value>40000</value></param>
-        <param name="libraryName"><value>pacbioReads</value></param>
-        <param name="asmWatchTime"><value>2592000</value></param>
-        <param name="xCoverage"><value>15</value></param>
-    </module>
-    <module id="P_ReferenceUploader">
-        <param name="runUploaderHgap"><value>True</value></param>
-        <param name="runUploader"><value>False</value></param>
-        <param name="name"><value>reference</value></param>
-        <param name="sawriter"><value>sawriter -blt 8 -welter</value></param>
-        <param name="gatkDict"><value>createSequenceDictionary</value></param>
-        <param name="samIdx"><value>samtools faidx</value></param>
-    </module>
-    <module id="P_Mapping">
-        <param name="align_opts"><value>--tmpDir=/mnt/tmp/smrt --minAccuracy=0.75 --minLength=50 </value></param>
-    </module>
-    <module id="P_AssemblyPolishing">
-    </module>
-</smrtpipeSettings>
-';
-
 #     print F '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 # <smrtpipeSettings>
 #     <protocol id="ARAST_HGAP2">
@@ -155,14 +117,14 @@ sub form_smrt_cmd {
 #     </module>
 #     <module id="P_PreAssemblerDagcon">
 #         <param name="computeLengthCutoff"><value>true</value></param>
-#         <param name="minLongReadLength"><value>6000</value></param>
+#         <param name="minLongReadLength"><value>3500</value></param>
 #         <param name="targetChunks"><value>6</value></param>
 #         <param name="splitBestn"><value>11</value></param>
 #         <param name="totalBestn"><value>24</value></param>
 #         <param name="blasrOpts"><value> -noSplitSubreads -minReadLength 200 -maxScore -1000 -maxLCPLength 16 </value></param>
 #     </module>
 #     <module id="P_CeleraAssembler">
-#         <param name="genomeSize"><value>5000000</value></param>
+#         <param name="genomeSize"><value>40000</value></param>
 #         <param name="libraryName"><value>pacbioReads</value></param>
 #         <param name="asmWatchTime"><value>2592000</value></param>
 #         <param name="xCoverage"><value>15</value></param>
@@ -183,6 +145,48 @@ sub form_smrt_cmd {
 # </smrtpipeSettings>
 # ';
 
+    print F '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<smrtpipeSettings>
+    <protocol id="ARAST_HGAP2">
+        <param name="otfReference"><value>reference</value></param>
+        <param name="deferRefCheck"><value>True</value></param>
+    </protocol>
+    <module id="P_Fetch" />
+    <module id="P_Filter" >
+        <param name="minLength"><value>100</value></param>
+        <param name="minSubReadLength"><value>500</value></param>
+        <param name="readScore"><value>0.80</value></param>
+    </module>
+    <module id="P_PreAssemblerDagcon">
+        <param name="computeLengthCutoff"><value>true</value></param>
+        <param name="minLongReadLength"><value>6000</value></param>
+        <param name="targetChunks"><value>6</value></param>
+        <param name="splitBestn"><value>11</value></param>
+        <param name="totalBestn"><value>24</value></param>
+        <param name="blasrOpts"><value> -noSplitSubreads -minReadLength 200 -maxScore -1000 -maxLCPLength 16 </value></param>
+    </module>
+    <module id="P_CeleraAssembler">
+        <param name="genomeSize"><value>5000000</value></param>
+        <param name="libraryName"><value>pacbioReads</value></param>
+        <param name="asmWatchTime"><value>2592000</value></param>
+        <param name="xCoverage"><value>15</value></param>
+    </module>
+    <module id="P_ReferenceUploader">
+        <param name="runUploaderHgap"><value>True</value></param>
+        <param name="runUploader"><value>False</value></param>
+        <param name="name"><value>reference</value></param>
+        <param name="sawriter"><value>sawriter -blt 8 -welter</value></param>
+        <param name="gatkDict"><value>createSequenceDictionary</value></param>
+        <param name="samIdx"><value>samtools faidx</value></param>
+    </module>
+    <module id="P_Mapping">
+        <param name="align_opts"><value>--tmpDir=/mnt/tmp/smrt --minAccuracy=0.75 --minLength=50 </value></param>
+    </module>
+    <module id="P_AssemblyPolishing">
+    </module>
+</smrtpipeSettings>
+';
+
     close(F);
 
     # my $smrt_cmd = 'smrtpipe.py -h';
@@ -191,7 +195,7 @@ sub form_smrt_cmd {
     # my $smrt_cmd = 'smrtpipe.py --output /mnt/tmp/test';
     # my $smrt_cmd = 'smrtpipe.py --recover --param=pipeline.xml xml:input.xml';
 
-    my $smrt_cmd = 'smrtpipe.py --param=pipeline.xml xml:input.xml';
+    my $smrt_cmd = 'smrtpipe.py -D NPROC=12 --param=pipeline.xml xml:input.xml';
     my @cmd = ('bash', '-c', "source $setup_sh && $smrt_cmd"); 
     # print STDERR '\@cmd = '. Dumper(\@cmd);
     
