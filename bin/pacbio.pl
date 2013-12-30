@@ -47,7 +47,7 @@ sub form_smrt_cmd {
     $setup_sh && -s $setup_sh or die "Cannot find setup.sh: $setup_sh\n";
 
     # my $file = '/space/ar-compute/assembly-rast/bin/smrt/current/common/test/primary/lambda/Analysis_Results/m120404_104101_00114_c100318002550000001523015908241265_s1_p0.bas.h5';
-    my $file = @ARGV;
+    my @files = @ARGV;
 
     run("mkdir -p $out_dir") if ! -d $out_dir;
     chdir($out_dir);
@@ -59,7 +59,7 @@ sub form_smrt_cmd {
   <dataReferences>
 ';
     my $i = 0;
-    for (@files) {
+    for my $file (@files) {
         print F '    <url ref="run:0000000-000'.$i++.'"><location>'.$file.'</location></url>'."\n";
     }
     print F '  </dataReferences>
