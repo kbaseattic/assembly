@@ -341,9 +341,11 @@ class DataResource:
         return register_data(json.dumps(params))
 
     @cherrypy.expose
-    def default(self, userid=None):
-        testResponse = {}
-        return '{}s data!'.format(userid)
+    def default(self, data_id, userid=None):
+        doc = metadata.get_doc_by_data_id(data_id, userid)
+        status = {k: doc[k] for k in ('ids', 'data_id', 'filename', 'file_sizes', 
+                                      'single', 'pair', 'version')}
+        return json.dumps(status)
 
 
         
