@@ -55,7 +55,11 @@ format from html??
 class Client:
     def __init__(self, url, user, token):
         self.port = 8000 ## change
-        self.url = url + ':{}'.format(self.port)
+        if url.find(':') == -1: # Port not included
+            self.url = url + ':{}'.format(self.port)
+        else:
+            self.url = url
+        print self.url
         self.user = user
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),

@@ -4,6 +4,7 @@ Job router.  Recieves job requests.  Manages data transfer, job queuing.
 # Import python libs
 import cherrypy
 import datetime
+import errno
 import json
 import logging
 import pika
@@ -21,6 +22,7 @@ from traceback import format_exc
 import metadata as meta
 import shock
 from nexus import client as nexusclient
+import ar_client.client as ar_client 
 
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
@@ -170,7 +172,7 @@ def CORS():
     cherrypy.response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
 #    cherrypy.response.headers["Access-Control-Allow-Headers"] = "X-Requested-With"
     cherrypy.response.headers["Access-Control-Allow-Headers"] = "Authorization, origin, content-type, accept"
-    cherrypy.response.headers["Content-Type"] = "application/json"
+#    cherrypy.response.headers["Content-Type"] = "application/json"
 
 
 
@@ -184,10 +186,6 @@ def start(config_file, mongo_host=None, mongo_port=None,
     metadata = meta.MetadataConnection(config_file, mongo_host)
 
     ##### CherryPy ######
-    root = Root()
-    root.user = UserResource()
-    root.module = ModuleResource()
-    root.shock = ShockResource({"shockurl": get_upload_url()})
     
     #cherrypy.tools.CORS = cherrypy.Tool('before_finalize', CORS)
 
@@ -196,8 +194,18 @@ def start(config_file, mongo_host=None, mongo_port=None,
             'server.socket_host': '0.0.0.0',
             'server.socket_port': 8000,
             'log.screen': True,
-        },
+            'ar_shock_url': parser.get('shock', 'host'),
+            },
     }
+
+    static_root = parser.get('web_serve', 'root')
+
+    root = Root()
+    root.user = UserResource()
+    root.module = ModuleResource()
+    root.shock = ShockResource({"shockurl": get_upload_url()})
+    root.static = StaticResource(static_root)
+
 
     #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.request.hooks.attach('before_finalize', CORS)
@@ -298,7 +306,6 @@ class JobResource:
                 return pt.get_string() + "\n"
 
 
-
     def get_shock_node(self, userid=None, job_id=None):
         """ GET /user/USER/job/JOB/node """
         if not job_id:
@@ -320,7 +327,37 @@ class JobResource:
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
 
+class StaticResource:
 
+    def __init__(self, static_root):
+        self.static_root = static_root
+        self._cp_config = {'tools.staticdir.on' : True,
+                           'tools.staticdir.dir': self.static_root}
+
+    @cherrypy.expose
+    def serve(self, userid=None, job_id=None, **kwargs):
+        # if userid == 'OPTIONS':
+        #     return ('New Job Request') # To handle initial html OPTIONS requess
+        #Return data id
+        try:
+            token = cherrypy.request.headers['Authorization']
+        except:
+            token = None
+        aclient = ar_client.Client('localhost', userid, token)
+        print cherrypy.config
+        outdir = os.path.join(self.static_root, userid, job_id)
+
+        try:
+            os.makedirs(outdir)
+        except OSError, e:
+            # be happy if someone already created the path
+            if e.errno != errno.EEXIST:
+                raise
+        ## Get all data
+        
+        aclient.get_job_data(job_id=job_id, outdir=outdir)
+        return 'done'
+#    serve._cp_config = {'tools.staticdir.on' : False}
 
 class FilesResource:
     @cherrypy.expose
@@ -364,13 +401,13 @@ class UserResource(object):
 
     @cherrypy.expose
     def default(self):
-        print 'user'
         return 'user default ok'
 
     default.job = JobResource()
     default.files = FilesResource()
     default.data = DataResource()
 
+    # Pull user id from URL
     def __getattr__(self, name):
         if name is not ('_cp_config'): #assume username
             cherrypy.request.params['userid'] = name
