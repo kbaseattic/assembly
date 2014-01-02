@@ -12,6 +12,7 @@ import pprint
 import os
 import re
 import sys
+import tarfile
 from bson import json_util
 from ConfigParser import SafeConfigParser
 from distutils.version import StrictVersion
@@ -334,30 +335,49 @@ class StaticResource:
         self._cp_config = {'tools.staticdir.on' : True,
                            'tools.staticdir.dir': self.static_root}
 
+    def _makedirs(self, dir):
+        try:
+            os.makedirs(dir)
+        except OSError, e:
+            # be happy if someone already created the path
+            if e.errno != errno.EEXIST:
+                raise
+
     @cherrypy.expose
     def serve(self, userid=None, job_id=None, **kwargs):
         # if userid == 'OPTIONS':
-        #     return ('New Job Request') # To handle initial html OPTIONS requess
+        #     return ('New Job Request') # To handle initial html OPTIONS request
         #Return data id
         try:
             token = cherrypy.request.headers['Authorization']
         except:
             token = None
         aclient = ar_client.Client('localhost', userid, token)
-        print cherrypy.config
         outdir = os.path.join(self.static_root, userid, job_id)
+        self._makedirs(outdir)
 
-        try:
-            os.makedirs(outdir)
-        except OSError, e:
-            # be happy if someone already created the path
-            if e.errno != errno.EEXIST:
-                raise
         ## Get all data
-        
         aclient.get_job_data(job_id=job_id, outdir=outdir)
+
+        ## Extract Quast data
+        if 'quast' in kwargs.keys():
+            quastdir = os.path.join(outdir, 'quast')
+            self._makedirs(quastdir)
+            qtars = [m for m in os.listdir(outdir) if 'qst' in m]
+            for t in qtars:
+                if 'ctg' in t: # Contig Quast
+                    ctgdir = os.path.join(quastdir, 'contig')
+                    self._makedirs(ctgdir)
+                    qtar = tarfile.open(os.path.join(outdir,t))
+                    qtar.extractall(path=ctgdir)
+                elif 'scf' in t: # Scaffold Quast
+                    scfdir = os.path.join(quastdir, 'scaffold')
+                    self._makedirs(scfdir)
+                    qtar = tarfile.open(os.path.join(outdir,t))
+                    qtar.extractall(path=scfdir)
+            
         return 'done'
-#    serve._cp_config = {'tools.staticdir.on' : False}
+    serve._cp_config = {'tools.staticdir.on' : False}
 
 class FilesResource:
     @cherrypy.expose
