@@ -1,0 +1,17 @@
+[Core]
+Name = ray
+Module = ray
+
+[Settings]
+short_name = ra
+executable = ../../bin/ray/Ray
+filetypes = fasta,fa,fastq,fq
+dashes = 1
+k = 31
+contig_threshold = 1000
+
+[Documentation]
+Author = Fangfang Xia
+Version = 0.1
+Description = Ray assembler
+
