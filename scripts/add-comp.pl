@@ -37,6 +37,7 @@ Compute server components:
       masurca      - MaSuRCA assembler (v2.0.0)
       pacbio       - SMRT Analysis Software (v2.1.1)
       quast        - QUAST assembly evaluator (v2.2)
+      ray          - Ray assembler (git)
       reapr        - REAPR reference-free evaluator (v1.0.15)
       screed       - Screed assembly statistics library (git)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
@@ -59,7 +60,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki masurca quast reapr screed seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki masurca quast ray reapr screed seqtk solexa spades velvet); 
 my @special_comps = qw (pacbio);
 my @all_comps = (@regular_comps, @special_comps);
 my %supported = map { $_ => 1 } @all_comps;
@@ -254,6 +255,15 @@ sub install_quast {
     my $file = "$dir.tar.gz";
     download($dir, $file, "https://downloads.sourceforge.net/project/quast");
     run("cp -r -T $dir $dest_dir/quast");
+}
+
+sub install_ray {
+    my $dir = 'ray';
+    git("git://github.com/sebhtml/ray.git");
+    git("git://github.com/sebhtml/RayPlatform.git");
+    run("cd ray; make clean; make -j8 PREFIX=build MAXKMERLENGTH=64 DEBUG=n ASSERT=y");
+    run("mkdir -p $dest_dir/$dir");
+    run("cd ray; cp -r scripts $dest_dir/$dir/; cp Ray $dest_dir/$dir/; cp libRayPlatform.a $dest_dir/$dir/; cp libRay.a $dest_dir/$dir/");
 }
 
 sub install_reapr {
