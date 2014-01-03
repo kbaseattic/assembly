@@ -3,7 +3,7 @@ Name = discovar
 Module = discovar
 
 [Settings]
-short_name = discovar
+short_name = ds
 executable = ../../bin/discovar
 filetypes = fastq,fq
 dashes = 1
