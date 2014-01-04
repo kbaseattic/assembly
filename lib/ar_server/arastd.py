@@ -11,6 +11,7 @@ import signal
 import daemon
 import logging
 import lockfile
+import multiprocessing
 import os
 import pymongo
 import pika
@@ -52,8 +53,27 @@ def start(config_file, mongo_host=None, mongo_port=None,
         sys.exit()
     print " [x] MongoDB connection successful."
 
-    router.start(config_file, mongo_host=mongo_host, mongo_port=mongo_port,
-                 rabbit_host=rabbit_host, rabbit_port=rabbit_port)
+
+
+    
+    router_kwargs = {'mongo_host': mongo_host, 'mongo_port': mongo_port,
+                     'rabbit_host' :rabbit_host, 'rabbit_port' : rabbit_port}
+    router_process = multiprocessing.Process(name='router', target=start_router,
+                                             args=(config_file,), kwargs=router_kwargs)
+    router_process.start()
+
+    qc_process = multiprocessing.Process(name='qcmon', target=start_qc_monitor,
+                                             args=(rabbit_host,))
+    qc_process.start()
+
+    # router.start(config_file, mongo_host=mongo_host, mongo_port=mongo_port,
+    #              rabbit_host=rabbit_host, rabbit_port=rabbit_port)
+
+def start_router(config_file, **kwargs):
+    router.start(config_file, **kwargs)
+
+def start_qc_monitor(rabbit_host):
+    router.start_qc_monitor(rabbit_host)
 
 def tear_down():
     print "Tear down"

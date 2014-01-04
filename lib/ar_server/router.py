@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import tarfile
+import uuid
 from bson import json_util
 from ConfigParser import SafeConfigParser
 from distutils.version import StrictVersion
@@ -71,7 +72,7 @@ def determine_routing_key(size, params):
     try:
         routing_key = params['queue']
     except:
-        pass
+        routing_key = None
     if routing_key:
         return routing_key
     return parser.get('rabbitmq','default_routing_key')
@@ -117,9 +118,49 @@ def register_data(body):
     logging.info("Inserting data record: %s" % client_params)
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
-
+    analyze_data(json.dumps(dict(client_params)))
     response = json.dumps({"data_id": data_id})
     return response
+
+def analyze_data(body): #run fastqc
+    """Send data to compute node for analysis, wait for result"""
+    # analysis_pipes = ['fastqc']
+    # client_params = json.loads(body) #dict of params
+    # job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
+    # client_params['pipeline'] = analysis_pipes
+    # client_params['job_id'] = job_id
+    # routing_key = determine_routing_key (1, client_params)
+    # uid = metadata.insert_job(client_params)
+    # msg = json.dumps(dict(client_params))
+    # metadata.update_job(uid, 'status', 'Analysis')
+    # send_message(msg, routing_key)
+
+    
+    client_params = json.loads(body) #dict of params
+    routing_key = 'qc'
+    job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
+    client_params['job_id'] = job_id
+    if not client_params['data_id']:
+        data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
+        client_params['data_id'] = data_id
+
+    analysis_pipes = ['fastqc']
+    client_params['pipeline'] = analysis_pipes
+    client_params['compute_type'] = 'qc'
+        
+    ## Check that user queue limit is not reached
+    uid = metadata.insert_job(client_params)
+    logging.info("Inserting job record: %s" % client_params)
+    metadata.update_job(uid, 'status', 'queued')
+    p = dict(client_params)
+    metadata.update_job(uid, 'message', p['message'])
+    msg = json.dumps(p)
+
+    send_message(msg, routing_key)
+    response = str(job_id)
+    return response
+
+
 
 def authenticate_request():
     if cherrypy.request.method == 'OPTIONS':
@@ -213,6 +254,34 @@ def start(config_file, mongo_host=None, mongo_port=None,
     cherrypy.quickstart(root, '/', conf)
     ###### DOES IT AUTH EVERY REQUEST??? ########
     
+
+def start_qc_monitor(arasturl):
+    """
+    Listens on QC queue for finished QC jobs
+    """
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host = arasturl))
+    channel = connection.channel()
+    channel.exchange_declare(exchange='qc',
+                             type='fanout')
+    result = channel.queue_declare(exclusive=True)
+    queue_name = result.method.queue
+    channel.queue_bind(exchange='qc',
+                       queue=queue_name)
+    print ' [*] Waiting for QC completion'
+    channel.basic_consume(qc_callback,
+                          queue=queue_name,
+                          no_ack=True)
+
+    channel.start_consuming()
+
+def qc_callback():
+    pass
+
+###########
+###########
+#CherryPy Resources
+###########
 
 class JobResource:
 

@@ -133,6 +133,9 @@ class MetadataConnection:
             logging.error("Job %s does not exist" % job_id)
         return job
 
+    def job_is_complete(self, user, job_id):
+        job = self.get_job(user, job_id)
+        return job['status'].find('success') != -1
 
     def get_auth_info(self, user):
         connection = pymongo.Connection(self.host, self.port)
