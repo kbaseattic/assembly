@@ -91,7 +91,6 @@ def route_job(body):
     client_params['job_id'] = job_id
 
     ## Check that user queue limit is not reached
-    
 
     uid = metadata.insert_job(client_params)
     logging.info("Inserting job record: %s" % client_params)
@@ -99,137 +98,25 @@ def route_job(body):
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
     msg = json.dumps(p)
+
     send_message(msg, routing_key)
     response = str(job_id)
     return response
 
-# def on_request(ch, method, props, body):
-#     global parser
-#     logging.info(" [.] Incoming request:  %r" % (body))
-#     params = json.loads(body)
-#     ack = ''
-#     pt = PrettyTable(["Error"])
+def register_data(body):
+    """ User is only submitting libraries, return data ID """
+    client_params = json.loads(body) #dict of params
+    data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
+    client_params['data_id'] = data_id
 
-#     # if 'stat'
-#     try:
-#         if params['command'] == 'stat':
+    # Inserting a blank job
+    uid = metadata.insert_job(client_params)
+    logging.info("Inserting data record: %s" % client_params)
+    p = dict(client_params)
+    metadata.update_job(uid, 'message', p['message'])
 
-#             #####  Stat Data #####
-#             if params['files']:
-#                 if params['files'] == -1:
-#                     ack = 'list all data not implemented'
-#                     pass
-#                 else:
-#                     pt = PrettyTable(['#', "File", "Size"])
-#                     data_id = params['files']
-#                     try:
-#                         doc = metadata.get_doc_by_data_id(data_id)
-#                         files = doc['filename']
-#                         fsizes = doc['file_sizes']
-#                         for i in range(len(files)):
-#                             row = [i+1, os.path.basename(files[i]), fsizes[i]]
-#                             pt.add_row(row)
-#                         ack = pt.get_string()
-#                     except:
-#                         ack = "Error: problem fetching DATA %s" % data_id
-
-#             ######  Stat Jobs #######
-#             else:
-#                 try:
-#                     job_stat = params['stat_job'][0]
-#                 except:
-#                     job_stat = None
-                
-#                 pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
-#                 if job_stat:
-#                     doc = metadata.get_job(params['ARASTUSER'], job_stat)
-
-#                     if doc:
-#                         docs = [doc]
-#                     else:
-#                         docs = None
-#                     n = -1
-#                 else:
-#                     try:
-#                         record_count = params['stat_n'][0]
-#                         if not record_count:
-#                             record_count = 15
-#                     except:
-#                         record_count = 15
-
-#                     n = record_count * -1
-#                     docs = metadata.list_jobs(params['ARASTUSER'])
-
-#                 if docs:
-#                     for doc in docs[n:]:
-#                         row = [doc['job_id'], str(doc['data_id']), doc['status'],]
-
-#                         try:
-#                             row.append(str(doc['computation_time']))
-#                         except:
-#                             row.append('')
-#                         row.append(str(doc['message']))
-
-#                         try:
-#                             pt.add_row(row)
-#                         except:
-#                             pt.add_row(doc['job_id'], "error")
-
-#                     ack = pt.get_string()
-#                 else:
-#                     ack = "Error: Job %s does not exist" % job_stat
-
-#         # if 'run'
-#         elif params['command'] == 'run':
-#             if params['config']:
-#                 logging.info("Config file submitted")
-#                 #Download config file
-#                 shock.download("http://" + parser.get('shock','host'),
-#                                params['config_id'][0],
-#                                'temp/',
-#                                parser.get('shock','admin_user'),
-#                                parser.get('shock','admin_pass'))
-                
-#             ack = str(route_job(body))
-
-#         # if 'get_url'
-#         elif params['command'] == 'get_url':
-#             ack = get_upload_url()
-
-#         elif params['command'] == 'get':
-#             if params['job_id'] == -1:
-#                 docs = metadata.list_jobs(params['ARASTUSER'])
-#                 doc = docs[-1]
-#             else:
-#                 # NEXT get specific job
-#                 doc = metadata.get_job(params['ARASTUSER'], params['job_id'])
-#             try:
-#                 result_data = doc['result_data']
-#                 ack = json.dumps(result_data)
-#             except:
-#                 ack = "Error getting results"
-                
-#     except:
-#         logging.error("Unexpected error: {}".format(sys.exc_info()[0]))
-#         traceback = format_exc(sys.exc_info())
-#         print traceback
-#         ack = "Error: Malformed message. Using latest version?"
-
-#     # Check client version TODO:handle all cases
-#     try:
-#         if StrictVersion(params['version']) < StrictVersion('0.2.1') and params['command'] == 'run':
-#             ack += "\nNew version of client available.  Please update"
-#     except:
-#         if params['command'] == 'run':
-#             ack += "\nNew version of client available.  Please update."
-
-#     ch.basic_publish(exchange='',
-#                      routing_key=props.reply_to,
-#                      properties=pika.BasicProperties(
-#             correlation_id=props.correlation_id),
-#                      body=ack)
-#     ch.basic_ack(delivery_tag=method.delivery_tag)
-
+    response = json.dumps({"data_id": data_id})
+    return response
 
 def authenticate_request():
     if cherrypy.request.method == 'OPTIONS':
@@ -441,6 +328,34 @@ class FilesResource:
         testResponse = {}
         return '{}s files!'.format(userid)
 
+class DataResource:
+    @cherrypy.expose
+    def new(self, userid=None):
+        userid = authenticate_request()
+        if userid == 'OPTIONS':
+            return ('New Job Request') # To handle initial html OPTIONS requess
+        params = json.loads(cherrypy.request.body.read())
+        params['ARASTUSER'] = userid
+        params['oauth_token'] = cherrypy.request.headers['Authorization']
+        #Return data id
+        return register_data(json.dumps(params))
+
+    @cherrypy.expose
+    def default(self, data_id=None, userid=None):
+        ## /user/USERID/data/
+        if not data_id:
+            docs = metadata.get_docs_distinct_data_id(userid)
+            summarized_docs = []
+            for d in docs: ## return summarized docs
+                summarized_docs.append({k: d[k] for k in ('data_id', 'filename')})
+            return json.dumps(summarized_docs)
+        ## /user/USERID/data/            
+        doc = metadata.get_doc_by_data_id(data_id, userid)
+        status = {k: doc[k] for k in ('ids', 'data_id', 'filename', 'file_sizes', 
+                                      'single', 'pair', 'version')}
+        return json.dumps(status)
+
+
         
 class UserResource(object):
     @cherrypy.expose
@@ -454,6 +369,7 @@ class UserResource(object):
 
     default.job = JobResource()
     default.files = FilesResource()
+    default.data = DataResource()
 
     def __getattr__(self, name):
         if name is not ('_cp_config'): #assume username

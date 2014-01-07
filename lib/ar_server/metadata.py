@@ -21,6 +21,10 @@ class MetadataConnection:
         # Connect
         self.connection = pymongo.Connection(self.host, self.port)
         self.database = self.connection[self.db]
+        
+        # Get local data
+        self.jobs = self.get_jobs()
+
     def get_jobs(self):
         """Fetch approriate database and collection for jobs."""
         return self.database[self.collection]
@@ -85,12 +89,25 @@ class MetadataConnection:
 
     def get_doc_by_data_id(self, data_id, user):
         try:
-            job = self.get_jobs().find({'ARASTUSER': user,'data_id':int(data_id)})[0]
+            job = self.get_jobs().find_one({'ARASTUSER': user,'data_id':int(data_id)})
         except:
             job = None
             logging.error("Data %s does not exist" % data_id)
         return job
 
+    def get_docs_distinct_data_id(self, user):
+        docs = []
+        distinct_ids = [int(id) for id in self.jobs.find(
+                {'ARASTUSER': user}).distinct('data_id')]
+        ## remove dupes due to str/int variability
+        dset = set()
+        for d in distinct_ids:
+            dset.add(d)
+        for d in sorted(dset):
+            doc = self.get_jobs().find_one({'ARASTUSER': user,'data_id':int(d)})
+            if doc:
+                docs.append(doc)
+        return docs
 
     def update_job(self, job_id, field, value):
         jobs = self.get_jobs()
