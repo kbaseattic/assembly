@@ -138,7 +138,7 @@ sub install_ale {
     my $dir = 'ale';
     git("git://github.com/sc932/ALE.git");
     run("mkdir -p $dest_dir/$dir");
-    run("cd ALE/src; make ALE; cp -r ALE samtools-0.1.19 *.sh *.py synthReadGen readFileSplitter $dest_dir/$dir/");
+    run("cd ALE/src; make ALE; cp -r ALE samtools-0.1.19 *.sh *.py *.pl $dest_dir/$dir/");
 }
 
 sub install_bowtie {
