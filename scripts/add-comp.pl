@@ -32,7 +32,7 @@ Compute server components:
       fastqc       - FastQC quality control (v0.10.1)
       fastx        - FastX preprocessing toolkit (v0.0.13)
       gam_ngs      - GAM-NGS assembler merger (git)
-      idba         - IDBA_UD assembler (v1.1.0)
+      idba         - IDBA_UD assembler (v1.1.1)
       kiki         - Kiki assembler (git)
       masurca      - MaSuRCA assembler (v2.0.0)
       pacbio       - SMRT Analysis Software (v2.1.1)
@@ -196,7 +196,7 @@ sub install_gam_ngs {
 }
 
 sub install_idba {
-    my $dir = 'idba-1.1.0';
+    my $dir = 'idba-1.1.1';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://hku-idba.googlecode.com/files');
     run("cd $dir; ./configure; make");
