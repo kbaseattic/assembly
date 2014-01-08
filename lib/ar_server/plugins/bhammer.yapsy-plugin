@@ -7,8 +7,12 @@ short_name = Bh
 executable = ../../bin/spades/bin/spades.py
 filetypes = fastq,fq
 
+[Parameters]
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = SPAdes error correction
+Version = 1.0
+Description = SPAdes component for quality control of sequence data
+Stages = preprocess
+References = doi:10.1089/cmb.2012.0021
 

@@ -9,12 +9,14 @@ OUT_JSON = 'ar_modules.json'
 plugin_configs = [p for p in os.listdir(PLUGIN_DIR) 
                   if re.search('yapsy', p)]
 
-parser = SafeConfigParser()
 plugins_data = []
 for plugin_config in plugin_configs:
     pfile = os.path.join(PLUGIN_DIR, plugin_config)
+    parser = SafeConfigParser()
     parser.read(pfile)
     pd = dict(dict(parser.items('Core')).items() +
+              dict(parser.items('Settings')).items() +
+              dict({'parameters' : dict(parser.items('Parameters')).items()}).items() +
               dict(parser.items('Documentation')).items())
     plugins_data.append(pd)
 

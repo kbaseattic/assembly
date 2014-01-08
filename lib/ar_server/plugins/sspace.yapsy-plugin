@@ -16,8 +16,19 @@ n = -1
 k = -1
 x = 0
 
+[Parameters]
+extend = False
+minimum_overlap = 15
+a = 0.4
+m = -1
+n = -1
+k = -1
+x = 0
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = SSPACE
+Version = 1.0
+Description = SSPACE pre-assembled contig scaffolder
+Stages = post-process
+References = doi:10.1093/bioinformatics/btq683
 

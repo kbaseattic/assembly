@@ -7,8 +7,12 @@ executable = ../../bin/bowtie2-2.1.0/bowtie2
 build_bin = ../../bin/bowtie2-2.1.0/bowtie2-build
 filetypes = fastq,fq
 
+[Parameters]
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = Bowtie2
+Version = 1.0
+Description = Bowtie2 aligner that maps reads to contigs
+Stages = post-process
+References = doi:10.1038/nmeth.1923
 

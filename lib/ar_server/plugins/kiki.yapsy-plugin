@@ -10,8 +10,14 @@ dashes = 1
 k = 29
 contig_threshold = 1000
 
+[Parameters]
+k = 29
+contig_threshold = 1000
+
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = Kiki read assembler
-
+Version = 1.0
+Description = Kiki overlap-based parallel microbial and metagenomic assembler 
+Stages = assembler
+References = https://github.com/GeneAssembly/kiki

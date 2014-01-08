@@ -3,12 +3,18 @@ Name = reapr
 Module = reapr
 
 [Settings]
+short_name = re
 executable = ../../bin/reapr/reapr
 filetypes = fasta,fa
 a = True
 
+[Parameters]
+a = True
+
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = REAPR plugin
-
+Version = 1.0
+Description = REAPR assembly error recognizer using paired-end reads
+Stages = post-process
+References = doi:10.1186/gb-2013-14-5-r47

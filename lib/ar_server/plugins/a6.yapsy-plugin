@@ -3,11 +3,17 @@ Name = a6
 Module = a6
 
 [Settings]
+short_name = a6
 executable = ../../bin/a6/bin/a5
 filetypes = fastq,fq,fastq.bz2,fq.bz2
 
+[Parameters]
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = A6 pipeline plugin
-
+Version = 1.0
+Description = Modified A5 microbial assembly pipeline 
+Limitations = Does not support reads longer than 255 bp
+Stages = preprocess,assembler,post-process
+Modules = tagdust,sga,idba,sspace
+References = https://github.com/levinas/a5

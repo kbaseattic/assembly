@@ -3,11 +3,15 @@ Name = ale
 Module = ale
 
 [Settings]
+short_name = ale
 executable = ../../bin/ale/ALE
 filetypes = bam,sam,fasta,fa
+
+[Parameters]
 
 [Documentation]
 Author = Chris Bun
 Version = 0.1
-Description = ALE plugin
-
+Description = ALE likelihood-based estimator of assembly quality
+Stages = post-process
+References = doi: 10.1093/bioinformatics/bts723

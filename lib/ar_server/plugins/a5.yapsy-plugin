@@ -6,8 +6,14 @@ Module = a5
 executable = ../../bin/a5/bin/a5_pipeline.pl
 filetypes = fastq,fq,fastq.bz2,fq.bz2
 
+[Parameters]
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = A5 pipeline plugin
+Version = 1.0
+Description = A5 microbial assembly pipeline
+Limitations = Crashes on some datasets (please use a modified version in A6)
+Stages = preprocess,assembler,post-process
+Modules = tagdust,sga,idba,sspace
+References = doi:10.1371/journal.pone.0042304
 

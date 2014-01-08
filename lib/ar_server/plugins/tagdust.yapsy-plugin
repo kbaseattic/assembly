@@ -9,9 +9,11 @@ filetypes = fasta,fa,fastq,fq
 library = ../../bin/a6/adapter.fasta
 sync = ../../bin/sync_paired_end_reads.py
 
+[Parameters]
 
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = Tagdust plugin
-
+Version = 1.0
+Description = TagDust sequencing artifacts remover
+Stages = preprocess
+References = doi:10.1093/bioinformatics/btp527

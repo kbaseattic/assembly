@@ -3,11 +3,15 @@ Name = fastqc
 Module = fastqc
 
 [Settings]
+short_name = fqc
 executable = ../../bin/FastQC/fastqc
 filetypes = fastq,fq
 
+[Parameters]
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = FastQC
-
+Version = 1.0
+Description = FastQC quality control tool for sequence data
+Stages = preprocess
+References = http://www.bioinformatics.babraham.ac.uk/projects/fastqc

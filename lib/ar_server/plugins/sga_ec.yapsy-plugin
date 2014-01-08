@@ -3,12 +3,17 @@ Name = sga_ec
 Module = sga_ec
 
 [Settings]
+short_name = sgae
 executable = ../../bin/a5/bin/sga
 filetypes = fastq,fq
 dependencies = sga_preprocess
 
+[Parameters]
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = SGA error correction plugin.  Runs 'sga index' and 'sga correct'
+Version = 1.0
+Description = SGA component for error correction (runs subcommands: 'index' & 'correct')
+Stages = preprocess
+References = doi:10.1101/gr.126953.111
 

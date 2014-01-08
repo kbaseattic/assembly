@@ -8,10 +8,14 @@ executable = ../../bin/ray/Ray
 filetypes = fasta,fa,fastq,fq
 dashes = 1
 k = 31
-contig_threshold = 1000
+
+[Parameters]
+k = 31
+
 
 [Documentation]
 Author = Fangfang Xia
-Version = 0.1
-Description = Ray assembler
-
+Version = 1.0
+Description = Ray graph-based parallel microbial and metagenomic assembler 
+Stages = assembler
+References = doi:10.1186/gb-2012-13-12-r122
