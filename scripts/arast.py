@@ -58,6 +58,7 @@ p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realt
 p_stat.add_argument("-n", dest="stat_n", action="store", default=15, type=int, help="specify number of records to show")
 
 p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
+p_avail.add_argument("-v", "--verbose", action="store_true", help="show module details")
 
 p_upload = subparsers.add_parser('upload', description='Upload a read set', help='Upload a read library or set of libraries, returns a data ID for future use')
 p_upload.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
@@ -310,8 +311,32 @@ def main():
     elif args.command == 'avail':
         try:
             mods = json.loads(aclient.get_available_modules())
-            for mod in mods:
-                print mod['module']
+            mods = sorted(mods, key=lambda mod: mod['module'])
+            # print json.dumps(mods, indent=4)
+            
+            if args.verbose:
+                for mod in mods:
+                    keys = ('description', 'version', 'stages', 'modules', 'limitations', 'references')
+                    if mod['version'] >= '1.0':
+                        print '[Module] ' + mod['module']
+                        for key in keys:
+                            if key in mod.keys():
+                                print '  '+key.title()+': '+mod[key]
+
+                        if 'parameters' in mod.keys() :
+                            parms = mod['parameters']
+                            if len(parms) > 0:
+                                print '  Customizable parameters: default (available values)'
+                                for parm in sorted(parms, key=lambda p: p[0]):
+                                    print '%25s  =  %s' % (parm[0], parm[1])
+                        print
+            else:
+                print '{0:16} {1:35} {2:10}'.format('Module', 'Stages', 'Description')
+                print '----------------------------------------------------------------'
+                for mod in mods:
+                    if mod['version'] >= '1.0':
+                        print '{module:16} {stages:35} {description}'.format(**mod)
+
         except:
             print 'Error getting available modules'
 
