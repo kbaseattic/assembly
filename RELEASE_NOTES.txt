@@ -4,6 +4,13 @@ This service allows users to assemble genomes and metagenomes with
 their choice of assembly algorithm.  Currently supports single
 microbial genome assembly using velvet, kiki, and/or A5.
 
+VERSION: 0.2.0 (Released 01/07/2014)
+--------------------------------------
+NEW FEATURES:
+- New assembly modules: ray, pacbio, fastqc...
+- New 'ar-avail' command for detailed information on assembly modules
+
+
 VERSION: 0.1.0 (Released 08/08/2013)
 --------------------------------------
 NEW FEATURES:
