@@ -151,7 +151,7 @@ sub install_bowtie {
         return;
     }
     download($dir, $file, "http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.1.0");
-    run("cp -r -T $dir $dest_dir/bowtie");
+    run("cp -r -T $dir $dest_dir/bowtie2");
 }
 
 sub install_bwa {
