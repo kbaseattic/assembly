@@ -224,7 +224,7 @@ class Shock:
             else:
                 print >> sys.stderr, "Upload error: {}".format(res['status'])
         except: 
-            print "Upload error"
+            print >> sys.stderr "Upload error"
 	return res
 
     def _curl_post_file(self, filename, filetype=''):
