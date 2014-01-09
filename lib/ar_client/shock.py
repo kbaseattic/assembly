@@ -8,6 +8,7 @@ import subprocess
 import StringIO
 import time
 import tempfile
+import sys
 
 def download(url, node_id, outdir):
     logging.info("Downloading id: %s" % node_id)
