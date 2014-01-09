@@ -174,7 +174,7 @@ sub install_fastqc {
 
 sub install_fastx {
     my $dir = 'fastx_toolkit';
-    # there is no bowtie plugin; so we need this extra check
+    # there is no fastx plugin; so we need this extra check
     if (-e "$dest_dir/$dir/fastx_trimmer") {
         print "Found component fastx, skipping...\n"; 
         return;
