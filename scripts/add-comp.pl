@@ -145,11 +145,6 @@ sub install_ale {
 sub install_bowtie {
     my $file = "bowtie2-2.1.0-linux-x86_64.zip";
     my $dir = "bowtie2-2.1.0";
-    # there is no bowtie plugin; so we need this extra check
-    if (-e "$dest_dir/$dir/bowtie2") {
-        print "Found component bowtie, skipping...\n"; 
-        return;
-    }
     download($dir, $file, "http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.1.0");
     run("cp -r -T $dir $dest_dir/bowtie2");
 }
