@@ -15,6 +15,7 @@ Usage: sudo add-comp.pl [ options ] components
 
 Options:
       -d dest_dir  - destination directory (D = assembly/bin/)
+      -f           - force reinstall even if component exists
       -t tmp_dir   - temporary directory (D = /mnt/tmp)
 
 Compute server components:
