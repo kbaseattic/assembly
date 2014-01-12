@@ -79,6 +79,7 @@ test-service:
 # Deployment
 
 deploy: deploy-client
+<<<<<<< HEAD
 # deploy: deploy-client deploy-service
 
 # deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
@@ -113,6 +114,10 @@ deploy-docs:
 	cp doc/*.png $(TARGET)/services/$(SERVICE)/webroot/.
 
 deploy-service: install-dep install-service-scripts deploy-mongo deploy-testworker
+=======
+deploy-service: install-dep create-scripts deploy-mongo
+deploy-client: deploy-dir install-client deploy-docs
+>>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e
 
 redeploy-service: clean install-dep create-scripts deploy-mongo
 deploy-compute: install-dep
@@ -138,6 +143,29 @@ deploy-mongo:
 	sed -i "s/bind_ip = 127.0.0.1/bind_ip = 0.0.0.0/" /etc/mongodb.conf
 	service mongodb restart
 
+<<<<<<< HEAD
+=======
+install-client:
+	cd ar_client; env PYTHONPATH=$(LIB_PYTHON) pip install -e . --install-option="--prefix=$(MODULE_DIR)"
+#	cd ar_client; env PYTHONPATH=$(LIB_PYTHON) python setup.py install --prefix $(MODULE_DIR)
+# 	cd ar_client; env PYTHONPATH=/kb/deployment/lib/python2.7/site-packages easy_install --prefix /kb/deployment ar_client-0.0.7-py2.7.egg
+	echo '#!/bin/sh' > $(CLIENT_EXE)
+	echo "export PYTHONPATH=$(LIB_PYTHON)" >> $(CLIENT_EXE)
+#	echo "export KB_TOP=/kb/dev_container" >> $(CLIENT_EXE)
+#	echo "export KB_RUNTIME=/kb/runtime"  >> $(CLIENT_EXE)
+#	echo "export PATH=/kb/runtime/bin:/kb/dev_container/bin:$PATH" >> $(CLIENT_EXE)
+#	echo "python -W ignore::UserWarning /kb/dev_container/modules/assembly/bin/arast" '"$$@"' >> $(CLIENT_EXE)
+	echo "python /kb/dev_container/modules/assembly/bin/arast" '"$$@"' >> $(CLIENT_EXE)
+	chmod a+x $(CLIENT_EXE)
+
+deploy-docs:
+	mkdir -p $(TARGET)/services/$(SERVICE)/webroot
+	cp doc/*.html $(TARGET)/services/$(SERVICE)/webroot/.
+
+test:
+	cd kbase_test && ./test_arast_client.sh
+
+>>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e
 clean:
 	rm -rfv $(SERVICE_DIR)
 	rm -f start_service stop_service

@@ -13,7 +13,13 @@ setup(
     description = ("A commandline client for the KBASE Assembly Service"),
     url = "http://www.kbase.us/services/assembly",
     packages = find_packages(),
+<<<<<<< HEAD
     install_requires = ['requests>=0.13.0', 'appdirs'],
+=======
+    install_requires = ['pika>=0.9.8',
+                        'pymongo>=2.2.1',
+                        'requests>=0.13.0'],
+>>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e
     long_description=read('README.md'),
     entry_points={'console_scripts':[
             'arast = ar_client.ar_client:main']},
