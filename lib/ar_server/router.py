@@ -135,7 +135,6 @@ def analyze_data(body): #run fastqc
     # metadata.update_job(uid, 'status', 'Analysis')
     # send_message(msg, routing_key)
 
-    
     client_params = json.loads(body) #dict of params
     routing_key = 'qc'
     job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
@@ -262,7 +261,7 @@ def start_qc_monitor(arasturl):
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host = arasturl))
     channel = connection.channel()
-    channel.exchange_declare(exchange='qc',
+    channel.exchange_declare(exchange='qc-complete',
                              type='fanout')
     result = channel.queue_declare(exclusive=True)
     queue_name = result.method.queue
@@ -287,10 +286,12 @@ class JobResource:
 
     @cherrypy.expose
     def new(self, userid=None):
+        print 'new!'
         userid = authenticate_request()
         if userid == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
         params = json.loads(cherrypy.request.body.read())
+        print params
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
         return route_job(json.dumps(params))
@@ -363,7 +364,10 @@ class JobResource:
                     print '[.] CLI request status'
 
                 for doc in docs[-records:]:
-                    row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
+                    try:
+                        row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
+                    except:
+                        row = ['err','err','err']
                     try:
                         row.append(str(doc['computation_time']))
                     except:
@@ -413,7 +417,7 @@ class StaticResource:
                 raise
 
     @cherrypy.expose
-    def serve(self, userid=None, job_id=None, **kwargs):
+    def serve(self, userid=None, resource=None, resource_id=None, **kwargs):
         # if userid == 'OPTIONS':
         #     return ('New Job Request') # To handle initial html OPTIONS request
         #Return data id
@@ -422,30 +426,31 @@ class StaticResource:
         except:
             token = None
         aclient = ar_client.Client('localhost', userid, token)
-        outdir = os.path.join(self.static_root, userid, job_id)
+        outdir = os.path.join(self.static_root, userid, resource, resource_id)
         self._makedirs(outdir)
 
         ## Get all data
-        aclient.get_job_data(job_id=job_id, outdir=outdir)
+        if resource == 'job':
+            job_id = resource_id
+            aclient.get_job_data(job_id=job_id, outdir=outdir)
+            ## Extract Quast data
+            if 'quast' in kwargs.keys():
+                quastdir = os.path.join(outdir, 'quast')
+                self._makedirs(quastdir)
+                qtars = [m for m in os.listdir(outdir) if 'qst' in m]
+                for t in qtars:
+                    if 'ctg' in t: # Contig Quast
+                        ctgdir = os.path.join(quastdir, 'contig')
+                        self._makedirs(ctgdir)
+                        qtar = tarfile.open(os.path.join(outdir,t))
+                        qtar.extractall(path=ctgdir)
+                    elif 'scf' in t: # Scaffold Quast
+                        scfdir = os.path.join(quastdir, 'scaffold')
+                        self._makedirs(scfdir)
+                        qtar = tarfile.open(os.path.join(outdir,t))
+                        qtar.extractall(path=scfdir)
 
-        ## Extract Quast data
-        if 'quast' in kwargs.keys():
-            quastdir = os.path.join(outdir, 'quast')
-            self._makedirs(quastdir)
-            qtars = [m for m in os.listdir(outdir) if 'qst' in m]
-            for t in qtars:
-                if 'ctg' in t: # Contig Quast
-                    ctgdir = os.path.join(quastdir, 'contig')
-                    self._makedirs(ctgdir)
-                    qtar = tarfile.open(os.path.join(outdir,t))
-                    qtar.extractall(path=ctgdir)
-                elif 'scf' in t: # Scaffold Quast
-                    scfdir = os.path.join(quastdir, 'scaffold')
-                    self._makedirs(scfdir)
-                    qtar = tarfile.open(os.path.join(outdir,t))
-                    qtar.extractall(path=scfdir)
-            
-        return 'done'
+            return 'done'
     serve._cp_config = {'tools.staticdir.on' : False}
 
 class FilesResource:
