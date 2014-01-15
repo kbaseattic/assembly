@@ -171,6 +171,8 @@ sub form_smrt_cmd {
         <param name="asmWatchTime"><value>2592000</value></param>
         <param name="xCoverage"><value>15</value></param>
         <param name="ovlErrorRate"><value>0.06</value></param>
+        <param name="ovlMinLen"><value>40</value></param>
+        <param name="merSize"><value>14</value></param>
         <param name="defaultFrgMinLen"><value>500</value></param>
         <param name="genFrgFile"><value>True</value></param>
         <param name="runCA"><value>False</value></param>
