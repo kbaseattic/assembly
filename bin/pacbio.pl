@@ -170,8 +170,9 @@ sub form_smrt_cmd {
         <param name="libraryName"><value>pacbioReads</value></param>
         <param name="asmWatchTime"><value>2592000</value></param>
         <param name="xCoverage"><value>15</value></param>
-        <param name="defaultFrgMinLen"><value>500</value></param>
         <param name="ovlErrorRate"><value>0.06</value></param>
+        <param name="defaultFrgMinLen"><value>500</value></param>
+        <param name="genFrgFile"><value>True</value></param>
         <param name="runCA"><value>False</value></param>
         <param name="asm2afg"><value>False</value></param>
         <param name="castats"><value>False</value></param>
@@ -179,8 +180,7 @@ sub form_smrt_cmd {
         <param name="runBank2CmpH5"><value>False</value></param>
         <param name="assemblyBnkReport"><value>False</value></param>
         <param name="sortCmpH5"><value>False</value></param>
-        <param name="gzipGff"><value>False</value>
-        <param name="genFrgFile"><value>True</value></param>
+        <param name="gzipGff"><value>False</value></param>
     </module>
     <module id="P_ReferenceUploader">
         <param name="runUploaderHgap"><value>True</value></param>
@@ -206,7 +206,7 @@ sub form_smrt_cmd {
     # my $smrt_cmd = 'smrtpipe.py --output /mnt/tmp/test';
     # my $smrt_cmd = 'smrtpipe.py --recover --param=pipeline.xml xml:input.xml';
 
-    my $smrt_cmd = 'smrtpipe.py -D NPROC=12 --param=pipeline.xml xml:input.xml';
+    my $smrt_cmd = 'smrtpipe.py -D NPROC=16 --param=pipeline.xml xml:input.xml';
     my @cmd = ('bash', '-c', "source $setup_sh && $smrt_cmd"); 
     # print STDERR '\@cmd = '. Dumper(\@cmd);
     
