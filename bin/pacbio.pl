@@ -170,6 +170,17 @@ sub form_smrt_cmd {
         <param name="libraryName"><value>pacbioReads</value></param>
         <param name="asmWatchTime"><value>2592000</value></param>
         <param name="xCoverage"><value>15</value></param>
+        <param name="defaultFrgMinLen"><value>500</value></param>
+        <param name="ovlErrorRate"><value>0.06</value></param>
+        <param name="runCA"><value>False</value></param>
+        <param name="asm2afg"><value>False</value></param>
+        <param name="castats"><value>False</value></param>
+        <param name="afg2bank"><value>False</value></param>
+        <param name="runBank2CmpH5"><value>False</value></param>
+        <param name="assemblyBnkReport"><value>False</value></param>
+        <param name="sortCmpH5"><value>False</value></param>
+        <param name="gzipGff"><value>False</value>
+        <param name="genFrgFile"><value>True</value></param>
     </module>
     <module id="P_ReferenceUploader">
         <param name="runUploaderHgap"><value>True</value></param>
