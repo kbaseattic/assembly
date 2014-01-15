@@ -105,6 +105,17 @@ class BasePlugin(object):
                 time.sleep(5)
             p.wait()
 
+            #Flush again
+            while True:
+                try:  line = q.get_nowait() # or q.get(timeout=.1)
+                except Empty:
+                    break
+                else: # got line
+                    logging.info(line)
+                    self.out_module.write(line)
+
+
+
         except subprocess.CalledProcessError as e:
             out = 'Process Failed.\nExit Code: {}\nOutput:{}\n'.format(
                 e.returncode, e.output)
@@ -169,7 +180,8 @@ class BasePlugin(object):
         self.job_data = job_data
         self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
-        self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
+        buffer_size = 0
+        self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w', buffer_size)
         job_data['logfiles'].append(self.out_module.name)
         for kv in settings:
             ## set absolute paths
