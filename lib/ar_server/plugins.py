@@ -105,6 +105,15 @@ class BasePlugin(object):
                 time.sleep(5)
             p.wait()
 
+            #Flush again
+            while True:
+                try:  line = q.get_nowait() # or q.get(timeout=.1)
+                except Empty:
+                    break
+                else: # got line
+                    logging.info(line)
+                    self.out_module.write(line)
+
         except subprocess.CalledProcessError as e:
             out = 'Process Failed.\nExit Code: {}\nOutput:{}\n'.format(
                 e.returncode, e.output)
