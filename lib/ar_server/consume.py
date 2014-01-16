@@ -473,7 +473,9 @@ class ArastConsumer:
                     pct_segment = 1.0 / num_pipes
                     stage_complete *= pct_segment
                     total_complete = pipes_complete + stage_complete
-                    cur_state = 'Running: [{}%]'.format(int(total_complete * 100))
+                    cur_state = 'Running:[{}%|P:{}/{}|S:{}/{}|{}]'.format(
+                        int(total_complete * 100), pipeline_num, num_pipes,
+                        pipeline_stage, num_stages, module_name)
                     self.metadata.update_job(job_data['uid'], 'status', cur_state)
                     if module_name.lower() == 'none':
                         continue
