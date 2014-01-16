@@ -197,9 +197,7 @@ class ArastConsumer:
                                                           s_id, filepath)
                                 filedict['files'].append(real_file)
                             else:
-                                filedict['files'].append(
-                                    self.download(url, user, token, 
-                                                  ids[files.index(baseword)], filepath))
+                                filedict['files'].append(dl)
                         elif re.search('=', word):
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -232,8 +230,7 @@ class ArastConsumer:
                                                           s_id, filepath)
                                 filedict['files'].append(real_file)
                             else:
-                                filedict['files'].append(
-                                    self.download(url, user, token, ids[files.index(baseword)], filepath))
+                                filedict['files'].append(dl)
                         elif re.search('=', word):
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -266,8 +263,7 @@ class ArastConsumer:
                                                           s_id, filepath)
                                 filedict['files'].append(real_file)
                             else:
-                                filedict['files'].append(
-                                    self.download(url, user, token, ids[files.index(baseword)], filepath))
+                                filedict['files'].append(dl)
                         elif re.search('=', word):
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
