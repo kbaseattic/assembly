@@ -1,3 +1,4 @@
+import datetime
 import json
 import requests
 import subprocess
@@ -62,8 +63,8 @@ class Client:
                         'Content-type': 'application/json', 
                         'Accept': 'text/plain'}
         shockres = requests.get('http://{}/shock'.format(self.url), headers=self.headers).text
-        shockurl = 'http://{}/'.format(json.loads(shockres)['shockurl'])
-        self.shock = Shock(shockurl, self.user, self.token)
+        self.shockurl = 'http://{}/'.format(json.loads(shockres)['shockurl'])
+        self.shock = Shock(self.shockurl, self.user, self.token)
 
     def get_job_data(self, job_id=None, outdir=None):
         if not job_id:
@@ -107,7 +108,13 @@ class Client:
         return 
         
     def upload_data_shock(self, filename, curl=False):
-        return self.shock.upload_reads(filename, curl=curl)
+        res = self.shock.upload_reads(filename, curl=curl)
+        shock_info = {'filename': os.path.basename(filename),
+                                  'filesize': os.path.getsize(filename),
+                                  'shock_url': self.shockurl,
+                                  'shock_id': res['data']['id'],
+                                  'upload_time': str(datetime.datetime.utcnow())}
+        return res, shock_info
 
     def submit_job(self, data):
         url = 'http://{}/user/{}/job/new'.format(self.url, self.user)
