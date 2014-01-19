@@ -28,8 +28,10 @@ class RayAssembler(BaseAssembler, IPlugin):
         cmd_args += ['-o', self.outpath+'RayOutput']
 
         self.arast_popen(cmd_args)
+        self.arast_popen(['cp', os.path.join(self.outpath+'RayOutput', 'Contigs.fasta'), self.outpath])
+        self.arast_popen(['cp', os.path.join(self.outpath+'RayOutput', 'Scaffolds.fasta'), self.outpath])
 
-        contigs = os.path.join(self.outpath+'RayOutput', 'Scaffolds.fasta')
+        contigs = os.path.join(self.outpath, 'Scaffolds.fasta')
         print "Contigs: {}".format(contigs)
 
         if os.path.exists(contigs):
