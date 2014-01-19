@@ -25,11 +25,14 @@ class RayAssembler(BaseAssembler, IPlugin):
             elif lib['type'] == 'single':
                 cmd_args += ['-s', lib['files'][0]]
 
-        cmd_args += ['-o', self.outpath + '/RayOutput']
+        cmd_args += ['-o', self.outpath+'RayOutput']
 
         self.arast_popen(cmd_args)
 
-        contigs = os.path.join(self.outpath+'/RayOutput', 'Scaffolds.fasta')
+        contigs = os.path.join(self.outpath+'RayOutput', 'Scaffolds.fasta')
+        print "Contigs: {}".format(contigs)
 
+        if os.path.exists(contigs):
+            return [contigs]
         return contigs
 
