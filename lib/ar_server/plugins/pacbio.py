@@ -16,7 +16,7 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         cmd_args += self.get_files(reads)
 
         cmd_args.append('-o')
-        cmd_args.append(self.outpath + '/pacbio')
+        cmd_args.append(self.outpath + 'pacbio')
 
         self.arast_popen(cmd_args)
 

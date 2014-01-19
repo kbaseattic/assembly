@@ -34,7 +34,5 @@ class RayAssembler(BaseAssembler, IPlugin):
         contigs = os.path.join(self.outpath, 'Scaffolds.fasta')
         print "Contigs: {}".format(contigs)
 
-        if os.path.exists(contigs):
-            return [contigs]
         return contigs
 
