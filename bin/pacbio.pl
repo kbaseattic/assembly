@@ -67,12 +67,12 @@ sub smrt_run {
     my $setup_sh = $opts->{setup_sh};
     my $smrt_dir = $opts->{smrt_dir};
     my $out_dir  = $opts->{out_dir} || 'out';
-    my $tmp_dir  = $opts->{tmp_dir} || '/mnt/tmp/smrt';
+    my $nproc    = $opts->{nproc}   || 8;
 
-    my $cov      = $opts->{coverage}    || 15;
-    my $gs       = $opts->{genome_size} || 5000000;
-    my $min_long = $opts->{min_long}    || 6000;
-    my $nproc    = $opts->{nproc}       || 16;
+    my $tmp_dir  = $opts->{tmp_dir} || '/mnt/tmp/smrt';
+    my $cov      = $opts->{coverage};   
+    my $gs       = $opts->{genome_size};
+    my $min_long = $opts->{min_long};
 
     my $self_dir = dirname(Cwd::abs_path($0));
     my $rel_path = "install/smrtanalysis-2.1.1.128549/etc/setup.sh";
@@ -83,95 +83,19 @@ sub smrt_run {
 
     my @files;                  # pacbio files: bax.h5 / bas.h5
     if ($se_libs && @$se_libs) {
-        for (@$se_libs) {
-            if (/(bax|bas)\.h5$/) {
-                push @files, $_;
-            }
-        }
+        for (@$se_libs) { push @files, $_ if /(bax|bas)\.h5$/; }
     }
-
     @files or die "No pacbio sequence file found: bax.h5 / bas.h5";
-    
 
     run("mkdir -p $out_dir") if ! -d $out_dir;
     chdir($out_dir);
 
-    my $input_xml = 'input.xml';
-    open(F, ">$input_xml") or die "Could not open $input_xml";
-    print F '<?xml version="1.0"?>
-<pacbioAnalysisInputs>
-  <dataReferences>
-';
-    my $i = 0;
-    for my $file (@files) {
-        print F '    <url ref="run:0000000-000'.$i++.'"><location>'.$file.'</location></url>'."\n";
-    }
-    print F '  </dataReferences>
-</pacbioAnalysisInputs>
-';
-    close(F);
+    
+    write_file('runCA.spec', gen_runCA_spec());
+    write_file('input_xml', gen_input_xml(@files));
+    write_file('pipeline_xml', gen_hgap2_settings({ tmp_dir => $tmp_dir, run_CA_spec => 'runCA.spec',
+                                                    coverage => $cov, genome_size => $gs, min_long => $min_long });
 
-    my $pipeline_xml = 'pipeline.xml';
-    open(F, ">$pipeline_xml") or die "Could not open $pipeline_xml";
-
-
-    print F <<End_of_Settings;
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<smrtpipeSettings>
-    <protocol id="ARAST_HGAP2">
-        <param name="otfReference"><value>reference</value></param>
-        <param name="deferRefCheck"><value>True</value></param>
-    </protocol>
-    <module id="P_Fetch" />
-    <module id="P_Filter" >
-        <param name="minLength"><value>100</value></param>
-        <param name="minSubReadLength"><value>500</value></param>
-        <param name="readScore"><value>0.80</value></param>
-    </module>
-    <module id="P_PreAssemblerDagcon">
-        <param name="computeLengthCutoff"><value>true</value></param>
-        <param name="minLongReadLength"><value>$min_long</value></param>
-        <param name="targetChunks"><value>6</value></param>
-        <param name="splitBestn"><value>11</value></param>
-        <param name="totalBestn"><value>24</value></param>
-        <param name="blasrOpts"><value> -noSplitSubreads -minReadLength 200 -maxScore -1000 -maxLCPLength 16 </value></param>
-    </module>
-    <module id="P_CeleraAssembler">
-        <param name="genomeSize"><value>$genome_size</value></param>
-        <param name="libraryName"><value>pacbioReads</value></param>
-        <param name="asmWatchTime"><value>2592000</value></param>
-        <param name="xCoverage"><value>$coverage</value></param>
-        <param name="ovlErrorRate"><value>0.06</value></param>
-        <param name="ovlMinLen"><value>40</value></param>
-        <param name="merSize"><value>14</value></param>
-        <param name="defaultFrgMinLen"><value>500</value></param>
-        <param name="genFrgFile"><value>True</value></param>
-        <param name="runCA"><value>False</value></param>
-        <param name="asm2afg"><value>False</value></param>
-        <param name="castats"><value>False</value></param>
-        <param name="afg2bank"><value>False</value></param>
-        <param name="runBank2CmpH5"><value>False</value></param>
-        <param name="assemblyBnkReport"><value>False</value></param>
-        <param name="sortCmpH5"><value>False</value></param>
-        <param name="gzipGff"><value>False</value></param>
-    </module>
-    <module id="P_ReferenceUploader">
-        <param name="runUploaderHgap"><value>True</value></param>
-        <param name="runUploader"><value>False</value></param>
-        <param name="name"><value>reference</value></param>
-        <param name="sawriter"><value>sawriter -blt 8 -welter</value></param>
-        <param name="gatkDict"><value>createSequenceDictionary</value></param>
-        <param name="samIdx"><value>samtools faidx</value></param>
-    </module>
-    <module id="P_Mapping">
-        <param name="align_opts"><value>--tmpDir=$tmp_dir --minAccuracy=0.75 --minLength=50 </value></param>
-    </module>
-    <module id="P_AssemblyPolishing">
-    </module>
-</smrtpipeSettings>
-End_of_Settings
-
-    close(F);
 
     # my $smrt_cmd = 'smrtpipe.py -h';
     # my $smrt_cmd = 'smrtpipe.py --version';
@@ -243,3 +167,142 @@ sub get_smrt_env {
 }
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
+
+sub write_file {
+    my ($filename, $output) = @_;
+    open(F, ">$filename") or die "Could not open $filename";
+    print F $output;
+    close(F);
+}
+
+sub gen_input_xml {
+    my (@files) = @_;
+    my @xml;
+    push @xml, '<?xml version="1.0"?>';
+    push @xml, '<pacbioAnalysisInputs>';
+    push @xml, '    <dataReferences>';
+    my $i = 0;
+    for my $file (@files) {
+        push @xml, '    <url ref="run:0000000-000'.$i++.'"><location>'.$file.'</location></url>';
+    }
+    push @xml, '  </dataReferences>';
+    push @xml, '</pacbioAnalysisInputs>';
+    return join('', map { $_."\n" } @xml);
+}
+
+sub gen_runCA_spec {
+
+    return <<End_of_runCA_spec;
+utgErrorRate = 0.06
+utgErrorLimit = 4.5
+
+cnsErrorRate = 0.25
+cgwErrorRate = 0.25
+# ovlErrorRate = 0.06
+
+frgMinLen = 500
+ovlMinLen = 40
+
+merSize=14
+
+merylMemory = 32091
+merylThreads = 8
+
+ovlStoreMemory = 32091
+
+# grid info
+useGrid = 0
+scriptOnGrid = 0
+frgCorrOnGrid = 0
+ovlCorrOnGrid = 0
+
+sge = -S /bin/bash -sync y -V -q None
+sgeScript = -pe None 28
+sgeConsensus = -pe None 1
+sgeOverlap = -pe None 1
+sgeFragmentCorrection = -pe None 2
+sgeOverlapCorrection = -pe None 1
+
+ovlHashBits = 26
+ovlHashBlockLength = 1915433779
+ovlRefBlockSize =  200000
+
+ovlThreads = 8
+ovlConcurrency = 2
+frgCorrThreads = 8
+frgCorrBatchSize = 100000
+ovlCorrBatchSize = 100000
+
+sgeName = pacbioReads
+End_of_runCA_spec
+    
+}
+
+
+sub gen_hgap2_settings {
+    my ($opts) = @_;
+
+    my $tmp_dir  = $opts->{tmp_dir}     || '/mnt/tmp/smrt';
+    my $cov      = $opts->{coverage}    || 15;
+    my $gs       = $opts->{genome_size} || 5000000;
+    my $min_long = $opts->{min_long}    || 6000;
+    my $CA_spec  = $opts->{run_CA_spec};
+
+    return <<End_of_HGAP2_Settings;
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<smrtpipeSettings>
+    <protocol id="ARAST_HGAP2">
+        <param name="otfReference"><value>reference</value></param>
+        <param name="deferRefCheck"><value>True</value></param>
+    </protocol>
+    <module id="P_Fetch" />
+    <module id="P_Filter" >
+        <param name="minLength"><value>100</value></param>
+        <param name="minSubReadLength"><value>500</value></param>
+        <param name="readScore"><value>0.80</value></param>
+    </module>
+    <module id="P_PreAssemblerDagcon">
+        <param name="computeLengthCutoff"><value>true</value></param>
+        <param name="minLongReadLength"><value>$min_long</value></param>
+        <param name="targetChunks"><value>6</value></param>
+        <param name="splitBestn"><value>11</value></param>
+        <param name="totalBestn"><value>24</value></param>
+        <param name="blasrOpts"><value> -noSplitSubreads -minReadLength 200 -maxScore -1000 -maxLCPLength 16 </value></param>
+    </module>
+    <module id="P_CeleraAssembler">
+        <param name="genomeSize"><value>$genome_size</value></param>
+        <param name="libraryName"><value>pacbioReads</value></param>
+        <param name="asmWatchTime"><value>2592000</value></param>
+        <param name="xCoverage"><value>$coverage</value></param>
+        <param name="ovlErrorRate"><value>0.06</value></param>
+        <param name="ovlMinLen"><value>40</value></param>
+        <param name="merSize"><value>14</value></param>
+        <param name="defaultFrgMinLen"><value>500</value></param>
+        <param name="genFrgFile"><value>True</value></param>
+        <param name="runCA"><value>False</value></param>
+        <param name="asm2afg"><value>False</value></param>
+        <param name="castats"><value>False</value></param>
+        <param name="afg2bank"><value>False</value></param>
+        <param name="runBank2CmpH5"><value>False</value></param>
+        <param name="assemblyBnkReport"><value>False</value></param>
+        <param name="sortCmpH5"><value>False</value></param>
+        <param name="gzipGff"><value>False</value></param>
+        <param name="specInRunCA"><value>$CA_spec</value></param>
+    </module>
+    <module id="P_ReferenceUploader">
+        <param name="runUploaderHgap"><value>True</value></param>
+        <param name="runUploader"><value>False</value></param>
+        <param name="name"><value>reference</value></param>
+        <param name="sawriter"><value>sawriter -blt 8 -welter</value></param>
+        <param name="gatkDict"><value>createSequenceDictionary</value></param>
+        <param name="samIdx"><value>samtools faidx</value></param>
+    </module>
+    <module id="P_Mapping">
+        <param name="align_opts"><value>--tmpDir=$tmp_dir --minAccuracy=0.75 --minLength=50 </value></param>
+    </module>
+    <module id="P_AssemblyPolishing">
+    </module>
+</smrtpipeSettings>
+End_of_HGAP2_Settings
+}
+
