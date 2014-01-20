@@ -770,11 +770,11 @@ class ArastConsumer:
             seen.add(f)
         return_files = [f for f in seen]
 
-        if exceptions:
-            if len(exceptions) > 1:
-                raise Exception('Multiple Errors')
-            else:
-                raise Exception(exceptions[0])
+        #if exceptions:        
+            # if len(exceptions) > 1:
+            #     raise Exception('Multiple Errors')
+            # else:
+            #     raise Exception(exceptions[0])
 
         if contig_files:
             return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
