@@ -56,7 +56,7 @@ my ($se_libs, $pe_libs) = process_read_lib_args(\@se_files, \@pe_files, \@ARGV);
 smrt_run({ se_libs => $se_libs, pe_libs => $pe_libs, setup_sh => $setup_sh, 
            out_dir => $out_dir, tmp_dir => $tmp_dir, smrt_dir => $smrt_dir,
            coverage => $coverage, genome_size => $genome_size,
-           min_long => $min_long_read_length, nproc => $np
+           min_long => $min_long_read_length, nproc => $nproc
          });
 
 sub smrt_run {
