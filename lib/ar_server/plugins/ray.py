@@ -32,7 +32,6 @@ class RayAssembler(BaseAssembler, IPlugin):
         self.arast_popen(['cp', os.path.join(self.outpath+'RayOutput', 'Scaffolds.fasta'), self.outpath])
 
         contigs = os.path.join(self.outpath, 'Scaffolds.fasta')
-        print "Contigs: {}".format(contigs)
 
         return contigs
 
