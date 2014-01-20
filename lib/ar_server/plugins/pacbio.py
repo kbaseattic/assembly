@@ -35,7 +35,9 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         self.arast_popen(['cp', os.path.join(self.outpath+'pacbio', 'contigs.fa'), self.outpath])
 
         contigs = os.path.join(self.outpath, 'contigs.fa')
-        print "Contigs: {}".format(contigs)
 
-        return contigs
+        if os.path.exists(contigs):
+            return [contigs]
+        return
+
         
