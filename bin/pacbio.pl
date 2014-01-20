@@ -10,18 +10,28 @@ use Getopt::Long;
 
 my $usage =<<"End_of_Usage";
 
-Usage pacbio.pl [ options ] components
+usage: pacbio.pl [ options ] components
+       
+       -h --help                   - print this usage statement
+       -d dir                      - SMRT installation directory (D = $cwd/smrt)
+       -f seq.bax.h5 [foo.fa ...]  - one or more single end sequence files:
+                                     bas.h5 & bax.h5 will be used as PacBio reads
+                                     fasta or fastq files will be used as Illumina reads
+       -o dir                      - output directory (D = ./out)
+       -p p1.fq p2.fq [...]        - one or more paired end libraries as Illumina reads
+       -t dir                      - temporary directory (D = /mnt/tmp/smrt)
 
 End_of_Usage
 
-my ($help, $in_files, $out_dir, $smrt_dir, $tmp_dir, $setup_sh);
+my ($help, $out_dir, $smrt_dir, $tmp_dir, $setup_sh, @se_files, @pe_files);
 
-GetOptions( 'h|help'     => \$help,
-            'd|dir=s'    => \$smrt_dir,
-            'i|input=s'  => \$in_files,
-            'o|output=s' => \$out_dir,   # supercedes smrtpipe.py --output
-            's|setup=s'  => \$setup_sh,
-            't|tmp=s'    => \$tmp_dir
+GetOptions( 'h|help'         => \$help,
+            'd|dir=s'        => \$smrt_dir,
+            'f|single=s{1,}' => \@se_files,
+            'p|pair=s{2}'    => \@pe_files,
+            'o|output=s'     => \$out_dir,   # supercedes smrtpipe.py --output
+            's|setup=s'      => \$setup_sh,
+            't|tmp=s'        => \$tmp_dir
           );
 
 # -m modules
@@ -31,15 +41,19 @@ GetOptions( 'h|help'     => \$help,
 
 if ($help) { print $usage; exit 0 }
 
+my ($se_libs, $pe_libs) = process_read_lib_args(\@se_files, \@pe_files, \@ARGV);
 
-form_smrt_cmd(undef, { in_files => $in_files, out_dir => $out_dir, setup_sh => $setup_sh, smrt_dir => $smrt_dir } );
+form_smrt_cmd({ se_libs => $se_libs, pe_libs => $pe_libs, out_dir => $out_dir, tmp_dir => $tmp_dir, setup_sh => $setup_sh, smrt_dir => $smrt_dir } );
 
 sub form_smrt_cmd {
-    my ($files, $opts) = @_;
+    my ($opts) = @_;
 
+    my $se_libs  = $opts->{se_libs};
+    my $pe_libs  = $opts->{pe_libs};
     my $setup_sh = $opts->{setup_sh};
     my $smrt_dir = $opts->{smrt_dir};
-    my $out_dir  = $opts->{out_dir};
+    my $out_dir  = $opts->{out_dir} || 'out';
+    my $tmp_dir  = $opts->{tmp_dir} || '/mnt/tmp/smrt';
 
     my $self_dir = dirname(Cwd::abs_path($0));
     my $rel_path = "install/smrtanalysis-2.1.1.128549/etc/setup.sh";
@@ -47,7 +61,17 @@ sub form_smrt_cmd {
     $setup_sh && -s $setup_sh or die "Cannot find setup.sh: $setup_sh\n";
 
     # my $file = '/space/ar-compute/assembly-rast/bin/smrt/current/common/test/primary/lambda/Analysis_Results/m120404_104101_00114_c100318002550000001523015908241265_s1_p0.bas.h5';
-    my @files = @ARGV;
+
+    my @files;                  # pacbio files: bax.h5 / bas.h5
+    if ($se_libs && @$se_libs) {
+        for (@$se_libs) {
+            if (/(bax|bas)\.h5$/) {
+                push @files, $_;
+            }
+        }
+    }
+
+    @files or die "No pacbio sequence file found: bax.h5 / bas.h5";
 
     run("mkdir -p $out_dir") if ! -d $out_dir;
     chdir($out_dir);
@@ -71,7 +95,8 @@ sub form_smrt_cmd {
     open(F, ">$pipeline_xml") or die "Could not open $pipeline_xml";
 
 
-    print F '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    print F <<End_of_Settings;
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <smrtpipeSettings>
     <protocol id="ARAST_HGAP2">
         <param name="otfReference"><value>reference</value></param>
@@ -119,12 +144,12 @@ sub form_smrt_cmd {
         <param name="samIdx"><value>samtools faidx</value></param>
     </module>
     <module id="P_Mapping">
-        <param name="align_opts"><value>--tmpDir=/mnt/tmp/smrt --minAccuracy=0.75 --minLength=50 </value></param>
+        <param name="align_opts"><value>--tmpDir=$tmp_dir --minAccuracy=0.75 --minLength=50 </value></param>
     </module>
     <module id="P_AssemblyPolishing">
     </module>
 </smrtpipeSettings>
-';
+End_of_Settings
 
     close(F);
 
@@ -143,6 +168,43 @@ sub form_smrt_cmd {
     my $result_file = "data/polished_assembly.fasta.gz";
     run("zcat $result_file > contigs.fa") if -s $result_file;
 
+}
+
+
+sub process_read_lib_args {
+    my ($se_files, $pe_files, $args) = @_;
+
+    my (@se_libs, @pe_libs);
+
+    if ($args && ref $args eq 'ARRAY') {
+        for (@$args) {
+            push (@se_libs, $_) if valid_seq_file_type($_) && -s $_;
+        }       
+    }     
+    if ($se_files && ref $se_files eq 'ARRAY') {
+        for (@$se_files) {
+            push (@se_libs, $_) if valid_seq_file_type($_) && -s $_;
+        }       
+    }     
+    if ($pe_files && ref $pe_files eq 'ARRAY' && @$pe_files >= 2) {
+        my $n = @$pe_files;
+        $n % 2 and die "Number of paired end files = $n, should be an even number.";
+        while (@pe_files) {
+            my $p1 = shift @pe_files;
+            my $p2 = shift @pe_files;
+            die "Paired end file unrecognized or not found: $p1." unless valid_seq_file_type($p1) && -s $p1;
+            die "Paired end file unrecognized or not found: $p2." unless valid_seq_file_type($p2) && -s $p2;
+            push (@pe_libs, [$p1, $p2]);
+        }
+    }
+    return (\@se_libs, \@pe_libs);
+}
+
+sub valid_seq_file_type {
+    my ($file) = @_;
+    $file =~ s/\.(gz|bz|bz2|zip)$//;
+    $file =~ s/\.tar$//;
+    return 1 if $file =~ /\.(fasta|fastq|fa|fq|fna|bas\.h5|bax\.h5)$/;
 }
 
 # my %env_old = %ENV;

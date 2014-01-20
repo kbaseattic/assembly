@@ -19,6 +19,7 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         cmd_args.append(self.outpath + 'pacbio')
 
         self.arast_popen(cmd_args)
+        self.arast_popen(['cp', os.path.join(self.outpath+'pacbio', 'contigs.fa'), self.outpath])
 
         contigs = self.outpath + 'contigs.fa'
 
