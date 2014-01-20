@@ -13,7 +13,15 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [self.executable]
-        cmd_args += self.get_files(reads)
+
+        # cmd_args += self.get_files(reads)
+
+        for lib in reads:
+            if lib['type'] == 'paired':
+                if len(lib['files']) == 2: # 2 Files
+                    cmd_args += ['-p', lib['files'][0], lib['files'][1]]
+            elif lib['type'] == 'single':
+                cmd_args += ['-f', lib['files'][0]]
 
         cmd_args.append('-o')
         cmd_args.append(self.outpath + 'pacbio')
