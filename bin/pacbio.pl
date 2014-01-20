@@ -21,9 +21,15 @@ usage: pacbio.pl [ options ] components
        -p p1.fq p2.fq [...]        - one or more paired end libraries as Illumina reads
        -t dir                      - temporary directory (D = /mnt/tmp/smrt)
 
+       --cov float                 - sequencing coverage (D = 15)
+       --gs int                    - genome size (D = 5000000)
+       --minlong int               - minimum long read length (D = 6000)
+       --np int                    - number of processors (D = 8)
+
 End_of_Usage
 
-my ($help, $out_dir, $smrt_dir, $tmp_dir, $setup_sh, @se_files, @pe_files);
+my ($help, $out_dir, $smrt_dir, $tmp_dir, $setup_sh, @se_files, @pe_files,
+    $nproc, $min_long_read_length, $genome_size, $coverage);
 
 GetOptions( 'h|help'         => \$help,
             'd|dir=s'        => \$smrt_dir,
@@ -31,7 +37,11 @@ GetOptions( 'h|help'         => \$help,
             'p|pair=s{2}'    => \@pe_files,
             'o|output=s'     => \$out_dir,   # supercedes smrtpipe.py --output
             's|setup=s'      => \$setup_sh,
-            't|tmp=s'        => \$tmp_dir
+            't|tmp=s'        => \$tmp_dir,
+            'cov=f'          => \$coverage,
+            'gs=i'           => \$genome_size,
+            'minlong=i'      => \$min_long_read_length,
+            'np=i'           => \$nproc
           );
 
 # -m modules
@@ -43,7 +53,11 @@ if ($help) { print $usage; exit 0 }
 
 my ($se_libs, $pe_libs) = process_read_lib_args(\@se_files, \@pe_files, \@ARGV);
 
-smrt_run({ se_libs => $se_libs, pe_libs => $pe_libs, out_dir => $out_dir, tmp_dir => $tmp_dir, setup_sh => $setup_sh, smrt_dir => $smrt_dir } );
+smrt_run({ se_libs => $se_libs, pe_libs => $pe_libs, setup_sh => $setup_sh, 
+           out_dir => $out_dir, tmp_dir => $tmp_dir, smrt_dir => $smrt_dir,
+           coverage => $coverage, genome_size => $genome_size,
+           min_long => $min_long_read_length, nproc => $np
+         });
 
 sub smrt_run {
     my ($opts) = @_;
@@ -54,6 +68,11 @@ sub smrt_run {
     my $smrt_dir = $opts->{smrt_dir};
     my $out_dir  = $opts->{out_dir} || 'out';
     my $tmp_dir  = $opts->{tmp_dir} || '/mnt/tmp/smrt';
+
+    my $cov      = $opts->{coverage}    || 15;
+    my $gs       = $opts->{genome_size} || 5000000;
+    my $min_long = $opts->{min_long}    || 6000;
+    my $nproc    = $opts->{nproc}       || 16;
 
     my $self_dir = dirname(Cwd::abs_path($0));
     my $rel_path = "install/smrtanalysis-2.1.1.128549/etc/setup.sh";
@@ -111,17 +130,17 @@ sub smrt_run {
     </module>
     <module id="P_PreAssemblerDagcon">
         <param name="computeLengthCutoff"><value>true</value></param>
-        <param name="minLongReadLength"><value>6000</value></param>
+        <param name="minLongReadLength"><value>$min_long</value></param>
         <param name="targetChunks"><value>6</value></param>
         <param name="splitBestn"><value>11</value></param>
         <param name="totalBestn"><value>24</value></param>
         <param name="blasrOpts"><value> -noSplitSubreads -minReadLength 200 -maxScore -1000 -maxLCPLength 16 </value></param>
     </module>
     <module id="P_CeleraAssembler">
-        <param name="genomeSize"><value>5000000</value></param>
+        <param name="genomeSize"><value>$genome_size</value></param>
         <param name="libraryName"><value>pacbioReads</value></param>
         <param name="asmWatchTime"><value>2592000</value></param>
-        <param name="xCoverage"><value>15</value></param>
+        <param name="xCoverage"><value>$coverage</value></param>
         <param name="ovlErrorRate"><value>0.06</value></param>
         <param name="ovlMinLen"><value>40</value></param>
         <param name="merSize"><value>14</value></param>
@@ -160,7 +179,7 @@ End_of_Settings
     # my $smrt_cmd = 'smrtpipe.py --output /mnt/tmp/test';
     # my $smrt_cmd = 'smrtpipe.py --recover --param=pipeline.xml xml:input.xml';
 
-    my $smrt_cmd = 'smrtpipe.py -D NPROC=16 --param=pipeline.xml xml:input.xml';
+    my $smrt_cmd = "smrtpipe.py -D NPROC=$nproc --param=pipeline.xml xml:input.xml";
     my @cmd = ('bash', '-c', "source $setup_sh && $smrt_cmd"); 
     
     # print STDERR join(" ", @cmd) . "\n"; exit;
