@@ -29,7 +29,7 @@ usage: pacbio.pl [ options ] components
 End_of_Usage
 
 my ($help, $out_dir, $smrt_dir, $tmp_dir, $setup_sh, @se_files, @pe_files,
-    $nproc, $min_long_read_length, $genome_size, $coverage);
+    $bigmem, $nproc, $min_long_read_length, $genome_size, $coverage);
 
 GetOptions( 'h|help'         => \$help,
             'd|dir=s'        => \$smrt_dir,
@@ -38,6 +38,7 @@ GetOptions( 'h|help'         => \$help,
             'o|output=s'     => \$out_dir,   # supercedes smrtpipe.py --output
             's|setup=s'      => \$setup_sh,
             't|tmp=s'        => \$tmp_dir,
+            'bigmem'         => \$bigmem,
             'cov=f'          => \$coverage,
             'gs=i'           => \$genome_size,
             'minlong=i'      => \$min_long_read_length,
@@ -68,6 +69,7 @@ sub smrt_run {
     my $smrt_dir = $opts->{smrt_dir};
     my $out_dir  = $opts->{out_dir} || 'out';
     my $nproc    = $opts->{nproc}   || 8;
+    my $bigmem   = $opts->{bigmem};
 
     my $tmp_dir  = $opts->{tmp_dir} || '/mnt/tmp/smrt';
     my $cov      = $opts->{coverage};   
@@ -79,9 +81,7 @@ sub smrt_run {
     $setup_sh  ||= $smrt_dir ? "$smrt_dir/$rel_path" : "$self_dir/smrt/$rel_path";
     $setup_sh && -s $setup_sh or die "Cannot find setup.sh: $setup_sh\n";
 
-    # my $file = '/space/ar-compute/assembly-rast/bin/smrt/current/common/test/primary/lambda/Analysis_Results/m120404_104101_00114_c100318002550000001523015908241265_s1_p0.bas.h5';
-
-    my @files;                  # pacbio files: bax.h5 / bas.h5
+    my @files;  # pacbio files: bax.h5 / bas.h5
     if ($se_libs && @$se_libs) {
         for (@$se_libs) { push @files, $_ if /(bax|bas)\.h5$/; }
     }
@@ -89,24 +89,16 @@ sub smrt_run {
 
     run("mkdir -p $out_dir") if ! -d $out_dir;
     chdir($out_dir);
-
     
-    write_file('runCA.spec', gen_runCA_spec());
+    write_file('runCA.spec', gen_runCA_spec({ nproc => $nproc, bigmem => $bigmem }));
     write_file('input.xml', gen_input_xml(@files));
     write_file('pipeline.xml', gen_hgap2_settings({ tmp_dir => $tmp_dir, run_CA_spec => 'runCA.spec',
                                                     coverage => $cov, genome_size => $gs, min_long => $min_long }));
 
-    # my $smrt_cmd = 'smrtpipe.py -h';
-    # my $smrt_cmd = 'smrtpipe.py --version';
-    # my $smrt_cmd = 'smrtpipe.py --examples';
-    # my $smrt_cmd = 'smrtpipe.py --output /mnt/tmp/test';
-    # my $smrt_cmd = 'smrtpipe.py --recover --param=pipeline.xml xml:input.xml';
-
+    # Currently nproc is controlled by runCA.spec, so NPROC here likely makes no difference
     my $smrt_cmd = "smrtpipe.py -D NPROC=$nproc --param=pipeline.xml xml:input.xml";
     my @cmd = ('bash', '-c', "source $setup_sh && $smrt_cmd"); 
     
-    # print STDERR join(" ", @cmd) . "\n"; exit;
-
     run(@cmd);
 
     my $result_file = "data/polished_assembly.fasta.gz";
@@ -190,6 +182,16 @@ sub gen_input_xml {
 }
 
 sub gen_runCA_spec {
+    my ($opts) = @_;
+
+    my $nproc  = $opts->{nproc}  || 8;
+    my $bigmem = $opts->{bigmem} || guess_system_memory() > 16000000 ? 1 : 0;
+
+    my $merylMemory        = $bigmem ?     128000 : 6000;
+    my $ovlStoreMemory     = $bigmem ?      32000 : 6000;
+    my $ovlHashBits        = $bigmem ?         26 : 24;
+    my $ovlHashBlockLength = $bigmem ? 2000000000 : 200000000;
+    my $ovlRefBlockSize    = $bigmem ?   32000000 : 2000000;
 
     return <<End_of_runCA_spec;
 utgErrorRate = 0.06
@@ -197,17 +199,18 @@ utgErrorLimit = 4.5
 
 cnsErrorRate = 0.25
 cgwErrorRate = 0.25
-# ovlErrorRate = 0.06
+ovlErrorRate = 0.06
 
 frgMinLen = 500
 ovlMinLen = 40
 
 merSize=14
 
-merylMemory = 32091
-merylThreads = 8
+# in MB
+merylMemory = $merylMemory
+merylThreads = $nproc
 
-ovlStoreMemory = 32091
+ovlStoreMemory = $ovlStoreMemory
 
 # grid info
 useGrid = 0
@@ -222,19 +225,18 @@ sgeOverlap = -pe None 1
 sgeFragmentCorrection = -pe None 2
 sgeOverlapCorrection = -pe None 1
 
-ovlHashBits = 26
-ovlHashBlockLength = 1915433779
-ovlRefBlockSize =  200000
+ovlHashBits = $ovlHashBits
+ovlHashBlockLength = $ovlHashBlockLength
+ovlRefBlockSize =  $ovlRefBlockSize
 
-ovlThreads = 8
-ovlConcurrency = 2
-frgCorrThreads = 8
+ovlThreads = $nproc
+ovlConcurrency = 1
+frgCorrThreads = 2
 frgCorrBatchSize = 100000
 ovlCorrBatchSize = 100000
 
 sgeName = pacbioReads
 End_of_runCA_spec
-    
 }
 
 
@@ -305,3 +307,10 @@ sub gen_hgap2_settings {
 End_of_HGAP2_Settings
 }
 
+sub guess_system_memory {
+    my ($cpu, $mem);
+    $cpu = `cat /proc/cpuinfo |grep processor|wc -l` if -e '/proc/cpuinfo'; chomp($cpu);
+    $mem = `cat /proc/meminfo |grep MemTotal` if -e '/proc/meminfo'; ($mem) = $mem =~ /(\d+)/; 
+    my $mem_per_core = int($mem / $cpu) if $mem > 0 && $cpu > 0;
+    return $mem_per_core;
+}
