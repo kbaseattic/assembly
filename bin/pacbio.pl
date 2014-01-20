@@ -92,10 +92,9 @@ sub smrt_run {
 
     
     write_file('runCA.spec', gen_runCA_spec());
-    write_file('input_xml', gen_input_xml(@files));
-    write_file('pipeline_xml', gen_hgap2_settings({ tmp_dir => $tmp_dir, run_CA_spec => 'runCA.spec',
+    write_file('input.xml', gen_input_xml(@files));
+    write_file('pipeline.xml', gen_hgap2_settings({ tmp_dir => $tmp_dir, run_CA_spec => 'runCA.spec',
                                                     coverage => $cov, genome_size => $gs, min_long => $min_long }));
-
 
     # my $smrt_cmd = 'smrtpipe.py -h';
     # my $smrt_cmd = 'smrtpipe.py --version';
