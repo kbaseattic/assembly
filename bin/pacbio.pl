@@ -8,7 +8,7 @@ use File::Basename;
 use File::Temp;
 use Getopt::Long;
 
-my $usage =<<"End_of_Usage";
+my $usage =<<'End_of_Usage';
 
 usage: pacbio.pl [ options ] components
        
@@ -43,9 +43,9 @@ if ($help) { print $usage; exit 0 }
 
 my ($se_libs, $pe_libs) = process_read_lib_args(\@se_files, \@pe_files, \@ARGV);
 
-form_smrt_cmd({ se_libs => $se_libs, pe_libs => $pe_libs, out_dir => $out_dir, tmp_dir => $tmp_dir, setup_sh => $setup_sh, smrt_dir => $smrt_dir } );
+smrt_run({ se_libs => $se_libs, pe_libs => $pe_libs, out_dir => $out_dir, tmp_dir => $tmp_dir, setup_sh => $setup_sh, smrt_dir => $smrt_dir } );
 
-sub form_smrt_cmd {
+sub smrt_run {
     my ($opts) = @_;
 
     my $se_libs  = $opts->{se_libs};
@@ -72,6 +72,7 @@ sub form_smrt_cmd {
     }
 
     @files or die "No pacbio sequence file found: bax.h5 / bas.h5";
+    
 
     run("mkdir -p $out_dir") if ! -d $out_dir;
     chdir($out_dir);
@@ -161,13 +162,13 @@ End_of_Settings
 
     my $smrt_cmd = 'smrtpipe.py -D NPROC=16 --param=pipeline.xml xml:input.xml';
     my @cmd = ('bash', '-c', "source $setup_sh && $smrt_cmd"); 
-    # print STDERR '\@cmd = '. Dumper(\@cmd);
     
+    # print STDERR join(" ", @cmd) . "\n"; exit;
+
     run(@cmd);
 
     my $result_file = "data/polished_assembly.fasta.gz";
     run("zcat $result_file > contigs.fa") if -s $result_file;
-
 }
 
 
