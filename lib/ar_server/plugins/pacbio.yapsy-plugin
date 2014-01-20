@@ -21,7 +21,7 @@ coverage = 15
 
 [Documentation]
 Author = Fangfang Xia
-Version = 0.1
+Version = 1.0
 Description = PacBio non-hybrid assembly pipeline for SMRT long reads
 Stages = preprocess,assembler,post-process
 References = doi:10.1038/nmeth.2474
