@@ -30,7 +30,9 @@ class SgaPreprocessor(BasePreprocessor, IPlugin):
 
                 # Get file name for prefix
                 cmd_args.append('-o')
-                base = os.path.basename(f).split('.')[0]
+                basename = os.path.basename(f)
+                base = basename[0:basename.rfind('.')]
+                #base = os.path.basename(f).split('.')[0]
                 pp_file = os.path.join(self.outpath,
                                        "{}.pp.fastq".format(base))
                 cmd_args.append(pp_file)
