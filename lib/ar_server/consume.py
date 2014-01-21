@@ -673,11 +673,26 @@ class ArastConsumer:
         job_data['contig_types'] = output_types
         job_data['params'] = [] #clear overrides from last stage
 
+
+        ## CONCAT MODULE LOG FILES
+        self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
+        for log in logfiles:
+            self.out_report.write("\n\n{0} Begin Module {0}\n".format("="*10))
+            try:
+                with open(log) as infile:
+                    self.out_report.write(infile.read())
+            except:
+                self.out_report.write("Error writing log file")
+
+
         if 'contigs' in output_types or 'scaffolds' in output_types:
             try: #Try to assess, otherwise report pipeline errors
                 quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                               tar=True, meta=True)
-                logfiles.append(q_log)
+                with open(q_log) as infile:
+                    self.out_report.write(infile.read())
+
+                    #logfiles.append(q_log)
             except:
                 if exceptions:
                     if len(exceptions) > 1:
@@ -735,16 +750,6 @@ class ArastConsumer:
         #             self.out_report.write(infile.read())
         #     except:
         #         self.out_report.write("Error writing log file")
-
-        ## CONCAT MODULE LOG FILES
-        self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
-        for log in logfiles:
-            self.out_report.write("\n\n{0} Begin Module {0}\n".format("="*10))
-            try:
-                with open(log) as infile:
-                    self.out_report.write(infile.read())
-            except:
-                self.out_report.write("Error writing log file")
 
         ## Format Returns
         ctg_analysis = quast_tar.rsplit('/', 1)[0] + '/{}_ctg_qst.tar.gz'.format(job_data['job_id'])
