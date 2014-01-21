@@ -355,7 +355,7 @@ class ArastConsumer:
                 for p in pipelines:
                     self.pmanager.validate_pipe(p)
 
-                result_files, summary, contig_files = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
                 for i, f in enumerate(result_files):
                     #fname = os.path.basename(f).split('.')[0]
                     fname = str(i)
@@ -367,7 +367,11 @@ class ArastConsumer:
                     res = self.upload(url, user, token, c, filetype='contigs')
                     contig_ids[fname] = res['data']['id']
 
-                status += "pipeline [success] "
+                # Check if job completed with no errors
+                if exceptions:
+                    status = 'Complete with errors'
+                else:
+                    status += "Complete"
                 self.out_report.write("Pipeline completed successfully\n")
             except:
                 traceback = format_exc(sys.exc_info())
@@ -650,6 +654,9 @@ class ArastConsumer:
             except:
                 print "ERROR: Pipeline #{} Failed".format(pipeline_num)
                 print format_exc(sys.exc_info())
+                e = str(sys.exc_info()[1])
+                if e.find('Terminated') != -1:
+                    raise Exception(e)
                 exceptions.append(str(sys.exc_info()[1]))
                 pipeline_num += 1
 
@@ -782,7 +789,7 @@ class ArastConsumer:
                         job_data['job_id'])))
         print "return files: {}".format(return_files)
 
-        return return_files, summary, contig_files
+        return return_files, summary, contig_files, exceptions
 
 
     def upload(self, url, user, token, file, filetype='default'):
