@@ -15,10 +15,13 @@ Usage: sudo add-comp.pl [ options ] components
 
 Options:
       -d dest_dir  - destination directory (D = assembly/bin/)
+      -f           - force reinstall even if component exists
       -t tmp_dir   - temporary directory (D = /mnt/tmp)
 
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
+      regular      - regular components (modules to be deployed on all compute nodes)
+      special      - special components (large modules: acbio, allpaths-lg, etc)
       all          - all components
 
       a5           - A5 pipeline (v.20120518)
@@ -27,36 +30,56 @@ Compute server components:
       bowtie       - Bowtie aligner (v2.1)
       bwa          - BWA aligner (git)
       discovar     - Discovar assembler (FTP latest)
+      fastqc       - FastQC quality control (v0.10.1)
       fastx        - FastX preprocessing toolkit (v0.0.13)
       gam_ngs      - GAM-NGS assembler merger (git)
-      idba         - IDBA_UD assembler (v1.1.0)
+      idba         - IDBA_UD assembler (v1.1.1)
       kiki         - Kiki assembler (git)
       masurca      - MaSuRCA assembler (v2.0.0)
+      pacbio       - SMRT Analysis Software (v2.1.1)
       quast        - QUAST assembly evaluator (v2.2)
+      ray          - Ray assembler (git)
       reapr        - REAPR reference-free evaluator (v1.0.15)
       screed       - Screed assembly statistics library (git)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
-      spades       - SPAdes assembler (v2.5)
+      spades       - SPAdes assembler (v3.0)
       velvet       - Velvet assembler (git)
 
 Examples:
       sudo add-comp.pl basic velvet spades
-      sudo add-comp.pl -t /space/tmp -d /usr/bin all
+      sudo add-comp.pl -t /space/tmp -d /usr/bin regular
 
 End_of_Usage
 
-my ($help, $dest_dir, $tmp_dir);
+my ($help, $dest_dir, $tmp_dir, $force_reinstall);
 
 GetOptions( 'd|dest=s' => \$dest_dir,
+            'f|force'  => \$force_reinstall,
             't|tmp=s'  => \$tmp_dir,
             'h|help'   => \$help);
 
 if ($help) { print $usage; exit 0 }
 
-my @all_comps = qw (basic a5 a6 ale bowtie bwa discovar fastx gam_ngs idba kiki masurca quast reapr screed seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki masurca quast ray reapr screed seqtk solexa spades velvet); 
+my @special_comps = qw (pacbio);
+my @all_comps = (@regular_comps, @special_comps);
 my %supported = map { $_ => 1 } @all_comps;
-my @comps = @ARGV; @comps = @all_comps if join(' ', @comps) =~ /\ball\b/;
+
+my @comps;
+# my @comps = @ARGV; @comps = @all_comps if join(' ', @comps) =~ /\ball\b/;
+for (@ARGV) {
+    if (/\ball\b/) {
+        @comps = @all_comps; last;
+    } elsif (/\bregular\b/) {
+        @comps = (@comps, @regular_comps);
+    } elsif (/\bspecial\b/) {
+        @comps = (@comps, @special_comps);
+    } else {
+        push @comps, $_;
+    }
+}
+
 
 my $curr_dir = cwd();
 my $base_dir = dirname(Cwd::abs_path($0));
@@ -65,7 +88,7 @@ $tmp_dir     = make_tmp_dir($tmp_dir);
 
 for my $c (@comps) {
     if (!$supported{$c}) { print "Warning: $c not supported.\n"; next; }
-    my $found = check_if_installed($c);
+    my $found = !$force_reinstall && check_if_installed($c);
     if ($found) { print "Found component $c, skipping...\n"; next; }
 
     print "Installing $c...\n";
@@ -83,7 +106,7 @@ for my $c (@comps) {
 # TODO: python: fallback: strip path prefix and check exe in path
 
 sub install_template {
-    # we are in the $tmp_dir 
+    # we are in the $tmp_dir directory 
     # 1. download source files
     # 2. compile
     # 3. copy executables to $dest_dir
@@ -116,19 +139,14 @@ sub install_ale {
     my $dir = 'ale';
     git("git://github.com/sc932/ALE.git");
     run("mkdir -p $dest_dir/$dir");
-    run("cd ALE/src; make ALE; cp -r ALE samtools-0.1.19 *.sh *.py synthReadGen readFileSplitter $dest_dir/$dir/");
+    run("cd ALE/src; make ALE; cp -r ALE samtools-0.1.19 *.sh *.py *.pl $dest_dir/$dir/");
 }
 
 sub install_bowtie {
     my $file = "bowtie2-2.1.0-linux-x86_64.zip";
     my $dir = "bowtie2-2.1.0";
-    # there is no bowtie plugin; so we need this extra check
-    if (-e "$dest_dir/$dir/bowtie2") {
-        print "Found component bowtie, skipping...\n"; 
-        return;
-    }
     download($dir, $file, "http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.1.0");
-    run("cp -r -T $dir $dest_dir/bowtie");
+    run("cp -r -T $dir $dest_dir/bowtie2");
 }
 
 sub install_bwa {
@@ -145,9 +163,18 @@ sub install_discovar {
     run("cd $dir; ./configure; make; cp src/Discovar $dest_dir/discovar");
 }
 
+sub install_fastqc {
+    my $dir = 'FastQC';
+    my $file = 'fastqc_v0.10.1.zip';
+    download($dir, $file, 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc');
+    run("unzip $file");
+    run("chmod a+x $dir/fastqc");
+    run("cp -r $dir $dest_dir/");
+}
+
 sub install_fastx {
     my $dir = 'fastx_toolkit';
-    # there is no bowtie plugin; so we need this extra check
+    # there is no fastx plugin; so we need this extra check
     if (-e "$dest_dir/$dir/fastx_trimmer") {
         print "Found component fastx, skipping...\n"; 
         return;
@@ -166,7 +193,7 @@ sub install_gam_ngs {
 }
 
 sub install_idba {
-    my $dir = 'idba-1.1.0';
+    my $dir = 'idba-1.1.1';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://hku-idba.googlecode.com/files');
     run("cd $dir; ./configure; make");
@@ -181,11 +208,43 @@ sub install_kiki {
 }
 
 sub install_masurca {
-    my $dir = 'MaSuRCA-2.0.0';
+    my $dir = 'MaSuRCA-2.1.0';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA');
     run("cd $dir; ./install.sh");
     run("cp -r -T $dir $dest_dir/masurca");
+}
+
+sub install_pacbio {
+    my $dir = 'smrtanalysis-2.1.1';
+    my $file = '2tqk61';
+    my $url = 'http://programs.pacificbiosciences.com/l/1652/2013-11-05';
+    download($dir, $file, $url);
+
+    # current configurations
+    # 
+    # directories
+    #   tmpdir   -> /mnt/tmp           # chmod 777 /mnt/tmp
+    #   userdata -> /space/smrtdata    # mkdir -p /space/smrtdata; chown ubuntu:ubuntu /space/smrtdata;
+    #                                    ln -s /space/smrtdata $AR_DIR/bin/smrt/userdata                                     
+    # 
+    # SMRT Analysis user:     ubuntu
+    # MySQL user/password:    root/root
+    # Job management system:  NONE
+    # Max parallel processes: 28
+    # TMP directory symlink:  /mnt/tmp
+    my $dest = "$dest_dir/smrt";
+    run("mkdir -p $dest");
+    run("bash $file --rootdir $dest");
+
+    # install patch
+    $file = 'smrtanalysis-2.1.1-patch-0.1.run';
+    $url = 'http://files.pacb.com/software/smrtanalysis/2.1.1';
+    download($dir, $file, $url);
+    run("bash $dest_dir/smrt/admin/bin/smrtupdater --force $file");
+
+    # source $AR_DIR/bin/smrt/install/smrtanalysis-2.1.1.128549/etc/setup.sh
+    # https://github.com/PacificBiosciences/SMRT-Analysis/wiki/SMRT-Pipe-Reference-Guide-v2.1
 }
 
 sub install_quast {
@@ -193,6 +252,15 @@ sub install_quast {
     my $file = "$dir.tar.gz";
     download($dir, $file, "https://downloads.sourceforge.net/project/quast");
     run("cp -r -T $dir $dest_dir/quast");
+}
+
+sub install_ray {
+    my $dir = 'ray';
+    git("git://github.com/sebhtml/ray.git");
+    git("git://github.com/sebhtml/RayPlatform.git");
+    run("cd ray; make clean; make -j8 PREFIX=build MAXKMERLENGTH=64 DEBUG=n ASSERT=y");
+    run("mkdir -p $dest_dir/$dir");
+    run("cd ray; cp -r scripts $dest_dir/$dir/; cp Ray $dest_dir/$dir/; cp libRayPlatform.a $dest_dir/$dir/; cp libRay.a $dest_dir/$dir/");
 }
 
 sub install_reapr {
@@ -246,9 +314,9 @@ sub install_solexa {
 }
 
 sub install_spades {
-    my $dir = 'SPAdes-2.5.0';
+    my $dir = 'SPAdes-3.0.0';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release2.5.0');
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.0.0');
     chdir($dir);
     run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
     run("chmod 755 install/bin/spades.py");
@@ -328,6 +396,12 @@ sub make_tmp_dir {
     $dir ||= "/mnt/tmp";
     run("mkdir -p $dir");
     return $dir;
+}
+
+sub verify_user {
+    my ($user) = @_;
+    my $rc = system "id -u $user >/dev/null 2>/dev/null";
+    run("sudo useradd -m $user 2>/dev/null") if $rc;
 }
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }

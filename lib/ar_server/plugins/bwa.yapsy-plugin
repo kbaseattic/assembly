@@ -7,8 +7,13 @@ short_name = bwa
 executable = ../../bin/bwa
 filetypes = fastq,fq
 
+[Parameters]
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = BWA
+Version = 1.0
+Description = BWA aligner that maps reads to contigs
+Stages = post-process
+References = 10.1093/bioinformatics/btp324
+
 

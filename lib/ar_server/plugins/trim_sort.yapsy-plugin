@@ -11,8 +11,13 @@ filetypes = fastq,fq
 probcutoff = 0.05
 length = 25
 
+[Parameters]
+probcutoff = 0.05
+length = 25
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = DynamicTrim and Lengthsort from SolexaQA
-
+Version = 1.0
+Description = DynamicTrim and LengthSort from SolexaQA
+Stages = preprocess
+References = doi:10.1186/1471-2105-11-485

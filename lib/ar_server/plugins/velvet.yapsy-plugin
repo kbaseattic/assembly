@@ -9,8 +9,12 @@ bin_velveth = ../../bin/velveth
 filetypes = fasta,fa,fastq,fq
 hash_length = 29
 
+[Parameters]
+hash_length = 29
+
 [Documentation]
 Author = Chris Bun
-Version = 0.2
-Description = Velvet assembler plugin
-
+Version = 1.0
+Description = Velvet de-bruijn graph based assembler
+Stages = assembler
+References = doi:10.1101/gr.074492.107

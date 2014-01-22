@@ -3,20 +3,27 @@ Name = idba
 Module = idba
 
 [Settings]
+short_name = idba
 single_lib = True
 # Newest idba is broken
+executable = ../../bin/idba/idba
 bin_idba_ud = ../../bin/idba/idba_ud
 bin_idba_tran = ../../bin/idba/idba_tran
 bin_idba_hybrid = ../../bin/idba/idba_hybrid
 bin_fq2fa = ../../bin/idba/fq2fa
+filetypes = fasta,fa,fastq,fq
 
 max_k = 50
-
-filetypes = fasta,fa,fastq,fq
 scaffold = True
+
+[Parameters]
+max_k = 50
+scaffold = True
+
 
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = IDBA assembler plugin
-
+Version = 1.0
+Description = IDBA iterative graph-based assembler for single-cell and standard data
+Stages = assembler
+References = doi:10.1093/bioinformatics/bts174

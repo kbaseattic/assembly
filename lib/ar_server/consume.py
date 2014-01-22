@@ -197,9 +197,7 @@ class ArastConsumer:
                                                           s_id, filepath)
                                 filedict['files'].append(real_file)
                             else:
-                                filedict['files'].append(
-                                    self.download(url, user, token, 
-                                                  ids[files.index(baseword)], filepath))
+                                filedict['files'].append(dl)
                         elif re.search('=', word):
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -232,8 +230,7 @@ class ArastConsumer:
                                                           s_id, filepath)
                                 filedict['files'].append(real_file)
                             else:
-                                filedict['files'].append(
-                                    self.download(url, user, token, ids[files.index(baseword)], filepath))
+                                filedict['files'].append(dl)
                         elif re.search('=', word):
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -266,8 +263,7 @@ class ArastConsumer:
                                                           s_id, filepath)
                                 filedict['files'].append(real_file)
                             else:
-                                filedict['files'].append(
-                                    self.download(url, user, token, ids[files.index(baseword)], filepath))
+                                filedict['files'].append(dl)
                         elif re.search('=', word):
                             kv = word.split('=')
                             filedict[kv[0]] = kv[1]
@@ -359,7 +355,7 @@ class ArastConsumer:
                 for p in pipelines:
                     self.pmanager.validate_pipe(p)
 
-                result_files, summary, contig_files = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
                 for i, f in enumerate(result_files):
                     #fname = os.path.basename(f).split('.')[0]
                     fname = str(i)
@@ -371,7 +367,11 @@ class ArastConsumer:
                     res = self.upload(url, user, token, c, filetype='contigs')
                     contig_ids[fname] = res['data']['id']
 
-                status += "pipeline [success] "
+                # Check if job completed with no errors
+                if exceptions:
+                    status = 'Complete with errors'
+                else:
+                    status += "Complete"
                 self.out_report.write("Pipeline completed successfully\n")
             except:
                 traceback = format_exc(sys.exc_info())
@@ -473,7 +473,9 @@ class ArastConsumer:
                     pct_segment = 1.0 / num_pipes
                     stage_complete *= pct_segment
                     total_complete = pipes_complete + stage_complete
-                    cur_state = 'Running: [{}%]'.format(int(total_complete * 100))
+                    cur_state = 'Running:[{}%|P:{}/{}|S:{}/{}|{}]'.format(
+                        int(total_complete * 100), pipeline_num, num_pipes,
+                        pipeline_stage, num_stages, module_name)
                     self.metadata.update_job(job_data['uid'], 'status', cur_state)
                     if module_name.lower() == 'none':
                         continue
@@ -537,20 +539,33 @@ class ArastConsumer:
                     if not reuse_data:
                         output, alldata, mod_log = self.pmanager.run_module(
                             module_name, job_data, all_data=True, reads=include_reads)
+
+                        ##### Module produced no output, attach log and proceed to next #####
                         if not output:
                             pipe_alive = False
+                            try:
+                                print mod_log
+                                logfiles.append(mod_log)
+                            except:
+                                print 'error attaching ', mod_log
                             break
-                        # Prefix outfiles with pipe stage, only assemblers
+
+
+                        ##### Prefix outfiles with pipe stage (only assembler modules) #####
                         alldata = [asm.prefix_file_move(
                                 file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
                                     for file in alldata]
                         module_elapsed_time = time.time() - module_start_time
                         job_data.get_pipeline(pipeline_num).get_module(
                             pipeline_stage)['elapsed_time'] = module_elapsed_time
-                        if output_type == 'contigs': #Assume assembly contigs
-                            pass
-                        elif output_type == 'reads':
-                            pass
+
+
+                        # if output_type == 'contigs': #Assume assembly contigs
+                        #     pass
+                        # elif output_type == 'reads':
+                        #     pass
+
+
                         if alldata: #If log was renamed
                             mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
                                     pipeline_num, pipeline_stage, module_name))
@@ -607,11 +622,10 @@ class ArastConsumer:
                             final_contigs.append(contig_data)
                             output_types.append(output_type)
 
-
                     try:
                         logfiles.append(mod_log)
                     except:
-                        pass
+                        print 'error attaching ', mod_log
                     pipeline_stage += 1
 
                     cur_outputs.append([module_code, output, alldata])
@@ -652,6 +666,9 @@ class ArastConsumer:
             except:
                 print "ERROR: Pipeline #{} Failed".format(pipeline_num)
                 print format_exc(sys.exc_info())
+                e = str(sys.exc_info()[1])
+                if e.find('Terminated') != -1:
+                    raise Exception(e)
                 exceptions.append(str(sys.exc_info()[1]))
                 pipeline_num += 1
 
@@ -668,11 +685,26 @@ class ArastConsumer:
         job_data['contig_types'] = output_types
         job_data['params'] = [] #clear overrides from last stage
 
+
+        ## CONCAT MODULE LOG FILES
+        self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
+        for log in logfiles:
+            self.out_report.write("\n\n{0} Begin Module {0}\n".format("="*10))
+            try:
+                with open(log) as infile:
+                    self.out_report.write(infile.read())
+            except:
+                self.out_report.write("Error writing log file")
+
+
         if 'contigs' in output_types or 'scaffolds' in output_types:
             try: #Try to assess, otherwise report pipeline errors
                 quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                               tar=True, meta=True)
-                logfiles.append(q_log)
+                with open(q_log) as infile:
+                    self.out_report.write(infile.read())
+
+                    #logfiles.append(q_log)
             except:
                 if exceptions:
                     if len(exceptions) > 1:
@@ -710,6 +742,7 @@ class ArastConsumer:
         try:    
             job_data.import_quast(quast_report[0])
         except:
+            exceptions.append('No Quast Report')
             print 'No Quast Report'
 
         ## Write out ALE scores
@@ -730,16 +763,6 @@ class ArastConsumer:
         #             self.out_report.write(infile.read())
         #     except:
         #         self.out_report.write("Error writing log file")
-
-        ## CONCAT MODULE LOG FILES
-        self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
-        for log in logfiles:
-            self.out_report.write("\n\n{0} Begin Module {0}\n".format("="*10))
-            try:
-                with open(log) as infile:
-                    self.out_report.write(infile.read())
-            except:
-                self.out_report.write("Error writing log file")
 
         ## Format Returns
         ctg_analysis = quast_tar.rsplit('/', 1)[0] + '/{}_ctg_qst.tar.gz'.format(job_data['job_id'])
@@ -772,11 +795,11 @@ class ArastConsumer:
             seen.add(f)
         return_files = [f for f in seen]
 
-        if exceptions:
-            if len(exceptions) > 1:
-                raise Exception('Multiple Errors')
-            else:
-                raise Exception(exceptions[0])
+        #if exceptions:        
+            # if len(exceptions) > 1:
+            #     raise Exception('Multiple Errors')
+            # else:
+            #     raise Exception(exceptions[0])
 
         if contig_files:
             return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
@@ -784,7 +807,7 @@ class ArastConsumer:
                         job_data['job_id'])))
         print "return files: {}".format(return_files)
 
-        return return_files, summary, contig_files
+        return return_files, summary, contig_files, exceptions
 
 
     def upload(self, url, user, token, file, filetype='default'):

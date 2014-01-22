@@ -12,8 +12,16 @@ min = 250
 end = 200
 sync = True
 
+[Parameters]
+min = 250
+end = 200
+sync = True
+
+
 [Documentation]
 Author = Chris Bun
-Version = 0.2
-Description = filter_by_length plugin
+Version = 1.0
+Description = Length-based sequencing reads filter and trimmer based on seqtk
+Stages = preprocess
+References = https://github.com/levinas/seqtk
 

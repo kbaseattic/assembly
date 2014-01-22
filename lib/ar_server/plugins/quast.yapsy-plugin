@@ -3,13 +3,19 @@ Name = quast
 Module = quast
 
 [Settings]
+short_name = qu
 executable = ../../bin/quast/quast.py
 filetypes = fasta,fa
 min_contig = 500
 scaffold_mode = False
 
+[Parameters]
+min_contig = 500
+
+
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = QUAST plugin
-
+Version = 1.0
+Description = QUAST assembly quality assessment tool (run by default)
+Stages = post-process
+References = doi:10.1093/bioinformatics/btt086

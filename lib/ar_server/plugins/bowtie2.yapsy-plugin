@@ -3,12 +3,16 @@ Name = bowtie2
 Module = bowtie2
 
 [Settings]
-executable = ../../bin/bowtie/bowtie2
-build_bin = ../../bin/bowtie/bowtie2-build
+executable = ../../bin/bowtie2/bowtie2
+build_bin = ../../bin/bowtie2/bowtie2-build
 filetypes = fastq,fq
+
+[Parameters]
 
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = Bowtie2
+Version = 1.0
+Description = Bowtie2 aligner that maps reads to contigs
+Stages = post-process
+References = doi:10.1038/nmeth.1923
 

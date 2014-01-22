@@ -3,6 +3,7 @@ Name = sga_preprocess
 Module = sga_preprocess
 
 [Settings]
+short_name = sgap
 executable = ../../bin/a5/bin/sga
 filetypes = fastq,fq
 
@@ -15,10 +16,16 @@ quality_filter = 20
 min_length = 29
 permute_ambiguous = True
 
+[Parameters]
+quality_trim = 10
+quality_filter = 20
+min_length = 29
+permute_ambiguous = True
 
 
 [Documentation]
 Author = Chris Bun
-Version = 0.1
-Description = SGA preprocess plugin
-
+Version = 1.0
+Description = SGA component for preprocessing reads (runs subcommand 'preprocess')
+Stages = preprocess
+References = doi:10.1101/gr.126953.111
