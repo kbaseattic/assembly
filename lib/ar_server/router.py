@@ -429,7 +429,10 @@ class SystemResource:
         unique = set()
         for c in conns:
             unique.add(c['peer_host'])
-        return unique
+        con_json = []
+        for u in unique:
+            con_json.append({'host': u})
+        return json.dumps(con_json)
 
     def close_connection(self, host):
         conns = json.loads(requests.get('http://{}:{}/api/connections'.format(
