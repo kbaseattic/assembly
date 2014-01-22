@@ -10,6 +10,7 @@ import pika
 import pprint
 import os
 import re
+import requests
 import sys
 from bson import json_util
 from ConfigParser import SafeConfigParser
@@ -25,8 +26,9 @@ from nexus import client as nexusclient
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
 
+    rmq_host = parser.get('rabbitmq', 'host')
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host='localhost'))
+            host=rmq_host))
     channel = connection.channel()
     channel.queue_declare(queue=routingKey, durable=True)
     #channel.basic_qos(prefetch_count=1)
@@ -189,6 +191,12 @@ def start(config_file, mongo_host=None, mongo_port=None,
     root.module = ModuleResource()
     root.shock = ShockResource({"shockurl": get_upload_url()})
     
+    rmq_host = parser.get('rabbitmq', 'host')
+    rmq_mp = parser.get('rabbitmq', 'management_port')
+    rmq_user = parser.get('rabbitmq', 'management_user')
+    rmq_pass = parser.get('rabbitmq', 'management_pass')
+    root.admin = SystemResource(rmq_host, rmq_mp, rmq_user, rmq_pass)
+
     #cherrypy.tools.CORS = cherrypy.Tool('before_finalize', CORS)
 
     conf = {
@@ -391,7 +399,49 @@ class ModuleResource:
             with open(parser.get('web', 'ar_modules')) as outfile:
                 return outfile.read()
         return module_name
-        
+
+class SystemResource:
+
+    def __init__(self, rmq_host, rmq_admin_port, rmq_admin_user, rmq_admin_pass):
+        self.rmq_host = rmq_host
+        self.rmq_admin_port = rmq_admin_port
+        self.rmq_admin_user = rmq_admin_user
+        self.rmq_admin_pass = rmq_admin_pass
+
+    @cherrypy.expose
+    def system(self, resource=None, *args):
+        if resource == 'node':
+            if len(args) == 0: # List nodes
+                return self.get_connections()
+            if len(args) == 2:
+                node_ip = args[0]
+                command = args[1]
+                if command == 'close':
+                    return self.close_connection(node_ip)
+
+    def get_connections(self):
+        """Returns a list of deduped connection IPs"""
+
+        conns = json.loads(requests.get('http://{}:{}/api/connections'.format(
+                    self.rmq_host, self.rmq_admin_port), 
+                                        auth=(self.rmq_admin_user, self.rmq_admin_pass)).text)
+        ## Dedupe
+        unique = set()
+        for c in conns:
+            unique.add(c['peer_host'])
+        return unique
+
+    def close_connection(self, host):
+        conns = json.loads(requests.get('http://{}:{}/api/connections'.format(
+                    self.rmq_host, self.rmq_admin_port), 
+                                        auth=(self.rmq_admin_user, self.rmq_admin_pass)).text)
+        for c in conns:
+            if c['peer_host'] == host:
+                res = requests.delete('http://{}:{}/api/connections/{}'.format(
+                self.rmq_host, self.rmq_admin_port, c['name']), 
+                                        auth=(self.rmq_admin_user, self.rmq_admin_pass)).text
+        return 'closed\n'
+
 class ShockResource(object):
 
     def __init__(self, content):
