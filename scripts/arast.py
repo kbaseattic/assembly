@@ -25,7 +25,7 @@ from ar_client.auth_token import *
 
 import traceback
 
-my_version = '0.3.5'
+my_version = '0.3.6'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -84,7 +84,8 @@ p_login = subparsers.add_parser('login', description='Force log in', help='log i
 
 # upload all files in list, return list of ids
 def upload(files, curl=False):
-    ids = []
+    ids = [] # legacy
+    shock_handles = []
     for f in files:
         # check if file exists
         if not os.path.exists(f):
@@ -92,15 +93,15 @@ def upload(files, curl=False):
             continue
         else:
             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
-             #res = curl_post_file(url, f)
-            res = aclient.upload_data_shock(f, curl=curl)
+            res, shock_info = aclient.upload_data_shock(f, curl=curl)
             ids.append(res['data']['id'])
+            shock_handles.append(shock_info)
             if res["error"] is not None:
                 sys.exit("Shock: err from server: %s" % res["error"][0])
             else:
                 sys.stderr.write( "Uploaded: %s...\n" % os.path.basename(f))
 
-    return ids
+    return ids, shock_handles
 
 def main():
     global aclient
@@ -237,7 +238,7 @@ def main():
         base_files = []
         file_sizes = []
         res_ids = []
-        
+        shock_handles = []
         curl = False
         try:
             curl = args.curl
@@ -247,27 +248,30 @@ def main():
         for f in files:
             #Check file or dir
             if os.path.isfile(f):
-                res_ids += upload([f], curl=curl)
+                ids, s_handles = upload([f], curl=curl)
+                res_ids += ids
+                shock_handles += s_handles
                 file_sizes.append(os.path.getsize(f))
                 base_files.append(os.path.basename(f))
-            elif os.path.isdir(f):
-                ls_files = os.listdir(f)
+            # elif os.path.isdir(f):
+            #     ls_files = os.listdir(f)
 
-                fullpaths = [str(f + "/"+ file) for file in ls_files 
-                             if not os.path.isdir(str(f + "/" +file))]
-                print fullpaths
-                file_list = fullpaths # ???
+            #     fullpaths = [str(f + "/"+ file) for file in ls_files 
+            #                  if not os.path.isdir(str(f + "/" +file))]
+            #     print fullpaths
+            #     file_list = fullpaths # ???
 
-                res_ids += upload(url, fullpaths)
-                for path in fullpaths:
-                    file_sizes.append(os.path.getsize(path))
-                base_files += [os.path.basename(file) for file in fullpaths]
+            #     res_ids += upload(url, fullpaths)
+            #     for path in fullpaths:
+            #         file_sizes.append(os.path.getsize(path))
+            #     base_files += [os.path.basename(file) for file in fullpaths]
             else:
                 print('File does not exist:{}'.format(f))
                 sys.exit(1)
 
         options['filename'] = base_files
         options['ids'] = res_ids
+        options['shock_handles'] = shock_handles
         options['file_sizes'] = file_sizes
 
         # # Send message to RPC Server
