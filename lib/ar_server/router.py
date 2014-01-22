@@ -435,12 +435,17 @@ class SystemResource:
         conns = json.loads(requests.get('http://{}:{}/api/connections'.format(
                     self.rmq_host, self.rmq_admin_port), 
                                         auth=(self.rmq_admin_user, self.rmq_admin_pass)).text)
+        shutdown_success = False
         for c in conns:
             if c['peer_host'] == host:
                 res = requests.delete('http://{}:{}/api/connections/{}'.format(
                 self.rmq_host, self.rmq_admin_port, c['name']), 
                                         auth=(self.rmq_admin_user, self.rmq_admin_pass)).text
-        return 'closed\n'
+                shutdown_success = True
+        if shutdown_success:
+            return '{} will shutdown after completing running job(s)\n'.format(host)
+        else:
+            return 'Could not shutdown node: {}'.format(host)
 
 class ShockResource(object):
 
