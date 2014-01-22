@@ -120,7 +120,7 @@ def register_data(body):
     logging.info("Inserting data record: %s" % client_params)
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
-    analyze_data(json.dumps(dict(client_params)))
+    #analyze_data(json.dumps(dict(client_params)))
     response = json.dumps({"data_id": data_id})
     return response
 
@@ -230,11 +230,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
 
     ##### CherryPy ######
     
-    rmq_host = parser.get('rabbitmq', 'host')
-    rmq_mp = parser.get('rabbitmq', 'management_port')
-    rmq_user = parser.get('rabbitmq', 'management_user')
-    rmq_pass = parser.get('rabbitmq', 'management_pass')
-    root.admin = SystemResource(rmq_host, rmq_mp, rmq_user, rmq_pass)
+
 
     #cherrypy.tools.CORS = cherrypy.Tool('before_finalize', CORS)
 
@@ -255,6 +251,12 @@ def start(config_file, mongo_host=None, mongo_port=None,
     root.shock = ShockResource({"shockurl": get_upload_url()})
     root.static = StaticResource(static_root)
 
+    #### Admin Routes ####
+    rmq_host = parser.get('rabbitmq', 'host')
+    rmq_mp = parser.get('rabbitmq', 'management_port')
+    rmq_user = parser.get('rabbitmq', 'management_user')
+    rmq_pass = parser.get('rabbitmq', 'management_pass')
+    root.admin = SystemResource(rmq_host, rmq_mp, rmq_user, rmq_pass)
 
     #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.request.hooks.attach('before_finalize', CORS)

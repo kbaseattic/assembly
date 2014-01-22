@@ -62,9 +62,9 @@ def start(config_file, mongo_host=None, mongo_port=None,
                                              args=(config_file,), kwargs=router_kwargs)
     router_process.start()
 
-    qc_process = multiprocessing.Process(name='qcmon', target=start_qc_monitor,
-                                             args=(rabbit_host,))
-    qc_process.start()
+    # qc_process = multiprocessing.Process(name='qcmon', target=start_qc_monitor,
+    #                                          args=(rabbit_host,))
+    # qc_process.start()
 
     # router.start(config_file, mongo_host=mongo_host, mongo_port=mongo_port,
     #              rabbit_host=rabbit_host, rabbit_port=rabbit_port)

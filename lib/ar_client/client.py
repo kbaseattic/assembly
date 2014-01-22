@@ -4,6 +4,7 @@ import requests
 import subprocess
 import os
 
+
 from shock import Shock
 
 #Debug
@@ -120,6 +121,12 @@ class Client:
                                   'upload_time': str(datetime.datetime.utcnow())}
         return res, shock_info
 
+    def upload_data_file_info(self, filename, curl=False):
+        """ Returns FileInfo Object """
+        res = self.shock.upload_reads(filename, curl=curl)
+        return FileInfo(self.shockurl, res['data']['id'], os.path.getsize(filename),
+                            os.path.basename(filename), str(datetime.datetime.utcnow()))
+
     def submit_job(self, data):
         url = 'http://{}/user/{}/job/new'.format(self.url, self.user)
         r = requests.post(url, data=data, headers=self.headers)
@@ -153,3 +160,36 @@ class Client:
                 self.url, self.user)
         r = requests.get(url, headers=self.headers)
         return r.content
+
+
+##### ARAST JSON SPEC METHODS #####
+
+class FileInfo(dict):
+    def __init__(self, shock_url, shock_id, filesize, filename, create_time, metadata=None, *args):
+        dict.__init__(self, *args)
+        self.update({'shock_url': shock_url,
+                     'shock_id' : shock_id,
+                     'filesize': filesize,
+                     'filename': filename,
+                     'create_time': create_time,
+                     'metadata': metadata})
+
+# class FileSet(dict):
+#     def __init__(self, set_type, file_infos, insert_size=None, stdev=None, metadata=None, *args):
+#         dict.__init__(self, *args)
+#         self.update({'type': set_type,
+#                         'insert_size': insert_size,
+#                         'stdev': stdev})
+#         if type(file_infos) is list:
+#             for f in file_infos:
+#                 self['file_infos'] = f
+#         else:
+#             self['file_infos'] = [file_infos]
+
+
+# class AssemblyData(dict):
+#     def __init__(self):
+#         dict.__init__(self, *args)
+        
+#     def add_set(self, file_set):
+#         pass
