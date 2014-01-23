@@ -220,7 +220,7 @@ class BasePlugin(object):
         eg [(100, 20), (500, 50), ()]"""
         libs_info = []
         for lib in libs:
-            if lib['type'] == 'paired':
+            if (lib['type'] == 'paired'):
                 try: 
                     ins_sd = (lib['insert'], lib['stdev'])
                 except:

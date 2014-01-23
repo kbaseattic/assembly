@@ -85,6 +85,46 @@ class ArastConsumer:
     def get_data(self, body):
         """Get data from cache or Shock server."""
         params = json.loads(body)
+        if 'assembly_data' in params:
+            print 'new data format!'
+            return self._get_data(body)
+        else:
+            return self._get_data_old(body)
+
+    def _get_data(self, body):
+        params = json.loads(body)
+        filepath = os.path.join(self.datapath, params['ARASTUSER'],
+                                str(params['data_id']))
+        datapath = filepath
+        filepath += "/raw/"
+        all_files = []
+        user = params['ARASTUSER']
+        token = params['oauth_token']
+        uid = params['_id']
+
+        ##### TODO Get data from ID #####
+
+        ##### TODO Check if files exist on node #####
+
+        ##### Get data from assembly_data #####
+        self.metadata.update_job(uid, 'status', 'Data transfer')
+        os.makedirs(filepath)
+          ### TODO Garbage collect ###
+        download_url = 'http://{}'.format(self.shockurl)
+        for file_set in params['assembly_data']['file_sets']:
+            file_set['files'] = [] #legacy
+            for file_info in file_set['file_infos']:
+                dl = self.download(download_url, user, token, 
+                                   file_info['shock_id'], filepath)
+                file_info['local_file'] = dl
+                file_set['files'].append(dl) #legacy
+            all_files.append(file_set)
+        print 'all data'
+        print all_files
+        return datapath, all_files                    
+
+    def _get_data_old(self, body):
+        params = json.loads(body)
         #filepath = self.datapath + str(params['data_id'])
         filepath = os.path.join(self.datapath, params['ARASTUSER'],
                                 str(params['data_id']))
@@ -272,6 +312,7 @@ class ArastConsumer:
                 #logging.info(format_exc(sys.exc_info()))
                 logging.info('No single end files submitted')
 
+        print all_files
         return datapath, all_files
 
 
@@ -306,7 +347,8 @@ class ArastConsumer:
         reads = []
         reference = []
         for fileset in all_files:
-            if fileset['type'] == 'single' or fileset['type'] == 'paired':
+            if (fileset['type'] == 'single' or 
+                fileset['type'] == 'paired'):
                 reads.append(fileset)
             elif fileset['type'] == 'reference':
                 reference.append(fileset)
