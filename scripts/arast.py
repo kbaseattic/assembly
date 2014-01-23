@@ -25,7 +25,7 @@ from ar_client.auth_token import *
 
 import traceback
 
-my_version = '0.3.5'
+my_version = '0.3.7'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -84,7 +84,8 @@ p_login = subparsers.add_parser('login', description='Force log in', help='log i
 
 # upload all files in list, return list of ids
 def upload(files, curl=False):
-    ids = []
+    ids = [] # legacy
+    shock_handles = []
     for f in files:
         # check if file exists
         if not os.path.exists(f):
@@ -92,15 +93,15 @@ def upload(files, curl=False):
             continue
         else:
             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
-             #res = curl_post_file(url, f)
-            res = aclient.upload_data_shock(f, curl=curl)
+            res, shock_info = aclient.upload_data_shock(f, curl=curl)
             ids.append(res['data']['id'])
+            shock_handles.append(shock_info)
             if res["error"] is not None:
                 sys.exit("Shock: err from server: %s" % res["error"][0])
             else:
                 sys.stderr.write( "Uploaded: %s...\n" % os.path.basename(f))
 
-    return ids
+    return ids, shock_handles
 
 def main():
     global aclient
@@ -193,10 +194,20 @@ def main():
         ARASTURL = args.ARASTURL
 
     aclient = client.Client(ARASTURL, a_user, a_token)
+
         
     res_ids = []
     file_sizes = []
     file_list = []
+
+
+    curl = False
+    try:
+        curl = args.curl
+    except:
+        pass
+
+
     # Format into separate pipelines
     if args.command == "run" or args.command == "upload":
         if args.command == "run":
@@ -219,66 +230,40 @@ def main():
             sys.exit()
 
         files = []
-        if args.pair:
-            for ls in args.pair:
-                for word in ls:
-                    if is_filename(word):
-                        files.append(word)
-        if args.single:
-            for ls in args.single:
-                for word in ls:
-                    if is_filename(word):
-                        files.append(word)
-        if args.reference:
-            for ls in args.reference:
-                for word in ls:
-                    if is_filename(word):
-                        files.append(word)
-        base_files = []
-        file_sizes = []
-        res_ids = []
+        adata = client.AssemblyData()
         
-        curl = False
+        ##### Parse args and create AssemblyData dict #####
         try:
-            curl = args.curl
+            has_data_id = args.data_id
         except:
-            pass
+            has_data_id = False
+        if not has_data_id:
+            all_lists = [args.pair, args.single, args.reference]
+            all_types = ['paired', 'single', 'reference']
+            for f_list, f_type in zip(all_lists, all_types):
+                f_infos = []
+                for ls in f_list:
+                    for word in ls:
+                        if is_filename(word) and os.path.isfile(word):
+                            f_info = aclient.upload_data_file_info(word, curl=curl)
+                            f_infos.append(f_info)
+                            #files.append(word)
+                f_set = client.FileSet(f_type, f_infos)
+                adata.add_set(f_set)
 
-        for f in files:
-            #Check file or dir
-            if os.path.isfile(f):
-                res_ids += upload([f], curl=curl)
-                file_sizes.append(os.path.getsize(f))
-                base_files.append(os.path.basename(f))
-            elif os.path.isdir(f):
-                ls_files = os.listdir(f)
+        arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version']
+                     if k in options}
+        arast_msg['assembly_data'] = adata
+        arast_msg['client'] = 'CLI'
 
-                fullpaths = [str(f + "/"+ file) for file in ls_files 
-                             if not os.path.isdir(str(f + "/" +file))]
-                print fullpaths
-                file_list = fullpaths # ???
-
-                res_ids += upload(url, fullpaths)
-                for path in fullpaths:
-                    file_sizes.append(os.path.getsize(path))
-                base_files += [os.path.basename(file) for file in fullpaths]
-            else:
-                print('File does not exist:{}'.format(f))
-                sys.exit(1)
-
-        options['filename'] = base_files
-        options['ids'] = res_ids
-        options['file_sizes'] = file_sizes
-
-        # # Send message to RPC Server
-        del options['ARASTURL']
-        rpc_body = json.dumps(options, sort_keys=True)
-        clientlog.debug(" [x] Sending message: %r" % (rpc_body))
+        ##### Send message to Arast Server #####
+        payload = json.dumps(arast_msg, sort_keys=True)
+        clientlog.debug(" [x] Sending message: %r" % (payload))
 
         if args.command == "run":
-            response = aclient.submit_job(rpc_body)
+            response = aclient.submit_job(payload)
         if args.command == "upload":
-            response = aclient.submit_data(rpc_body)
+            response = aclient.submit_data(payload)
         print response
         clientlog.debug(" [.] Response: %r" % (response))
 

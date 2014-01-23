@@ -1,7 +1,9 @@
+import datetime
 import json
 import requests
 import subprocess
 import os
+
 
 from shock import Shock
 
@@ -55,15 +57,19 @@ format from html??
 class Client:
     def __init__(self, url, user, token):
         self.port = 8000 ## change
-        self.url = url + ':{}'.format(self.port)
+        if url.find(':') == -1: # Port not included
+            self.url = url + ':{}'.format(self.port)
+        else:
+            self.url = url
+        print self.url
         self.user = user
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),
                         'Content-type': 'application/json', 
                         'Accept': 'text/plain'}
         shockres = requests.get('http://{}/shock'.format(self.url), headers=self.headers).text
-        shockurl = 'http://{}/'.format(json.loads(shockres)['shockurl'])
-        self.shock = Shock(shockurl, self.user, self.token)
+        self.shockurl = 'http://{}/'.format(json.loads(shockres)['shockurl'])
+        self.shock = Shock(self.shockurl, self.user, self.token)
 
     def get_job_data(self, job_id=None, outdir=None):
         if not job_id:
@@ -107,7 +113,19 @@ class Client:
         return 
         
     def upload_data_shock(self, filename, curl=False):
-        return self.shock.upload_reads(filename, curl=curl)
+        res = self.shock.upload_reads(filename, curl=curl)
+        shock_info = {'filename': os.path.basename(filename),
+                                  'filesize': os.path.getsize(filename),
+                                  'shock_url': self.shockurl,
+                                  'shock_id': res['data']['id'],
+                                  'upload_time': str(datetime.datetime.utcnow())}
+        return res, shock_info
+
+    def upload_data_file_info(self, filename, curl=False):
+        """ Returns FileInfo Object """
+        res = self.shock.upload_reads(filename, curl=curl)
+        return FileInfo(self.shockurl, res['data']['id'], os.path.getsize(filename),
+                            os.path.basename(filename), str(datetime.datetime.utcnow()))
 
     def submit_job(self, data):
         url = 'http://{}/user/{}/job/new'.format(self.url, self.user)
@@ -142,3 +160,37 @@ class Client:
                 self.url, self.user)
         r = requests.get(url, headers=self.headers)
         return r.content
+
+
+##### ARAST JSON SPEC METHODS #####
+
+class FileInfo(dict):
+    def __init__(self, shock_url, shock_id, filesize, filename, create_time, metadata=None, *args):
+        dict.__init__(self, *args)
+        self.update({'shock_url': shock_url,
+                     'shock_id' : shock_id,
+                     'filesize': filesize,
+                     'filename': filename,
+                     'create_time': create_time,
+                     'metadata': metadata})
+
+class FileSet(dict):
+    def __init__(self, set_type, file_infos, insert_size=None, stdev=None, metadata=None, *args):
+        dict.__init__(self, *args)
+        self.update({'type': set_type,
+                     'insert_size': insert_size,
+                     'stdev': stdev,
+                     'file_infos': []})
+        if type(file_infos) is list:
+            for f in file_infos:
+                self['file_infos'].append(f)
+        else:
+            self['file_infos'] = [file_infos]
+
+class AssemblyData(dict):
+    def __init__(self, *args):
+        dict.__init__(self, *args)
+        self['file_sets'] = []
+
+    def add_set(self, file_set):
+        self['file_sets'].append(file_set)

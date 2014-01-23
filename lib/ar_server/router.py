@@ -4,6 +4,7 @@ Job router.  Recieves job requests.  Manages data transfer, job queuing.
 # Import python libs
 import cherrypy
 import datetime
+import errno
 import json
 import logging
 import pika
@@ -12,6 +13,8 @@ import os
 import re
 import requests
 import sys
+import tarfile
+import uuid
 from bson import json_util
 from ConfigParser import SafeConfigParser
 from distutils.version import StrictVersion
@@ -22,6 +25,7 @@ from traceback import format_exc
 import metadata as meta
 import shock
 from nexus import client as nexusclient
+import ar_client.client as ar_client 
 
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
@@ -70,7 +74,7 @@ def determine_routing_key(size, params):
     try:
         routing_key = params['queue']
     except:
-        pass
+        routing_key = None
     if routing_key:
         return routing_key
     return parser.get('rabbitmq','default_routing_key')
@@ -81,11 +85,23 @@ def get_upload_url():
     return parser.get('shock', 'host')
 
 
+def check_valid_client(body):
+    client_params = json.loads(body) #dict of params
+    min_version = parser.get('assembly', 'min_cli_version')
+    try:
+        if StrictVersion(client_params['version']) >= StrictVersion(min_version):
+            return True
+        else:
+            return False
+    except:
+        return True
+
 def route_job(body):
+    if not check_valid_client(body):
+        return "Client too old, please upgrade"
     client_params = json.loads(body) #dict of params
     routing_key = determine_routing_key (1, client_params)
     job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
-
     if not client_params['data_id']:
         data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
         client_params['data_id'] = data_id
@@ -107,6 +123,8 @@ def route_job(body):
 
 def register_data(body):
     """ User is only submitting libraries, return data ID """
+    if not check_valid_client(body):
+        return "Client too old, please upgrade"
     client_params = json.loads(body) #dict of params
     data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
     client_params['data_id'] = data_id
@@ -116,9 +134,48 @@ def register_data(body):
     logging.info("Inserting data record: %s" % client_params)
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
-
+    #analyze_data(json.dumps(dict(client_params)))
     response = json.dumps({"data_id": data_id})
     return response
+
+def analyze_data(body): #run fastqc
+    """Send data to compute node for analysis, wait for result"""
+    # analysis_pipes = ['fastqc']
+    # client_params = json.loads(body) #dict of params
+    # job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
+    # client_params['pipeline'] = analysis_pipes
+    # client_params['job_id'] = job_id
+    # routing_key = determine_routing_key (1, client_params)
+    # uid = metadata.insert_job(client_params)
+    # msg = json.dumps(dict(client_params))
+    # metadata.update_job(uid, 'status', 'Analysis')
+    # send_message(msg, routing_key)
+
+    client_params = json.loads(body) #dict of params
+    routing_key = 'qc'
+    job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
+    client_params['job_id'] = job_id
+    if not client_params['data_id']:
+        data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
+        client_params['data_id'] = data_id
+
+    analysis_pipes = ['fastqc']
+    client_params['pipeline'] = analysis_pipes
+    client_params['compute_type'] = 'qc'
+        
+    ## Check that user queue limit is not reached
+    uid = metadata.insert_job(client_params)
+    logging.info("Inserting job record: %s" % client_params)
+    metadata.update_job(uid, 'status', 'queued')
+    p = dict(client_params)
+    metadata.update_job(uid, 'message', p['message'])
+    msg = json.dumps(p)
+
+    send_message(msg, routing_key)
+    response = str(job_id)
+    return response
+
+
 
 def authenticate_request():
     if cherrypy.request.method == 'OPTIONS':
@@ -172,8 +229,7 @@ def CORS():
     cherrypy.response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
 #    cherrypy.response.headers["Access-Control-Allow-Headers"] = "X-Requested-With"
     cherrypy.response.headers["Access-Control-Allow-Headers"] = "Authorization, origin, content-type, accept"
-    cherrypy.response.headers["Content-Type"] = "application/json"
-
+#    cherrypy.response.headers["Content-Type"] = "application/json"
 
 
 def start(config_file, mongo_host=None, mongo_port=None,
@@ -186,32 +242,64 @@ def start(config_file, mongo_host=None, mongo_port=None,
     metadata = meta.MetadataConnection(config_file, mongo_host)
 
     ##### CherryPy ######
+    conf = {
+        'global': {
+            'server.socket_host': '0.0.0.0',
+            'server.socket_port': 8000,
+            'log.screen': True,
+            'ar_shock_url': parser.get('shock', 'host'),
+            },
+    }
+
+    static_root = parser.get('web_serve', 'root')
+
     root = Root()
     root.user = UserResource()
     root.module = ModuleResource()
     root.shock = ShockResource({"shockurl": get_upload_url()})
-    
+    root.static = StaticResource(static_root)
+
+    #### Admin Routes ####
     rmq_host = parser.get('rabbitmq', 'host')
     rmq_mp = parser.get('rabbitmq', 'management_port')
     rmq_user = parser.get('rabbitmq', 'management_user')
     rmq_pass = parser.get('rabbitmq', 'management_pass')
     root.admin = SystemResource(rmq_host, rmq_mp, rmq_user, rmq_pass)
 
-    #cherrypy.tools.CORS = cherrypy.Tool('before_finalize', CORS)
-
-    conf = {
-        'global': {
-            'server.socket_host': '0.0.0.0',
-            'server.socket_port': 8000,
-            'log.screen': True,
-        },
-    }
-
     #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.request.hooks.attach('before_finalize', CORS)
     cherrypy.quickstart(root, '/', conf)
-    ###### DOES IT AUTH EVERY REQUEST??? ########
+
     
+
+
+def start_qc_monitor(arasturl):
+    """
+    Listens on QC queue for finished QC jobs
+    """
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host = arasturl))
+    channel = connection.channel()
+    channel.exchange_declare(exchange='qc-complete',
+                             type='fanout')
+    result = channel.queue_declare(exclusive=True)
+    queue_name = result.method.queue
+    channel.queue_bind(exchange='qc',
+                       queue=queue_name)
+    print ' [*] Waiting for QC completion'
+    channel.basic_consume(qc_callback,
+                          queue=queue_name,
+                          no_ack=True)
+
+    channel.start_consuming()
+
+def qc_callback():
+    pass
+
+###########
+###########
+#CherryPy Resources
+###########
 
 class JobResource:
 
@@ -221,6 +309,7 @@ class JobResource:
         if userid == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
         params = json.loads(cherrypy.request.body.read())
+        print params
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
         return route_job(json.dumps(params))
@@ -293,7 +382,10 @@ class JobResource:
                     print '[.] CLI request status'
 
                 for doc in docs[-records:]:
-                    row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
+                    try:
+                        row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
+                    except:
+                        row = ['err','err','err']
                     try:
                         row.append(str(doc['computation_time']))
                     except:
@@ -304,7 +396,6 @@ class JobResource:
                         row += ['']
                     pt.add_row(row)
                 return pt.get_string() + "\n"
-
 
 
     def get_shock_node(self, userid=None, job_id=None):
@@ -328,7 +419,57 @@ class JobResource:
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
 
+class StaticResource:
 
+    def __init__(self, static_root):
+        self.static_root = static_root
+        self._cp_config = {'tools.staticdir.on' : True,
+                           'tools.staticdir.dir': self.static_root}
+
+    def _makedirs(self, dir):
+        try:
+            os.makedirs(dir)
+        except OSError, e:
+            # be happy if someone already created the path
+            if e.errno != errno.EEXIST:
+                raise
+
+    @cherrypy.expose
+    def serve(self, userid=None, resource=None, resource_id=None, **kwargs):
+        # if userid == 'OPTIONS':
+        #     return ('New Job Request') # To handle initial html OPTIONS request
+        #Return data id
+        try:
+            token = cherrypy.request.headers['Authorization']
+        except:
+            token = None
+        aclient = ar_client.Client('localhost', userid, token)
+        outdir = os.path.join(self.static_root, userid, resource, resource_id)
+        self._makedirs(outdir)
+
+        ## Get all data
+        if resource == 'job':
+            job_id = resource_id
+            aclient.get_job_data(job_id=job_id, outdir=outdir)
+            ## Extract Quast data
+            if 'quast' in kwargs.keys():
+                quastdir = os.path.join(outdir, 'quast')
+                self._makedirs(quastdir)
+                qtars = [m for m in os.listdir(outdir) if 'qst' in m]
+                for t in qtars:
+                    if 'ctg' in t: # Contig Quast
+                        ctgdir = os.path.join(quastdir, 'contig')
+                        self._makedirs(ctgdir)
+                        qtar = tarfile.open(os.path.join(outdir,t))
+                        qtar.extractall(path=ctgdir)
+                    elif 'scf' in t: # Scaffold Quast
+                        scfdir = os.path.join(quastdir, 'scaffold')
+                        self._makedirs(scfdir)
+                        qtar = tarfile.open(os.path.join(outdir,t))
+                        qtar.extractall(path=scfdir)
+
+            return 'done'
+    serve._cp_config = {'tools.staticdir.on' : False}
 
 class FilesResource:
     @cherrypy.expose
@@ -372,13 +513,13 @@ class UserResource(object):
 
     @cherrypy.expose
     def default(self):
-        print 'user'
         return 'user default ok'
 
     default.job = JobResource()
     default.files = FilesResource()
     default.data = DataResource()
 
+    # Pull user id from URL
     def __getattr__(self, name):
         if name is not ('_cp_config'): #assume username
             cherrypy.request.params['userid'] = name
