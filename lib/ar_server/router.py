@@ -85,7 +85,20 @@ def get_upload_url():
     return parser.get('shock', 'host')
 
 
+def check_valid_client(body):
+    client_params = json.loads(body) #dict of params
+    min_version = parser.get('assembly', 'min_cli_version')
+    try:
+        if StrictVersion(client_params['version']) >= StrictVersion(min_version):
+            return True
+        else:
+            return False
+    except:
+        return True
+
 def route_job(body):
+    if not check_valid_client(body):
+        return "Client too old, please upgrade"
     client_params = json.loads(body) #dict of params
     routing_key = determine_routing_key (1, client_params)
     job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
@@ -110,6 +123,8 @@ def route_job(body):
 
 def register_data(body):
     """ User is only submitting libraries, return data ID """
+    if not check_valid_client(body):
+        return "Client too old, please upgrade"
     client_params = json.loads(body) #dict of params
     data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
     client_params['data_id'] = data_id
@@ -217,7 +232,6 @@ def CORS():
 #    cherrypy.response.headers["Content-Type"] = "application/json"
 
 
-
 def start(config_file, mongo_host=None, mongo_port=None,
           rabbit_host=None, rabbit_port=None):
     global parser, metadata
@@ -228,11 +242,6 @@ def start(config_file, mongo_host=None, mongo_port=None,
     metadata = meta.MetadataConnection(config_file, mongo_host)
 
     ##### CherryPy ######
-    
-
-
-    #cherrypy.tools.CORS = cherrypy.Tool('before_finalize', CORS)
-
     conf = {
         'global': {
             'server.socket_host': '0.0.0.0',
@@ -260,8 +269,9 @@ def start(config_file, mongo_host=None, mongo_port=None,
     #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.request.hooks.attach('before_finalize', CORS)
     cherrypy.quickstart(root, '/', conf)
-    ###### DOES IT AUTH EVERY REQUEST??? ########
+
     
+
 
 def start_qc_monitor(arasturl):
     """
@@ -295,7 +305,6 @@ class JobResource:
 
     @cherrypy.expose
     def new(self, userid=None):
-        print 'new!'
         userid = authenticate_request()
         if userid == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
