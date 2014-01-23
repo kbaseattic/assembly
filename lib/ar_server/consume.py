@@ -86,7 +86,7 @@ class ArastConsumer:
         """Get data from cache or Shock server."""
         params = json.loads(body)
         if 'assembly_data' in params:
-            print 'new data format!'
+            logging.info('New Data Format')
             return self._get_data(body)
         else:
             return self._get_data_old(body)
