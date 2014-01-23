@@ -102,32 +102,30 @@ class ArastConsumer:
         token = params['oauth_token']
         uid = params['_id']
 
-        ##### TODO Get data from ID #####
+        ##### Get data from ID #####
         data_doc = self.metadata.get_doc_by_data_id(params['data_id'], params['ARASTUSER'])
-        print 'data doc'
-        print data_doc
         params['assembly_data'] = data_doc['assembly_data']
-        print params
-
-        ##### TODO Check if files exist on node #####
 
         ##### Get data from assembly_data #####
         self.metadata.update_job(uid, 'status', 'Data transfer')
-        os.makedirs(filepath)
+        try:os.makedirs(filepath)
+        except:pass
+            
           ### TODO Garbage collect ###
         download_url = 'http://{}'.format(self.shockurl)
-
         file_sets = params['assembly_data']['file_sets']
         for file_set in file_sets:
             file_set['files'] = [] #legacy
             for file_info in file_set['file_infos']:
-                dl = self.download(download_url, user, token, 
-                                   file_info['shock_id'], filepath)
-                file_info['local_file'] = dl
-                file_set['files'].append(dl) #legacy
+                local_file = os.path.join(filepath, file_info['filename'])
+                if os.path.exists(local_file):
+                    logging.info("Requested data exists on node: {}".format(local_file))
+                else:
+                    local_file = self.download(download_url, user, token, 
+                                               file_info['shock_id'], filepath)
+                file_info['local_file'] = local_file
+                file_set['files'].append(local_file) #legacy
             all_files.append(file_set)
-        print 'all data'
-        print all_files
         return datapath, all_files                    
 
     def _get_data_old(self, body):
