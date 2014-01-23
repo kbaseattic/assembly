@@ -231,61 +231,31 @@ def main():
 
         files = []
         adata = client.AssemblyData()
-
-
+        
         ##### Parse args and create AssemblyData dict #####
-        all_lists = [args.pair, args.single, args.reference]
-        all_types = ['pair', 'single', 'reference']
-        for f_list, f_type in zip(all_lists, all_types):
-            f_infos = []
-            for ls in f_list:
-                for word in ls:
-                    if is_filename(word) and os.path.isfile(word):
-                        f_info = aclient.upload_data_file_info(word, curl=curl)
-                        f_infos.append(f_info)
-                        #files.append(word)
-            f_set = client.FileSet(f_type, f_infos)
-            adata.add_set(f_set)
+        try:
+            has_data_id = args.data_id
+        except:
+            has_data_id = False
+        if not has_data_id:
+            all_lists = [args.pair, args.single, args.reference]
+            all_types = ['paired', 'single', 'reference']
+            for f_list, f_type in zip(all_lists, all_types):
+                f_infos = []
+                for ls in f_list:
+                    for word in ls:
+                        if is_filename(word) and os.path.isfile(word):
+                            f_info = aclient.upload_data_file_info(word, curl=curl)
+                            f_infos.append(f_info)
+                            #files.append(word)
+                f_set = client.FileSet(f_type, f_infos)
+                adata.add_set(f_set)
 
-        base_files = []
-        file_sizes = []
-        res_ids = []
-        shock_handles = []
-
-        # for f in files:
-        #     #Check file or dir
-        #     if os.path.isfile(f):
-        #         ids, s_handles = upload([f], curl=curl)
-        #         res_ids += ids
-        #         shock_handles += s_handles
-        #         file_sizes.append(os.path.getsize(f))
-        #         base_files.append(os.path.basename(f))
-        #     # elif os.path.isdir(f):
-        #     #     ls_files = os.listdir(f)
-
-        #     #     fullpaths = [str(f + "/"+ file) for file in ls_files 
-        #     #                  if not os.path.isdir(str(f + "/" +file))]
-        #     #     print fullpaths
-        #     #     file_list = fullpaths # ???
-
-        #     #     res_ids += upload(url, fullpaths)
-        #     #     for path in fullpaths:
-        #     #         file_sizes.append(os.path.getsize(path))
-        #     #     base_files += [os.path.basename(file) for file in fullpaths]
-        #     else:
-        #         print('File does not exist:{}'.format(f))
-        #         sys.exit(1)
-
-        # options['filename'] = base_files
-        # options['ids'] = res_ids
-        # options['file_sizes'] = file_sizes
-
-        arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version']}
+        arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version']
+                     if k in options}
         arast_msg['assembly_data'] = adata
 
-        # # Send message to RPC Server
-        del options['ARASTURL']
-        #rpc_body = json.dumps(options, sort_keys=True)
+        ##### Send message to Arast Server #####
         payload = json.dumps(arast_msg, sort_keys=True)
         clientlog.debug(" [x] Sending message: %r" % (payload))
 
