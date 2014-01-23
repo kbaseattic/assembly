@@ -103,6 +103,11 @@ class ArastConsumer:
         uid = params['_id']
 
         ##### TODO Get data from ID #####
+        data_doc = self.metadata.get_doc_by_data_id(params['data_id'], params['ARASTUSER'])
+        print 'data doc'
+        print data_doc
+        params['assembly_data'] = data_doc['assembly_data']
+        print params
 
         ##### TODO Check if files exist on node #####
 
@@ -111,7 +116,9 @@ class ArastConsumer:
         os.makedirs(filepath)
           ### TODO Garbage collect ###
         download_url = 'http://{}'.format(self.shockurl)
-        for file_set in params['assembly_data']['file_sets']:
+
+        file_sets = params['assembly_data']['file_sets']
+        for file_set in file_sets:
             file_set['files'] = [] #legacy
             for file_info in file_set['file_infos']:
                 dl = self.download(download_url, user, token, 
