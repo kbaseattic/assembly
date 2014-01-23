@@ -174,22 +174,23 @@ class FileInfo(dict):
                      'create_time': create_time,
                      'metadata': metadata})
 
-# class FileSet(dict):
-#     def __init__(self, set_type, file_infos, insert_size=None, stdev=None, metadata=None, *args):
-#         dict.__init__(self, *args)
-#         self.update({'type': set_type,
-#                         'insert_size': insert_size,
-#                         'stdev': stdev})
-#         if type(file_infos) is list:
-#             for f in file_infos:
-#                 self['file_infos'] = f
-#         else:
-#             self['file_infos'] = [file_infos]
+class FileSet(dict):
+    def __init__(self, set_type, file_infos, insert_size=None, stdev=None, metadata=None, *args):
+        dict.__init__(self, *args)
+        self.update({'type': set_type,
+                     'insert_size': insert_size,
+                     'stdev': stdev,
+                     'file_infos': []})
+        if type(file_infos) is list:
+            for f in file_infos:
+                self['file_infos'].append(f)
+        else:
+            self['file_infos'] = [file_infos]
 
+class AssemblyData(dict):
+    def __init__(self, *args):
+        dict.__init__(self, *args)
+        self['file_sets'] = []
 
-# class AssemblyData(dict):
-#     def __init__(self):
-#         dict.__init__(self, *args)
-        
-#     def add_set(self, file_set):
-#         pass
+    def add_set(self, file_set):
+        self['file_sets'].append(file_set)

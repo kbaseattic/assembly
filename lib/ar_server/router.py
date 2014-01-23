@@ -89,7 +89,6 @@ def route_job(body):
     client_params = json.loads(body) #dict of params
     routing_key = determine_routing_key (1, client_params)
     job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
-
     if not client_params['data_id']:
         data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
         client_params['data_id'] = data_id
