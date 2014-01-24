@@ -201,9 +201,8 @@ def authenticate_request():
         atime = datetime.datetime.strptime(auth_time_str, '%Y-%m-%d %H:%M:%S.%f')
         ctime = datetime.datetime.today()
         globus_user = user
-        print auth_info
         if (ctime - atime).seconds > 15*60: # 15 min auth token
-            print 'expired, reauth'
+            print 'Token expired, reauthenticating with Globus'
             nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
             globus_user = nexus.authenticate_user(token)
             metadata.update_auth_info(globus_user, token, str(ctime))
@@ -305,11 +304,12 @@ class JobResource:
 
     @cherrypy.expose
     def new(self, userid=None):
-        userid = authenticate_request()
-        if userid == 'OPTIONS':
+        token_user = authenticate_request()
+        if token_user == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
+        if not userid == token_user:
+            raise cherrypyHTTPError(403)
         params = json.loads(cherrypy.request.body.read())
-        print params
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
         return route_job(json.dumps(params))
