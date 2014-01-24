@@ -539,20 +539,33 @@ class ArastConsumer:
                     if not reuse_data:
                         output, alldata, mod_log = self.pmanager.run_module(
                             module_name, job_data, all_data=True, reads=include_reads)
+
+                        ##### Module produced no output, attach log and proceed to next #####
                         if not output:
                             pipe_alive = False
+                            try:
+                                print mod_log
+                                logfiles.append(mod_log)
+                            except:
+                                print 'error attaching ', mod_log
                             break
-                        # Prefix outfiles with pipe stage, only assemblers
+
+
+                        ##### Prefix outfiles with pipe stage (only assembler modules) #####
                         alldata = [asm.prefix_file_move(
                                 file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
                                     for file in alldata]
                         module_elapsed_time = time.time() - module_start_time
                         job_data.get_pipeline(pipeline_num).get_module(
                             pipeline_stage)['elapsed_time'] = module_elapsed_time
-                        if output_type == 'contigs': #Assume assembly contigs
-                            pass
-                        elif output_type == 'reads':
-                            pass
+
+
+                        # if output_type == 'contigs': #Assume assembly contigs
+                        #     pass
+                        # elif output_type == 'reads':
+                        #     pass
+
+
                         if alldata: #If log was renamed
                             mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
                                     pipeline_num, pipeline_stage, module_name))
@@ -609,11 +622,10 @@ class ArastConsumer:
                             final_contigs.append(contig_data)
                             output_types.append(output_type)
 
-
                     try:
                         logfiles.append(mod_log)
                     except:
-                        pass
+                        print 'error attaching ', mod_log
                     pipeline_stage += 1
 
                     cur_outputs.append([module_code, output, alldata])
@@ -730,6 +742,7 @@ class ArastConsumer:
         try:    
             job_data.import_quast(quast_report[0])
         except:
+            exceptions.append('No Quast Report')
             print 'No Quast Report'
 
         ## Write out ALE scores
