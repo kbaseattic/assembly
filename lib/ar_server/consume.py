@@ -678,21 +678,45 @@ class ArastConsumer:
                 exceptions.append(module_name + ':\n' + str(sys.exc_info()[1]))
                 pipeline_num += 1
 
+        ## ANALYSIS: Quast
         job_data['final_contigs'] = final_contigs
         job_data['final_scaffolds'] = final_scaffolds
-
-
-        # try:
-
-        # except:
-        #     job_data['final_scaffolds'] = []
-        #mfiles,_,_ = self.pmanager.run_module('gam_ngs', job_data)
-        # for m in mfiles:
-        #     job_data['final_contigs'].append({'files':[m]})
-
-        ## ANALYSIS: Quast
-        #job_data['contig_types'] = output_types
         job_data['params'] = [] #clear overrides from last stage
+
+        summary = []  # Quast reports for contigs and scaffolds
+        try: #Try to assess, otherwise report pipeline errors
+            if job_data['final_contigs']:
+                    job_data['contig_type'] = 'contigs'
+                    quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
+                                                                                  tar=True, meta=True)
+                    summary.append(quast_report[0])
+                    with open(q_log) as infile:
+                        self.out_report.write(infile.read())
+            else:
+                quast_report, quast_tar = '',''
+
+            if job_data['final_scaffolds']:
+                scaff_data = dict(job_data)
+                scaff_data['final_contigs'] = job_data['final_scaffolds']
+                scaff_data['contig_type'] = 'scaffolds'
+                scaff_report, scaff_tar, _, scaff_log = self.pmanager.run_module('quast', scaff_data, 
+                                                                          tar=True, meta=True)
+                scaffold_quast = True
+                summary.append(scaff_report[0])
+                with open(scaff_log) as infile:
+                    self.out_report.write('\n Quast Report - Scaffold Mode \n')
+                    self.out_report.write(infile.read())
+
+            else:
+                scaffold_quast = False
+        except:
+            if exceptions:
+                if len(exceptions) > 1:
+                    raise Exception('Multiple Errors')
+                else:
+                    raise Exception(exceptions[0])
+            else:
+                raise Exception('No valid contigs')
 
 
         ## CONCAT MODULE LOG FILES
@@ -706,95 +730,16 @@ class ArastConsumer:
                 self.out_report.write("Error writing log file")
 
 
-        #if 'contigs' in output_types or 'scaffolds' in output_types:
-        if job_data['final_contigs']:
-            print 'FINAL CONTIGS'
-            print job_data['final_contigs']
-            try: #Try to assess, otherwise report pipeline errors
-                job_data['contig_type'] = 'contigs'
-                quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
-                                                                              tar=True, meta=True)
-                with open(q_log) as infile:
-                    self.out_report.write(infile.read())
-
-                    #logfiles.append(q_log)
-            except:
-                if exceptions:
-                    if len(exceptions) > 1:
-                        raise Exception('Multiple Errors')
-                    else:
-                        raise Exception(exceptions[0])
-                else:
-                    raise Exception('No valid contigs')
-        else:
-            quast_report, quast_tar = '',''
-
-        summary = []  # Quast reports for contigs and scaffolds
-        if job_data['final_scaffolds']:
-            scaff_data = dict(job_data)
-            scaff_data['final_contigs'] = job_data['final_scaffolds']
-            scaff_data['contig_type'] = 'scaffolds'
-            scaff_report, scaff_tar, _, scaff_log = self.pmanager.run_module('quast', scaff_data, 
-                                                                      tar=True, meta=True)
-            scaffold_quast = True
-            summary.append(scaff_report[0])
-            with open(scaff_log) as infile:
-                self.out_report.write('\n Quast Report - Scaffold Mode \n')
-                self.out_report.write(infile.read())
-
-        else:
-            scaffold_quast = False
-            
-
-
-        ## Add reference assessment
-        # if job_data['reference']:
-        #     ref_data = dict(job_data)
-        #     ref_data['contigs'] = job_data['reference'][0]['files']
-        #     ref_ale_out, _, _ = self.pmanager.run_module('ale', ref_data)
-        #     if ref_ale_out:
-        #         job_data.add_pipeline(-1, [])
-        #         job_data.get_pipeline(-1).import_ale(ref_ale_out)
-        #         job_data.get_pipeline(-1)['name'] = 'REF'
-            
-        # try:    
-        #     job_data.import_quast(quast_report[0])
-        # except:
-        #     exceptions.append('No Quast Report')
-        #     print 'No Quast Report'
-
-        ## Write out ALE scores
-        # self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
-        # for suffix,report in ale_reports.items():
-        #     try:
-        #         f = open(report, 'r')
-        #         score = f.readline()
-        #         f.close()
-        #         self.out_report.write("{}: {}\n".format(suffix, score))
-        #     except:
-        #         self.out_report.write("{}: Error\n".format(suffix))
-
-        # for suffix,report in ale_reports.items():
-        #     self.out_report.write("\n\n{0} ALE: {1}  {0}\n".format("="*10, suffix))
-        #     try:
-        #         with open(report) as infile:
-        #             self.out_report.write(infile.read())
-        #     except:
-        #         self.out_report.write("Error writing log file")
 
         ## Format Returns
         ctg_analysis = quast_tar.rsplit('/', 1)[0] + '/{}_ctg_qst.tar.gz'.format(job_data['job_id'])
         try:
-            summary.append(quast_report[0])
             os.rename(quast_tar, ctg_analysis)
             return_files = [ctg_analysis]
         except:
             #summary = ''
             return_files = []
 
-        # ale_plot = job_data.plot_ale()
-        # if ale_plot:
-        #     return_files.append(ale_plot)
         if scaffold_quast:
             scf_analysis = scaff_tar.rsplit('/', 1)[0] + '/{}_scf_qst.tar.gz'.format(job_data['job_id'])
             #summary = quast_report[0]
@@ -951,3 +896,49 @@ class UpdateTimer(threading.Thread):
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
             self.meta.update_job(self.uid, 'computation_time', ftime)
             time.sleep(self.interval)
+
+
+
+
+### GRAVEYARD
+
+
+        ## Add reference assessment
+        # if job_data['reference']:
+        #     ref_data = dict(job_data)
+        #     ref_data['contigs'] = job_data['reference'][0]['files']
+        #     ref_ale_out, _, _ = self.pmanager.run_module('ale', ref_data)
+        #     if ref_ale_out:
+        #         job_data.add_pipeline(-1, [])
+        #         job_data.get_pipeline(-1).import_ale(ref_ale_out)
+        #         job_data.get_pipeline(-1)['name'] = 'REF'
+            
+        # try:    
+        #     job_data.import_quast(quast_report[0])
+        # except:
+        #     exceptions.append('No Quast Report')
+        #     print 'No Quast Report'
+
+        ## Write out ALE scores
+        # self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
+        # for suffix,report in ale_reports.items():
+        #     try:
+        #         f = open(report, 'r')
+        #         score = f.readline()
+        #         f.close()
+        #         self.out_report.write("{}: {}\n".format(suffix, score))
+        #     except:
+        #         self.out_report.write("{}: Error\n".format(suffix))
+
+        # for suffix,report in ale_reports.items():
+        #     self.out_report.write("\n\n{0} ALE: {1}  {0}\n".format("="*10, suffix))
+        #     try:
+        #         with open(report) as infile:
+        #             self.out_report.write(infile.read())
+        #     except:
+        #         self.out_report.write("Error writing log file")
+
+
+        # ale_plot = job_data.plot_ale()
+        # if ale_plot:
+        #     return_files.append(ale_plot)
