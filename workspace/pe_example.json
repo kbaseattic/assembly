@@ -1,0 +1,22 @@
+{
+    "dataset_prefix": "demo", 
+    "paired_end_libs": [
+        {
+            "handle_1": {
+                "file_name": "pe_1.fastq", 
+                "id": "bbd47ead-484b-4f70-ab27-64e5fcf282fa", 
+                "type": "shock"
+            }, 
+            "handle_2": {
+                "file_name": "pe_2.fastq", 
+                "id": "d5a0de73-3840-4b5d-9173-3122b1e39306", 
+                "type": "shock"
+            }, 
+            "insert_size_mean": 300, 
+            "insert_size_std_dev": 80, 
+            "read_orientation_outward": 0
+        }
+    ], 
+    "references": [], 
+    "single_end_libs": []
+}
