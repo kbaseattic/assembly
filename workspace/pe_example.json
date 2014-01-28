@@ -1,5 +1,5 @@
 {
-    "dataset_prefix": "paired_w_ins", 
+    "dataset_prefix": "demo", 
     "paired_end_libs": [
         {
             "handle_1": {
