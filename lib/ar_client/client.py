@@ -61,7 +61,6 @@ class Client:
             self.url = url + ':{}'.format(self.port)
         else:
             self.url = url
-        print self.url
         self.user = user
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),
@@ -133,7 +132,6 @@ class Client:
         return r.content
 
     def submit_data(self, data):
-        print("Registering data upload")
         url = 'http://{}/user/{}/data/new'.format(self.url, self.user)
         r = requests.post(url, data=data, headers=self.headers)
         return r.content
@@ -175,11 +173,10 @@ class FileInfo(dict):
                      'metadata': metadata})
 
 class FileSet(dict):
-    def __init__(self, set_type, file_infos, insert_size=None, stdev=None, metadata=None, *args):
-        dict.__init__(self, *args)
+    def __init__(self, set_type, file_infos, 
+                 **kwargs):
+        dict.__init__(self, **kwargs)
         self.update({'type': set_type,
-                     'insert_size': insert_size,
-                     'stdev': stdev,
                      'file_infos': []})
         if type(file_infos) is list:
             for f in file_infos:
