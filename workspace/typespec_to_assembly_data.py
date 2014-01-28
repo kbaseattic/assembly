@@ -9,7 +9,7 @@ def typespec_to_assembly_data(spec):
     lib_types = dict (
         paired_end_libs = 'paired',
         single_end_libs = 'single',
-        references      = 'ref',
+        references      = 'reference',
     )
     data = {}
     file_sets = []
