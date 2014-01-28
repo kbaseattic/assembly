@@ -240,19 +240,22 @@ def main():
         if not has_data_id:
             all_lists = [args.pair, args.single, args.reference]
             all_types = ['paired', 'single', 'reference']
-            for f_list, f_type in zip(all_lists, all_types):
-                f_infos = []
-                f_set_args = {}
-                for ls in f_list:
-                    for word in ls:
-                        if is_filename(word) and os.path.isfile(word):
-                            f_info = aclient.upload_data_file_info(word, curl=curl)
-                            f_infos.append(f_info)
-                        elif '=' in word:
-                            kv = word.split('=')
-                            f_set_args[kv[0]] = kv[1]
-                f_set = client.FileSet(f_type, f_infos, **f_set_args)
-                adata.add_set(f_set)
+            try:
+                for f_list, f_type in zip(all_lists, all_types):
+                    f_infos = []
+                    f_set_args = {}
+                    for ls in f_list:
+                        for word in ls:
+                            if is_filename(word) and os.path.isfile(word):
+                                f_info = aclient.upload_data_file_info(word, curl=curl)
+                                f_infos.append(f_info)
+                            elif '=' in word:
+                                kv = word.split('=')
+                                f_set_args[kv[0]] = kv[1]
+                    f_set = client.FileSet(f_type, f_infos, **f_set_args)
+                    adata.add_set(f_set)
+            except TypeError: ### Catch null list
+                pass
 
         arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version']
                      if k in options}

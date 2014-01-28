@@ -61,7 +61,6 @@ class Client:
             self.url = url + ':{}'.format(self.port)
         else:
             self.url = url
-        print self.url
         self.user = user
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),
@@ -133,7 +132,6 @@ class Client:
         return r.content
 
     def submit_data(self, data):
-        print("Registering data upload")
         url = 'http://{}/user/{}/data/new'.format(self.url, self.user)
         r = requests.post(url, data=data, headers=self.headers)
         return r.content
