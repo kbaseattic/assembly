@@ -500,8 +500,9 @@ class DataResource:
             return json.dumps(summarized_docs)
         ## /user/USERID/data/            
         doc = metadata.get_doc_by_data_id(data_id, userid)
-        status = {k: doc[k] for k in ('ids', 'data_id', 'filename', 'file_sizes', 
-                                      'single', 'pair', 'version')}
+
+        status = {k: doc[k] for k in ('assembly_data', 'ids', 'data_id', 'filename', 'file_sizes', 
+                                      'single', 'pair', 'version') if k in doc}
         return json.dumps(status)
 
 
