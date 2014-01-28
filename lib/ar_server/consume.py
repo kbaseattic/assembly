@@ -352,13 +352,14 @@ class ArastConsumer:
         reads = []
         reference = []
         for fileset in all_files:
-            if (fileset['type'] == 'single' or 
-                fileset['type'] == 'paired'):
-                reads.append(fileset)
-            elif fileset['type'] == 'reference':
-                reference.append(fileset)
-            else:
-                raise Exception('fileset error')
+            if len(fileset['files']) != 0:
+                if (fileset['type'] == 'single' or 
+                    fileset['type'] == 'paired'):
+                    reads.append(fileset)
+                elif fileset['type'] == 'reference':
+                    reference.append(fileset)
+                else:
+                    raise Exception('fileset error')
 
         job_data = ArastJob({'job_id' : params['job_id'], 
                     'uid' : params['_id'],
@@ -384,7 +385,7 @@ class ArastConsumer:
         contig_ids = {}
 
         url = "http://%s" % (self.shockurl)
-        url += '/node'
+#        url += '/node'
         try:
             include_all_data = params['all_data']
         except:
