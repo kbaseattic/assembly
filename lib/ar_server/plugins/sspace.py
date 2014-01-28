@@ -83,5 +83,5 @@ class SspaceScaffolder(BaseScaffolder, IPlugin):
         final_scaffolds = os.path.join(self.outpath,
                                        str(job_data['job_id']) + 
                                        '.final.scaffolds.fasta')
-        return [final_scaffolds]
+        return [], [final_scaffolds]
         

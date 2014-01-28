@@ -16,13 +16,17 @@ class QuastAssessment(BaseAssessment, IPlugin):
                     '--min-contig', self.min_contig,
                     '-o', self.outpath,
                     '--gene-finding']
-        scaffolds = True
-        for t in self.job_data['contig_types']:
-            if t != 'scaffolds':
-                scaffolds = False
-                break
-        if scaffolds and self.scaffold_mode == 'True':
+        # scaffolds = True
+        # for t in self.job_data['contig_types']:
+        #     if t != 'scaffolds':
+        #         scaffolds = False
+        #         break
+        
+        if self.job_data['contig_type'] == 'scaffolds':
             cmd_args.append('--scaffolds')
+
+        # if scaffolds and self.scaffold_mode == 'True':
+        #     cmd_args.append('--scaffolds')
 
         ref = self.job_data['reference']
 
