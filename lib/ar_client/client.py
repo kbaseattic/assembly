@@ -175,11 +175,10 @@ class FileInfo(dict):
                      'metadata': metadata})
 
 class FileSet(dict):
-    def __init__(self, set_type, file_infos, insert_size=None, stdev=None, metadata=None, *args):
-        dict.__init__(self, *args)
+    def __init__(self, set_type, file_infos, 
+                 **kwargs):
+        dict.__init__(self, **kwargs)
         self.update({'type': set_type,
-                     'insert_size': insert_size,
-                     'stdev': stdev,
                      'file_infos': []})
         if type(file_infos) is list:
             for f in file_infos:
