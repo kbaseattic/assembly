@@ -23,7 +23,7 @@ import assembly.config as conf
 from assembly.auth_token import *
 import traceback
 
-my_version = '0.3.8.1'
+my_version = '0.3.8.2'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -81,25 +81,25 @@ p_logout = subparsers.add_parser('logout', description='Log out', help='log out'
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
 
 # upload all files in list, return list of ids
-def upload(files, curl=False):
-    ids = [] # legacy
-    shock_handles = []
-    for f in files:
-        # check if file exists
-        if not os.path.exists(f):
-            logging.error("File does not exist: '%s'" % (f))
-            continue
-        else:
-            sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
-            res, shock_info = aclient.upload_data_shock(f, curl=curl)
-            ids.append(res['data']['id'])
-            shock_handles.append(shock_info)
-            if res["error"] is not None:
-                sys.exit("Shock: err from server: %s" % res["error"][0])
-            else:
-                sys.stderr.write( "Uploaded: %s...\n" % os.path.basename(f))
+# def upload(files, curl=False):
+#     ids = [] # legacy
+#     shock_handles = []
+#     for f in files:
+#         # check if file exists
+#         if not os.path.exists(f):
+#             logging.error("File does not exist: '%s'" % (f))
+#             continue
+#         else:
+#             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
+#             res, shock_info = aclient.upload_data_shock(f, curl=curl)
+#             ids.append(res['data']['id'])
+#             shock_handles.append(shock_info)
+#             if res["error"] is not None:
+#                 sys.exit("Shock: err from server: %s" % res["error"][0])
+#             else:
+#                 sys.stderr.write( "Uploaded: %s...\n" % os.path.basename(f))
 
-    return ids, shock_handles
+#     return ids, shock_handles
 
 def main():
     global aclient
@@ -112,7 +112,6 @@ def main():
     sh.setFormatter(frmt)
     clientlog.addHandler(sh)
 
-    
     args = parser.parse_args()
     opt = parser.parse_args()
     options = vars(args)
@@ -123,6 +122,7 @@ def main():
         clientlog.setLevel(logging.DEBUG)
         clientlog.debug("Logger Debugging mode")
 
+    #### Get configuration #####
     ARASTURL = conf.URL
     user_dir = appdirs.user_data_dir(conf.APPNAME, conf.APPAUTHOR)
     oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
@@ -251,12 +251,16 @@ def main():
                 f_set_args = {}
                 for ls in f_list:
                     for word in ls:
-                        if is_filename(word) and os.path.isfile(word):
+                        if not (os.path.isfile(word) or '=' in word):
+                            raise Exception('{} is not valid input!'.format(word))
+                    for word in ls:
+                        if os.path.isfile(word):
                             f_info = aclient.upload_data_file_info(word, curl=curl)
                             f_infos.append(f_info)
                         elif '=' in word:
                             kv = word.split('=')
                             f_set_args[kv[0]] = kv[1]
+
                 f_set = client.FileSet(f_type, f_infos, **f_set_args)
                 adata.add_set(f_set)
 
