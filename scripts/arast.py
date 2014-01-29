@@ -80,26 +80,6 @@ p_get.add_argument("-o", "--outdir", action="store", help="Download to specified
 p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
 
-# upload all files in list, return list of ids
-# def upload(files, curl=False):
-#     ids = [] # legacy
-#     shock_handles = []
-#     for f in files:
-#         # check if file exists
-#         if not os.path.exists(f):
-#             logging.error("File does not exist: '%s'" % (f))
-#             continue
-#         else:
-#             sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
-#             res, shock_info = aclient.upload_data_shock(f, curl=curl)
-#             ids.append(res['data']['id'])
-#             shock_handles.append(shock_info)
-#             if res["error"] is not None:
-#                 sys.exit("Shock: err from server: %s" % res["error"][0])
-#             else:
-#                 sys.stderr.write( "Uploaded: %s...\n" % os.path.basename(f))
-
-#     return ids, shock_handles
 
 def main():
     global aclient
