@@ -64,7 +64,7 @@ p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="S
 p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
 p_upload.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
 p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
-
+p_upload.add_argument("--json", action="store_true", help="Print data info json object to STDOUT")
 
 p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
 p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
@@ -275,10 +275,13 @@ def main():
 
         if args.command == "run":
             response = aclient.submit_job(payload)
+            print response
         if args.command == "upload":
             response = aclient.submit_data(payload)
-        print response
-        clientlog.debug(" [.] Response: %r" % (response))
+            arast_msg.update(json.loads(response))
+            if args.json:
+                print arast_msg
+            print 'Data ID: {}'.format(arast_msg['data_id'])
 
     elif args.command == 'stat':
         while True:

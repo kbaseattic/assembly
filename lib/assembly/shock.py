@@ -220,7 +220,7 @@ class Shock:
         logging.info(r.text)
         try:
             if res['status'] == 200:
-                print >> sys.stderr, "Upload complete"
+                print >> sys.stderr, "Upload complete: {}".format(filename)
             else:
                 print >> sys.stderr, "Upload error: {}".format(res['status'])
         except: 
