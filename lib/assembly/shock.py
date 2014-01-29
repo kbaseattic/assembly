@@ -209,7 +209,7 @@ class Shock:
             with open(filename) as f:
                 files = {'upload': f, 
                          'attributes': attr_fd}
-                r = requests.post('{}node/'.format(self.shockurl), files=files)
+                r = requests.post('{}/node/'.format(self.shockurl), files=files)
 
         except:
             print "ERROR: python-requests error, try with --curl flag"
