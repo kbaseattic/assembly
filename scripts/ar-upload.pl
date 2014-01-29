@@ -9,27 +9,35 @@ use Getopt::Long;
 
 my $usage = <<End_of_Usage;
 
-Usage: ar-upload [-h]
+Usage: ar-upload [ options ]
 
 Upload a dataset to the ARAST server. The dataset can be a combination
 of paired-end libraries, single-end libraries and reference genomes.
 
 Optional arguments:
-  -h, --help            show this help message and exit
-  -f [SINGLE [SINGLE ...]], --single [SINGLE [SINGLE ...]]
-                        specify sequence file(s)
-  --pair [PAIR [PAIR ...]]
-                        Specify a paired-end library and parameters
+  -h, --help                         - show this help message and exit
+  -f --single     file ...           - single end sequence file(s)
+  --pair          f1 f2 key=val ...  - paired end sequence file(s) and parameters
+  -r --reference  file key=val ...   - reference genome(s) and parameters
+  --cov           float              - expected coverage
+  --gs            int                - estimated genome size in base pairs
+  -m              "text"             - dataset description
+  --prefix        string             - dataset prefix string
 
-                        Specify a single end file and parameters
-  -r [REFERENCE [REFERENCE ...]], --reference [REFERENCE [REFERENCE ...]]
-                        specify sequence file(s)
-  -m MESSAGE, --message MESSAGE
-                        Attach a description to dataset
+Supported sequence file types:
+  fasta fa fna  (FASTA and compressed forms)
+  fastq fq      (FASTQ and compressed forms)
+  bas.h5 bax.h5 (PacBio reads)
+
+Examples:
+  Upload a hybrid library of paired and single reads:
+    % ar-upload --pair r1.fastq r2.fastq insert=300 stdev=60 --single unpaired.fasta --pair f1.fq f2.fq insert=180
+  Upload PacBio reads with a reference assembly:
+    % ar-upload -f pb1.bas.h5 -f pb2.bas.h5 --cov 15.0 --gs 40000 -r lambda.fa name="Lambda phage"
 
 End_of_Usage
 
-my ($help, $server, $message, $prefix,
+my ($help, $server, %params,
     @se_args, @pe_args, @ref_args);
 
 my $rc = GetOptions(
@@ -37,9 +45,11 @@ my $rc = GetOptions(
                     'f|single=s{1,}'     => \@se_args,
                     'p|pair=s{2,}'       => \@pe_args,
                     'r|references=s{1,}' => \@ref_args,
-                    "m=s"                => \$message,
                     "s=s"                => \$server,
-                    # "prefix=s"           => \$prefix,
+                    "cov=f"              => sub { $params{expected_coverage}     = $_[1] },
+                    "gs=i"               => sub { $params{estimated_genome_size} = $_[1] },
+                    "m=s"                => sub { $params{dataset_description}   = $_[1] },
+                    "prefix=s"           => sub { $params{dataset_prefix}        = $_[1] },
                    ) or die $usage;
 
 if ($help) { print $usage; exit 0;}
@@ -48,23 +58,79 @@ if ($help) { print $usage; exit 0;}
 my $config = get_config();
 print STDERR '$config = '. Dumper($config);
 
-my $input_data = process_input_args(\@se_args, \@pe_args, \@ref_args, \@ARGV);
+authenticate($config);
 
+my $input_data = process_input_args(\@se_args, \@pe_args, \@ref_args, \%params);
+
+sub authenticate {
+    my ($config) = @_;
+    
+}
 
 
 sub process_input_args {
-    my ($se_args, $pe_args, $ref_args, $other_args) = @_;
-
-    my $data;
+    my ($se_args, $pe_args, $ref_args, $params) = @_;
 
     my (@se_libs, @pe_libs, @refs);
 
-    while (@$pe_args) {
-        
+    my %se_param_map;
+    my %pe_param_map  = ( insert => 'insert_size_mean', stdev => 'insert_size_std_dev' );
+    my %ref_param_map = ( name => 'reference_name' );
+
+    my $i;
+    for (@$ref_args) {
+        if (/(\S.*?)=(.*)/) {
+            my $param_key = $ref_param_map{$1} ? $ref_param_map{$1} : $1;
+            $refs[$i]->{$param_key} = $2;
+        } else {
+            my $file = validate_seq_file($_);
+            $refs[$i++]->{handle} = $file;
+        }
     }
-    
-    print STDERR '$pe_args = '. Dumper($pe_args);
-    print STDERR '$se_args = '. Dumper($se_args);
+
+    $i = 0;
+    for (@$se_args) {
+        if (/(\S.*?)=(.*)/) {
+            my $param_key = $se_param_map{$1} ? $se_param_map{$1} : $1;
+            $se_libs[$i]->{$param_key} = $2;
+        } else {
+            my $file = validate_seq_file($_);
+            $se_libs[$i++]->{handle} = $file;
+        }
+    }
+
+    my @pair;
+    $i = 0;
+    for (@$pe_args) {
+        if (/(\S.*?)=(.*)/) {
+            my $param_key = $pe_param_map{$1} ? $pe_param_map{$1} : $1;
+            $pe_libs[$i]->{$param_key} = $2;
+        } else {
+            my $file = validate_seq_file($_);
+            if (@pair == 2) { 
+                $pe_libs[$i]->{handle_1} = $pair[0];
+                $pe_libs[$i]->{handle_2} = $pair[1];
+                @pair = ( $file );
+                $i++;
+            } else {
+                push @pair, $file;
+            }
+        }
+    }
+    if (@pair == 2) {
+        $pe_libs[$i]->{handle_1} = $pair[0];
+        $pe_libs[$i]->{handle_2} = $pair[1];
+    } else {
+        die "Incorrect number of paired end files.\n"
+    }
+
+    my $data = { paired_end_libs => \@pe_libs,
+                 single_end_libs => \@se_libs,
+                 references      => \@refs,
+                 %params
+               };
+
+    print STDERR '$data = '. Dumper($data);
 }
 
 sub get_config {
@@ -76,9 +142,12 @@ sub get_config {
     return $config;
 }
 
-sub valid_seq_file_type {
+sub validate_seq_file {
     my ($file) = @_;
-    $file =~ s/\.(gz|bz|bz2|zip)$//;
-    $file =~ s/\.tar$//;
-    return 1 if $file =~ /\.(fasta|fastq|fa|fq|fna|bas\.h5|bax\.h5)$/;
+    -s $file or die "Invalid file: $file\n";
+    my $name = $file;
+    $name =~ s/\.(gz|gzip|bzip|bzip2|bz|bz2|zip)$//;
+    $name =~ s/\.tar$//;
+    $name =~ /\.(fasta|fastq|fa|fq|fna|bas\.h5|bax\.h5)$/ or die "Unrecognized file type: $file\n";
+    return { file_name => $file, type => '_handle_to_be_' };
 }
