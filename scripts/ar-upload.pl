@@ -58,13 +58,28 @@ if ($help) { print $usage; exit 0;}
 my $config = get_config();
 print STDERR '$config = '. Dumper($config);
 
-authenticate($config);
+my ($user, $token) = authenticate($config);
 
 my $input_data = process_input_args(\@se_args, \@pe_args, \@ref_args, \%params);
 
 sub authenticate {
     my ($config) = @_;
+    my ($user, $token);
+    if ($ENV{KB_RUNNING_IN_IRIS}) {
+        $user  = $ENV{KB_AUTH_USER_ID};
+        $token = $ENV{KB_AUTH_TOKEN};
+        if (!$user || $token) {
+            print "Please authenticate with KBase credentials\n";
+            exit 0;
+        }
+    } else {
+        
+    }
     
+}
+
+sub post {
+    my ($json, $user, $pass) = @_;
 }
 
 
