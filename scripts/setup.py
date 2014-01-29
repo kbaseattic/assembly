@@ -15,6 +15,5 @@ setup(
     packages = find_packages(),
     install_requires = ['requests>=2.1.0', 'appdirs'],
     entry_points={'console_scripts':[
-            'arast = ar_client.arast:main']},
-    #package_data = {'':['ar_client/*.conf']},
+            'arast = assembly.arast:main']},
 )
