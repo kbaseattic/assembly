@@ -18,9 +18,9 @@ from ConfigParser import SafeConfigParser
 from pkg_resources import resource_filename
 
 #arast libs
-import ar_client.client as client
-import ar_client.config as conf
-from ar_client.auth_token import *
+import assembly.client as client
+import assembly.config as conf
+from assembly.auth_token import *
 import traceback
 
 my_version = '0.3.8.1'
