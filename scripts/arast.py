@@ -23,7 +23,7 @@ import assembly.config as conf
 from assembly.auth_token import *
 import traceback
 
-my_version = '0.3.8.1'
+my_version = '0.3.8.2'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -64,7 +64,7 @@ p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="S
 p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
 p_upload.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
 p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
-
+p_upload.add_argument("--json", action="store_true", help="Print data info json object to STDOUT")
 
 p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
 p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
@@ -80,26 +80,6 @@ p_get.add_argument("-o", "--outdir", action="store", help="Download to specified
 p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
 
-# upload all files in list, return list of ids
-def upload(files, curl=False):
-    ids = [] # legacy
-    shock_handles = []
-    for f in files:
-        # check if file exists
-        if not os.path.exists(f):
-            logging.error("File does not exist: '%s'" % (f))
-            continue
-        else:
-            sys.stderr.write( "Uploading: %s...\n" % os.path.basename(f))
-            res, shock_info = aclient.upload_data_shock(f, curl=curl)
-            ids.append(res['data']['id'])
-            shock_handles.append(shock_info)
-            if res["error"] is not None:
-                sys.exit("Shock: err from server: %s" % res["error"][0])
-            else:
-                sys.stderr.write( "Uploaded: %s...\n" % os.path.basename(f))
-
-    return ids, shock_handles
 
 def main():
     global aclient
@@ -112,7 +92,6 @@ def main():
     sh.setFormatter(frmt)
     clientlog.addHandler(sh)
 
-    
     args = parser.parse_args()
     opt = parser.parse_args()
     options = vars(args)
@@ -123,6 +102,7 @@ def main():
         clientlog.setLevel(logging.DEBUG)
         clientlog.debug("Logger Debugging mode")
 
+    #### Get configuration #####
     ARASTURL = conf.URL
     user_dir = appdirs.user_data_dir(conf.APPNAME, conf.APPAUTHOR)
     oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
@@ -251,12 +231,16 @@ def main():
                 f_set_args = {}
                 for ls in f_list:
                     for word in ls:
-                        if is_filename(word) and os.path.isfile(word):
+                        if not (os.path.isfile(word) or '=' in word):
+                            raise Exception('{} is not valid input!'.format(word))
+                    for word in ls:
+                        if os.path.isfile(word):
                             f_info = aclient.upload_data_file_info(word, curl=curl)
                             f_infos.append(f_info)
                         elif '=' in word:
                             kv = word.split('=')
                             f_set_args[kv[0]] = kv[1]
+
                 f_set = client.FileSet(f_type, f_infos, **f_set_args)
                 adata.add_set(f_set)
 
@@ -271,10 +255,13 @@ def main():
 
         if args.command == "run":
             response = aclient.submit_job(payload)
+            print response
         if args.command == "upload":
             response = aclient.submit_data(payload)
-        print response
-        clientlog.debug(" [.] Response: %r" % (response))
+            arast_msg.update(json.loads(response))
+            if args.json:
+                print arast_msg
+            print 'Data ID: {}'.format(arast_msg['data_id'])
 
     elif args.command == 'stat':
         while True:
