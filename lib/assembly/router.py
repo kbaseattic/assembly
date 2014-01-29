@@ -25,7 +25,7 @@ from traceback import format_exc
 import metadata as meta
 import shock
 from nexus import client as nexusclient
-import ar_client.client as ar_client 
+import client as ar_client 
 
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
