@@ -18,20 +18,18 @@ from ConfigParser import SafeConfigParser
 from pkg_resources import resource_filename
 
 #arast libs
-
 import ar_client.client as client
 import ar_client.config as conf
 from ar_client.auth_token import *
-
 import traceback
 
-my_version = '0.3.7'
+my_version = '0.3.8.1'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
 parser.add_argument('-c', '--config', action="store", help='Specify config file')
 parser.add_argument("-v", "--verbose", action="store_true", help="Verbose")
-parser.add_argument('--version', action='version', version='%(prog)s ' + my_version)
+parser.add_argument('--version', action='version', version='AssemblyRAST Client ' + my_version)
 
 subparsers = parser.add_subparsers(dest='command', title='The commands are')
 

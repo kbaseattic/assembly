@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name = "ar_client",
-    version = "0.3.7.3",
+    version = "0.3.8.1",
     author = "Chris Bun",
     author_email = "chrisbun@gmail.com",
     description = ("A commandline client for the KBASE Assembly Service"),
@@ -16,5 +16,5 @@ setup(
     install_requires = ['requests>=2.1.0', 'appdirs'],
     entry_points={'console_scripts':[
             'arast = ar_client.arast:main']},
-    package_data = {'':['ar_client/*.conf']},
+    #package_data = {'':['ar_client/*.conf']},
 )
