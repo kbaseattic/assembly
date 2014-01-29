@@ -59,7 +59,7 @@ my $config = get_config();
 print STDERR '$config = '. Dumper($config);
 
 my ($user, $token) = authenticate($config);
-
+exit;
 my $input_data = process_input_args(\@se_args, \@pe_args, \@ref_args, \%params);
 
 sub authenticate {
@@ -73,6 +73,7 @@ sub authenticate {
             exit 0;
         }
     } else {
+        my $file = glob join('/', '~/.config', $config->{APPNAME}, $config->{OAUTH_FILENAME});
         
     }
     
@@ -150,7 +151,7 @@ sub process_input_args {
 
 sub get_config {
     my $self_dir = dirname(Cwd::abs_path($0));
-    my $config_dir = "$self_dir/../lib/ar_client";
+    my $config_dir = "$self_dir/../lib/assembly";
     my $config_file = "$config_dir/config.py";
     my $cfg = new Config::Simple($config_file);
     my $config = $cfg->param(-block => 'default');
