@@ -7,6 +7,10 @@ use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
 
+use Bio::KBase::workspace::Client;
+use Bio::KBase::workspace::ScriptHelpers qw(workspace get_ws_client);
+
+
 my $usage = <<End_of_Usage;
 
 Usage: ar-upload [ options ]
@@ -23,6 +27,7 @@ Optional arguments:
   --gs            int                - estimated genome size in base pairs
   -m              "text"             - dataset description
   --prefix        string             - dataset prefix string
+  --ws            [workspace-name]   - drop assembly data object into KBase workspace
 
 Supported sequence file types:
   fasta fa fna  (FASTA and compressed forms)
@@ -37,7 +42,7 @@ Examples:
 
 End_of_Usage
 
-my ($help, $server, %params,
+my ($help, $server, $ws_name, %params,
     @se_args, @pe_args, @ref_args);
 
 my $rc = GetOptions(
@@ -46,6 +51,7 @@ my $rc = GetOptions(
                     'p|pair=s{2,}'       => \@pe_args,
                     'r|references=s{1,}' => \@ref_args,
                     "s=s"                => \$server,
+                    "ws:s"               => \$ws_name,
                     "cov=f"              => sub { $params{expected_coverage}     = $_[1] },
                     "gs=i"               => sub { $params{estimated_genome_size} = $_[1] },
                     "m=s"                => sub { $params{dataset_description}   = $_[1] },
@@ -54,17 +60,25 @@ my $rc = GetOptions(
 
 if ($help) { print $usage; exit 0;}
 
+my $config = get_arast_config();
+# print STDERR '$config = '. Dumper($ar_config);
 
-my $config = get_config();
-print STDERR '$config = '. Dumper($config);
-
+my $check_ws = defined $ws_name;
 my ($user, $token) = authenticate($config);
+
 exit;
+
 my $input_data = process_input_args(\@se_args, \@pe_args, \@ref_args, \%params);
+
+# check if ws exists
+# get ws name if set
+# 
 
 sub authenticate {
     my ($config) = @_;
+
     my ($user, $token);
+
     if ($ENV{KB_RUNNING_IN_IRIS}) {
         $user  = $ENV{KB_AUTH_USER_ID};
         $token = $ENV{KB_AUTH_TOKEN};
@@ -72,11 +86,24 @@ sub authenticate {
             print "Please authenticate with KBase credentials\n";
             exit 0;
         }
-    } else {
-        my $file = glob join('/', '~/.config', $config->{APPNAME}, $config->{OAUTH_FILENAME});
-        
-    }
+        return ($user, $token);
+    } 
+
+    my $ar_auth_file = glob join('/', '~/.config', $config->{APPNAME}, $config->{OAUTH_FILENAME});
+
+    my ($user, $token) = get_arast_user_token($ar_auth_file);
+
+    print "user=$user\n";
+    print "token=$token\n";
+
+    my $auth = Bio::KBase::AuthToken->new( token => $token );
+    my $auth_token = $auth->token;
+    print "auth_token=$auth_token\n";
     
+    
+    
+    # check ar auth
+    # check ws auth
 }
 
 sub post {
@@ -149,13 +176,22 @@ sub process_input_args {
     print STDERR '$data = '. Dumper($data);
 }
 
-sub get_config {
+sub get_arast_config {
     my $self_dir = dirname(Cwd::abs_path($0));
     my $config_dir = "$self_dir/../lib/assembly";
     my $config_file = "$config_dir/config.py";
+    return unless -s $config_file;
     my $cfg = new Config::Simple($config_file);
     my $config = $cfg->param(-block => 'default');
     return $config;
+}
+
+sub get_arast_user_token {
+    my ($config_file) = @_;
+    return unless -s $config_file;
+    my $cfg = new Config::Simple($config_file);
+    my $config = $cfg->param(-block => 'auth');
+    return ($config->{user}, $config->{token});
 }
 
 sub validate_seq_file {
