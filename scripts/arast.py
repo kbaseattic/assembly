@@ -260,7 +260,8 @@ def main():
             response = aclient.submit_data(payload)
             arast_msg.update(json.loads(response))
             if args.json:
-                print arast_msg
+                # print arast_msg
+                print payload
             print 'Data ID: {}'.format(arast_msg['data_id'])
 
     elif args.command == 'stat':
