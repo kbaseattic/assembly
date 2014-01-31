@@ -8,7 +8,6 @@ use DateTime;
 use File::Basename;
 use Getopt::Long;
 use HTTP::Request;
-use LWP::Simple;
 use LWP::UserAgent;
 use JSON;
 use Term::ReadKey;
@@ -314,7 +313,7 @@ sub process_input_args {
     for (@$ref_args) {
         if (/(\S.*?)=(.*)/) {
             my $param_key = $ref_param_map{$1} ? $ref_param_map{$1} : $1;
-            $refs[$i]->{$param_key} = $2;
+            $refs[$i]->{$param_key} = check_numerical($2);
         } else {
             my $file = validate_seq_file($_);
             $refs[$i++]->{handle} = $file;
@@ -325,7 +324,7 @@ sub process_input_args {
     for (@$se_args) {
         if (/(\S.*?)=(.*)/) {
             my $param_key = $se_param_map{$1} ? $se_param_map{$1} : $1;
-            $se_libs[$i]->{$param_key} = $2;
+            $se_libs[$i]->{$param_key} = check_numerical($2);
         } else {
             my $file = validate_seq_file($_);
             $se_libs[$i++]->{handle} = $file;
@@ -337,7 +336,7 @@ sub process_input_args {
     for (@$pe_args) {
         if (/(\S.*?)=(.*)/) {
             my $param_key = $pe_param_map{$1} ? $pe_param_map{$1} : $1;
-            $pe_libs[$i]->{$param_key} = $2;
+            $pe_libs[$i]->{$param_key} = check_numerical($2);
         } else {
             my $file = validate_seq_file($_);
             if (@pair == 2) { 
@@ -361,8 +360,13 @@ sub process_input_args {
     $data->{paired_end_libs} = \@pe_libs if @pe_libs;
     $data->{single_end_libs} = \@se_libs if @se_libs;
     $data->{references}      = \@refs    if @refs;
+    
     return $data;
 }
 
+sub check_numerical {
+    my $val = shift @_;
+    $val =~ /^[0-9.]+$/ ? $val*1 : $val;
+}
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
