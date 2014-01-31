@@ -15,7 +15,7 @@ $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 my $testCount = 0;
 
 my @pe_assemblers = qw(spades ray); 
-my @pe_libs = ( "--pair /mnt/b99_1.fq /mnt/b99_1.fq" );
+my @pe_libs = ( "--pair /mnt/b99_1.fq /mnt/b99_2.fq" );
 
 my @pb_assemblers = ('pacbio ?min_long_read_length=3500 ?genome_size=40000');
 my @pb_libs = ( "--single /mnt/m120404.bas.h5 -r /mnt/lambda.fasta" );
@@ -55,6 +55,7 @@ for (@cases) {
         eval {!system("$command > /dev/null") or die $!;}; 
         diag("unable to run $command") if $@; 
     }
+    last;
 }
 
 done_testing($testCount);
