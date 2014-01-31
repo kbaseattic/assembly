@@ -55,7 +55,6 @@ for (@cases) {
         eval {!system("$command > /dev/null") or die $!;}; 
         diag("unable to run $command") if $@; 
     }
-    last;
 }
 
 done_testing($testCount);
