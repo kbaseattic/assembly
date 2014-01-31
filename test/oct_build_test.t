@@ -85,7 +85,7 @@ sub get {
     print "Waiting for job $jobid to complete.";
     while (1) {
 	my $stat = `ar-stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
-        if ($stat =~ /success/i) {
+        if ($stat =~ /(success|complete)/i) {
             $done = 1;
             print " [done]\n";
             last;
