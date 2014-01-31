@@ -116,11 +116,11 @@ sub submit_data {
     my $req = HTTP::Request->new( POST => $url );
     $req->header( Authorization => $token );
 
-    # This works : 
+    # ARAST assembly_data style: dummy data
     # my $tmp = '{"assembly_data": {"file_sets": [{"file_infos": [], "type": "paired"}, {"file_infos": [{"create_time": "2014-01-31 04:51:50.931737", "filename": "s1.fa", "filesize": 7, "metadata": null, "shock_id": "dedc9e52-d41a-45ae-914e-457120ec1f83", "shock_url": "http://140.221.84.205:8000/"}], "type": "single"}, {"file_infos": [], "type": "reference"}]}, "client": "CLI", "message": null, "version": "0.3.8.2"}';
     # $req->content( $tmp );
 
-    # Typespec style: FIXME
+    # Kbase typespec style
     my $client_data = { kbase_assembly_input => $data,
                         version => $cli_upload_compatible_version,
                         client => "CLI/ar-upload.pl" };
