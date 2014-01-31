@@ -399,6 +399,7 @@ class ArastConsumer:
 
         ## TODO CHANGE: default pipeline
         default_pipe = ['velvet']
+        exceptions = []
 
         if pipelines:
             try:
@@ -422,6 +423,8 @@ class ArastConsumer:
                 # Check if job completed with no errors
                 if exceptions:
                     status = 'Complete with errors'
+                elif not summary:
+                    status = 'Complete: No valid contigs'
                 else:
                     status += "Complete"
                 self.out_report.write("Pipeline completed successfully\n")
@@ -741,7 +744,8 @@ class ArastConsumer:
                     job_data['contig_type'] = 'contigs'
                     quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                                   tar=True, meta=True)
-                    summary.append(quast_report[0])
+                    if quast_report:
+                        summary.append(quast_report[0])
                     with open(q_log) as infile:
                         self.out_report.write(infile.read())
             else:
@@ -754,11 +758,11 @@ class ArastConsumer:
                 scaff_report, scaff_tar, _, scaff_log = self.pmanager.run_module('quast', scaff_data, 
                                                                           tar=True, meta=True)
                 scaffold_quast = True
-                summary.append(scaff_report[0])
+                if scaff_report:
+                    summary.append(scaff_report[0])
                 with open(scaff_log) as infile:
                     self.out_report.write('\n Quast Report - Scaffold Mode \n')
                     self.out_report.write(infile.read())
-
             else:
                 scaffold_quast = False
         except:
@@ -768,7 +772,7 @@ class ArastConsumer:
                 else:
                     raise Exception(exceptions[0])
             else:
-                raise Exception('No valid contigs')
+                raise Exception(str(sys.exc_info()[1]))
 
 
         ## CONCAT MODULE LOG FILES
@@ -804,6 +808,7 @@ class ArastConsumer:
                 contig_files.append(os.path.realpath(f))
 
         return_files += all_files
+
         ## Deduplicate
         seen = set()
         for f in return_files:
