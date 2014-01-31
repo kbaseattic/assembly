@@ -13,8 +13,9 @@ use JSON;
 use Term::ReadKey;
 use Text::Table;
 
+use Bio::KBase::Auth;
+use Bio::KBase::AuthToken;
 use Bio::KBase::workspace::Client;
-use Bio::KBase::workspace::ScriptHelpers qw(workspace get_ws_client);
 
 our $cli_upload_compatible_version = "0.3.8.2"; 
 
