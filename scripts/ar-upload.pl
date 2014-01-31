@@ -12,10 +12,12 @@ use LWP::Simple;
 use LWP::UserAgent;
 use JSON;
 use Term::ReadKey;
+use Text::Table;
 
 use Bio::KBase::workspace::Client;
 use Bio::KBase::workspace::ScriptHelpers qw(workspace get_ws_client);
 
+our $cli_upload_compatible_version = "0.3.8.2"; 
 
 my $usage = <<End_of_Usage;
 
@@ -33,7 +35,9 @@ Optional arguments:
   --gs            int                - estimated genome size in base pairs
   -m              "text"             - dataset description
   --prefix        string             - dataset prefix string
-  --ws            [workspace-name]   - drop assembly data object into KBase workspace
+  --ws            obj [ws-name]      - drop assembly data object into KBase workspace
+  --ws-url        url                - workspace url (D = current URL or production URL)
+  --ws-json                          - print assembly input data object in JSON
 
 Supported sequence file types:
   fasta fa fna  (FASTA and compressed forms)
@@ -44,20 +48,22 @@ Examples:
   Upload a hybrid library of paired and single reads:
     % ar-upload --pair r1.fastq r2.fastq insert=300 stdev=60 --single unpaired.fasta --pair f1.fq f2.fq insert=180
   Upload PacBio reads with a reference assembly:
-    % ar-upload -f pb1.bas.h5 -f pb2.bas.h5 --cov 15.0 --gs 40000 -r lambda.fa name="Lambda phage"
+    % ar-upload -f pb1.bas.h5 -f pb2.bas.h5 --cov 15.0 --gs 40000 -r lambda.fa name="Lambda phage" -ws pb
 
 End_of_Usage
 
-my ($help, $server, $ws_name, %params,
-    @se_args, @pe_args, @ref_args);
+my ($help, $server, %params, $ws_url, $ws_json,
+    @se_args, @pe_args, @ref_args, @ws_args);
 
 my $rc = GetOptions(
                     "h|help"             => \$help,
+                    "s=s"                => \$server,
                     'f|single=s{1,}'     => \@se_args,
                     'p|pair=s{2,}'       => \@pe_args,
                     'r|references=s{1,}' => \@ref_args,
-                    "s=s"                => \$server,
-                    "ws:s"               => \$ws_name,
+                    "ws=s{1,}"           => \@ws_args,
+                    "ws-url=s"           => \$ws_url,
+                    "ws-json"            => \$ws_json,
                     "cov=f"              => sub { $params{expected_coverage}     = $_[1] },
                     "gs=i"               => sub { $params{estimated_genome_size} = $_[1] },
                     "m=s"                => sub { $params{dataset_description}   = $_[1] },
@@ -69,52 +75,78 @@ if ($help) { print $usage; exit 0;}
 my $config = get_arast_config();
 $config->{URL} = $server if $server;
 
-my $check_ws = defined $ws_name;
 my ($user, $token) = authenticate($config);
 my $shock = get_shock($config, $user, $token);
 
 my $input_data = process_input_args(\@se_args, \@pe_args, \@ref_args, \%params);
+$input_data = upload_files_in_input_data($input_data, $shock);
+print encode_json($input_data)."\n" if $ws_json;
 
-# $input_data = upload_files_in_input_data($input_data, $shock);
-# print encode_json($input_data);
+submit_data($input_data, $config, $user, $token);
 
-# submit_data($input_data, $config, $user, $token);
-
-if (defined $ws_name) {
-    $ws_name ||= current_workspace();
-    $ws_name or die "Error: workspace name not set, and no active workspace found\n";
+if (@ws_args) {
+    my ($obj_name, $ws_name) = @ws_args;
+    my ($curr_url, $curr_name) = current_workspace();
+    $ws_url  ||= $curr_url;
+    $ws_name ||= $curr_name or die "Error: workspace name not set, and no active workspace found\n";
     
     my $ws_url = 'http://140.221.84.209:7058'; # TODO: option, read from cfg
     my $ws = Bio::KBase::workspace::Client->new($ws_url, token => $token);
-    # print STDERR '$ws = '. Dumper($ws);
 
-    # my $metadata = $ws->save_object({ id => 
-    # $metadata = $obj->save_object($params)
-    # save_object_params is a reference to a hash where the following keys are defined:
-	# id has a value which is a Workspace.obj_name
-	# type has a value which is a Workspace.type_string
-	# data has a value which is an UnspecifiedObject, which can hold any non-null object
-	# workspace has a value which is a Workspace.ws_name
-	# metadata has a value which is a reference to a hash where the key is a string and the value is a string
-	# auth has a value which is a string
-    
+    my $info = $ws->save_object({ id => $obj_name,
+                                  type => 'KBaseAssembly.AssemblyInput',
+                                  data => $input_data,
+                                  workspace => $ws_name,
+                                  auth => $token });
+
+    if ($info && @$info && $info->[11]) {
+        my $table = Text::Table->new(qw(ID ObjName Version Type Workspace LastModBy Owner));
+        $table->load([ @$info[11,0,3,1,7,5,6] ]);
+        print STDERR "Created workspace object for assembly input data:\n$table";
+    }
 }
-
 
 exit;
 
+
+sub submit_data {
+    my ($data, $config, $user, $token) = @_;
+    my $url = complete_url($config->{URL}, 8000, "user/$user/data/new");
+    my $ua = LWP::UserAgent->new; $ua->timeout(10);
+    my $req = HTTP::Request->new( POST => $url );
+    $req->header( Authorization => $token );
+
+    # This works : 
+    my $tmp = '{"assembly_data": {"file_sets": [{"file_infos": [], "type": "paired"}, {"file_infos": [{"create_time": "2014-01-31 04:51:50.931737", "filename": "s1.fa", "filesize": 7, "metadata": null, "shock_id": "dedc9e52-d41a-45ae-914e-457120ec1f83", "shock_url": "http://140.221.84.205:8000/"}], "type": "single"}, {"file_infos": [], "type": "reference"}]}, "client": "CLI", "message": null, "version": "0.3.8.2"}';
+    $req->content( $tmp );
+
+    # Typespec style: FIXME
+    # my $client_data = { kbase_assembly_input => $data,
+                        # version => $cli_upload_compatible_version,
+                        # client => "CLI/ar-upload.pl" };
+    # $req->content( encode_json($client_data) );
+    # print encode_json($client_data);
+    
+    my $res = $ua->request($req);
+
+    $res->is_success or die "Error submitting data: ".$res->message."\n";
+    my $data_id = decode_json($res->decoded_content)->{data_id} or die "Error get data ID\n";
+    print "Data ID: $data_id\n";
+}
+
 sub current_workspace {
-    my $ws_name;
+    my ($ws_url, $ws_name);
     if (defined $ENV{KB_RUNNING_IN_IRIS}) {
+        $ws_url  = $ENV{KB_WORKSPACEURL};
         $ws_name = $ENV{KB_WORKSPACE};
     } else {
         my $kb_conf_file = $Bio::KBase::Auth::ConfPath;
         my $cfg = new Config::Simple($kb_conf_file) if -s $kb_conf_file;
+        $ws_url  = $cfg->param("workspace_deluxe.url") if $cfg;
         $ws_name = $cfg->param("workspace_deluxe.workspace") if $cfg;
     }
-    return $ws_name;
+    return ($ws_url, $ws_name);
 }
-
 
 sub authenticate {
     my ($config) = @_;
@@ -152,29 +184,6 @@ sub authenticate {
     return ($user, $token);
 }
 
-
-sub submit_data {
-    my ($data, $config, $user, $token) = @_;
-    my $url = complete_url($config->{URL}, 8000, "user/$user/data/new");
-    print "$url\n";
-    
-    my $ua = LWP::UserAgent->new; $ua->timeout(10);
-    my $req = HTTP::Request->new( POST => $url );
-    $req->header( Authorization => $token );
-    $req->content( encode_json($data) );
-    my $res = $ua->request($req);
-    print STDERR '$res->decoded_content = '. Dumper($res->decoded_content);
-
-    # url = 'http://{}/user/{}/data/new'.format(self.url, self.user)
-    # r = requests.post(url, data=data, headers=self.headers)
-    # return r.content
-    # self.headers = {'Authorization': '{}'.format(self.token),
-                    # 'Content-type': 'application/json', 
-                    # 'Accept': 'text/plain'}
-
-    
-}
-
 sub upload_files_in_input_data {
     my ($data, $shock) = @_;
     my @types = qw(paired_end_libs single_end_libs references);
@@ -201,11 +210,11 @@ sub update_handle {
     my ($handle, $shock) = @_;
     
     my $file = $handle->{file_name};
-    my $node = curl_post_file($file, $shock);
+    my $id = curl_post_file($file, $shock);
 
     $handle->{type} = 'shock';
     $handle->{url}  = $shock->{url};
-    $handle->{node} = $node;
+    $handle->{id}   = $id;
     
     return $handle;
 }
