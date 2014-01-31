@@ -71,7 +71,7 @@ sub get {
     my $done;
     while (1) {
         my $stat = `ar-stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
-        if ($stat =~ /success/i) {
+        if ($stat =~ /(complete|success)/i) {
             $done = 1;
             print " [done]\n";
             last;
