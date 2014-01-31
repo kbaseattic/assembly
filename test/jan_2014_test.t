@@ -17,7 +17,7 @@ my $testCount = 0;
 my @pe_assemblers = qw(spades ray); 
 my @pe_libs = ( "--pair /mnt/b99_1.fq /mnt/b99_1.fq" );
 
-my @pb_assemblers = qw(pacbio);
+my @pb_assemblers = ('pacbio ?min_long_read_length=3500 ?genome_size=40000');
 my @pb_libs = ( "--single /mnt/m120404.bas.h5 -r /mnt/lambda.fasta" );
 
 my @cases;
@@ -37,7 +37,8 @@ setup();
 
 for (@cases) {
     my ($assembler, $dataset) = @$_;
-    print "Performing assembler tests for $assembler \n";
+    my ($name) = split(/\s+/, $assembler);
+    print "Performing assembler tests for $name \n";
     my $data_id = upload($dataset);
     $testCount++;
     my $job_id = run_on_data($assembler, $data_id, $dataset);
@@ -64,8 +65,6 @@ sub upload {
     my $dataset = shift;
     my $data_id;
     my $command = "ar-upload -s $ENV{ARASTURL} $dataset";
-    print "$command\n";
-    
     eval {$data_id = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " Data ID: $data_id");
     diag("unable to run $command") if $@;
@@ -92,8 +91,9 @@ sub run_on_data {
 sub run {
     my $assembler = shift;
     my $file_inputs = shift;
+    my ($name) = split(/\s+/, $assembler);
     my $jobid;
-    my $command = "ar-run -s $ENV{ARASTURL} -a $assembler $file_inputs -m \"$assembler run command on $file_inputs\"";
+    my $command = "ar-run -s $ENV{ARASTURL} -a $assembler $file_inputs -m \"$name run command on $file_inputs\"";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
