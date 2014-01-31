@@ -28,6 +28,7 @@ import config
 import assembly as asm
 import metadata as meta
 import shock 
+from kbase import typespec_to_assembly_data as kb_to_asm
 
 from ConfigParser import SafeConfigParser
 
@@ -104,7 +105,10 @@ class ArastConsumer:
 
         ##### Get data from ID #####
         data_doc = self.metadata.get_doc_by_data_id(params['data_id'], params['ARASTUSER'])
-        params['assembly_data'] = data_doc['assembly_data']
+        if 'kbase_assembly_input' in data_doc:
+            params['assembly_data'] = kb_to_asm(data_doc['kbase_assembly_input'])
+        elif 'assembly_data' in data_doc:
+            params['assembly_data'] = data_doc['assembly_data']
 
         ##### Get data from assembly_data #####
         self.metadata.update_job(uid, 'status', 'Data transfer')
