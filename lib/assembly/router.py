@@ -237,7 +237,11 @@ def start(config_file, mongo_host=None, mongo_port=None,
 
     parser = SafeConfigParser()
     parser.read(config_file)
-    metadata = meta.MetadataConnection(config_file, mongo_host)
+    metadata = meta.MetadataConnection(parser.get('assembly', 'mongo_host'),
+                                       int(parser.get('assembly', 'mongo_port')),
+                                       parser.get('meta', 'mongo.db'),
+                                       parser.get('meta', 'mongo.collection'),
+                                       parser.get('meta', 'mongo.collection.auth'))
 
     ##### CherryPy ######
     conf = {
