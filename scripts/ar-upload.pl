@@ -125,7 +125,7 @@ sub submit_data {
                         version => $cli_upload_compatible_version,
                         client => "CLI/ar-upload.pl" };
     $req->content( encode_json($client_data) );
-    print encode_json($client_data);
+    # print encode_json($client_data);
     
     my $res = $ua->request($req);
 
