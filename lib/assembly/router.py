@@ -133,7 +133,6 @@ def register_data(body):
     uid = metadata.insert_job(client_params)
     logging.info("Inserting data record: %s" % client_params)
     p = dict(client_params)
-    metadata.update_job(uid, 'message', p['message'])
     #analyze_data(json.dumps(dict(client_params)))
     response = json.dumps({"data_id": data_id})
     return response
