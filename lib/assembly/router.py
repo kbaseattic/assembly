@@ -268,8 +268,14 @@ def start(config_file, mongo_host=None, mongo_port=None,
     cherrypy.request.hooks.attach('before_finalize', CORS)
     cherrypy.quickstart(root, '/', conf)
 
-    
 
+def parser_as_dict(parser):
+    """Return configparser as a dict"""
+    d = dict(parser._sections)
+    for k in d:
+        d[k] = dict(parser._defaults, **d[k])
+        d[k].pop('__name__', None)
+    return d
 
 def start_qc_monitor(arasturl):
     """
@@ -290,7 +296,6 @@ def start_qc_monitor(arasturl):
                           no_ack=True)
 
     channel.start_consuming()
-
 def qc_callback():
     pass
 
@@ -559,6 +564,8 @@ class SystemResource:
                 command = args[1]
                 if command == 'close':
                     return self.close_connection(node_ip)
+        elif resource == 'config':
+            return json.dumps(parser_as_dict(parser))
 
     def get_connections(self):
         """Returns a list of deduped connection IPs"""
