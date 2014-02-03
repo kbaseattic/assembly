@@ -30,7 +30,7 @@ import client as ar_client
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
 
-    rmq_host = parser.get('rabbitmq', 'host')
+    rmq_host = parser.get('assembly', 'rabbitmq_host')
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host=rmq_host))
     channel = connection.channel()
@@ -258,7 +258,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
     root.static = StaticResource(static_root)
 
     #### Admin Routes ####
-    rmq_host = parser.get('rabbitmq', 'host')
+    rmq_host = parser.get('assembly', 'rabbitmq_host')
     rmq_mp = parser.get('rabbitmq', 'management_port')
     rmq_user = parser.get('rabbitmq', 'management_user')
     rmq_pass = parser.get('rabbitmq', 'management_pass')
