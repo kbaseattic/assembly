@@ -159,6 +159,9 @@ class Client:
         r = requests.get(url, headers=self.headers)
         return r.content
 
+    def get_config(self):
+        return requests.get('http://{}/admin/system/config'.format(self.url)).content
+
 
 ##### ARAST JSON SPEC METHODS #####
 
