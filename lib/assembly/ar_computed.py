@@ -6,7 +6,6 @@ The Arast daemon runs on the control node.
 
 """
 import os
-
 import argparse
 import sys
 import daemon
@@ -20,6 +19,7 @@ import requests
 from ConfigParser import SafeConfigParser
 import consume
 import shock
+import client
 
 #context = daemon.DaemonContext(stdout=sys.stdout) #temp print to stdout
 #TODO change to log file
@@ -30,33 +30,43 @@ job_list = mgr.list()
 kill_list = mgr.list()
 
 def start(arast_server, config, num_threads, queue):
-    # Read config file
+
+    #### Get default configuration from ar_compute.conf
+    print " [.] Starting Assembly Service Compute Node"    
     cparser = SafeConfigParser()
     cparser.read(config)
-
-    print " [.] Starting Assembly Service Compute Node"    
-    ## Retrieve shock url from arast server
-    try:
-        shockurl = json.loads(requests.get('http://{}:8000/shock'.format(arast_server)).text)['shockurl']
-        print ' [.] Retrieved Shock URL: {}'.format(shockurl)
-    except:
-        shockurl = cparser.get('shock', 'host')
-    arasturl =  cparser.get('meta','mongo.host')
+    arasturl =  cparser.get('assembly','arast_url')
+    arastport = cparser.get('assembly','arast_port')
+    if arast_server != '':
+        arasturl = arast_server
     if not num_threads:
         num_threads =  cparser.get('compute','threads')
 
-    mongo_port = int(cparser.get('meta','mongo.port'))
-    if arast_server != '':
-        arasturl = arast_server
+
+    #### Retrieve system configuration from AssemblyRAST server
+    ctrl_conf = json.loads(requests.get('http://{}:{}/admin/system/config'.format(arasturl, arastport)).content)
+    mongo_port = int(ctrl_conf['assembly']['mongo_port'])
+    mongo_host = ctrl_conf['assembly']['mongo_host']
+    rmq_port = int(ctrl_conf['assembly']['rabbitmq_port'])
+    rmq_host = ctrl_conf['assembly']['rabbitmq_host']
+    if mongo_host == 'localhost':
+        mongo_host = arasturl
+    if rmq_host == 'localhost':
+        rmq_host = arasturl
+    try:
+        shockurl = ctrl_conf['shock']['host']
+        print ' [.] Retrieved Shock URL: {}'.format(shockurl)
+    except:
+        raise Exception('Could not communicate with server')
+
 
     print " [.] AssemblyRAST host: %s" % arasturl
-    print " [.] MongoDB port: %s" % cparser.get('meta','mongo.port')
-    print " [.] RabbitMQ port: %s" % cparser.get('rabbitmq','port')
+    print " [.] MongoDB port: %s" % mongo_port
+    print " [.] RabbitMQ port: %s" % rmq_port
     
     # Check MongoDB status
     try:
-        connection = pymongo.Connection(arasturl, mongo_port)
-                      
+        connection = pymongo.Connection(mongo_host, mongo_port)
         logging.info("MongoDB Info: %s" % connection.server_info())
     except:
         logging.error("MongoDB connection error: %s" % sys.exc_info()[0])
@@ -75,7 +85,7 @@ def start(arast_server, config, num_threads, queue):
     else:
         raise Exception("Shock connection error: {}".format(shockurl))
 
-    ## Check data write permissions
+    #### Check data write permissions
     datapath = cparser.get('compute', 'datapath')
     if os.access(datapath, os.W_OK):
         print ' [.] Storage path -- {} : OKAY'.format(datapath)
@@ -91,7 +101,7 @@ def start(arast_server, config, num_threads, queue):
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
         compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads, 
-                                        queue, kill_list, job_list)
+                                        queue, kill_list, job_list, ctrl_conf)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
 
