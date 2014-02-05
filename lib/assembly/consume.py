@@ -50,7 +50,9 @@ class ArastConsumer:
             self.queue = self.parser.get('rabbitmq','default_routing_key')
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
         m = ctrl_conf['meta']        
-        self.metadata = meta.MetadataConnection(arasturl, int(m['mongo.port']), m['mongo.db'],
+        a = ctrl_conf['assembly']
+        
+        self.metadata = meta.MetadataConnection(arasturl, int(a['mongo_port']), m['mongo.db'],
                                                 m['mongo.collection'], m['mongo.collection.auth'])
         self.gc_lock = multiprocessing.Lock()
 
