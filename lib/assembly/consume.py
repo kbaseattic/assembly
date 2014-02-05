@@ -24,7 +24,6 @@ from job import ArastJob
 from multiprocessing import current_process as proc
 from traceback import format_tb, format_exc
 
-import config
 import assembly as asm
 import metadata as meta
 import shock 
@@ -33,7 +32,7 @@ from kbase import typespec_to_assembly_data as kb_to_asm
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, arasturl, config, threads, queue, kill_queue, job_list):
+    def __init__(self, shockurl, arasturl, config, threads, queue, kill_queue, job_list, ctrl_conf):
         self.parser = SafeConfigParser()
         self.parser.read(config)
         self.job_list = job_list
@@ -43,8 +42,6 @@ class ArastConsumer:
     # Set up environment
         self.shockurl = shockurl
         self.arasturl = arasturl
-        self.shockuser = self.parser.get('shock','admin_user')
-        self.shockpass = self.parser.get('shock','admin_pass')
         self.datapath = self.parser.get('compute','datapath')
         if queue:
             self.queue = queue
@@ -52,10 +49,12 @@ class ArastConsumer:
         else:
             self.queue = self.parser.get('rabbitmq','default_routing_key')
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
-        self.metadata = meta.MetadataConnection(config, arasturl)
+        m = ctrl_conf['meta']        
+        a = ctrl_conf['assembly']
+        
+        self.metadata = meta.MetadataConnection(arasturl, int(a['mongo_port']), m['mongo.db'],
+                                                m['mongo.collection'], m['mongo.collection.auth'])
         self.gc_lock = multiprocessing.Lock()
-        #self.metadata.update_doc('active_nodes', 'server_name', socket.gethostname(),
-         #                        'status', 'running')
 
     def garbage_collect(self, datapath, user, required_space):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""
@@ -106,7 +105,7 @@ class ArastConsumer:
         ##### Get data from ID #####
         data_doc = self.metadata.get_doc_by_data_id(params['data_id'], params['ARASTUSER'])
         if not data_doc:
-            raise Exception('Invalid Data ID: {}'.formate(params['data_id']))
+            raise Exception('Invalid Data ID: {}'.format(params['data_id']))
 
         if 'kbase_assembly_input' in data_doc:
             params['assembly_data'] = kb_to_asm(data_doc['kbase_assembly_input'])
