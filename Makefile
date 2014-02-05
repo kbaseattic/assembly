@@ -17,7 +17,7 @@ WRAP_PERL_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PERL_TOOL).sh
 SRC_PERL = $(wildcard scripts/ar-*.pl)
 WRAP_PYTHON_TOOL = wrap_python
 WRAP_PYTHON_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PYTHON_TOOL).sh
-SRC_PYTHON = $(wildcard scripts/*.py)
+SRC_PYTHON = $(wildcard scripts/arast.py)
 
 
 SERVER_TESTS = $(wildcard server-tests/*.t)
