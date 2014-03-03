@@ -17,6 +17,9 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         pe_num = 1
         for lib in reads:
             if lib['type'] == 'paired':
+                if pe_num == 6:
+                    print '> 5 pairs not supported!'
+                    break
                 if len(lib['files']) == 1: # Interleaved
                     cmd_args += ['--pe{}-12'.format(pe_num), lib['files'][0]]
                 elif len(lib['files']) == 2: # 2 Files
@@ -26,6 +29,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
                     print len(lib['files'])
                     print lib['files']
                     raise Exception('Spades module file error')
+
                 pe_num += 1
             elif lib['type'] == 'single':
                 cmd_args += ['-s', lib['files'][0]]
