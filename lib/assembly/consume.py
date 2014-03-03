@@ -420,8 +420,9 @@ class ArastConsumer:
                     download_ids[fname] = res['data']['id']
                     
                 for c in contig_files:
-                    fname = os.path.basename(c).split('.')[0]
-                    res = self.upload(url, user, token, c, filetype='contigs')
+                    processed_contigs = process_contigs(c)
+                    fname = os.path.basename(processed_contigs).split('.')[0]
+                    res = self.upload(url, user, token, processed_contigs, filetype='contigs')
                     contig_ids[fname] = res['data']['id']
 
                 # Check if job completed with no errors
@@ -937,6 +938,21 @@ def list_io_basenames(job_data):
         for f in d['files']:
             basenames.append(os.path.basename(f))
     return basenames
+
+def process_contigs(c):
+    d = os.path.dirname(c)
+    f = os.path.basename(c)
+    new = '{}.ar.fasta'.format(f[0:f.rfind('.')])
+    outname = (os.path.join(d, new))
+    c_in = open(c)
+    c_out = open(outname, 'w')
+    for line in c_in:
+        if line[0] == '>':
+            c_out.write('\n')
+        c_out.write(line)
+    c_in.close()
+    c_out.close()
+    return outname
 
 class UpdateTimer(threading.Thread):
     """ Thread for updating time in the mongodb record (for arast stat). """

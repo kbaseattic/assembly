@@ -132,7 +132,10 @@ class Shock:
         cmd = ['curl', 
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
         r = subprocess.check_output(cmd)
-        filename = json.loads(r)['data']['file']['name']
+        try:
+            filename = json.loads(r)['data']['file']['name']
+        except:
+            raise Exception('Data transfer error: {}'.format(r))
         if outdir:
             try:
                 os.makedirs(outdir)
