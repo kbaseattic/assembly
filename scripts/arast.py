@@ -227,9 +227,9 @@ def main():
                     
             all_types = ['paired', 'single', 'reference']
             for f_list, f_type in zip(file_lists, all_types):
-                f_infos = []
-                f_set_args = {}
                 for ls in f_list:
+                    f_infos = []
+                    f_set_args = {}
                     for word in ls:
                         if not (os.path.isfile(word) or '=' in word):
                             raise Exception('{} is not valid input!'.format(word))
