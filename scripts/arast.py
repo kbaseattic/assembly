@@ -241,8 +241,8 @@ def main():
                             kv = word.split('=')
                             f_set_args[kv[0]] = kv[1]
 
-                f_set = client.FileSet(f_type, f_infos, **f_set_args)
-                adata.add_set(f_set)
+                    f_set = client.FileSet(f_type, f_infos, **f_set_args)
+                    adata.add_set(f_set)
 
         arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version']
                      if k in options}
