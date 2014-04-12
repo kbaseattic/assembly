@@ -37,7 +37,7 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         base = os.path.join(self.outpath, 'run')
         cmd_args += ['-r', read_file, '-o', base, '--maxk', self.max_k] 
         self.arast_popen(cmd_args, cwd=self.outpath)
-        self.outpath = base
+        #self.outpath = base
         contig ="{}/contig.fa".format(base)
         if os.path.exists(contig):
             return [contig]

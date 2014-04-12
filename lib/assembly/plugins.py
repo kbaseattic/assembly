@@ -206,18 +206,13 @@ class BasePlugin(object):
         """ Returns list of all files created after run. """
         allfiles = []
         for root, sub_dirs, files in os.walk(self.outpath):
-            if not sub_dirs:
-                for f in files:
-                    allfiles.append(os.path.join(root, f))
-            for s in sub_dirs:
-                for f in files:
-                    allfiles.append(os.path.join(root,s,f))
+            for f in files:
+                allfiles.append(os.path.join(root, f))
 
         # if os.path.exists(self.outpath):
         #     return [os.path.join(self.outpath, f) for 
         #             f in os.listdir(self.outpath)]
         # raise Exception("No output files in directory")
-        print allfiles
         return allfiles
 
     def run_checks(self, settings, job_data):

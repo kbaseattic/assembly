@@ -12,7 +12,7 @@ class RayAssembler(BaseAssembler, IPlugin):
         Return list of contig file(s)
         """
         
-        cmd_args = ["mpirun", "-np", "4", self.executable, '-k', self.k]
+        cmd_args = ["mpirun", "-np", self.process_threads_allowed, self.executable, '-k', self.k]
         
         for lib in reads:
             if lib['type'] == 'paired':
