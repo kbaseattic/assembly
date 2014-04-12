@@ -109,8 +109,12 @@ class MetadataConnection:
 
     def update_job(self, job_id, field, value):
         jobs = self.get_jobs()
-        jobs.update({'_id' : job_id},
-                    {'$set' : {field : value}})
+        if type(value) is dict:
+            jobs.update({'_id' : job_id},
+                        {'$push' : {field : value}})
+        else:
+            jobs.update({'_id' : job_id},
+                        {'$set' : {field : value}})
         if jobs.find_one({'_id' : job_id}) is not None:
             logging.info("Job updated: %s:%s:%s" % (job_id, field, value))
         else:

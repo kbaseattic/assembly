@@ -472,6 +472,10 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'contig_ids', contig_ids)
         self.metadata.update_job(uid, 'status', status)
 
+        ## Make compatible with JSON dumps()
+        del job_data['out_report']
+        self.metadata.update_job(uid, 'data', job_data)
+
         print '=========== JOB COMPLETE ============'
 
     def update_time_record(self):
