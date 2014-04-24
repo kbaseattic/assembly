@@ -376,6 +376,7 @@ class ArastConsumer:
                     'reference': reference,
                     'initial_reads': list(reads),
                     'raw_reads': copy.deepcopy(reads),
+                    'params': [],
                     'processed_reads': list(reads),
                     'pipeline_data': {},
                     'datapath': datapath,
@@ -403,6 +404,7 @@ class ArastConsumer:
 
         ## TODO CHANGE: default pipeline
         default_pipe = ['velvet']
+        default_read_analysis = ['fastqc']
         exceptions = []
 
         if pipelines:
@@ -411,8 +413,10 @@ class ArastConsumer:
                     pipelines = [default_pipe,]
                 for p in pipelines:
                     self.pmanager.validate_pipe(p)
-
+                    
+                #ra_results = self.run_read_analysis(job_data, default_read_analysis)
                 result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                #result_files += ra_results
                 for i, f in enumerate(result_files):
                     #fname = os.path.basename(f).split('.')[0]
                     fname = str(i)
@@ -474,14 +478,32 @@ class ArastConsumer:
 
         ## Make compatible with JSON dumps()
         del job_data['out_report']
+        del job_data['initial_reads']
+        del job_data['raw_reads']
         self.metadata.update_job(uid, 'data', job_data)
-
+        
         print '=========== JOB COMPLETE ============'
 
     def update_time_record(self):
         elapsed_time = time.time() - self.start_time
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
         self.metadata.update_job(uid, 'computation_time', ftime)
+
+    def run_read_analysis(self, job_data, modules):
+        results = []
+        #self.metadata.update_job(job_data['uid', 'modules', modules])
+        for module in modules:
+            self.metadata.update_job(job_data['uid'], 
+                                     'status', 'Analysis:{}'.format(module))
+            output, _, mod_log = self.pmanager.run_module(
+                module, job_data, all_data=True)
+            results += output
+        return results
+
+    def run_asm_analysis(self, job_data):
+        ## TEMPORARY
+        self.metadata.update_job(job_data['uid', 'modules', ['quast']])
+
 
     def run_pipeline(self, pipes, job_data, contigs_only=True):
         """
