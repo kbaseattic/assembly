@@ -39,3 +39,32 @@ def is_handle(k, v):
     if k.find("handle") >= 0 and "id" in v:
         return True
     return False
+
+def fasta_to_contigset(fasta_file, name):
+    contig_set = {'name:': name,
+                  'source:':'AssemblyService',
+                  'type': 'Genome',
+                  'contigs': []}
+
+    ##### Parse Fasta content
+    contig = {}
+    seq_buffer = ''
+    with open(fasta_file) as f:
+        for line in f:
+            if line[0] == '>':
+                header = line[1:].rstrip()
+                contig['id'] = header
+                contig['name'] = header
+                header = ''
+            elif line[0] == '\n':
+                if seq_buffer != '':
+                    contig['sequence'] = seq_buffer
+                    seq_buffer = ''
+                    contig_set['contigs'].append(contig)
+                    contig = {}
+            else:
+                seq_buffer += line.rstrip()
+        if seq_buffer != '':
+            contig['sequence'] = seq_buffer
+            contig_set['contigs'].append(contig)
+    return contig_set
