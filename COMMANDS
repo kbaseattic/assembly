@@ -1,2 +1,2 @@
-#group-name	arast	Assembly
+#group-name	arast	Assembly Commands
 #command-set	scripts/(ar-.*).pl	arast
