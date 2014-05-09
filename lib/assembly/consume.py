@@ -27,6 +27,7 @@ from traceback import format_tb, format_exc
 import assembly as asm
 import metadata as meta
 import shock 
+import wasp
 from kbase import typespec_to_assembly_data as kb_to_asm
 
 from ConfigParser import SafeConfigParser
@@ -380,8 +381,8 @@ class ArastConsumer:
                     'processed_reads': list(reads),
                     'pipeline_data': {},
                     'datapath': datapath,
-                    'out_report' : self.out_report,
-                    'logfiles': []})
+                    'out_report' : self.out_report})
+                    
 
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         self.job_list.append(job_data)
@@ -407,15 +408,32 @@ class ArastConsumer:
         default_read_analysis = ['fastqc']
         exceptions = []
 
-        if pipelines:
+        ## TEMP
+        runwasp = True
+        wasp_exp = pipelines[0][0]
+        if runwasp:
+            w_engine = wasp.WaspEngine(self.pmanager, job_data)
+            w_engine.run_wasp(wasp_exp, job_data)
+
+            ###### Upload all result files
+            for f in job_data.get_all():
+                filepaths = f.values()[0]
+                for filepath in filepaths:
+                    fname = os.path.basename(filepath).split('.')[0]
+                    res = self.upload(url, user, token, filepath, filetype='contigs')
+                    download_ids[fname] = res['data']['id']
+
+        elif pipelines:
             try:
                 if pipelines == ['auto']:
                     pipelines = [default_pipe,]
-                for p in pipelines:
-                    self.pmanager.validate_pipe(p)
+                # for p in pipelines:
+                #     self.pmanager.validate_pipe(p)
                     
                 #ra_results = self.run_read_analysis(job_data, default_read_analysis)
-                result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                #result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                result_files, summary, contig_files, exceptions = self.run_wasp(pipelines[0][0], job_data)
+
                 #result_files += ra_results
                 for i, f in enumerate(result_files):
                     #fname = os.path.basename(f).split('.')[0]
@@ -443,6 +461,8 @@ class ArastConsumer:
                 print traceback
                 self.out_report.write("ERROR TRACE:\n{}\n".
                                       format(format_tb(sys.exc_info()[2])))
+
+
 
         # Format report
         for i, job in enumerate(self.job_list):
@@ -502,8 +522,11 @@ class ArastConsumer:
 
     def run_asm_analysis(self, job_data):
         ## TEMPORARY
-        self.metadata.update_job(job_data['uid', 'modules', ['quast']])
-
+        quast_report, quast_tar, _, _ = self.pmanager.run_module('quast', job_data, 
+                                                                 tar=True, meta=True)
+        analysis = quast_report[0]
+        analysis_data = quast_tar
+        return analysis, analysis_data
 
     def run_pipeline(self, pipes, job_data, contigs_only=True):
         """
@@ -541,7 +564,6 @@ class ArastConsumer:
                 # Reset job data 
                 job_data['reads'] = copy.deepcopy(job_data['raw_reads'])
                 job_data['processed_reads'] = []
-                print job_data
 
                 self.out_report.write('\n{0} Pipeline {1}: {2} {0}\n'.format('='*15, pipeline_num, pipe))
                 pipe_suffix = '' # filename code for indiv pipes

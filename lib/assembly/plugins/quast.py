@@ -22,8 +22,8 @@ class QuastAssessment(BaseAssessment, IPlugin):
         #         scaffolds = False
         #         break
         
-        if self.job_data['contig_type'] == 'scaffolds':
-            cmd_args.append('--scaffolds')
+        # if self.job_data['contig_type'] == 'scaffolds':
+        #     cmd_args.append('--scaffolds')
 
         # if scaffolds and self.scaffold_mode == 'True':
         #     cmd_args.append('--scaffolds')

@@ -12,7 +12,12 @@ class ArastJob(dict):
     def __init__(self, *args):
         dict.__init__(self, *args)
         self['pipelines'] = [] # List of ArastPipeline
-        
+        self['out_contigs'] = []
+        self['out_scaffolds'] = []
+        self['logfiles'] = []
+        self['out_reports'] = []
+        self['out_results'] = []
+
     def make_plots(self):
         pass
 
@@ -88,6 +93,17 @@ class ArastJob(dict):
         for pipeline in self['pipelines']:
             if pipeline['number'] == number:
                 return pipeline
+
+    def add_contigs(self, contigs, name='MODULE'):
+        self['out_contigs'].append({name: contigs})
+
+    def add_results(self, results, name='MODULE'):
+        self['out_results'].append({name: results})
+
+    def get_all(self):
+        return (self['out_contigs'] + 
+                self['out_scaffolds'] +
+                self['out_results'])
 
 
 class ArastPipeline(dict):

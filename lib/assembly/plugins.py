@@ -545,6 +545,19 @@ class BaseAssessment(BasePlugin):
         self.out_module.close()
         return output
 
+    def wasp_run(self, settings, job_data, manager):
+        self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data, manager)
+        inputs = job_data['wasp_chain']['link']
+        contigs = []
+        for i,input in enumerate(inputs):
+            contigs.append(input['default_output'])
+        a_reads = copy.deepcopy(job_data['raw_reads'])
+        output = self.run(contigs, a_reads)
+        self.out_module.close()
+        return output
+
+        
     # Must implement run() method
     @abc.abstractmethod
     def run(self, contigs, reads):
@@ -563,11 +576,26 @@ class BaseMetaAssembler(BasePlugin):
     OUTPUT = 'contigs'
 
     def __call__(self, settings, job_data, manager):
-        self.run_checks(settings, job_data)
+        #### WASP style
         logging.info("{} Settings: {}".format(self.name, settings))
         self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data, manager)
-        contigs = job_data['final_contigs']
+        inputs = job_data['wasp_chain']['link']
+        contigs = []
+        for i,input in enumerate(inputs):
+            contigs.append({'files': input['default_output'], 
+                            'name': '{}_P{}'.format(job_data['job_id'], i),
+                            'alignment_bam' : []})
+        # else:
+        #     ### legacy
+
+        #     self.run_checks(settings, job_data)
+        #     logging.info("{} Settings: {}".format(self.name, settings))
+        #     self.outpath = self.create_directories(job_data)
+        #     self.init_settings(settings, job_data, manager)
+        #     contigs = job_data['final_contigs']
+
+        print contigs
         output = self.run(contigs)
         self.out_module.close()
         return output
@@ -660,7 +688,7 @@ class ModuleManager():
             plugins.append(plugin.name)
         print "Plugins found [{}]: {}".format(num_plugins, sorted(plugins))
 
-    def run_module(self, module, job_data_orig, tar=False, 
+    def run_module(self, module, job_data, tar=False, 
                    all_data=False, reads=False, meta=False, 
                    overrides=True):
         """
@@ -673,13 +701,8 @@ class ModuleManager():
           Not recommended for large read files.
 
         """
-        job_data = job_data_orig
-        # job_data = copy.deepcopy(job_data_orig)
-        # # Pass back orig file descriptor
-        # try:
-        #     job_data['out_report'] = job_data_orig['out_report'] 
-        # except:
-        #     pass
+        if len(job_data) == 1:
+            job_data = job_data[0]
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)
@@ -701,6 +724,36 @@ class ModuleManager():
                 data = plugin.plugin_object.get_all_output_files()
             return output, data, log
         return output, [], log
+
+    def run_proc(self, module, wlink, job_data):
+        """ Run module adapter for wasp interpreter
+        To support the Job_data mechanism, injects wlink 
+        """
+        ## Setup 
+        if not self.has_plugin(module):
+            raise Exception("No plugin named {}".format(module))
+        plugin = self.pmanager.getPluginByName(module)
+        settings = plugin.details.items('Settings')
+        plugin.plugin_object.update_settings(job_data)
+
+        ## Run
+        job_data['wasp_chain'] = wlink
+        
+        try:  ## If base class has wasp_run
+            output = plugin.plugin_object.wasp_run(settings, job_data, self)
+            print 'Using Wasp'
+        except: ## Legacy
+            output = plugin.plugin_object(settings, job_data, self)
+        wlink['default_output'] = output
+        wlink['output_type'] = self.output_type(module)
+        wlink['log'] = plugin.plugin_object.out_module.name
+
+        ## Jobdata compatibility
+        job_data['wasp_chain'] = wlink
+        if self.output_type(module) == 'contigs':
+            job_data['contigs'] = output
+        elif self.output_type(module) == 'reads':
+            job_data['reads'] = output
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT
