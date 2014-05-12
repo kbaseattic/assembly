@@ -18,6 +18,7 @@ from Queue import Queue, Empty
 
 # A-Rast modules
 import assembly
+import asmtypes
 import pipe as phelper
 
 class BasePlugin(object):
@@ -548,12 +549,23 @@ class BaseAssessment(BasePlugin):
     def wasp_run(self, settings, job_data, manager):
         self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data, manager)
-        inputs = job_data['wasp_chain']['link']
+
+        #### Get Contigs ####
         contigs = []
-        for i,input in enumerate(inputs):
-            contigs.append(input['default_output'])
+        inputs = job_data['wasp_chain']['link']
+        for input in inputs:
+            fileset = input['default_output']
+            for fileinfo in fileset['file_infos']:
+                contigs.append(fileinfo)
+
+        #### Get Initial Reads ####
         a_reads = copy.deepcopy(job_data['raw_reads'])
-        output = self.run(contigs, a_reads)
+
+        #### Get Reference Files ####
+        ref = job_data['reference']
+
+        #### Run Assessment
+        output = self.run(contigs, a_reads, ref)
         self.out_module.close()
         return output
 
@@ -742,10 +754,28 @@ class ModuleManager():
         try:  ## If base class has wasp_run
             output = plugin.plugin_object.wasp_run(settings, job_data, self)
             print 'Using Wasp'
-        except: ## Legacy
+        except Exception as e: ## Legacy
+            print e
             output = plugin.plugin_object(settings, job_data, self)
-        wlink['default_output'] = output
-        wlink['output_type'] = self.output_type(module)
+
+        #### Store output(s) in FileSet objects ####
+        filesets = []
+        wlink['all_output'] = []
+        if type(output) is dict: # New Format
+            for outtype, outfiles in output.items():
+                ## Store default output
+                if self.output_type(module) == outtype:
+                    wlink['default_output'] = asmtypes.FileSet(outtype, [asmtypes.FileInfo(f) for f in outfiles])
+                ## Store all outputs
+                fileinfos = []
+                for outfile in outfiles:
+                    fileinfos.append(asmtypes.FileInfo(outfile))
+                wlink['all_output'].append(asmtypes.FileSet(outtype, fileinfos))
+            print 'wlink!', wlink
+        ## Legacy
+        elif type(output) is list:
+            wlink['default_output'] = asmtypes.FileSet(self.output_type(module),
+                                                       [asmtypes.FileInfo(f) for f in output])
         wlink['log'] = plugin.plugin_object.out_module.name
 
         ## Jobdata compatibility

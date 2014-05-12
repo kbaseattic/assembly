@@ -134,11 +134,7 @@ class WaspEngine():
         def insert(w):
             """ Extracts output data and injects into job data """
             try:
-                ### Add Contigs
-                if w['output_type'] == 'contigs':
-                    job_data.add_contigs(w['default_output'])
-                else:
-                    job_data.add_results(w['default_output'])
+                job_data.add_results(w['default_output'])
             except: pass
 
         ## Run Wasp expression

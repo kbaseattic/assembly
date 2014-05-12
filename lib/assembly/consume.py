@@ -416,12 +416,9 @@ class ArastConsumer:
             w_engine.run_wasp(wasp_exp, job_data)
 
             ###### Upload all result files
-            for f in job_data.get_all():
-                filepaths = f.values()[0]
-                for filepath in filepaths:
-                    fname = os.path.basename(filepath).split('.')[0]
-                    res = self.upload(url, user, token, filepath, filetype='contigs')
-                    download_ids[fname] = res['data']['id']
+            for fpath, ftype in job_data.get_all_ftypes():
+                res = self.upload(url, user, token, fpath, filetype=ftype)
+                download_ids[os.path.basename(fpath).split('.')[0]] = res['data']['id']
 
         elif pipelines:
             try:
