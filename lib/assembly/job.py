@@ -95,17 +95,24 @@ class ArastJob(dict):
                 return pipeline
 
     def add_contigs(self, contigs, name='MODULE'):
-        self['out_contigs'].append({name: contigs})
+        self['out_contigs'].append({'name': name})
 
-    def add_results(self, results, name='MODULE'):
-        self['out_results'].append({name: results})
+    def add_results(self, fileset):
+        self['out_results'].append(fileset)
 
-    def get_all(self):
-        return (self['out_contigs'] + 
-                self['out_scaffolds'] +
-                self['out_results'])
+    def get_all_filesets(self):
+        """Return all output FileSets"""
+        return self['out_results']
+
+    def get_all_ftypes(self):
+        ft = []
+        for fileset in self.get_all_filesets():
+            for fileinfo in fileset['file_infos']:
+                ft.append((fileinfo['filename'], fileset['type']))
+        return ft
 
 
+        
 class ArastPipeline(dict):
     """ Pipeline object """
     
