@@ -11,6 +11,7 @@ class Env(dict):
     def __init__(self, parms=(), args=(), outer=None):
         self.update(zip(parms,args))
         self.outer = outer
+        self.emissions = []
     def find(self, var):
         "Find the innermost Env where var appears."
         return self if var in self else self.outer.find(var)
@@ -54,6 +55,11 @@ def eval(x, env=global_env):
     elif x[0] == 'lambda':         # (lambda (var*) exp)
         (_, vars, exp) = x
         return lambda *args: eval(exp, Env(vars, args, env))
+    elif x[0] == 'emit':          # (begin exp*) Return each intermediate
+        (_,  exp) = x
+        val = eval(exp, env)
+        env.emissions.append(val)
+        return val
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate
         val = []
         for exp in x[1:]:
@@ -63,8 +69,6 @@ def eval(x, env=global_env):
         exps = [eval(exp, env) for exp in x]
         proc = exps.pop(0)
         return proc(*exps)
-        print 'result ', result
-        return result
 
 ################ parse, read, and user interaction
 
@@ -132,11 +136,10 @@ class WaspEngine():
     def run_wasp(self, exp, job_data):
         ## Run Wasp expression
         w_chain = run(exp, self.assembly_env)
-
         ## Record results into job_data
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
-        for w in w_chain:
+        for w in w_chain + self.assembly_env.emissions:
             try: job_data.add_results(w['default_output'])
             except: pass
         return job_data
