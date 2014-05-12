@@ -1,5 +1,5 @@
 class FileInfo(dict):
-    def __init__(self, filename, shock_url=None, shock_id=None, 
+    def __init__(self, filename, shock_url=None, shock_id=None, name=None,
                  filesize=None, create_time=None, metadata=None, *args):
         dict.__init__(self, *args)
         self.update({'shock_url': shock_url,
@@ -20,3 +20,4 @@ class FileSet(dict):
                 self['file_infos'].append(f)
         else:
             self['file_infos'] = [file_infos]
+
