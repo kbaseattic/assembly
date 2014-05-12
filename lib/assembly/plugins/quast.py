@@ -59,6 +59,7 @@ class QuastAssessment(BaseAssessment, IPlugin):
                 
         report = os.path.join(self.outpath, 'report.txt')
         if not os.path.exists(report):
+            print 'No Quast Output'
             return []
         return [report]
 

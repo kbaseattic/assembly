@@ -94,9 +94,6 @@ class ArastJob(dict):
             if pipeline['number'] == number:
                 return pipeline
 
-    def add_contigs(self, contigs, name='MODULE'):
-        self['out_contigs'].append({'name': name})
-
     def add_results(self, fileset):
         self['out_results'].append(fileset)
 

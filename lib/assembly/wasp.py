@@ -130,24 +130,15 @@ class WaspEngine():
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
 
     def run_wasp(self, exp, job_data):
-        ## Helper function
-        def insert(w):
-            """ Extracts output data and injects into job data """
-            try:
-                job_data.add_results(w['default_output'])
-            except: pass
-
         ## Run Wasp expression
         w_chain = run(exp, self.assembly_env)
-        print 'wchain', type(w_chain), len(w_chain), w_chain
 
         ## Record results into job_data
-        if type(w_chain) is list: # Return Multiple
-            for w in w_chain:
-                insert(w)
-        else: # Single result
-            insert(w_chain)
-
+        if type(w_chain) is not list: # Single
+            w_chain = [w_chain]
+        for w in w_chain:
+            try: job_data.add_results(w['default_output'])
+            except: pass
         return job_data
 
     def get_wasp_func(self, module, job_data):
