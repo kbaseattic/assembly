@@ -2,7 +2,10 @@
 ## (c) Peter Norvig, 2010; See http://norvig.com/lispy.html
 ################ Symbol, Env classes
 
-from __future__ import division
+import os
+
+#### Arast Libraries
+import asmtypes
 
 Symbol = str
 
@@ -55,11 +58,17 @@ def eval(x, env=global_env):
     elif x[0] == 'lambda':         # (lambda (var*) exp)
         (_, vars, exp) = x
         return lambda *args: eval(exp, Env(vars, args, env))
-    elif x[0] == 'emit':          # (begin exp*) Return each intermediate
+    elif x[0] == 'emit':          # (emit exp) Store each intermediate for return
         (_,  exp) = x
         val = eval(exp, env)
         env.emissions.append(val)
         return val
+    elif x[0] == 'get':
+        (_, key, exp) = x
+        chain = eval(exp, env)
+        assert type(chain) is WaspLink
+        chain['default_output'] = chain.get_value(key)
+        return chain
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate
         val = []
         for exp in x[1:]:
@@ -125,6 +134,38 @@ class WaspLink(dict):
         self['link'] = link
         self['module'] = module
         self['default_output'] = ''
+        self['info'] = {}
+
+    def insert_output(self, output, default_type):
+        for outtype, outvalue in output.items():
+            ## Store default output
+            if default_type == outtype:
+                self['default_output'] = asmtypes.FileSet(outtype, [asmtypes.FileInfo(f) for f in outvalue])
+
+            ## Store all outputs and values
+            if not type(outvalue) is list: 
+                outvalue = [outvalue]
+            outputs = []
+            are_files = False
+            for out in outvalue:
+                try:
+                    if os.path.exists(out): # These are files, convert to FileInfo format
+                        outputs.append(asmtypes.FileInfo(out))
+                        are_files = True
+                except: # Not a file
+                    outputs = outvalue
+                    break
+            if are_files:
+                self['all_output'].append(asmtypes.FileSet(outtype, outputs))
+            else:
+                self['info'][outtype] = outputs if not len(outputs) == 1 else outputs[0]
+
+    def get_value(self, key):
+        for fs in self['all_output']:
+            if fs['type'] == key:
+                return fs 
+        return self['info'][key]
+
 
 
 class WaspEngine():
@@ -148,7 +189,6 @@ class WaspEngine():
          def run_module(*inlinks):
             # WaspLinks keep track of the recursive pipelines
             # Outputs a single "link"
-
             ### Case: Tail recursive call
              jd = job_data
              if inlinks[0] == 1: ## Indicate reads
