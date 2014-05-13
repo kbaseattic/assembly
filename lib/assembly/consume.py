@@ -885,10 +885,10 @@ class ArastConsumer:
         files["file"] = (os.path.basename(file), open(file, 'rb'))
         logging.debug("Message sent to shock on upload: %s" % files)
         sclient = shock.Shock(url, user, token)
-        if filetype == 'default':
-            res = sclient.upload_misc(file, 'default')
-        elif filetype == 'contigs':
+        if filetype == 'contigs' or filetype == 'scaffolds':
             res = sclient.upload_contigs(file)
+        else:
+            res = sclient.upload_misc(file, filetype)
         return res
 
     def download(self, url, user, token, node_id, outdir):
