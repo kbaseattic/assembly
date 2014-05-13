@@ -67,8 +67,12 @@ def eval(x, env=global_env):
         (_, key, exp) = x
         chain = eval(exp, env)
         assert type(chain) is WaspLink
-        chain['default_output'] = chain.get_value(key)
-        return chain
+        val = chain.get_value(key)
+        if type(val) is asmtypes.FileSet:
+            chain['default_output'] = val
+            return chain
+        else: # A value
+            return val
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate
         val = []
         for exp in x[1:]:

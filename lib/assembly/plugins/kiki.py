@@ -29,6 +29,7 @@ class KikiAssembler(BaseAssembler, IPlugin):
 
         output = {}
         output['contigs'] = contigs_renamed
+        output['scaffolds'] = contigs_renamed
         return output
 
     def tab_to_fasta(self, tabbed_file, outfile, threshold):

@@ -753,26 +753,15 @@ class ModuleManager():
         
         try:  ## If base class has wasp_run
             output = plugin.plugin_object.wasp_run(settings, job_data, self)
-            print 'Using Wasp'
         except Exception as e: ## Legacy
-            print e
             output = plugin.plugin_object(settings, job_data, self)
 
         #### Store output(s) in FileSet objects ####
-        filesets = []
         wlink['all_output'] = []
         if type(output) is dict: # New Format
-            for outtype, outfiles in output.items():
-                ## Store default output
-                if self.output_type(module) == outtype:
-                    wlink['default_output'] = asmtypes.FileSet(outtype, [asmtypes.FileInfo(f) for f in outfiles])
-                ## Store all outputs
-                fileinfos = []
-                for outfile in outfiles:
-                    fileinfos.append(asmtypes.FileInfo(outfile))
-                wlink['all_output'].append(asmtypes.FileSet(outtype, fileinfos))
-            print 'wlink!', wlink
-        ## Legacy
+            wlink.insert_output(output, self.output_type(module))
+
+        ########## Legacy
         elif type(output) is list:
             wlink['default_output'] = asmtypes.FileSet(self.output_type(module),
                                                        [asmtypes.FileInfo(f) for f in output])
