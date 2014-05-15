@@ -36,13 +36,18 @@ class BasePlugin(object):
     - self.PARAM_IN_CONFIG_FILE
         eg. self.k = 29
     """
-        
+
+    def base_call(self, settings, job_data, manager, strict=False):
+        """ Plugin wrapper """
+        self.init_settings(settings, job_data, manager)
+        output = self.wasp_run()
+        self.out_module.close()
+        return output
+
     def arast_popen(self, cmd_args, overrides=True, **kwargs):
         """
         Set overrides to FALSE if flags should not be applied to this binary.
         """
-
-
         if overrides:
             for kv in self.extra_params:
                 dashes = '-'
@@ -185,6 +190,7 @@ class BasePlugin(object):
         return valid_files
 
     def init_settings(self, settings, job_data, manager):
+        self.outpath = self.create_directories(job_data)
         self.pmanager = manager
         self.threads = 1
         self.process_cores = multiprocessing.cpu_count()
@@ -202,15 +208,28 @@ class BasePlugin(object):
                 setattr(self, kv[0], abs)
             else:
                 setattr(self, kv[0], kv[1])
-
-        self.extra_params = []
         self.insert_info = self.get_insert_info(self.job_data['initial_reads'])
 
+        #### Set custom parameters
+        self.extra_params = []
         for kv in job_data['params']:
             if not hasattr(self, kv[0]):
                 self.extra_params.append(kv)
-            print "Override: {}".format(kv)
             setattr(self, kv[0], kv[1])
+
+        #### Get default outputs of last module
+        
+        self.data = job_data.wasp_data()
+
+        # self.input = []
+        # if job_data['wasp_chain']['link']:
+        #     for fileset in job_data['wasp_chain']['link']:
+        #         self.input += fileset['default_output'].files
+
+        # #### Get raw reads, reference
+        # self.raw_reads = copy.deepcopy(job_data['raw_reads'])
+        # self.reference = job_data['reference']
+
 
     def linuxRam(self):
         """Returns the RAM of a linux system"""
@@ -354,20 +373,22 @@ class BaseAssembler(BasePlugin):
     INPUT = 'reads'
     OUTPUT = 'contigs'
 
-    def __call__(self, settings, job_data, manager):
-        self.run_checks(settings, job_data)
-        logging.info("{} Settings: {}".format(self.name, settings))
-        self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data, manager)
-        valid_files = self.get_valid_reads(job_data)
-        output = self.run(valid_files)
-        if type(output) is tuple and len(output) == 2:
-            contigs = output[0]
-            scaffolds = output[1]
-            return contigs, scaffolds
-        self.out_module.close()
-        return output
+    # def __call__(self, settings, job_data, manager):
+    #     self.run_checks(settings, job_data)
+    #     logging.info("{} Settings: {}".format(self.name, settings))
+    #     self.outpath = self.create_directories(job_data)
+    #     self.init_settings(settings, job_data, manager)
+    #     valid_files = self.get_valid_reads(job_data)
+    #     output = self.run(valid_files)
+    #     if type(output) is tuple and len(output) == 2:
+    #         contigs = output[0]
+    #         scaffolds = output[1]
+    #         return contigs, scaffolds
+    #     self.out_module.close()
+    #     return output
 
+    def wasp_run(self):
+        return self.run()
 
     def get_files(self, file_dicts):
         """ Return a list of files from dicts. """
@@ -546,26 +567,11 @@ class BaseAssessment(BasePlugin):
         self.out_module.close()
         return output
 
-    def wasp_run(self, settings, job_data, manager):
-        self.outpath = self.create_directories(job_data)
+    def wasp_run(self, settings, job_data, manager, strict=False):
         self.init_settings(settings, job_data, manager)
 
-        #### Get Contigs ####
-        contigs = []
-        inputs = job_data['wasp_chain']['link']
-        for input in inputs:
-            fileset = input['default_output']
-            for fileinfo in fileset['file_infos']:
-                contigs.append(fileinfo)
-
-        #### Get Initial Reads ####
-        a_reads = copy.deepcopy(job_data['raw_reads'])
-
-        #### Get Reference Files ####
-        ref = job_data['reference']
-
         #### Run Assessment
-        output = self.run(contigs, a_reads, ref)
+        output = self.run(self.input, self.raw_reads, self.reference)
         self.out_module.close()
         return output
 
@@ -598,16 +604,7 @@ class BaseMetaAssembler(BasePlugin):
             contigs.append({'files': input['default_output'], 
                             'name': '{}_P{}'.format(job_data['job_id'], i),
                             'alignment_bam' : []})
-        # else:
-        #     ### legacy
 
-        #     self.run_checks(settings, job_data)
-        #     logging.info("{} Settings: {}".format(self.name, settings))
-        #     self.outpath = self.create_directories(job_data)
-        #     self.init_settings(settings, job_data, manager)
-        #     contigs = job_data['final_contigs']
-
-        print contigs
         output = self.run(contigs)
         self.out_module.close()
         return output
@@ -651,6 +648,8 @@ class BaseAligner(BasePlugin):
 
         self.out_module.close()
         return [output] #TODO return multiple samfiles for each library
+
+
 
     # Must implement run() method
     @abc.abstractmethod
@@ -750,16 +749,18 @@ class ModuleManager():
 
         ## Run
         job_data['wasp_chain'] = wlink
-        
         try:  ## If base class has wasp_run
-            output = plugin.plugin_object.wasp_run(settings, job_data, self)
+            output = plugin.plugin_object.base_call(settings, job_data, self)
         except Exception as e: ## Legacy
+            print e
             output = plugin.plugin_object(settings, job_data, self)
 
         #### Store output(s) in FileSet objects ####
-        wlink['all_output'] = []
         if type(output) is dict: # New Format
             wlink.insert_output(output, self.output_type(module))
+
+            print 'okay'
+            print wlink
 
         ########## Legacy
         elif type(output) is list:
