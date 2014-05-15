@@ -6,17 +6,21 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class KikiAssembler(BaseAssembler, IPlugin):
-    def run(self, reads):
+    def run(self):
         """ 
         Build the command and run.
         Return list of contig file(s)
         """
-        
+
+        reads = []
+        for readset in self.data.readsets:
+            reads += readset.files
+
         cmd_args = [self.executable, '-k', self.k, '-i',]
-        cmd_args += self.get_files(reads)
+        cmd_args += reads
         cmd_args.append('-o')
         cmd_args.append(self.outpath + '/kiki')
-        #self.out_module.write(subprocess.check_output(cmd_args))
+
         self.arast_popen(cmd_args)
 
         contigs = glob.glob(self.outpath + '/*.contig')
