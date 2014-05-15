@@ -40,10 +40,16 @@ class BasePlugin(object):
     def base_call(self, settings, job_data, manager, strict=False):
         """ Plugin wrapper """
         self.init_settings(settings, job_data, manager)
+
+        ### Compatibility
         if self.new_version:
             print "Updated plugin"
         output = self.wasp_run()
         self.out_module.close()
+
+        ### Compatibility
+
+        print output
         return output
 
     def arast_popen(self, cmd_args, overrides=True, **kwargs):
@@ -220,17 +226,8 @@ class BasePlugin(object):
             setattr(self, kv[0], kv[1])
 
         #### Get default outputs of last module
-        
         self.data = job_data.wasp_data()
 
-        # self.input = []
-        # if job_data['wasp_chain']['link']:
-        #     for fileset in job_data['wasp_chain']['link']:
-        #         self.input += fileset['default_output'].files
-
-        # #### Get raw reads, reference
-        # self.raw_reads = copy.deepcopy(job_data['raw_reads'])
-        # self.reference = job_data['reference']
 
 
     def linuxRam(self):
@@ -569,14 +566,8 @@ class BaseAssessment(BasePlugin):
         self.out_module.close()
         return output
 
-    def wasp_run(self, settings, job_data, manager, strict=False):
-        self.init_settings(settings, job_data, manager)
-
-        #### Run Assessment
-        output = self.run(self.input, self.raw_reads, self.reference)
-        self.out_module.close()
-        return output
-
+    def wasp_run(self):
+        return self.run()
         
     # Must implement run() method
     @abc.abstractmethod
@@ -749,30 +740,36 @@ class ModuleManager():
         settings = plugin.details.items('Settings')
         plugin.plugin_object.update_settings(job_data)
 
+        #### Check input/output type compatibility
+        if wlink['link']:
+            for link in wlink['link']:
+                assert self.output_type(link['module']) == self.input_type(module)
         ## Run
         job_data['wasp_chain'] = wlink
         try:  ## If base class has wasp_run
             output = plugin.plugin_object.base_call(settings, job_data, self)
         except Exception as e: ## Legacy
-            print e
+            print 'Exception in run_proc', e
             output = plugin.plugin_object(settings, job_data, self)
 
         #### Store output(s) in FileSet objects ####
         if type(output) is dict: # New Format
             wlink.insert_output(output, self.output_type(module))
 
-        ########## Legacy
-        elif type(output) is list:
-            wlink['default_output'] = asmtypes.FileSet(self.output_type(module),
-                                                       [asmtypes.FileInfo(f) for f in output])
+        ########## Legacy Compatibility #########
         wlink['log'] = plugin.plugin_object.out_module.name
-
-        ## Jobdata compatibility
         job_data['wasp_chain'] = wlink
         if self.output_type(module) == 'contigs':
             job_data['contigs'] = output
+            if type(output) is dict:
+                if type(output['contigs']) is list:
+                    job_data['contigs'] = output['contigs'] 
+                else:job_data['contigs'] = [output['contigs']]
         elif self.output_type(module) == 'reads':
             job_data['reads'] = output
+            if type(output) is list:
+                wlink['default_output'] = job_data.wasp_data().readsets
+
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT
