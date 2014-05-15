@@ -44,9 +44,24 @@ class ReadSet(FileSet):
     def insert_len(self):
         return self.insert or None
 
+class ContigSet(FileSet):
+    def __init__(self, set_type, file_infos,  **kwargs):
+        FileSet.__init__(self, set_type, file_infos, **kwargs)
+        self.__dict__.update(kwargs)
+
+class ReferenceSet(FileSet):
+    def __init__(self, set_type, file_infos,  **kwargs):
+        FileSet.__init__(self, set_type, file_infos, **kwargs)
+        self.__dict__.update(kwargs)
+        assert len(file_infos) < 2
+
 def set_factory(set_type, file_infos, **kwargs):
     if set_type in ['paired', 'single']:
         return ReadSet(set_type, file_infos, **kwargs)
+    elif set_type == 'contigs':
+        return ContigSet(set_type, file_infos, **kwargs)
+    elif set_type == 'reference':
+        return ReferenceSet(set_type, file_infos, **kwargs)
     else:
         return FileSet(set_type, file_infos, **kwargs)
 
@@ -58,23 +73,48 @@ class FileSetContainer(dict):
 
     @property
     def readsets(self):
+        """ Returns a list of all ReadSet objects"""
         return [fileset for fileset in self.filesets if type(fileset) is ReadSet]
 
     @property
     def readsets_paired(self):
+        """ Returns a list of all paired-end  ReadSet objects"""
         return [readset for readset in self.readsets if readset['type'] == 'paired']
 
     @property
     def readsets_single(self):
+        """ Returns a list of all single-end  ReadSet objects"""
         return [readset for readset in self.readsets if readset['type'] == 'single']
     
     @property
-    def contigs(self):
-        pass
+    def readfiles(self):
+        return [readfile for readset in self.readsets for readfile in readset.files]
 
     @property
-    def reference(self):
-        pass
+    def readfiles_paired(self):
+        return [readfile for readset in self.readsets_paired for readfile in readset.files]
+
+    @property
+    def readfiles_single(self):
+        return [readfile for readset in self.readsets_single for readfile in readset.files]
+
+    @property
+    def contigsets(self):
+        """ Returns a list of all ContigSet objects"""
+        return [fileset for fileset in self.filesets if type(fileset) is ContigSet]
+
+    @property
+    def contigfiles(self):
+        return [contigfile for contigset in self.contigsets for contigfile in contigset.files]
+
+    @property
+    def referencesets(self):
+        """ Returns a list of all ReferenceSet objects"""
+        return [fileset for fileset in self.filesets if type(fileset) is ReferenceSet]
+
+    @property
+    def referencefiles(self):
+        return [referencefile for referenceset in self.referencesets for referencefile in referenceset.files]
 
     @property
     def bamfiles(self):
