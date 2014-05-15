@@ -378,7 +378,6 @@ class ArastConsumer:
                     'initial_reads': list(reads),
                     'raw_reads': copy.deepcopy(reads),
                     'params': [],
-                    'processed_reads': list(reads),
                     'pipeline_data': {},
                     'datapath': datapath,
                     'out_report' : self.out_report})
@@ -428,9 +427,7 @@ class ArastConsumer:
                 #     self.pmanager.validate_pipe(p)
                     
                 #ra_results = self.run_read_analysis(job_data, default_read_analysis)
-                #result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
-                result_files, summary, contig_files, exceptions = self.run_wasp(pipelines[0][0], job_data)
-
+                result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
                 #result_files += ra_results
                 for i, f in enumerate(result_files):
                     #fname = os.path.basename(f).split('.')[0]
@@ -660,6 +657,9 @@ class ArastConsumer:
                                 print 'error attaching ', mod_log
                             break
 
+                        ### New Plugin Compatibility
+                        if type(output) is dict:
+                            output = output[output_type]
 
                         ##### Prefix outfiles with pipe stage (only assembler modules) #####
                         alldata = [asm.prefix_file_move(
