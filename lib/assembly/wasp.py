@@ -134,10 +134,11 @@ def run(exp, env):
 
 
 class WaspLink(dict):
-    def __init__(self, module, link):
+    def __init__(self, module, link=None):
         self['link'] = link
         self['module'] = module
         self['default_output'] = ''
+        self['data'] = None
         self['info'] = {}
 
     def insert_output(self, output, default_type):
@@ -150,6 +151,7 @@ class WaspLink(dict):
             if not type(outvalue) is list: 
                 outvalue = [outvalue]
             outputs = []
+            filesets = []
             are_files = False
             for out in outvalue:
                 try:
@@ -160,9 +162,10 @@ class WaspLink(dict):
                     outputs = outvalue
                     break
             if are_files:
-                self['all_output'].append(asmtypes.FileSet(outtype, outputs))
+                filesets.append(asmtypes.set_factory(outtype, outputs))
             else:
                 self['info'][outtype] = outputs if not len(outputs) == 1 else outputs[0]
+        self['data'] = asmtypes.FileSetContainer(filesets)
 
     def get_value(self, key):
         for fs in self['all_output']:
@@ -192,12 +195,13 @@ class WaspEngine():
     def get_wasp_func(self, module, job_data):
          def run_module(*inlinks):
             # WaspLinks keep track of the recursive pipelines
-            # Outputs a single "link"
+
             ### Case: Tail recursive call
              jd = job_data
              if inlinks[0] == 1: ## Indicate reads
                  # Empty link
-                 inlinks = (WaspLink(str(inlinks[0]), None),)
+#                 inlinks = (WaspLink(str(inlinks[0]), None),)
+                 inlinks = None
 
              wlink = WaspLink(module, inlinks)
              self.pmanager.run_proc(module, wlink, jd)
