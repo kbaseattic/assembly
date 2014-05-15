@@ -5,6 +5,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy.numarray as na
 
+import asmtypes
+
 class ArastJob(dict):
     """
 
@@ -105,8 +107,24 @@ class ArastJob(dict):
         ft = []
         for fileset in self.get_all_filesets():
             for fileinfo in fileset['file_infos']:
-                ft.append((fileinfo['filename'], fileset['type']))
+                ft.append((fileinfo['local_file'], fileset['type']))
         return ft
+
+    def wasp_data(self):
+        """
+        Compatibility layer for wasp data types.  
+        Scans self for certain data types and populates a FileSetContainer
+        """
+        all_sets = []
+        for set_type in ['reads']:
+            for fs in self[set_type]:
+                ### Get supported set attributes (ins, std, etc)
+                kwargs = {}
+                for key in ['insert', 'stdev']:
+                    if key in fs:
+                        kwargs[key] = fs[key]
+                all_sets.append(asmtypes.set_factory(fs['type'], fs['file_infos'], **kwargs))
+        return asmtypes.FileSetContainer(all_sets)
 
 
         
