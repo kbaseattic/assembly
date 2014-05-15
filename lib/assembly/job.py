@@ -96,8 +96,11 @@ class ArastJob(dict):
             if pipeline['number'] == number:
                 return pipeline
 
-    def add_results(self, fileset):
-        self['out_results'].append(fileset)
+    def add_results(self, filesets):
+        if not type(filesets) is list:
+            filesets = [filesets]
+        for f in filesets:
+            self['out_results'].append(f)
 
     def get_all_filesets(self):
         """Return all output FileSets"""
@@ -115,18 +118,29 @@ class ArastJob(dict):
         Compatibility layer for wasp data types.  
         Scans self for certain data types and populates a FileSetContainer
         """
+
         all_sets = []
+
+        #### Convert Old Reads Format to ReadSets
         for set_type in ['reads']:
-            for fs in self[set_type]:
-                ### Get supported set attributes (ins, std, etc)
-                kwargs = {}
-                for key in ['insert', 'stdev']:
-                    if key in fs:
-                        kwargs[key] = fs[key]
-                all_sets.append(asmtypes.set_factory(fs['type'], fs['file_infos'], **kwargs))
+            if set_type in self:
+                for fs in self[set_type]:
+                    ### Get supported set attributes (ins, std, etc)
+                    kwargs = {}
+                    for key in ['insert', 'stdev']:
+                        if key in fs:
+                            kwargs[key] = fs[key]
+                    all_sets.append(asmtypes.set_factory(fs['type'], 
+                                                         [asmtypes.FileInfo(f) for f in fs['files']], 
+                                                         **kwargs))
+
+        #### Convert Contig/Ref format
+        for set_type in ['contigs', 'reference']:
+            if set_type in self:
+                all_sets.append(asmtypes.set_factory(set_type, [asmtypes.FileInfo(fs) for fs in self[set_type]]))
+
         return asmtypes.FileSetContainer(all_sets)
-
-
+    
         
 class ArastPipeline(dict):
     """ Pipeline object """
