@@ -8,7 +8,7 @@ from plugins import BaseMetaAssembler
 from yapsy.IPlugin import IPlugin
 
 class GamNgsAssembler(BaseMetaAssembler, IPlugin):
-    def run(self, contigs, type='pairwise'):
+    def run(self, contigs, type='in_order'):
         """ 
         Other types: iterative, smart
         """
@@ -60,6 +60,10 @@ class GamNgsAssembler(BaseMetaAssembler, IPlugin):
                 mfile = self.merge(pair[0], pair[1])
                 if mfile:
                     merged_files.append(mfile)
+        elif type == 'in_order':
+            mfile = self.merge(pair[0], pair[1])
+            if mfile:
+                merged_files.append(mfile)
         #elif type == 'iterative':
             
         return merged_files
