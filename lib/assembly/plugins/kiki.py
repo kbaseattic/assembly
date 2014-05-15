@@ -8,37 +8,22 @@ from yapsy.IPlugin import IPlugin
 class KikiAssembler(BaseAssembler, IPlugin):
     new_version = True
 
-    def run(self):
-        """ 
-        Build the command and run.
-        Return list of contig file(s)
-        """
+    def run(self, reads=None):
+        ### Run Kiki Assembler
+        self.arast_popen([self.executable, '-k', self.k, '-i'] + self.data.readfiles + ['-o', self.outpath + '/kiki'])
 
-        reads = []
-        for readset in self.data.readsets:
-            reads += readset.files
-
-        cmd_args = [self.executable, '-k', self.k, '-i',]
-        cmd_args += reads
-        cmd_args.append('-o')
-        cmd_args.append(self.outpath + '/kiki')
-
-        self.arast_popen(cmd_args)
-
+        ### Find Contig Files
         contigs = glob.glob(self.outpath + '/*.contig')
         contigs_renamed = [contig + '.fa' for contig in contigs]
+
+        ### Convert to standard FastA
         for i in range(len(contigs)):
             self.tab_to_fasta(contigs[i], contigs_renamed[i], self.contig_threshold)
-        if not contigs_renamed:
-            pass
-            #raise Exception("No contigs")
 
-        output = {}
-        output['contigs'] = contigs_renamed
-        output['scaffolds'] = contigs_renamed
-        return output
+        return {'contigs': contigs_renamed}
 
     def tab_to_fasta(self, tabbed_file, outfile, threshold):
+        """ Converter for Kiki format """
         tabbed = open(tabbed_file, 'r')
         fasta = open(outfile, 'w')
         prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', ' seed_', '\n']
