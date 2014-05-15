@@ -6,6 +6,8 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class KikiAssembler(BaseAssembler, IPlugin):
+    new_version = True
+
     def run(self):
         """ 
         Build the command and run.

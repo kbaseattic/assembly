@@ -40,6 +40,8 @@ class BasePlugin(object):
     def base_call(self, settings, job_data, manager, strict=False):
         """ Plugin wrapper """
         self.init_settings(settings, job_data, manager)
+        if self.new_version:
+            print "Updated plugin"
         output = self.wasp_run()
         self.out_module.close()
         return output
@@ -373,19 +375,19 @@ class BaseAssembler(BasePlugin):
     INPUT = 'reads'
     OUTPUT = 'contigs'
 
-    # def __call__(self, settings, job_data, manager):
-    #     self.run_checks(settings, job_data)
-    #     logging.info("{} Settings: {}".format(self.name, settings))
-    #     self.outpath = self.create_directories(job_data)
-    #     self.init_settings(settings, job_data, manager)
-    #     valid_files = self.get_valid_reads(job_data)
-    #     output = self.run(valid_files)
-    #     if type(output) is tuple and len(output) == 2:
-    #         contigs = output[0]
-    #         scaffolds = output[1]
-    #         return contigs, scaffolds
-    #     self.out_module.close()
-    #     return output
+    def __call__(self, settings, job_data, manager):
+        self.run_checks(settings, job_data)
+        logging.info("{} Settings: {}".format(self.name, settings))
+        self.outpath = self.create_directories(job_data)
+        self.init_settings(settings, job_data, manager)
+        valid_files = self.get_valid_reads(job_data)
+        output = self.run(valid_files)
+        if type(output) is tuple and len(output) == 2:
+            contigs = output[0]
+            scaffolds = output[1]
+            return contigs, scaffolds
+        self.out_module.close()
+        return output
 
     def wasp_run(self):
         return self.run()
@@ -758,9 +760,6 @@ class ModuleManager():
         #### Store output(s) in FileSet objects ####
         if type(output) is dict: # New Format
             wlink.insert_output(output, self.output_type(module))
-
-            print 'okay'
-            print wlink
 
         ########## Legacy
         elif type(output) is list:
