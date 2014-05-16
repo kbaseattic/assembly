@@ -46,10 +46,6 @@ class BasePlugin(object):
             print "Updated plugin"
         output = self.wasp_run()
         self.out_module.close()
-
-        ### Compatibility
-
-        print output
         return output
 
     def arast_popen(self, cmd_args, overrides=True, **kwargs):
@@ -476,6 +472,11 @@ class BasePreprocessor(BasePlugin):
         self.out_module.close()
         return output
 
+    def wasp_run(self):
+        #### Save and restore insert data
+        pass
+
+
     # Must implement run() method
     @abc.abstractmethod
     def run(self, reads, contigs):
@@ -611,6 +612,9 @@ class BaseMetaAssembler(BasePlugin):
         self.out_module.close()
         return output
 
+    def wasp_run(self):
+        return self.run()
+
     # Must implement run() method
     @abc.abstractmethod
     def run(self, contigs):
@@ -626,8 +630,8 @@ class BaseAligner(BasePlugin):
 
     """
     # Default behavior for run()
-    INPUT = 'contigs'
-    OUTPUT = 'sam'
+    INPUT = ['contigs', 'reads']
+    OUTPUT = 'alignment'
 
     def __call__(self, settings, job_data, manager):
         self.run_checks(settings, job_data)
@@ -651,6 +655,9 @@ class BaseAligner(BasePlugin):
         self.out_module.close()
         return [output] #TODO return multiple samfiles for each library
 
+
+    def wasp_run(self):
+        return self.run()
 
 
     # Must implement run() method
@@ -752,7 +759,9 @@ class ModuleManager():
         #### Check input/output type compatibility
         if wlink['link']:
             for link in wlink['link']:
-                assert self.output_type(link['module']) == self.input_type(module)
+                if link['module']:
+                    assert (self.output_type(link['module']) == self.input_type(module) or 
+                            self.output_type(link['module']) in self.input_type(module)) 
         ## Run
         job_data['wasp_chain'] = wlink
 
@@ -762,7 +771,7 @@ class ModuleManager():
             print 'Exception in run_proc', e
             output = plugin.plugin_object(settings, job_data, self)
 
-        #output = plugin.plugin_object.base_call(settings, job_data, self) 
+
         #### Store output(s) in FileSet objects ####
         if type(output) is dict: # New Format
             wlink.insert_output(output, self.output_type(module),
@@ -778,6 +787,7 @@ class ModuleManager():
                 if type(output['contigs']) is list:
                     job_data['contigs'] = output['contigs'] 
                 else:job_data['contigs'] = [output['contigs']]
+
         elif self.output_type(module) == 'reads':
             job_data['reads'] = output
             if type(output) is list:
