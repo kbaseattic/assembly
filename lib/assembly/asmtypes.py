@@ -33,7 +33,9 @@ class FileSet(dict):
     def files(self):
         """ Returns file paths of all files in set"""
         return [f['local_file'] for f in self['file_infos']]
-
+    
+    def name(self):
+        return self['name'] or None
 
 class ReadSet(FileSet):
     def __init__(self, set_type, file_infos,  **kwargs):

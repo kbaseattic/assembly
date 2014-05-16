@@ -226,9 +226,18 @@ class BasePlugin(object):
             setattr(self, kv[0], kv[1])
 
         #### Get default outputs of last module
-        self.data = job_data.wasp_data()
-
-
+        if job_data['wasp_chain']['link']:
+            all_sets = []
+            for link in job_data['wasp_chain']['link']:
+                if isinstance(link['default_output'], asmtypes.FileSet):
+                    all_sets.append(link['default_output']) # Single FileSet
+                elif type(link['default_output']) is list:
+                    all_sets += [fileset for fileset in link['default_output']]
+                else:
+                    raise Exception('Wasp Link Error')
+            self.data = asmtypes.FileSetContainer(all_sets)
+        else: 
+            self.data = job_data.wasp_data()
 
     def linuxRam(self):
         """Returns the RAM of a linux system"""
@@ -547,7 +556,7 @@ class BaseAssessment(BasePlugin):
     """
     # Default behavior for run()
     INPUT = 'contigs'
-    OUTPUT = 'contigs' #for reapr used in pipe!
+    OUTPUT = 'report' 
 
     def __call__(self, settings, job_data, manager, meta=False):
         self.run_checks(settings, job_data)
@@ -746,19 +755,23 @@ class ModuleManager():
                 assert self.output_type(link['module']) == self.input_type(module)
         ## Run
         job_data['wasp_chain'] = wlink
+
         try:  ## If base class has wasp_run
             output = plugin.plugin_object.base_call(settings, job_data, self)
         except Exception as e: ## Legacy
             print 'Exception in run_proc', e
             output = plugin.plugin_object(settings, job_data, self)
 
+        #output = plugin.plugin_object.base_call(settings, job_data, self) 
         #### Store output(s) in FileSet objects ####
         if type(output) is dict: # New Format
-            wlink.insert_output(output, self.output_type(module))
+            wlink.insert_output(output, self.output_type(module),
+                                plugin.name)
 
         ########## Legacy Compatibility #########
         wlink['log'] = plugin.plugin_object.out_module.name
         job_data['wasp_chain'] = wlink
+
         if self.output_type(module) == 'contigs':
             job_data['contigs'] = output
             if type(output) is dict:
@@ -769,7 +782,6 @@ class ModuleManager():
             job_data['reads'] = output
             if type(output) is list:
                 wlink['default_output'] = job_data.wasp_data().readsets
-
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT

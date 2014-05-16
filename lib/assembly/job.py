@@ -134,6 +134,17 @@ class ArastJob(dict):
                                                          [asmtypes.FileInfo(f) for f in fs['files']], 
                                                          **kwargs))
 
+        #### Convert final_contigs from pipeline mode
+        if 'final_contigs' in self:
+            if self['final_contigs']: ## Not empty
+                ## Remove left over contigs
+                del(self['contigs'])
+                for contig_data in self['final_contigs']:
+                    all_sets.append(asmtypes.set_factory('contigs', 
+                                                         [asmtypes.FileInfo(fs,) for fs in contig_data['files']],
+                                                         #{'name':contig_data['name']}))
+                                                         name=contig_data['name']))
+
         #### Convert Contig/Ref format
         for set_type in ['contigs', 'reference']:
             if set_type in self:
