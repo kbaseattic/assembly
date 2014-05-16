@@ -134,7 +134,7 @@ def run(exp, env):
 
 
 class WaspLink(dict):
-    def __init__(self, module, link=None):
+    def __init__(self, module=None, link=None):
         self['link'] = link
         self['module'] = module
         self['default_output'] = ''
@@ -181,13 +181,20 @@ class WaspLink(dict):
 
 class WaspEngine():
     def __init__(self, plugin_manager, job_data):
+        self.constants_reads = 'READS'
         self.pmanager = plugin_manager
         self.assembly_env = add_globals(Env())
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
 
+        init_link = WaspLink()
+        init_link['default_output'] = job_data.wasp_data().readsets
+        self.assembly_env.update({self.constants_reads: init_link})
+        
+
     def run_wasp(self, exp, job_data):
         ## Run Wasp expression
         w_chain = run(exp, self.assembly_env)
+        print 'done', w_chain
         ## Record results into job_data
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
@@ -199,13 +206,7 @@ class WaspEngine():
     def get_wasp_func(self, module, job_data):
          def run_module(*inlinks):
             # WaspLinks keep track of the recursive pipelines
-
-            ### Case: Tail recursive call
-             jd = job_data
-             if inlinks[0] == 1: ## Indicate reads
-                 inlinks = None
-
              wlink = WaspLink(module, inlinks)
-             self.pmanager.run_proc(module, wlink, jd)
+             self.pmanager.run_proc(module, wlink, job_data)
              return wlink
          return run_module
