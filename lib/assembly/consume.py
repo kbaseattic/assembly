@@ -794,7 +794,10 @@ class ArastConsumer:
                     job_data['contig_type'] = 'contigs'
                     quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
                                                                                   tar=True, meta=True)
+
+
                     if quast_report:
+#                        if type(quast_report) is dict
                         summary.append(quast_report[0])
                     with open(q_log) as infile:
                         self.out_report.write(infile.read())

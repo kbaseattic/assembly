@@ -771,11 +771,17 @@ class ModuleManager():
             print 'Exception in run_proc', e
             output = plugin.plugin_object(settings, job_data, self)
 
-
         #### Store output(s) in FileSet objects ####
         if type(output) is dict: # New Format
             wlink.insert_output(output, self.output_type(module),
                                 plugin.name)
+        elif type(output) is list and self.output_type(module) == 'contigs':
+            old_format = {self.output_type(module): output}
+            wlink.insert_output(old_format, self.output_type(module),
+                                plugin.name)
+        else:
+            raise Exception('{}: No output produced'.format(module))
+
 
         ########## Legacy Compatibility #########
         wlink['log'] = plugin.plugin_object.out_module.name
