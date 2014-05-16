@@ -141,15 +141,19 @@ class WaspLink(dict):
         self['data'] = None
         self['info'] = {}
 
-    def insert_output(self, output, default_type):
+    def insert_output(self, output, default_type, module_name):
+        """ Parses the output dict of a completed module and stores the 
+        data and information within the WaspLink object """
         for outtype, outvalue in output.items():
-            ## Store default output
-            if default_type == outtype:
-                self['default_output'] = asmtypes.FileSet(outtype, [asmtypes.FileInfo(f) for f in outvalue])
-
-            ## Store all outputs and values
+            name = '{}_{}'.format(module_name, outtype)
             if not type(outvalue) is list: 
                 outvalue = [outvalue]
+            ## Store default output
+            if default_type == outtype:
+                self['default_output'] = asmtypes.set_factory(outtype,[asmtypes.FileInfo(f) for f in outvalue],
+                                                              name=name)
+
+            ## Store all outputs and values
             outputs = []
             filesets = []
             are_files = False
@@ -162,13 +166,13 @@ class WaspLink(dict):
                     outputs = outvalue
                     break
             if are_files:
-                filesets.append(asmtypes.set_factory(outtype, outputs))
+                filesets.append(asmtypes.set_factory(outtype, outputs, name=name))
             else:
                 self['info'][outtype] = outputs if not len(outputs) == 1 else outputs[0]
         self['data'] = asmtypes.FileSetContainer(filesets)
 
     def get_value(self, key):
-        for fs in self['all_output']:
+        for fs in self['data']:
             if fs['type'] == key:
                 return fs 
         return self['info'][key]
@@ -199,8 +203,6 @@ class WaspEngine():
             ### Case: Tail recursive call
              jd = job_data
              if inlinks[0] == 1: ## Indicate reads
-                 # Empty link
-#                 inlinks = (WaspLink(str(inlinks[0]), None),)
                  inlinks = None
 
              wlink = WaspLink(module, inlinks)

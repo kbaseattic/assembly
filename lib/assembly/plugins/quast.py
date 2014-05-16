@@ -7,46 +7,25 @@ from yapsy.IPlugin import IPlugin
 import asmtypes
 
 class QuastAssessment(BaseAssessment, IPlugin):
-    def run(self, contigs, reads, ref=None):
-        """ 
-        Build the command and run.
-        Return list of file(s)
-        """
+    new_version = True
+
+    def run(self):
+        contigsets = self.data.contigsets
+        contigfiles = self.data.contigfiles
+        ref = self.data.referencefiles or None
         
         cmd_args = [os.path.join(os.getcwd(),self.executable), 
                     '--min-contig', self.min_contig,
                     '-o', self.outpath,
                     '--gene-finding']
-        # scaffolds = True
-        # for t in self.job_data['contig_types']:
-        #     if t != 'scaffolds':
-        #         scaffolds = False
-        #         break
-        
-        # if self.job_data['contig_type'] == 'scaffolds':
-        #     cmd_args.append('--scaffolds')
-
-        # if scaffolds and self.scaffold_mode == 'True':
-        #     cmd_args.append('--scaffolds')
-
-        #ref = self.job_data['reference']
 
         #### Add Reference ####
         if ref:
-            rfile = ref[0]['files'][0]
+            rfile = ref[0]
             cmd_args += ['-R', rfile, '--gage']
 
         #### Add Contig files ####
-        contig_files = []
-        for data in contigs:
-            print 'type: ', type(data)
-            print data
-            if type(data) == asmtypes.FileInfo:
-                contig_files.append(data['filename'])
-            else:## Legacy 
-                for f in data['files']:
-                    contig_files.append(f)
-        cmd_args += contig_files
+        cmd_args += self.data.contigfiles
 
         #### Run Quast ####
         self.arast_popen(cmd_args)
@@ -57,9 +36,12 @@ class QuastAssessment(BaseAssessment, IPlugin):
             for file in files:
                 all_files.append(os.path.join(root, file))
                 
+        output = {}
         report = os.path.join(self.outpath, 'report.txt')
         if not os.path.exists(report):
             print 'No Quast Output'
-            return []
-        return [report]
-
+            report = None
+        else: output['report'] = report
+        output['all_files'] = all_files
+        return output
+    
