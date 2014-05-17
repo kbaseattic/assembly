@@ -39,10 +39,9 @@ class BasePlugin(object):
 
     def base_call(self, settings, job_data, manager, strict=False):
         """ Plugin wrapper """
-        self.init_settings(settings, job_data, manager)
-
         ### Compatibility
         if self.new_version:
+            self.init_settings(settings, job_data, manager)
             print "Updated plugin"
         output = self.wasp_run()
         self.out_module.close()
@@ -380,7 +379,6 @@ class BaseAssembler(BasePlugin):
     def __call__(self, settings, job_data, manager):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
-        self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data, manager)
         valid_files = self.get_valid_reads(job_data)
         output = self.run(valid_files)
@@ -464,7 +462,6 @@ class BasePreprocessor(BasePlugin):
     def __call__(self, settings, job_data, manager):
         self.run_checks(settings, job_data)
         logging.info("{} Settings: {}".format(self.name, settings))
-        self.outpath = self.create_directories(job_data)
         self.init_settings(settings, job_data, manager)
         valid_files = self.get_valid_reads(job_data)
         output = self.run(valid_files)
@@ -779,9 +776,6 @@ class ModuleManager():
             old_format = {self.output_type(module): output}
             wlink.insert_output(old_format, self.output_type(module),
                                 plugin.name)
-        else:
-            raise Exception('{}: No output produced'.format(module))
-
 
         ########## Legacy Compatibility #########
         wlink['log'] = plugin.plugin_object.out_module.name
