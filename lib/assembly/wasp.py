@@ -3,6 +3,7 @@
 ################ Symbol, Env classes
 
 import os
+import itertools
 
 #### Arast Libraries
 import asmtypes
@@ -148,11 +149,11 @@ class WaspLink(dict):
             name = '{}_{}'.format(module_name, outtype)
             if not type(outvalue) is list: 
                 outvalue = [outvalue]
+
             ## Store default output
             if default_type == outtype:
                 self['default_output'] = asmtypes.set_factory(outtype,[asmtypes.FileInfo(f) for f in outvalue],
                                                               name=name)
-
             ## Store all outputs and values
             outputs = []
             filesets = []
@@ -172,10 +173,9 @@ class WaspLink(dict):
         self['data'] = asmtypes.FileSetContainer(filesets)
 
     def get_value(self, key):
-        for fs in self['data']:
-            if fs['type'] == key:
-                return fs 
-        return self['info'][key]
+        if key in self['info']:
+            return self['info']['key']
+        return self['data'].find_type(key)[0]
 
 
 
@@ -190,11 +190,12 @@ class WaspEngine():
         init_link['default_output'] = job_data.wasp_data().readsets
         self.assembly_env.update({self.constants_reads: init_link})
         
-
     def run_wasp(self, exp, job_data):
         ## Run Wasp expression
-        w_chain = run(exp, self.assembly_env)
-        print 'done', w_chain
+        if type(exp) is str or type(exp) is unicode:
+            w_chain = run(exp, self.assembly_env)
+        elif type(exp) is list:
+            w_chain = eval(exp, env=env)
         ## Record results into job_data
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
@@ -210,3 +211,62 @@ class WaspEngine():
              self.pmanager.run_proc(module, wlink, job_data)
              return wlink
          return run_module
+
+
+
+
+###### Utitlity
+
+def _longest_common_exp(s1, s2):
+    m = [[0] * (1 + len(s2)) for i in xrange(1 + len(s1))]
+    longest, x_longest = 0, 0
+    for x in xrange(1, 1 + len(s1)):
+        for y in xrange(1, 1 + len(s2)):
+            if s1[x - 1] == s2[y - 1]:
+                m[x][y] = m[x - 1][y - 1] + 1
+                if m[x][y] > longest:
+                    longest = m[x][y]
+                    x_longest = x
+            else:
+                m[x][y] = 0
+    lcs = s1[x_longest - longest: x_longest]
+    
+    #### Remove extra parens
+    open_parens = lcs.count('(')
+    close_parens = lcs.count(')')
+    if open_parens and close_parens >= open_parens:
+        return lcs[:-(close_parens - open_parens)]
+
+def pipelines_to_exp(pipes):
+    all_pipes = []
+    for pipe in pipes:        
+        exp = 'READS'
+        for m in pipe:
+            exp = '({} {})'.format(m, exp)
+        exp = '(emit {})'.format(exp)
+        all_pipes.append(exp)
+        
+    #### Check for duplicates and redefine
+    val_num = 0
+    replacements = []
+    defs = []
+    reversed_pairs = set()
+    lces = set()
+    for pipe1, pipe2 in itertools.permutations(all_pipes, 2):
+        reversed_pairs.add((pipe2, pipe1))
+        if not (pipe1, pipe2) in reversed_pairs:
+            lce = _longest_common_exp(pipe1, pipe2)
+            if lce not in lces and lce:
+                lces.add(lce)
+                replacements.append((lce.strip(), 'val{}'.format(val_num)))
+                defs.append('(define val{} {})'.format(val_num, lce.strip()))
+                val_num += 1
+
+    #### Replace defined expressions
+    for replacement in replacements:
+        for i, pipe in enumerate(all_pipes):
+            all_pipes[i] = pipe.replace(*replacement)
+    
+    #### Form final expression
+    final_exp = '(begin {} (quast {}))'.format(' '.join(defs), ' '.join(all_pipes))
+    return final_exp

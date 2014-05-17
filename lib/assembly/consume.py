@@ -394,7 +394,6 @@ class ArastConsumer:
         contig_ids = {}
 
         url = "http://%s" % (self.shockurl)
-#        url += '/node'
         try:
             include_all_data = params['all_data']
         except:
@@ -408,53 +407,63 @@ class ArastConsumer:
         exceptions = []
 
         ## TEMP
-        runwasp = True
+        runwasp = False
         wasp_exp = pipelines[0][0]
-        if runwasp:
-            w_engine = wasp.WaspEngine(self.pmanager, job_data)
-            w_engine.run_wasp(wasp_exp, job_data)
 
-            ###### Upload all result files
-            for fpath, ftype in job_data.get_all_ftypes():
-                res = self.upload(url, user, token, fpath, filetype=ftype)
-                download_ids[os.path.basename(fpath).split('.')[0]] = res['data']['id']
+        #### Parse pipeline to wasp exp
+        if not runwasp:
+            all_pipes = []
+            for p in pipelines:
+                all_pipes += self.pmanager.parse_input(p)
+            print all_pipes
+            wasp_exp = wasp.pipelines_to_exp(all_pipes)
+            print 'Wasp Expression: ', wasp_exp
+        w_engine = wasp.WaspEngine(self.pmanager, job_data)
+        w_engine.run_wasp(wasp_exp, job_data)
 
-        elif pipelines:
-            try:
-                if pipelines == ['auto']:
-                    pipelines = [default_pipe,]
-                # for p in pipelines:
-                #     self.pmanager.validate_pipe(p)
+        ###### Upload all result files
+        for fpath, ftype in job_data.get_all_ftypes():
+            res = self.upload(url, user, token, fpath, filetype=ftype)
+            download_ids[os.path.basename(fpath).split('.')[0]] = res['data']['id']
+
+        
+
+        # elif pipelines:
+        #     try:
+        #         if pipelines == ['auto']:
+        #             pipelines = [default_pipe,]
+        #         # for p in pipelines:
+        #         #     self.pmanager.validate_pipe(p)
                     
-                #ra_results = self.run_read_analysis(job_data, default_read_analysis)
-                result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
-                #result_files += ra_results
-                for i, f in enumerate(result_files):
-                    #fname = os.path.basename(f).split('.')[0]
-                    fname = str(i)
-                    res = self.upload(url, user, token, f)
-                    download_ids[fname] = res['data']['id']
+        #         #ra_results = self.run_read_analysis(job_data, default_read_analysis)
+        #         result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+        #         #result_files += ra_results
+        #         for i, f in enumerate(result_files):
+        #             #fname = os.path.basename(f).split('.')[0]
+        #             fname = str(i)
+        #             res = self.upload(url, user, token, f)
+        #             download_ids[fname] = res['data']['id']
                     
-                for c in contig_files:
-                    processed_contigs = process_contigs(c)
-                    fname = os.path.basename(processed_contigs).split('.')[0]
-                    res = self.upload(url, user, token, processed_contigs, filetype='contigs')
-                    contig_ids[fname] = res['data']['id']
+        #         for c in contig_files:
+        #             processed_contigs = process_contigs(c)
+        #             fname = os.path.basename(processed_contigs).split('.')[0]
+        #             res = self.upload(url, user, token, processed_contigs, filetype='contigs')
+        #             contig_ids[fname] = res['data']['id']
 
-                # Check if job completed with no errors
-                if exceptions:
-                    status = 'Complete with errors'
-                elif not summary:
-                    status = 'Complete: No valid contigs'
-                else:
-                    status += "Complete"
-                self.out_report.write("Pipeline completed successfully\n")
-            except:
-                traceback = format_exc(sys.exc_info())
-                status = "[FAIL] {}".format(sys.exc_info()[1])
-                print traceback
-                self.out_report.write("ERROR TRACE:\n{}\n".
-                                      format(format_tb(sys.exc_info()[2])))
+        #         # Check if job completed with no errors
+        #         if exceptions:
+        #             status = 'Complete with errors'
+        #         elif not summary:
+        #             status = 'Complete: No valid contigs'
+        #         else:
+        #             status += "Complete"
+        #         self.out_report.write("Pipeline completed successfully\n")
+        #     except:
+        #         traceback = format_exc(sys.exc_info())
+        #         status = "[FAIL] {}".format(sys.exc_info()[1])
+        #         print traceback
+        #         self.out_report.write("ERROR TRACE:\n{}\n".
+        #                               format(format_tb(sys.exc_info()[2])))
 
 
 
