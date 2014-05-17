@@ -73,6 +73,9 @@ class FileSetContainer(dict):
     def __init__(self, filesets=None):
         self.filesets = filesets if filesets else []
 
+    def find_type(self, set_type):
+        return [fileset for fileset in self.filesets if fileset['type'] == set_type]
+
     @property
     def readsets(self):
         """ Returns a list of all ReadSet objects"""
