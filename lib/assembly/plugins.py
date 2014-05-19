@@ -16,6 +16,9 @@ from yapsy.PluginManager import PluginManager
 from threading  import Thread
 from Queue import Queue, Empty
 
+# Debugging
+import sys, traceback
+
 # A-Rast modules
 import assembly
 import asmtypes
@@ -169,7 +172,6 @@ class BasePlugin(object):
         """
         Based on plugin config file, filters for valid filetypes
         """
-
         filetypes = self.filetypes.split(',')
         filetypes = ['.' + filetype for filetype in filetypes]
         valid_files = []
@@ -191,6 +193,7 @@ class BasePlugin(object):
                     [os.path.basename(d['files'][0]) for
                      d in job_data['reads']]))
         return valid_files
+
 
     def init_settings(self, settings, job_data, manager):
         self.outpath = self.create_directories(job_data)
@@ -471,6 +474,7 @@ class BasePreprocessor(BasePlugin):
 
     def wasp_run(self):
         #### Save and restore insert data
+        
         pass
 
 
@@ -746,6 +750,8 @@ class ModuleManager():
         """ Run module adapter for wasp interpreter
         To support the Job_data mechanism, injects wlink 
         """
+        print 'run_proc:',  module
+
         ## Setup 
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
@@ -766,6 +772,9 @@ class ModuleManager():
             output = plugin.plugin_object.base_call(settings, job_data, self)
         except Exception as e: ## Legacy
             print 'Exception in run_proc', e
+            ex_type, ex, tb = sys.exc_info()
+            traceback.print_tb(tb)
+
             output = plugin.plugin_object(settings, job_data, self)
 
         #### Store output(s) in FileSet objects ####

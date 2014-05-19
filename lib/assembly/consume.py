@@ -393,13 +393,13 @@ class ArastConsumer:
         download_ids = {}
         contig_ids = {}
 
-        url = "http://%s" % (self.shockurl)
-        try:
-            include_all_data = params['all_data']
-        except:
-            include_all_data = False
-        contigs = not include_all_data
-        status = ''
+        # url = "http://%s" % (self.shockurl)
+        # try:
+        #     include_all_data = params['all_data']
+        # except:
+        #     include_all_data = False
+        # contigs = not include_all_data
+        # status = ''
 
         ## TODO CHANGE: default pipeline
         default_pipe = ['velvet']
@@ -407,7 +407,7 @@ class ArastConsumer:
         exceptions = []
 
         ## TEMP
-        runwasp = False
+        runwasp = True
         wasp_exp = pipelines[0][0]
 
         #### Parse pipeline to wasp exp
@@ -415,7 +415,6 @@ class ArastConsumer:
             all_pipes = []
             for p in pipelines:
                 all_pipes += self.pmanager.parse_input(p)
-            print all_pipes
             wasp_exp = wasp.pipelines_to_exp(all_pipes)
             print 'Wasp Expression: ', wasp_exp
         w_engine = wasp.WaspEngine(self.pmanager, job_data)
@@ -425,8 +424,6 @@ class ArastConsumer:
         for fpath, ftype in job_data.get_all_ftypes():
             res = self.upload(url, user, token, fpath, filetype=ftype)
             download_ids[os.path.basename(fpath).split('.')[0]] = res['data']['id']
-
-        
 
         # elif pipelines:
         #     try:

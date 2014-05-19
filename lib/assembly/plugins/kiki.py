@@ -20,7 +20,9 @@ class KikiAssembler(BaseAssembler, IPlugin):
         for i in range(len(contigs)):
             self.tab_to_fasta(contigs[i], contigs_renamed[i], self.contig_threshold)
 
-        return {'contigs': contigs_renamed}
+        return {'contigs': contigs_renamed,
+                'scaffolds': contigs_renamed,
+                'some_stat': 50}
 
     def tab_to_fasta(self, tabbed_file, outfile, threshold):
         """ Converter for Kiki format """

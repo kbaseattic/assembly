@@ -5,7 +5,8 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class VelvetAssembler(BaseAssembler, IPlugin):
-    def run(self, reads):
+
+    def run(self, reads=None):
         """ 
         Build the command and run.
         Return list of contig file(s)
@@ -15,6 +16,31 @@ class VelvetAssembler(BaseAssembler, IPlugin):
         paired_count = 1                    
         single_count = 1
         pair_data = {}
+
+        # #### Add Paired Reads ####
+        # for pair_num, pairset in enumerate(self.data.readsets.paired):
+        #     if pair_num == 0: p_suffix = ''
+        #     else: p_suffix = str(pair_num + 1)
+        #     read1 = pairset.files[0]
+        #     cmd_args.append('-shortPaired' + p_suffix)
+        #     cmd_args.append('-' + infer_filetype(read1))
+        #     try:
+        #         read2 = pairset.files[1]
+        #         cmd_args.append('-separate')
+        #         cmd_args.append(read1)
+        #         cmd_args.append(read2)
+        #     except:
+        #         cmd_args.append(read1)
+
+        # #### Add Single Reads ####
+
+        #     elif d['type'] == 'single':
+        #         cmd_args.append('-' + 'short' + s_suffix)
+        #         cmd_args.append('-' + infer_filetype(read1))
+        #         cmd_args.append(read1)
+        #         single_count += 1
+
+
         for i,d in enumerate(reads):
             if paired_count == 1:
                 p_suffix = ''
@@ -69,7 +95,7 @@ class VelvetAssembler(BaseAssembler, IPlugin):
         if not os.path.exists(contigs[0]):
             contigs = []
             #raise Exception("No contigs")
-        return contigs
+        return {'contigs': contigs}
 
 def infer_filetype(file):
     filemap = {'.fa':'fasta',

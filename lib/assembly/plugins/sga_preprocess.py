@@ -13,6 +13,7 @@ class SgaPreprocessor(BasePreprocessor, IPlugin):
         Return list of reads
         """
         processed_reads = []
+        print reads
         for file_set in reads: # preprocess all pairs/reads!!!
             new_file_set = dict(file_set)
             new_file_set['files'] = []

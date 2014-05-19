@@ -212,11 +212,7 @@ class WaspEngine():
              return wlink
          return run_module
 
-
-
-
 ###### Utitlity
-
 def _longest_common_exp(s1, s2):
     m = [[0] * (1 + len(s2)) for i in xrange(1 + len(s1))]
     longest, x_longest = 0, 0
