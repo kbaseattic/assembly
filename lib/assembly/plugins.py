@@ -473,10 +473,13 @@ class BasePreprocessor(BasePlugin):
         return output
 
     def wasp_run(self):
-        #### Save and restore insert data
-        
-        pass
+        if len(self.data.readsets) != 1:
+            raise Exception('Preprocessing plugins consume a single readset')
 
+        #### Save and restore insert data
+        orig = self.data.readsets[0]
+        orig.update_files(self.run()['reads'])
+        return {'reads': orig}
 
     # Must implement run() method
     @abc.abstractmethod
@@ -765,42 +768,52 @@ class ModuleManager():
                 if link['module']:
                     assert (self.output_type(link['module']) == self.input_type(module) or 
                             self.output_type(link['module']) in self.input_type(module)) 
-        ## Run
+        #### Run
         job_data['wasp_chain'] = wlink
+        output = plugin.plugin_object.base_call(settings, job_data, self)
+        wlink.insert_output(output, self.output_type(module),
+                            plugin.name)
 
-        try:  ## If base class has wasp_run
-            output = plugin.plugin_object.base_call(settings, job_data, self)
-        except Exception as e: ## Legacy
-            print 'Exception in run_proc', e
-            ex_type, ex, tb = sys.exc_info()
-            traceback.print_tb(tb)
 
-            output = plugin.plugin_object(settings, job_data, self)
 
-        #### Store output(s) in FileSet objects ####
-        if type(output) is dict: # New Format
-            wlink.insert_output(output, self.output_type(module),
-                                plugin.name)
-        elif type(output) is list and self.output_type(module) == 'contigs':
-            old_format = {self.output_type(module): output}
-            wlink.insert_output(old_format, self.output_type(module),
-                                plugin.name)
+
+
+        # try:  ## If base class has wasp_run
+
+        #     wasp = True
+        # except Exception as e: ## Legacy
+        #     print 'Exception in run_proc', e
+        #     ex_type, ex, tb = sys.exc_info()
+        #     traceback.print_tb(tb)
+        #     output = plugin.plugin_object(settings, job_data, self)
 
         ########## Legacy Compatibility #########
-        wlink['log'] = plugin.plugin_object.out_module.name
-        job_data['wasp_chain'] = wlink
+        ### Convert old to new: list -> wlink
+        # if type(output) is list:
+        #     output = {self.output_type(module): output}
 
-        if self.output_type(module) == 'contigs':
-            job_data['contigs'] = output
-            if type(output) is dict:
-                if type(output['contigs']) is list:
-                    job_data['contigs'] = output['contigs'] 
-                else:job_data['contigs'] = [output['contigs']]
+        # wlink['log'] = plugin.plugin_object.out_module.name
+        # ### Convert new to old: wasp_dict -> list
+        # if self.output_type(module) == 'contigs':
+        #     if type(output) is dict:
+        #         if type(output['contigs']) is list:
+        #             job_data['contigs'] = output['contigs'] 
+        #         else:job_data['contigs'] = [output['contigs']]
 
-        elif self.output_type(module) == 'reads':
-            job_data['reads'] = output
-            if type(output) is list:
-                wlink['default_output'] = job_data.wasp_data().readsets
+        # elif self.output_type(module) == 'reads' and not wasp:
+        #     job_data['reads'] = output['reads']
+        #     wlink['default_output'] = job_data.wasp_data().readsets
+        # job_data['wasp_chain'] = wlink
+        ############################################
+        ### Store Results
+
+
+        # try:
+
+        # except Exception as e:
+        #     print e
+
+            
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT
