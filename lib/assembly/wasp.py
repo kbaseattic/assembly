@@ -152,8 +152,12 @@ class WaspLink(dict):
 
             ## Store default output
             if default_type == outtype:
-                self['default_output'] = asmtypes.set_factory(outtype,[asmtypes.FileInfo(f) for f in outvalue],
-                                                              name=name)
+                for f in outvalue:
+                    if isinstance(f, asmtypes.FileSet):
+                        self['default_output'] = f
+                    else:
+                        self['default_output'] = asmtypes.set_factory(outtype,[asmtypes.FileInfo(f)],
+                                                                      name=name)
             ## Store all outputs and values
             outputs = []
             filesets = []
@@ -189,6 +193,7 @@ class WaspEngine():
         init_link = WaspLink()
         init_link['default_output'] = job_data.wasp_data().readsets
         self.assembly_env.update({self.constants_reads: init_link})
+        self.assembly_env.update({'best_contig': wasp_functions.best})
         
     def run_wasp(self, exp, job_data):
         ## Run Wasp expression
@@ -258,6 +263,7 @@ def pipelines_to_exp(pipes):
                 defs.append('(define val{} {})'.format(val_num, lce.strip()))
                 val_num += 1
 
+                
     #### Replace defined expressions
     for replacement in replacements:
         for i, pipe in enumerate(all_pipes):
