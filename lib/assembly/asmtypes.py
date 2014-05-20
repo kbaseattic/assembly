@@ -1,4 +1,5 @@
 import os
+import uuid
 
 #### Single Files #####
 class FileInfo(dict):
@@ -12,6 +13,7 @@ class FileInfo(dict):
                      'local_file': filename,
                      'create_time': create_time,
                      'metadata': metadata})
+        self.id = uuid.uuid4()
 
 
 
@@ -23,6 +25,7 @@ class FileSet(dict):
         dict.__init__(self, **kwargs)
         self.update({'type': set_type,
                      'file_infos': []})
+        self.id = uuid.uuid4()
         if type(file_infos) is list:
             for f in file_infos:
                 self['file_infos'].append(f)
@@ -33,14 +36,19 @@ class FileSet(dict):
     def files(self):
         """ Returns file paths of all files in set"""
         return [f['local_file'] for f in self['file_infos']]
-    
+
+    @property
     def name(self):
         return self['name'] or None
+
+    def update_files(self, files):
+        self['file_infos'] = [FileInfo(f) for f in files]
 
 class ReadSet(FileSet):
     def __init__(self, set_type, file_infos,  **kwargs):
         FileSet.__init__(self, set_type, file_infos, **kwargs)
         self.__dict__.update(kwargs)
+        self.type = set_type
 
     @property
     def insert_len(self):
@@ -58,6 +66,11 @@ class ReferenceSet(FileSet):
         assert len(file_infos) < 2
 
 def set_factory(set_type, file_infos, **kwargs):
+    
+    for i,f in enumerate(file_infos):
+        if type(f) is not FileInfo and os.path.exists(f):
+            file_infos[i] = FileInfo(f)
+            
     if set_type in ['paired', 'single']:
         return ReadSet(set_type, file_infos, **kwargs)
     elif set_type == 'contigs':
@@ -75,6 +88,13 @@ class FileSetContainer(dict):
 
     def find_type(self, set_type):
         return [fileset for fileset in self.filesets if fileset['type'] == set_type]
+
+    def find(self, id):
+        for fileset in self.filesets:
+            if fileset.id == id: return fileset
+
+    def find_and_update(self, id, newdict):
+        self.find(id).update(newdict)
 
     @property
     def readsets(self):
