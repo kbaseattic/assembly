@@ -141,8 +141,6 @@ class MetadataConnection:
         col = database[self.auth_collection]
         try:
             auth_info = col.find_one({'globus_user': user})
-            print 'found'
-            print auth_info
         except:
             return None
         return auth_info
