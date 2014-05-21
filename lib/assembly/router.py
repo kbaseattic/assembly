@@ -398,7 +398,7 @@ class JobResource:
                     try:
                         row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
                     except:
-                        row = ['err','err','err']
+                        continue
                     try:
                         row.append(str(doc['computation_time']))
                     except:
