@@ -332,7 +332,7 @@ class JobResource:
         return 'Kill request sent for job {}'.format(job_id)
 
     @cherrypy.expose
-    def default(self, job_id, *args, **kwargs):
+    def default(self, job_id=None, *args, **kwargs):
         if len(args) == 0: # /user/USER/job/JOBID/
             pass
         else:
@@ -342,6 +342,11 @@ class JobResource:
         except:
             raise cherrypyHTTPError(403)
 
+        ### No job_id, return all
+        if not job_id:  
+            return self.status(job_id=job_id, format='json', **kwargs)
+
+        ### job_id 
         if resource == 'shock_node':
             return self.get_shock_node(userid, job_id)
         elif resource == 'assembly':
@@ -380,7 +385,7 @@ class JobResource:
             except:
                 records = 100
 
-            docs = metadata.list_jobs(kwargs['userid'])
+            docs = [sanitize_doc(d) for d in metadata.list_jobs(kwargs['userid'])]
             pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
             if docs:
                 try:
@@ -393,7 +398,7 @@ class JobResource:
                     try:
                         row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
                     except:
-                        row = ['err','err','err']
+                        continue
                     try:
                         row.append(str(doc['computation_time']))
                     except:
@@ -617,3 +622,10 @@ class Root(object):
     def default(self):
         print 'root'
 
+def sanitize_doc(doc):
+    """ Removes unwanted information in response data """
+    to_remove = ['oauth_token', '_id', 'data']
+    for k in to_remove:
+        try: del doc[k]
+        except KeyError: pass
+    return doc
