@@ -624,8 +624,8 @@ class Root(object):
 
 def sanitize_doc(doc):
     """ Removes unwanted information in response data """
-    to_remove = ['oauth_token', 'wasp_chain', '_id']
+    to_remove = ['oauth_token', '_id', 'data']
     for k in to_remove:
         try: del doc[k]
-        except KeyError: print '{} not in document'.format(k)
+        except KeyError: pass
     return doc
