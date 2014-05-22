@@ -52,8 +52,10 @@ class ArastConsumer:
         m = ctrl_conf['meta']        
         a = ctrl_conf['assembly']
         
+
+        ###### TODO Use REST API
         self.metadata = meta.MetadataConnection(arasturl, int(a['mongo_port']), m['mongo.db'],
-                                                m['mongo.collection'], m['mongo.collection.auth'])
+                                                m['mongo.collection'], m['mongo.collection.auth'], m['mongo.collection.data'] )
         self.gc_lock = multiprocessing.Lock()
 
     def garbage_collect(self, datapath, user, required_space):
@@ -103,7 +105,7 @@ class ArastConsumer:
         uid = params['_id']
 
         ##### Get data from ID #####
-        data_doc = self.metadata.get_doc_by_data_id(params['data_id'], params['ARASTUSER'])
+        data_doc = self.metadata.get_data_docs(params['ARASTUSER'], params['data_id'])
         if not data_doc:
             raise Exception('Invalid Data ID: {}'.format(params['data_id']))
 
