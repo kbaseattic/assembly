@@ -258,9 +258,9 @@ sub install_ray {
     my $dir = 'ray';
     git("git://github.com/sebhtml/ray.git");
     git("git://github.com/sebhtml/RayPlatform.git");
-    run("cd ray; make clean; make -j8 PREFIX=build MAXKMERLENGTH=64 DEBUG=n ASSERT=y");
+    run("cd ray; make clean; make -j8 PREFIX=build MAXKMERLENGTH=64 DEBUG=n ASSERT=y HAVE_LIBZ=y");
     run("mkdir -p $dest_dir/$dir");
-    run("cd ray; cp -r scripts $dest_dir/$dir/; cp Ray $dest_dir/$dir/; cp libRayPlatform.a $dest_dir/$dir/; cp libRay.a $dest_dir/$dir/");
+    run("cd ray; cp -r scripts $dest_dir/$dir/; cp Ray $dest_dir/$dir/");
 }
 
 sub install_reapr {

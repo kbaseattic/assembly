@@ -90,7 +90,10 @@ if (@ws_args) {
     $ws_url  ||= $curr_url;
     $ws_name ||= $curr_name or die "Error: workspace name not set, and no active workspace found\n";
     
-    my $ws_url = 'http://140.221.84.209:7058'; # TODO: option, read from cfg
+    # $ws_url ||= 'http://140.221.84.209:7058';   # dev
+    # $ws_url ||= 'http://kbase.us/services/ws/'; # prod
+
+    # We can leave $ws_url undefined to get the production server
     my $ws = Bio::KBase::workspace::Client->new($ws_url, token => $token);
 
     my $info = $ws->save_object({ id => $obj_name,
@@ -125,7 +128,7 @@ sub submit_data {
                         version => $cli_upload_compatible_version,
                         client => "CLI/ar-upload.pl" };
     $req->content( encode_json($client_data) );
-    print encode_json($client_data);
+    # print encode_json($client_data);
     
     my $res = $ua->request($req);
 
