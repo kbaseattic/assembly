@@ -3,16 +3,19 @@ import uuid
 
 #### Single Files #####
 class FileInfo(dict):
-    def __init__(self, filename, shock_url=None, shock_id=None, name=None,
+    def __init__(self, local_file=None, filename=None, shock_url=None, shock_id=None, name=None,
                  filesize=None, create_time=None, metadata=None, *args):
         dict.__init__(self, *args)
         self.update({'shock_url': shock_url,
                      'shock_id' : shock_id,
                      'filesize': filesize,
-                     'filename': os.path.basename(filename),
-                     'local_file': filename,
+                     'filename': filename,
+                     'local_file': local_file,
                      'create_time': create_time,
                      'metadata': metadata})
+        if not filename:
+            try: self['filename'] = os.path.basename(local_file)
+            except: pass
         self.id = uuid.uuid4()
 
 

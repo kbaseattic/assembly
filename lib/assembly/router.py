@@ -22,6 +22,7 @@ from prettytable import PrettyTable
 from traceback import format_exc
 
 # Import A-RAST libs
+import asmtypes
 import metadata as meta
 import shock
 from nexus import client as nexusclient
@@ -461,21 +462,31 @@ class JobResource:
         return json.dumps(result_data)
 
     def get_assembly_handles(self, userid=None, job_id=None, asm=None):
+        """ Converts old style nodes to File Handles with Shock information """
+
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
+
+        #### Convert (hack) into FileInfo
+        file_handles = []
         try:
             if asm:
                 if asm.isdigit() and asm != '0':
-                    result_data = doc['contig_ids'].items()[int(asm)-1]
+                    result_data = [doc['contig_ids'].items()[int(asm)-1]]
                 elif asm == 'auto':
-                    result_data = doc['contig_ids'].items()[0]
+                    result_data = [doc['contig_ids'].items()[0]]
             else:
-                result_data = doc['contig_ids']
+                result_data = doc['contig_ids'].items()
         except Exception as e:
             print e
             raise cherrypy.HTTPError(500)
-        return json.dumps(result_data)
+
+        return json.dumps([asmtypes.FileInfo(filename=f[0], 
+                                          shock_url=cherrypy.config['ar_shock_url'],
+                                          shock_id=f[1]) for f in result_data])
+
+
 
 
 class StaticResource:
