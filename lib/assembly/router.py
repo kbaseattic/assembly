@@ -103,7 +103,7 @@ def route_job(body):
     routing_key = determine_routing_key (1, client_params)
     job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
     if not client_params['data_id']:
-        data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
+        data_id, _ = register_data(body)
         client_params['data_id'] = data_id
         
     client_params['job_id'] = job_id
@@ -126,14 +126,13 @@ def register_data(body):
     if not check_valid_client(body):
         return "Client too old, please upgrade"
     client_params = json.loads(body) #dict of params
-    data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
-    client_params['data_id'] = data_id
-
-    # Inserting a blank job
-    uid = metadata.insert_job(client_params)
-    logging.info("Inserting data record: %s" % client_params)
-    p = dict(client_params)
-    #analyze_data(json.dumps(dict(client_params)))
+    keep = ['assembly_data', 'client', 'ARASTUSER', 'message', 'version']
+    data_info = {}
+    for key in keep:
+        try: data_info[key] = client_params[key]
+        except: pass
+    data_id, uid = metadata.insert_data(data_info['ARASTUSER'], data_info)
+    logging.info("Inserting data record: %s" % data_info)
     response = json.dumps({"data_id": data_id})
     return response
 
@@ -241,7 +240,8 @@ def start(config_file, mongo_host=None, mongo_port=None,
                                        int(parser.get('assembly', 'mongo_port')),
                                        parser.get('meta', 'mongo.db'),
                                        parser.get('meta', 'mongo.collection'),
-                                       parser.get('meta', 'mongo.collection.auth'))
+                                       parser.get('meta', 'mongo.collection.auth'),
+                                       parser.get('meta', 'mongo.collection.data'))
 
     ##### CherryPy ######
     conf = {
@@ -398,6 +398,7 @@ class JobResource:
                     try:
                         row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
                     except:
+                        #row = ['err','err','err']
                         continue
                     try:
                         row.append(str(doc['computation_time']))
@@ -485,7 +486,6 @@ class StaticResource:
     serve._cp_config = {'tools.staticdir.on' : False}
 
 class FilesResource:
-    @cherrypy.expose
     def default(self, userid=None):
         testResponse = {}
         return '{}s files!'.format(userid)
@@ -504,20 +504,10 @@ class DataResource:
 
     @cherrypy.expose
     def default(self, data_id=None, userid=None):
-        ## /user/USERID/data/
-        if not data_id:
-            docs = metadata.get_docs_distinct_data_id(userid)
-            summarized_docs = []
-            for d in docs: ## return summarized docs
-                summarized_docs.append({k: d[k] for k in ('data_id', 'filename')})
-            return json.dumps(summarized_docs)
-        ## /user/USERID/data/            
-        doc = metadata.get_doc_by_data_id(data_id, userid)
-
-        status = {k: doc[k] for k in ('assembly_data', 'ids', 'data_id', 'filename', 'file_sizes', 
-                                      'single', 'pair', 'version') if k in doc}
-        return json.dumps(status)
-
+        if not data_id: ## /user/USERID/data/
+            return json_util.dumps(list(metadata.get_data_docs(userid)))
+        else: ## /user/USERID/data/<data.id>
+            return json_util.dumps(metadata.get_data_docs(userid, data_id))
 
         
 class UserResource(object):
