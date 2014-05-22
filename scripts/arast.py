@@ -23,7 +23,7 @@ import assembly.config as conf
 from assembly.auth_token import *
 import traceback
 
-my_version = '0.3.8.3'
+my_version = '0.3.9.2'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -227,9 +227,9 @@ def main():
                     
             all_types = ['paired', 'single', 'reference']
             for f_list, f_type in zip(file_lists, all_types):
-                f_infos = []
-                f_set_args = {}
                 for ls in f_list:
+                    f_infos = []
+                    f_set_args = {}
                     for word in ls:
                         if not (os.path.isfile(word) or '=' in word):
                             raise Exception('{} is not valid input!'.format(word))
@@ -241,8 +241,8 @@ def main():
                             kv = word.split('=')
                             f_set_args[kv[0]] = kv[1]
 
-                f_set = client.FileSet(f_type, f_infos, **f_set_args)
-                adata.add_set(f_set)
+                    f_set = client.FileSet(f_type, f_infos, **f_set_args)
+                    adata.add_set(f_set)
 
         arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version']
                      if k in options}
@@ -291,7 +291,7 @@ def main():
     elif args.command == 'get':
         if args.assembly:
             try:
-                if type(args.assembly) is int:
+                if type(args.assembly) is str:
                     aclient.get_assemblies(job_id=args.job_id[0], asm_id=args.assembly, stdout=args.stdout, outdir=args.outdir)
                 else:
                     aclient.get_assemblies(job_id=args.job_id[0], stdout=args.stdout, outdir=args.outdir)

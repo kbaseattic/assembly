@@ -101,6 +101,7 @@ class BasePlugin(object):
                         break
                     else: # got line
                         logging.info(line)
+                        self.is_urgent_output(line)
                         self.out_module.write(line)
                 time.sleep(5)
             p.wait()
@@ -112,6 +113,7 @@ class BasePlugin(object):
                     break
                 else: # got line
                     logging.info(line)
+                    self.is_urgent_output(line)
                     self.out_module.write(line)
 
         except subprocess.CalledProcessError as e:
@@ -120,6 +122,18 @@ class BasePlugin(object):
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
         self.out_report.write("Process time: {}\n\n".format(m_ftime))
+
+    def is_urgent_output(self, line):
+        """ 
+        Plugins should override this if functionality depends on stdout.
+        Should return False if no action should be taken.
+        Returning a non-zero value will terminate the process and return
+        the value to the plugin instance.
+
+        This is for use cases where tools provide feedback to STDOUT which
+        could be used to debug / iterate over itself in a smart way.
+        """
+        pass
 
     def killed(self):
         """ Check the kill queue to see if job should be killed """
@@ -204,10 +218,16 @@ class BasePlugin(object):
 
     def get_all_output_files(self):
         """ Returns list of all files created after run. """
-        if os.path.exists(self.outpath):
-            return [os.path.join(self.outpath, f) for 
-                    f in os.listdir(self.outpath)]
-        raise Exception("No output files in directory")
+        allfiles = []
+        for root, sub_dirs, files in os.walk(self.outpath):
+            for f in files:
+                allfiles.append(os.path.join(root, f))
+
+        # if os.path.exists(self.outpath):
+        #     return [os.path.join(self.outpath, f) for 
+        #             f in os.listdir(self.outpath)]
+        # raise Exception("No output files in directory")
+        return allfiles
 
     def run_checks(self, settings, job_data):
         logging.info("Doing checks")

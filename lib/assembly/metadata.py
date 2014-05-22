@@ -95,6 +95,7 @@ class MetadataConnection:
         jobs = self.get_jobs()
         jobs.update({'_id' : job_id},
                     {'$set' : {field : value}})
+
         if jobs.find_one({'_id' : job_id}) is not None:
             logging.info("Job updated: %s:%s:%s" % (job_id, field, value))
         else:

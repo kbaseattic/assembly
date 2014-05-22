@@ -87,9 +87,11 @@ class ArastConsumer:
     def get_data(self, body):
         """Get data from cache or Shock server."""
         params = json.loads(body)
-        if 'assembly_data' in params:
+        if ('assembly_data' in params or
+            params['version'] == 'widget'):
             logging.info('New Data Format')
             return self._get_data(body)
+
         else:
             return self._get_data_old(body)
 
@@ -376,6 +378,7 @@ class ArastConsumer:
                     'reference': reference,
                     'initial_reads': list(reads),
                     'raw_reads': copy.deepcopy(reads),
+                    'params': [],
                     'processed_reads': list(reads),
                     'pipeline_data': {},
                     'datapath': datapath,
@@ -403,6 +406,7 @@ class ArastConsumer:
 
         ## TODO CHANGE: default pipeline
         default_pipe = ['velvet']
+        default_read_analysis = ['fastqc']
         exceptions = []
 
         if pipelines:
@@ -411,8 +415,10 @@ class ArastConsumer:
                     pipelines = [default_pipe,]
                 for p in pipelines:
                     self.pmanager.validate_pipe(p)
-
+                    
+                #ra_results = self.run_read_analysis(job_data, default_read_analysis)
                 result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
+                #result_files += ra_results
                 for i, f in enumerate(result_files):
                     #fname = os.path.basename(f).split('.')[0]
                     fname = str(i)
@@ -420,8 +426,9 @@ class ArastConsumer:
                     download_ids[fname] = res['data']['id']
                     
                 for c in contig_files:
-                    fname = os.path.basename(c).split('.')[0]
-                    res = self.upload(url, user, token, c, filetype='contigs')
+                    processed_contigs = process_contigs(c)
+                    fname = os.path.basename(processed_contigs).split('.')[0]
+                    res = self.upload(url, user, token, processed_contigs, filetype='contigs')
                     contig_ids[fname] = res['data']['id']
 
                 # Check if job completed with no errors
@@ -471,12 +478,34 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'contig_ids', contig_ids)
         self.metadata.update_job(uid, 'status', status)
 
+        ## Make compatible with JSON dumps()
+        del job_data['out_report']
+        del job_data['initial_reads']
+        del job_data['raw_reads']
+        self.metadata.update_job(uid, 'data', job_data)
+        
         print '=========== JOB COMPLETE ============'
 
     def update_time_record(self):
         elapsed_time = time.time() - self.start_time
         ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
         self.metadata.update_job(uid, 'computation_time', ftime)
+
+    def run_read_analysis(self, job_data, modules):
+        results = []
+        #self.metadata.update_job(job_data['uid', 'modules', modules])
+        for module in modules:
+            self.metadata.update_job(job_data['uid'], 
+                                     'status', 'Analysis:{}'.format(module))
+            output, _, mod_log = self.pmanager.run_module(
+                module, job_data, all_data=True)
+            results += output
+        return results
+
+    def run_asm_analysis(self, job_data):
+        ## TEMPORARY
+        self.metadata.update_job(job_data['uid', 'modules', ['quast']])
+
 
     def run_pipeline(self, pipes, job_data, contigs_only=True):
         """
@@ -937,6 +966,21 @@ def list_io_basenames(job_data):
         for f in d['files']:
             basenames.append(os.path.basename(f))
     return basenames
+
+def process_contigs(c):
+    d = os.path.dirname(c)
+    f = os.path.basename(c)
+    new = '{}.ar.fasta'.format(f[0:f.rfind('.')])
+    outname = (os.path.join(d, new))
+    c_in = open(c)
+    c_out = open(outname, 'w')
+    for line in c_in:
+        if line[0] == '>':
+            c_out.write('\n')
+        c_out.write(line)
+    c_in.close()
+    c_out.close()
+    return outname
 
 class UpdateTimer(threading.Thread):
     """ Thread for updating time in the mongodb record (for arast stat). """

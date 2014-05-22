@@ -357,6 +357,8 @@ class JobResource:
             try: asm = args[1]
             except IndexError: asm = None
             return self.get_assembly_handles(userid, job_id, asm)
+        elif resource == 'data':
+            return self.get_job_data(userid, job_id)
         elif resource == 'report':
             return 'Report placeholder'
         elif resource == 'status':
@@ -366,6 +368,18 @@ class JobResource:
             return self.kill(job_id=job_id, userid=user)
         else:
             return resource
+
+        #@cherrypy.expose
+    def get_job_data(self, userid, job_id=None):
+        if userid == 'OPTIONS':
+            return ('New Data Request') # To handle initial html OPTIONS requess
+        try:
+            doc = metadata.get_job(userid, job_id)
+            del doc['oauth_token']
+            return json.dumps(doc)
+        except:
+            raise cherrypyHTTPError(403, 'Could not get data')
+
     @cherrypy.expose
     def status(self, **kwargs):
         try:
@@ -495,7 +509,15 @@ class StaticResource:
         ## Get all data
         if resource == 'job':
             job_id = resource_id
+            doc = metadata.get_job(userid, job_id)
+
+            # Download data
             aclient.get_job_data(job_id=job_id, outdir=outdir)
+
+
+            # Extract / stage files
+            if 'fastqc' in kwargs.keys():
+                pass
             ## Extract Quast data
             if 'quast' in kwargs.keys():
                 quastdir = os.path.join(outdir, 'quast')

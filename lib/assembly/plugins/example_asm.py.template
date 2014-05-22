@@ -1,0 +1,36 @@
+import os
+from plugins import BaseAssembler
+from yapsy.IPlugin import IPlugin
+
+class ExampleAssembler(BaseAssembler, IPlugin):
+    """
+    Built in attributes in self object:
+    * outpath: Automatically created unique path for module
+    * process_threads_allowed: Maximum threads module should use
+
+    Plugin-specific attributes are populated from the plugin config
+    file (PLUGIN.yapsy-plugin).  E.g:
+    * executable
+    * k
+
+    Invoking the process:
+    self.arast_popen is a wrapper for subprocess.Popen which handles 
+    logging and assembly service features
+
+    Helper functions are inherited from plugins.BasePlugin and in this case,
+    plugins.BaseAssembler.  For example:
+    self.get_files(reads) will extract the paths of read_files, regardless of type (single/paired)
+    """
+
+    def run(self, reads):
+        """ 
+        Return a list of contig files
+        """
+        self.arast_popen([self.executable, '-k', self.k, '-o', self.outpath, '-i'] + self.get_files(reads))
+        contig_file = os.path.join(self.outpath + '/assembly.fa')
+
+        # Check to see if contig file was created
+        if os.path.exists(contig_file):
+            return [contig_file]
+        else:
+            return []

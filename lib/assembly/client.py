@@ -1,3 +1,4 @@
+import collections
 import datetime
 import json
 import requests
@@ -102,6 +103,11 @@ class Client:
                 with open(asm_file) as f:
                     for line in f:
                         print line
+            elif asm_id:
+                ordered = collections.OrderedDict(sorted(nodes_map.items()))
+                id = ordered.values()[int(asm_id)-1]
+                self.shock.download_file(id , outdir=outdir)
+
             else:
                 for node_id in nodes_map.values():
                     self.shock.download_file(node_id, outdir=outdir)

@@ -14,15 +14,23 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [self.executable]
+        pe_num = 1
         for lib in reads:
             if lib['type'] == 'paired':
+                if pe_num == 6:
+                    print '> 5 pairs not supported!'
+                    break
                 if len(lib['files']) == 1: # Interleaved
-                    cmd_args += ['--12', lib['files'][0]]
+                    cmd_args += ['--pe{}-12'.format(pe_num), lib['files'][0]]
                 elif len(lib['files']) == 2: # 2 Files
-                    cmd_args += ['-1', lib['files'][0],
-                                 '-2', lib['files'][1]]
+                    cmd_args += ['--pe{}-1'.format(pe_num), lib['files'][0],
+                                 '--pe{}-2'.format(pe_num), lib['files'][1]]
                 else:
+                    print len(lib['files'])
+                    print lib['files']
                     raise Exception('Spades module file error')
+
+                pe_num += 1
             elif lib['type'] == 'single':
                 cmd_args += ['-s', lib['files'][0]]
         if self.only_assembler == 'True':
