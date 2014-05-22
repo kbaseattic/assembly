@@ -116,10 +116,13 @@ def route_job(body):
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
     msg = json.dumps(p)
-
     send_message(msg, routing_key)
     response = str(job_id)
     return response
+
+def route_data(body):
+    data_id, _ = register_data(body)
+    return json.dumps({"data_id": data_id})
 
 def register_data(body):
     """ User is only submitting libraries, return data ID """
@@ -131,10 +134,7 @@ def register_data(body):
     for key in keep:
         try: data_info[key] = client_params[key]
         except: pass
-    data_id, uid = metadata.insert_data(data_info['ARASTUSER'], data_info)
-    logging.info("Inserting data record: %s" % data_info)
-    response = json.dumps({"data_id": data_id})
-    return response
+    return metadata.insert_data(data_info['ARASTUSER'], data_info)
 
 def analyze_data(body): #run fastqc
     """Send data to compute node for analysis, wait for result"""
@@ -350,7 +350,9 @@ class JobResource:
         if resource == 'shock_node':
             return self.get_shock_node(userid, job_id)
         elif resource == 'assembly':
-            return self.get_assembly_nodes(userid, job_id)
+            try: asm = args[1]
+            except IndexError: asm = None
+            return self.get_assembly_nodes(userid, job_id, asm)
         elif resource == 'report':
             return 'Report placeholder'
         elif resource == 'status':
@@ -423,12 +425,21 @@ class JobResource:
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
 
-    def get_assembly_nodes(self, userid=None, job_id=None):
+    def get_assembly_nodes(self, userid=None, job_id=None, asm=None):
+        print 'asm'
+        print asm
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
         try:
-            result_data = doc['contig_ids']
+
+            if asm:
+                if type(asm) is int:
+                    result_data = doc['contig_ids'][asm_num]
+                elif asm is 'auto':
+                    result_data = doc['contig_ids'][0]
+            else:
+                result_data = doc['contig_ids']
         except:
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
@@ -500,7 +511,7 @@ class DataResource:
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
         #Return data id
-        return register_data(json.dumps(params))
+        return route_data(json.dumps(params))
 
     @cherrypy.expose
     def default(self, data_id=None, userid=None):
