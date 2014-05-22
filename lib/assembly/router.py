@@ -426,21 +426,19 @@ class JobResource:
         return json.dumps(result_data)
 
     def get_assembly_nodes(self, userid=None, job_id=None, asm=None):
-        print 'asm'
-        print asm
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
         try:
-
             if asm:
-                if type(asm) is int:
-                    result_data = doc['contig_ids'][asm_num]
-                elif asm is 'auto':
-                    result_data = doc['contig_ids'][0]
+                if asm.isdigit() and asm != '0':
+                    result_data = doc['contig_ids'].items()[int(asm)-1]
+                elif asm == 'auto':
+                    result_data = doc['contig_ids'].items()[0]
             else:
                 result_data = doc['contig_ids']
-        except:
+        except Exception as e:
+            print e
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
 
