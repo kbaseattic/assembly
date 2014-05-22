@@ -43,5 +43,6 @@ class QuastAssessment(BaseAssessment, IPlugin):
             report = None
         else: output['report'] = report
         output['all_files'] = all_files
+        output['n50s'] = (100000, 1)
         return output
     

@@ -28,6 +28,7 @@ import assembly as asm
 import metadata as meta
 import shock 
 import wasp
+import recipes
 from kbase import typespec_to_assembly_data as kb_to_asm
 
 from ConfigParser import SafeConfigParser
@@ -412,7 +413,9 @@ class ArastConsumer:
         wasp_exp = pipelines[0][0]
 
         #### Parse pipeline to wasp exp
-        if not '(' in wasp_exp:
+        if pipelines == ['auto']:
+            wasp_exp = recipes.auto
+        elif not '(' in wasp_exp:
             all_pipes = []
             for p in pipelines:
                 all_pipes += self.pmanager.parse_input(p)

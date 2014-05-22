@@ -7,6 +7,7 @@ import itertools
 
 #### Arast Libraries
 import asmtypes
+import wasp_functions
 
 Symbol = str
 
@@ -178,7 +179,7 @@ class WaspLink(dict):
 
     def get_value(self, key):
         if key in self['info']:
-            return self['info']['key']
+            return self['info'][key]
         return self['data'].find_type(key)[0]
 
 
@@ -193,7 +194,7 @@ class WaspEngine():
         init_link = WaspLink()
         init_link['default_output'] = job_data.wasp_data().readsets
         self.assembly_env.update({self.constants_reads: init_link})
-        self.assembly_env.update({'best_contig': wasp_functions.best})
+        self.assembly_env.update({'best_contig': wasp_functions.best_contig})
         
     def run_wasp(self, exp, job_data):
         ## Run Wasp expression
@@ -263,7 +264,6 @@ def pipelines_to_exp(pipes):
                 defs.append('(define val{} {})'.format(val_num, lce.strip()))
                 val_num += 1
 
-                
     #### Replace defined expressions
     for replacement in replacements:
         for i, pipe in enumerate(all_pipes):
