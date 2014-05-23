@@ -13,14 +13,27 @@ Symbol = str
 
 class Env(dict):
     "An environment: a dict of {'var':val} pairs, with an outer Env."
-    def __init__(self, parms=(), args=(), outer=None):
+    def __init__(self, parms=(), args=(), outer=None, meta=None, job_data=None):
         self.update(zip(parms,args))
         self.outer = outer
         self.emissions = []
+
+        ### Updata job status
+        self.meta = meta
+        self.uid = job_data['uid']
+        self.stage = 1
+        self.stages = 0
+        self.plugins = []
+
     def find(self, var):
         "Find the innermost Env where var appears."
         return self if var in self else self.outer.find(var)
 
+    def next_stage(self, module=''):
+        if module in self.plugins:
+            self.meta.update_job(self.uid, 'status', 'Stage {}/{}: {}'.format(self.stage, self.stages, module))
+            self.stage += 1
+    
 def add_globals(env):
     "Add some Scheme standard procedures to an environment."
     import math, operator as op
@@ -34,12 +47,12 @@ def add_globals(env):
       'null?':lambda x:x==[], 'symbol?':lambda x: isa(x, Symbol)})
     return env
 
-global_env = add_globals(Env())
+#global_env = add_globals(Env())
 isa = isinstance
 
 ################ eval
 
-def eval(x, env=global_env):
+def eval(x, env):
     "Evaluate an expression in an environment."
     if isa(x, Symbol):             # variable reference
         return env.find(x)[x]
@@ -83,6 +96,7 @@ def eval(x, env=global_env):
     else:                          # (proc exp*)
         exps = [eval(exp, env) for exp in x]
         proc = exps.pop(0)
+        env.next_stage(x[0])
         return proc(*exps)
 
 ################ parse, read, and user interaction
@@ -132,6 +146,10 @@ def repl(prompt='lis.py> '):
         if val is not None: print to_string(val)
 
 def run(exp, env):
+    stages = 0
+    for plugin in env.plugins:
+        stages += exp.count(plugin)
+    env.stages = stages
     return eval(parse(exp), env=env)
 
 
@@ -185,23 +203,25 @@ class WaspLink(dict):
 
 
 class WaspEngine():
-    def __init__(self, plugin_manager, job_data):
+    def __init__(self, plugin_manager, job_data, meta):
         self.constants_reads = 'READS'
         self.pmanager = plugin_manager
-        self.assembly_env = add_globals(Env())
+        self.assembly_env = add_globals(Env(job_data=job_data, meta=meta))
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
+        self.assembly_env.plugins = self.pmanager.plugins
 
         init_link = WaspLink()
         init_link['default_output'] = job_data.wasp_data().readsets
         self.assembly_env.update({self.constants_reads: init_link})
         self.assembly_env.update({'best_contig': wasp_functions.best_contig})
-        
+
+
     def run_wasp(self, exp, job_data):
         ## Run Wasp expression
         if type(exp) is str or type(exp) is unicode:
             w_chain = run(exp, self.assembly_env)
-        elif type(exp) is list:
-            w_chain = eval(exp, env=env)
+        # elif type(exp) is list:
+        #     w_chain = eval(exp, env=env)
         ## Record results into job_data
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
