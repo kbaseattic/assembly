@@ -200,7 +200,19 @@ class WaspLink(dict):
             return self['info'][key]
         return self['data'].find_type(key)[0]
 
+    def traverse(self):
+        if self['link']:
+            print self['default_output']['name']
+            for i,wlink in enumerate(self['link']):
+                print 'link ', i 
+                wlink.traverse()
 
+    def find_module(self, module):
+        """ Traverses the chain to find module """
+        if self['module'] == module:
+            return self
+        for wlink in self['link']:
+            return wlink.find_module(module)
 
 class WaspEngine():
     def __init__(self, plugin_manager, job_data, meta):

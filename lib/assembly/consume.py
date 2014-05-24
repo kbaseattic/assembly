@@ -375,6 +375,7 @@ class ArastConsumer:
                     'uid' : params['_id'],
                     'user' : params['ARASTUSER'],
                     'reads': reads,
+                    'logfiles': [],
                     'reference': reference,
                     'initial_reads': list(reads),
                     'raw_reads': copy.deepcopy(reads),
@@ -394,24 +395,10 @@ class ArastConsumer:
         download_ids = {}
         contig_ids = {}
         url = "http://%s" % (self.shockurl)
+        exceptions = []
         status = ''
 
-        # try:
-        #     include_all_data = params['all_data']
-        # except:
-        #     include_all_data = False
-        # contigs = not include_all_data
-        # 
-
-        ## TODO CHANGE: default pipeline
-        default_pipe = ['velvet']
-        default_read_analysis = ['fastqc']
-        exceptions = []
-
-        ## TEMP
-        runwasp = True
         wasp_exp = pipelines[0][0]
-
         #### Parse pipeline to wasp exp
         if pipelines == ['auto']:
             wasp_exp = recipes.auto
@@ -424,49 +411,11 @@ class ArastConsumer:
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
         w_engine.run_wasp(wasp_exp, job_data)
 
+
         ###### Upload all result files
         for fpath, ftype in job_data.get_all_ftypes():
             res = self.upload(url, user, token, fpath, filetype=ftype)
             download_ids[os.path.basename(fpath).split('.')[0]] = res['data']['id']
-
-        # elif pipelines:
-        #     try:
-        #         if pipelines == ['auto']:
-        #             pipelines = [default_pipe,]
-        #         # for p in pipelines:
-        #         #     self.pmanager.validate_pipe(p)
-                    
-        #         #ra_results = self.run_read_analysis(job_data, default_read_analysis)
-        #         result_files, summary, contig_files, exceptions = self.run_pipeline(pipelines, job_data, contigs_only=contigs)
-        #         #result_files += ra_results
-        #         for i, f in enumerate(result_files):
-        #             #fname = os.path.basename(f).split('.')[0]
-        #             fname = str(i)
-        #             res = self.upload(url, user, token, f)
-        #             download_ids[fname] = res['data']['id']
-                    
-        #         for c in contig_files:
-        #             processed_contigs = process_contigs(c)
-        #             fname = os.path.basename(processed_contigs).split('.')[0]
-        #             res = self.upload(url, user, token, processed_contigs, filetype='contigs')
-        #             contig_ids[fname] = res['data']['id']
-
-        #         # Check if job completed with no errors
-        #         if exceptions:
-        #             status = 'Complete with errors'
-        #         elif not summary:
-        #             status = 'Complete: No valid contigs'
-        #         else:
-        #             status += "Complete"
-        #         self.out_report.write("Pipeline completed successfully\n")
-        #     except:
-        #         traceback = format_exc(sys.exc_info())
-        #         status = "[FAIL] {}".format(sys.exc_info()[1])
-        #         print traceback
-        #         self.out_report.write("ERROR TRACE:\n{}\n".
-        #                               format(format_tb(sys.exc_info()[2])))
-
-
 
         # Format report
         for i, job in enumerate(self.job_list):
@@ -498,7 +447,7 @@ class ArastConsumer:
         # Get location
         self.metadata.update_job(uid, 'result_data', download_ids)
         self.metadata.update_job(uid, 'contig_ids', contig_ids)
-        self.metadata.update_job(uid, 'status', status)
+        self.metadata.update_job(uid, 'status', 'Complete')
 
         ## Make compatible with JSON dumps()
         del job_data['out_report']

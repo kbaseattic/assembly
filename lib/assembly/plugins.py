@@ -479,6 +479,7 @@ class BasePreprocessor(BasePlugin):
         #### Save and restore insert data
         orig = self.data.readsets[0]
         orig.update_files(self.run()['reads'])
+        orig['name'] = '{}_reads'.format(self.name)
         return {'reads': orig}
 
     # Must implement run() method
