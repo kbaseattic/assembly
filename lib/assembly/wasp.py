@@ -4,6 +4,7 @@
 
 import os
 import itertools
+import uuid
 
 #### Arast Libraries
 import asmtypes
@@ -221,6 +222,7 @@ class WaspEngine():
         self.assembly_env = add_globals(Env(job_data=job_data, meta=meta))
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
         self.assembly_env.plugins = self.pmanager.plugins
+        self.id = uuid.uuid4()
 
         init_link = WaspLink()
         init_link['default_output'] = job_data.wasp_data().readsets
