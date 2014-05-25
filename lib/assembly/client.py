@@ -11,48 +11,7 @@ from shock import Shock
 #Debug
 import sys
 import traceback
-""" Assembly Service client library.
-
-REST interface:
-
-Resources:
-* http://assembly.kbase.us/api/
-
-** user/current
-** user/USER_ID/
-
-*** jobs/current
-*** jobs/JOB_ID
-**** status
-**** download
-**** runtime
-**** data_id
-**** ... other metadata
-
-*** data/current
-*** data/DATA_ID
-**** files
-**** files/FILE_ID(?)
-***** filename
-***** filesize
-
-
-Admin
------
-Create user                       POST URL/users
-Run job                           POST URL/user/USER_ID/job/new --data JSON_MSG
-Get status of recent jobs         GET  URL/user/USER_ID/job/status?records=<>
-
-# TODO
-Get status of one job             GET  URL/user/USER_ID/job/JOB_ID/status
-Get list of user's data           GET  URL/user/USER_ID/data/current/status
-Get list of files for data_id     GET  URL/user/USER_ID/data/DATA_ID/status
-
-
-#TODO
-format from html??
-
-"""
+""" Assembly Service client library. """
 
 
 class Client:

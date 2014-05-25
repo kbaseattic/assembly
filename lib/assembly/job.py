@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy.numarray as na
 
 import asmtypes
+import shock 
 
 class ArastJob(dict):
     """
@@ -97,12 +98,14 @@ class ArastJob(dict):
                 return pipeline
 
     def add_results(self, filesets):
-        if not type(filesets) is list:
-            filesets = [filesets]
-        for f in filesets:
-            self['out_results'].append(f)
+        if filesets:
+            if not type(filesets) is list:
+                filesets = [filesets]
+            for f in filesets:
+                self['out_results'].append(f)
 
-    def get_all_filesets(self):
+    @property
+    def results(self):
         """Return all output FileSets"""
         return self['out_results']
 
@@ -112,6 +115,32 @@ class ArastJob(dict):
             for fileinfo in fileset['file_infos']:
                 ft.append((fileinfo['local_file'], fileset['type']))
         return ft
+
+    def upload_results(self, url, token):
+        """ Uploads all filesets and updates shock info """
+        new_sets = []
+        for fset in self.results:
+            new_files = []
+            for f,t in zip(fset['file_infos'], fset.type):
+                res = self.upload_file(url, self['user'], token, f['local_file'], filetype=t)
+                f.update({'shock_url': url, 'shock_id': res['data']['id']})
+                new_files.append(f)
+            fset.update_fileinfo(new_files)
+            new_sets.append(fset)
+        return new_sets
+
+
+    def upload_file(self, url, user, token, file, filetype='default'):
+        files = {}
+        files["file"] = (os.path.basename(file), open(file, 'rb'))
+        sclient = shock.Shock(url, user, token)
+        if filetype == 'contigs' or filetype == 'scaffolds':
+            res = sclient.upload_contigs(file)
+        else:
+            res = sclient.upload_misc(file, filetype)
+        return res
+
+
 
     def wasp_data(self):
         """

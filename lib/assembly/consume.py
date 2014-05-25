@@ -18,7 +18,6 @@ import re
 import threading
 import tarfile
 import subprocess
-#from yapsy.PluginManager import PluginManager
 from plugins import ModuleManager
 from job import ArastJob
 from multiprocessing import current_process as proc
@@ -412,10 +411,14 @@ class ArastConsumer:
         w_engine.run_wasp(wasp_exp, job_data)
 
 
-        ###### Upload all result files
-        for fpath, ftype in job_data.get_all_ftypes():
-            res = self.upload(url, user, token, fpath, filetype=ftype)
-            download_ids[os.path.basename(fpath).split('.')[0]] = res['data']['id']
+        ###### Upload all result files and place them into appropriate tags
+        print 'upload'
+        print job_data.upload_results(url, token)
+
+
+        # for fpath, ftype in job_data.get_all_ftypes():
+        #     res = self.upload(url, user, token, fpath, filetype=ftype)
+        #     download_ids[os.path.basename(fpath).split('.')[0]] = res['data']['id']
 
         # Format report
         for i, job in enumerate(self.job_list):
@@ -938,29 +941,6 @@ def extract_file(filename):
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1
 
-def list_io_basenames(job_data):
-    """ Lists filenames in JOB_DATA dict """
-    basenames = []
-    for d in job_data['reads']:
-        for f in d['files']:
-            basenames.append(os.path.basename(f))
-    return basenames
-
-def process_contigs(c):
-    d = os.path.dirname(c)
-    f = os.path.basename(c)
-    new = '{}.ar.fasta'.format(f[0:f.rfind('.')])
-    outname = (os.path.join(d, new))
-    c_in = open(c)
-    c_out = open(outname, 'w')
-    for line in c_in:
-        if line[0] == '>':
-            c_out.write('\n')
-        c_out.write(line)
-    c_in.close()
-    c_out.close()
-    return outname
-
 class UpdateTimer(threading.Thread):
     """ Thread for updating time in the mongodb record (for arast stat). """
     def __init__(self, meta_obj, update_interval, start_time, uid, done_flag):
@@ -980,49 +960,3 @@ class UpdateTimer(threading.Thread):
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
             self.meta.update_job(self.uid, 'computation_time', ftime)
             time.sleep(self.interval)
-
-
-
-
-### GRAVEYARD
-
-
-        ## Add reference assessment
-        # if job_data['reference']:
-        #     ref_data = dict(job_data)
-        #     ref_data['contigs'] = job_data['reference'][0]['files']
-        #     ref_ale_out, _, _ = self.pmanager.run_module('ale', ref_data)
-        #     if ref_ale_out:
-        #         job_data.add_pipeline(-1, [])
-        #         job_data.get_pipeline(-1).import_ale(ref_ale_out)
-        #         job_data.get_pipeline(-1)['name'] = 'REF'
-            
-        # try:    
-        #     job_data.import_quast(quast_report[0])
-        # except:
-        #     exceptions.append('No Quast Report')
-        #     print 'No Quast Report'
-
-        ## Write out ALE scores
-        # self.out_report.write("\n\n{0} ALE Reports {0}\n".format("="*10))
-        # for suffix,report in ale_reports.items():
-        #     try:
-        #         f = open(report, 'r')
-        #         score = f.readline()
-        #         f.close()
-        #         self.out_report.write("{}: {}\n".format(suffix, score))
-        #     except:
-        #         self.out_report.write("{}: Error\n".format(suffix))
-
-        # for suffix,report in ale_reports.items():
-        #     self.out_report.write("\n\n{0} ALE: {1}  {0}\n".format("="*10, suffix))
-        #     try:
-        #         with open(report) as infile:
-        #             self.out_report.write(infile.read())
-        #     except:
-        #         self.out_report.write("Error writing log file")
-
-
-        # ale_plot = job_data.plot_ale()
-        # if ale_plot:
-        #     return_files.append(ale_plot)

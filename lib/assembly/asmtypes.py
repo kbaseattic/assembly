@@ -1,6 +1,10 @@
 import os
 import uuid
 
+### arast ###
+import client
+
+
 #### Single Files #####
 class FileInfo(dict):
     def __init__(self, filename, shock_url=None, shock_id=None, name=None,
@@ -41,14 +45,22 @@ class FileSet(dict):
     def name(self):
         return self['name'] or None
 
+    @property
+    def type(self):
+        return self['type'] or None
+
+
     def update_files(self, files):
         self['file_infos'] = [FileInfo(f) for f in files]
+
+    def update_fileinfo(self, fileinfos):
+        self['file_infos'] = fileinfos
 
 class ReadSet(FileSet):
     def __init__(self, set_type, file_infos,  **kwargs):
         FileSet.__init__(self, set_type, file_infos, **kwargs)
         self.__dict__.update(kwargs)
-        self.type = set_type
+        self['type'] = set_type
 
     @property
     def insert_len(self):
