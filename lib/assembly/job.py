@@ -127,6 +127,7 @@ class ArastJob(dict):
                 new_files.append(f)
             fset.update_fileinfo(new_files)
             new_sets.append(fset)
+        self['result_data'] = new_sets
         return new_sets
 
 

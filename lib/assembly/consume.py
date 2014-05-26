@@ -391,8 +391,6 @@ class ArastConsumer:
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
         timer_thread.start()
         
-        download_ids = {}
-        contig_ids = {}
         url = "http://%s" % (self.shockurl)
         exceptions = []
         status = ''
@@ -412,19 +410,14 @@ class ArastConsumer:
 
 
         ###### Upload all result files and place them into appropriate tags
-        print 'upload'
-        print job_data.upload_results(url, token)
-
-
-        # for fpath, ftype in job_data.get_all_ftypes():
-        #     res = self.upload(url, user, token, fpath, filetype=ftype)
-        #     download_ids[os.path.basename(fpath).split('.')[0]] = res['data']['id']
-
-        # Format report
+        uploaded_fsets = job_data.upload_results(url, token)
+        
         for i, job in enumerate(self.job_list):
             if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
                 self.job_list.pop(i)
         self.done_flag.set()
+
+        # Format report
         new_report = open('{}.tmp'.format(self.out_report_name), 'w')
 
         ### Log exceptions
@@ -432,8 +425,9 @@ class ArastConsumer:
             new_report.write('PIPELINE ERRORS')
             for i,e in enumerate(exceptions):
                 new_report.write('{}: {}\n'.format(i, e))
-        try:
-            for sum in summary:
+        try: ## Get Quast output
+            quast_report = job_data['wasp_chain'].find_module('quast')['default_output'].files
+            for sum in quast_report:
                 with open(sum) as s:
                     new_report.write(s.read())
         except:
@@ -447,9 +441,7 @@ class ArastConsumer:
         res = self.upload(url, user, token, self.out_report_name)
         download_ids['report'] = res['data']['id']
 
-        # Get location
-        self.metadata.update_job(uid, 'result_data', download_ids)
-        self.metadata.update_job(uid, 'contig_ids', contig_ids)
+        self.metadata.update_job(uid, 'result_data', uploaded_fsets)
         self.metadata.update_job(uid, 'status', 'Complete')
 
         ## Make compatible with JSON dumps()
