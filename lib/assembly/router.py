@@ -358,6 +358,10 @@ class JobResource:
             try: asm = args[1]
             except IndexError: asm = None
             return self.get_assembly_handles(userid, job_id, asm)
+        elif resource == 'results':
+            try: args = args[1:]
+            except IndexError: args = ()
+            return self.get_results(userid, job_id, *args)
         elif resource == 'data':
             return self.get_job_data(userid, job_id)
         elif resource == 'report':
@@ -368,9 +372,8 @@ class JobResource:
             user = authenticate_request()
             return self.kill(job_id=job_id, userid=user)
         else:
-            return resource
+            raise cherrypyHTTPError(403, 'Resource {} not found.'.format(resource))
 
-        #@cherrypy.expose
     def get_job_data(self, userid, job_id=None):
         if userid == 'OPTIONS':
             return ('New Data Request') # To handle initial html OPTIONS requess
@@ -486,8 +489,12 @@ class JobResource:
                                           shock_url=cherrypy.config['ar_shock_url'],
                                           shock_id=f[1]) for f in result_data])
 
-
-
+    def get_results(self, userid=None, job_id=None, *args):
+        """ Converts old style nodes to File Handles with Shock information """
+        if not job_id:
+            raise cherrypy.HTTPError(403)
+        doc = metadata.get_job(userid, job_id)
+        return json.dumps(doc['result_data'])
 
 class StaticResource:
 
