@@ -330,7 +330,6 @@ class ArastConsumer:
         print all_files
         return datapath, all_files
 
-
     def compute(self, body):
         error = False
         params = json.loads(body)
@@ -396,8 +395,9 @@ class ArastConsumer:
         exceptions = []
         status = ''
 
-        wasp_exp = pipelines[0][0]
+
         #### Parse pipeline to wasp exp
+        wasp_exp = pipelines[0][0]
         if pipelines == ['auto']:
             wasp_exp = recipes.auto
         elif not '(' in wasp_exp:
@@ -407,7 +407,7 @@ class ArastConsumer:
             wasp_exp = wasp.pipelines_to_exp(all_pipes)
             print 'Wasp Expression: ', wasp_exp
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
-        w_engine.run_wasp(wasp_exp, job_data)
+        w_engine.run_expression(wasp_exp, job_data)
 
 
         ###### Upload all result files and place them into appropriate tags

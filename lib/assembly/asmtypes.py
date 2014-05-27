@@ -18,8 +18,9 @@ class FileInfo(dict):
                      'create_time': create_time,
                      'metadata': metadata})
         self.id = uuid.uuid4()
-        
 
+        #TODO Auto populate filesize
+        
 ##### Set of Files ######
 class FileSet(dict):
     def __init__(self, set_type, file_infos, 

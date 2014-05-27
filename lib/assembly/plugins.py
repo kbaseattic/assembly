@@ -23,6 +23,7 @@ import sys, traceback
 import assembly
 import asmtypes
 import pipe as phelper
+import wasp
 
 class BasePlugin(object):
     """ 
@@ -222,6 +223,12 @@ class BasePlugin(object):
             if not hasattr(self, kv[0]):
                 self.extra_params.append(kv)
             setattr(self, kv[0], kv[1])
+
+
+        #### Initialize Internal Wasp Engine ####
+        plugin_data = copy.deepcopy(job_data)
+        plugin_data['out_report'] = self.out_module
+        self.plugin_engine = wasp.WaspEngine(self.pmanager, plugin_data)
 
         #### Get default outputs of last module
         if job_data['wasp_chain']['link']:
