@@ -32,8 +32,10 @@ class Env(dict):
 
     def next_stage(self, module=''):
         if module in self.plugins:
-            self.meta.update_job(self.uid, 'status', 'Stage {}/{}: {}'.format(self.stage, self.stages, module))
-            self.stage += 1
+            try:
+                self.meta.update_job(self.uid, 'status', 'Stage {}/{}: {}'.format(self.stage, self.stages, module))
+                self.stage += 1
+            except: pass
     
 def add_globals(env):
     "Add some Scheme standard procedures to an environment."
@@ -62,6 +64,10 @@ def eval(x, env):
     elif x[0] == 'quote':          # (quote exp)
         (_, exp) = x
         return exp
+    elif x[0] == 'contigs':          # Create a fileset
+        wlink = WaspLink()
+        wlink['default_output'] = asmtypes.set_factory('contigs', x[1:])
+        return wlink
     elif x[0] == 'if':             # (if test conseq alt)
         (_, test, conseq, alt) = x
         return eval((conseq if eval(test, env) else alt), env)
@@ -162,6 +168,11 @@ class WaspLink(dict):
         self['data'] = None
         self['info'] = {}
 
+    @property
+    def files(self):
+        """ Return default results of current link """
+        return self['default_output'].files
+
     def insert_output(self, output, default_type, module_name):
         """ Parses the output dict of a completed module and stores the 
         data and information within the WaspLink object """
@@ -216,12 +227,13 @@ class WaspLink(dict):
             return wlink.find_module(module)
 
 class WaspEngine():
-    def __init__(self, plugin_manager, job_data, meta):
+    def __init__(self, plugin_manager, job_data, meta=None):
         self.constants_reads = 'READS'
         self.pmanager = plugin_manager
         self.assembly_env = add_globals(Env(job_data=job_data, meta=meta))
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
         self.assembly_env.plugins = self.pmanager.plugins
+        self.job_data = job_data
         self.id = uuid.uuid4()
 
         init_link = WaspLink()
@@ -229,20 +241,20 @@ class WaspEngine():
         self.assembly_env.update({self.constants_reads: init_link})
         self.assembly_env.update({'best_contig': wasp_functions.best_contig})
 
-
-    def run_wasp(self, exp, job_data):
+    def run_expression(self, exp, job_data=None):
+        if not job_data:
+            job_data = self.job_data
         ## Run Wasp expression
         if type(exp) is str or type(exp) is unicode:
             w_chain = run(exp, self.assembly_env)
-        # elif type(exp) is list:
-        #     w_chain = eval(exp, env=env)
+
         ## Record results into job_data
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
         for w in w_chain + self.assembly_env.emissions:
             try: job_data.add_results(w['default_output'])
             except: pass
-        return job_data
+        return w_chain[0]
 
     def get_wasp_func(self, module, job_data):
          def run_module(*inlinks):
