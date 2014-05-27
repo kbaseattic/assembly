@@ -25,6 +25,7 @@ from traceback import format_tb, format_exc
 
 import assembly as asm
 import metadata as meta
+import asmtypes
 import shock 
 import wasp
 import recipes
