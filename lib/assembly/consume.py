@@ -395,10 +395,9 @@ class ArastConsumer:
         exceptions = []
         status = ''
 
-
         #### Parse pipeline to wasp exp
         wasp_exp = pipelines[0][0]
-        if pipelines == ['auto']:
+        if wasp_exp == 'auto':
             wasp_exp = recipes.auto
         elif not '(' in wasp_exp:
             all_pipes = []
@@ -408,7 +407,6 @@ class ArastConsumer:
             print 'Wasp Expression: ', wasp_exp
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
         w_engine.run_expression(wasp_exp, job_data)
-
 
         ###### Upload all result files and place them into appropriate tags
         uploaded_fsets = job_data.upload_results(url, token)

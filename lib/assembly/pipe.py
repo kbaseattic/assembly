@@ -67,6 +67,9 @@ def parse_branches(pipe):
     all_pipes = []
     for pipe in cart[0]:
         all_pipes.append(list(itertools.chain(*pipe)))
+    for p in all_pipes:
+        try: p.remove('none')
+        except ValueError: pass
     return all_pipes
    
 def expand_sweep(module):
