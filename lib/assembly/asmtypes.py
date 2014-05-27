@@ -18,9 +18,7 @@ class FileInfo(dict):
                      'create_time': create_time,
                      'metadata': metadata})
         self.id = uuid.uuid4()
-
-
-
+        
 
 ##### Set of Files ######
 class FileSet(dict):

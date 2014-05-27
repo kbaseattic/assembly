@@ -439,9 +439,8 @@ class ArastConsumer:
         os.remove(self.out_report_name)
         shutil.move(new_report.name, self.out_report_name)
         res = self.upload(url, user, token, self.out_report_name)
-        download_ids['report'] = res['data']['id']
-
-        self.metadata.update_job(uid, 'result_data', uploaded_fsets)
+        report_info = asmtypes.FileInfo(self.out_report_name, shock_url=url, shock_id=res['data']['id'])
+        self.metadata.update_job(uid, 'report', [asmtypes.set_factory('report', [report_info])])
         self.metadata.update_job(uid, 'status', 'Complete')
 
         ## Make compatible with JSON dumps()
