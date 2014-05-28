@@ -433,14 +433,20 @@ class ArastConsumer:
         self.out_report.close()
         with open(self.out_report_name) as old:
             new_report.write(old.read())
+
+        for log in job_data['logfiles']:
+            new_report.write('\n{1} {0} {1}\n'.format(os.path.basename(log), '='*20))
+            with open(log) as l:
+                new_report.write(l.read())
         new_report.close()
         os.remove(self.out_report_name)
         shutil.move(new_report.name, self.out_report_name)
         res = self.upload(url, user, token, self.out_report_name)
         report_info = asmtypes.FileInfo(self.out_report_name, shock_url=url, shock_id=res['data']['id'])
+
+
         self.metadata.update_job(uid, 'report', [asmtypes.set_factory('report', [report_info])])
         status = 'Complete with errors' if job_data['exceptions'] else 'Complete'
-
 
         ## Make compatible with JSON dumps()
         del job_data['out_report']
