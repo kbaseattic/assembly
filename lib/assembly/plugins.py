@@ -234,6 +234,8 @@ class BasePlugin(object):
         if job_data['wasp_chain']['link']:
             all_sets = []
             for link in job_data['wasp_chain']['link']:
+                if not link:
+                    continue
                 if isinstance(link['default_output'], asmtypes.FileSet):
                     all_sets.append(link['default_output']) # Single FileSet
                 elif type(link['default_output']) is list:
@@ -761,9 +763,6 @@ class ModuleManager():
         """ Run module adapter for wasp interpreter
         To support the Job_data mechanism, injects wlink 
         """
-        print 'run_proc:',  module
-
-        ## Setup 
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)
@@ -773,6 +772,8 @@ class ModuleManager():
         #### Check input/output type compatibility
         if wlink['link']:
             for link in wlink['link']:
+                if not link:
+                    continue
                 if link['module']:
                     try:
                         assert (self.output_type(link['module']) == self.input_type(module) or 

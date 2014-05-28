@@ -22,6 +22,7 @@ class Env(dict):
         self.update(zip(parms,args))
         self.outer = outer
         self.emissions = []
+        self.exceptions = []
 
         ### Updata job status
         self.meta = meta
@@ -29,6 +30,7 @@ class Env(dict):
         self.stage = 1
         self.stages = 0
         self.plugins = []
+        
 
     def find(self, var):
         "Find the innermost Env where var appears."
@@ -89,9 +91,13 @@ def eval(x, env):
         return lambda *args: eval(exp, Env(vars, args, env))
     elif x[0] == 'emit':          # (emit exp) Store each intermediate for return
         (_,  exp) = x
-        val = eval(exp, env)
-        env.emissions.append(val)
-        return val
+        try:
+            val = eval(exp, env)
+            env.emissions.append(val)
+            return val
+        except Exception as e: 
+           #env.exceptions.append(e)
+            env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
     elif x[0] == 'get':
         (_, key, exp) = x
         chain = eval(exp, env)
@@ -108,7 +114,8 @@ def eval(x, env):
             try:
                 val.append(eval(exp, env))
             except Exception as e:
-                val.append(e)
+                #env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
+                env.exceptions.append(e)
         return val
     else:                          # (proc exp*)
         exps = [eval(exp, env) for exp in x]
@@ -262,11 +269,9 @@ class WaspEngine():
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
         for w in w_chain + self.assembly_env.emissions:
-            if isinstance(w, Exception):
-                job_data['exceptions'].append(str(w))
-            else:
-                try: job_data.add_results(w['default_output'])
-                except: pass
+            try: job_data.add_results(w['default_output'])
+            except: pass
+        job_data['exceptions'] = [str(e) for e in self.assembly_env.exceptions]
         return w_chain[0]
 
     def get_wasp_func(self, module, job_data):
