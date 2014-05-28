@@ -6,6 +6,10 @@ import os
 import itertools
 import uuid
 
+import traceback, sys
+
+
+
 #### Arast Libraries
 import asmtypes
 import wasp_functions
@@ -58,7 +62,10 @@ isa = isinstance
 def eval(x, env):
     "Evaluate an expression in an environment."
     if isa(x, Symbol):             # variable reference
-        return env.find(x)[x]
+        try:
+            return env.find(x)[x]
+        except:
+            raise Exception('Module "{}" not found'.format(x))
     elif not isa(x, list):         # constant literal
         return x                
     elif x[0] == 'quote':          # (quote exp)
@@ -98,7 +105,10 @@ def eval(x, env):
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate
         val = []
         for exp in x[1:]:
-            val.append(eval(exp, env))
+            try:
+                val.append(eval(exp, env))
+            except Exception as e:
+                val.append(e)
         return val
     else:                          # (proc exp*)
         exps = [eval(exp, env) for exp in x]
@@ -252,8 +262,11 @@ class WaspEngine():
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
         for w in w_chain + self.assembly_env.emissions:
-            try: job_data.add_results(w['default_output'])
-            except: pass
+            if isinstance(w, Exception):
+                job_data['exceptions'].append(str(w))
+            else:
+                try: job_data.add_results(w['default_output'])
+                except: pass
         return w_chain[0]
 
     def get_wasp_func(self, module, job_data):

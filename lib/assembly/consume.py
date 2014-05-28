@@ -378,6 +378,7 @@ class ArastConsumer:
                     'initial_reads': list(reads),
                     'raw_reads': copy.deepcopy(reads),
                     'params': [],
+                    'exceptions': [],
                     'pipeline_data': {},
                     'datapath': datapath,
                     'out_report' : self.out_report})
@@ -391,7 +392,6 @@ class ArastConsumer:
         timer_thread.start()
         
         url = "http://%s" % (self.shockurl)
-        exceptions = []
         status = ''
 
         #### Parse pipeline to wasp exp
@@ -419,9 +419,9 @@ class ArastConsumer:
         new_report = open('{}.tmp'.format(self.out_report_name), 'w')
 
         ### Log exceptions
-        if len(exceptions) > 0:
-            new_report.write('PIPELINE ERRORS')
-            for i,e in enumerate(exceptions):
+        if len(job_data['exceptions']) > 0:
+            new_report.write('PIPELINE ERRORS\n')
+            for i,e in enumerate(job_data['exceptions']):
                 new_report.write('{}: {}\n'.format(i, e))
         try: ## Get Quast output
             quast_report = job_data['wasp_chain'].find_module('quast')['default_output'].files
@@ -506,7 +506,6 @@ class ArastConsumer:
         channel.basic_qos(prefetch_count=1)
         channel.basic_consume(self.callback,
                               queue=self.queue)
-
 
         channel.start_consuming()
 
