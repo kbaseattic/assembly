@@ -21,22 +21,32 @@ class Env(dict):
     def __init__(self, parms=(), args=(), outer=None, meta=None, job_data=None):
         self.update(zip(parms,args))
         self.outer = outer
-        self.emissions = []
-        self.exceptions = []
+        if outer is not None:
+            self.emissions = outer.emissions
+            self.uid = outer.uid
+            self.meta = outer.meta
+            self.stage = outer.stage
+            self.stages = outer.stages
+            self.plugins = outer.plugins
+            self.exceptions = outer.exceptions
+        else:
+            self.emissions = []
+            self.uid = job_data['uid']
+            self.meta = meta
+            self.stage = 1
+            self.stages = 0
+            self.plugins = []
+            self.exceptions = []
 
+        self.parameters = {}
         ### Updata job status
-        self.meta = meta
-        self.uid = job_data['uid']
-        self.stage = 1
-        self.stages = 0
-        self.plugins = []
         
-
     def find(self, var):
         "Find the innermost Env where var appears."
         return self if var in self else self.outer.find(var)
 
     def next_stage(self, module=''):
+        "Increment the stage and update the status"
         if module in self.plugins:
             try:
                 self.meta.update_job(self.uid, 'status', 'Stage {}/{}: {}'.format(self.stage, self.stages, module))
@@ -56,10 +66,7 @@ def add_globals(env):
       'null?':lambda x:x==[], 'symbol?':lambda x: isa(x, Symbol)})
     return env
 
-#global_env = add_globals(Env())
 isa = isinstance
-
-################ eval
 
 def eval(x, env):
     "Evaluate an expression in an environment."
@@ -83,6 +90,9 @@ def eval(x, env):
     elif x[0] == 'set!':           # (set! var exp)
         (_, var, exp) = x
         env.find(var)[var] = eval(exp, env)
+    elif x[0] == 'setparam': 
+        (_, param, value) = x
+        env.parameters[param] = value
     elif x[0] == 'define':         # (define var exp)
         (_, var, exp) = x
         env[var] = eval(exp, env)
@@ -109,10 +119,12 @@ def eval(x, env):
         else: # A value
             return val
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate
+        inner_env = Env(outer=env)
         val = []
         for exp in x[1:]:
             try:
-                val.append(eval(exp, env))
+                #val.append(eval(exp, env))
+                val.append(eval(exp, inner_env))
             except Exception as e:
                 #env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
                 env.exceptions.append(e)
@@ -121,7 +133,7 @@ def eval(x, env):
         exps = [eval(exp, env) for exp in x]
         proc = exps.pop(0)
         env.next_stage(x[0])
-        return proc(*exps)
+        return proc(env, *exps)
 
 ################ parse, read, and user interaction
 
@@ -264,7 +276,6 @@ class WaspEngine():
         ## Run Wasp expression
         if type(exp) is str or type(exp) is unicode:
             w_chain = run(exp, self.assembly_env)
-
         ## Record results into job_data
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
@@ -275,10 +286,10 @@ class WaspEngine():
         return w_chain[0]
 
     def get_wasp_func(self, module, job_data):
-         def run_module(*inlinks):
+         def run_module(env, *inlinks):
             # WaspLinks keep track of the recursive pipelines
              wlink = WaspLink(module, inlinks)
-             self.pmanager.run_proc(module, wlink, job_data)
+             self.pmanager.run_proc(module, wlink, job_data, env.parameters)
              return wlink
          return run_module
 

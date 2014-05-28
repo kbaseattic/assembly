@@ -302,11 +302,6 @@ class BasePlugin(object):
         """ Module plugin should implement get_version. """
         return 'get_version not implemented!'
 
-    def update_settings(self, job_data):
-        """
-        Overwrite any new settings passed in JOB_DATA
-        """
-        pass
 
     def update_status(self):
         pass
@@ -759,7 +754,7 @@ class ModuleManager():
             return output, data, log
         return output, [], log
 
-    def run_proc(self, module, wlink, job_data):
+    def run_proc(self, module, wlink, job_data, parameters):
         """ Run module adapter for wasp interpreter
         To support the Job_data mechanism, injects wlink 
         """
@@ -767,7 +762,7 @@ class ModuleManager():
             raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)
         settings = plugin.details.items('Settings')
-        plugin.plugin_object.update_settings(job_data)
+        settings = update_settings(settings, parameters)
 
         #### Check input/output type compatibility
         if wlink['link']:
@@ -889,3 +884,14 @@ def handle_output(out, q):
         q.put(line)
     out.close()
 
+def update_settings(settings, new_dict):
+    """
+    Overwrite any new settings passed in 
+    """
+    updated = []
+    for tup in settings:
+        if tup[0] in new_dict:
+            updated.append((tup[0], str(new_dict[tup[0]])))
+        else:
+            updated.append(tup)
+    return updated
