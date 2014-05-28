@@ -25,16 +25,15 @@ class Env(dict):
             self.emissions = outer.emissions
             self.uid = outer.uid
             self.meta = outer.meta
-            self.stage = outer.stage
-            self.stages = outer.stages
+            self.global_data = outer.global_data
             self.plugins = outer.plugins
             self.exceptions = outer.exceptions
         else:
             self.emissions = []
             self.uid = job_data['uid']
             self.meta = meta
-            self.stage = 1
-            self.stages = 0
+            self.global_data = {'stage': 1,
+                                'stages': 0}
             self.plugins = []
             self.exceptions = []
 
@@ -49,8 +48,11 @@ class Env(dict):
         "Increment the stage and update the status"
         if module in self.plugins:
             try:
-                self.meta.update_job(self.uid, 'status', 'Stage {}/{}: {}'.format(self.stage, self.stages, module))
-                self.stage += 1
+                self.meta.update_job(self.uid, 'status', 
+                                     'Stage {}/{}: {}'.format(self.global_data['stage'], 
+                                                              self.global_data['stages']
+                                                              , module))
+                self.global_data['stage'] += 1
             except: pass
     
 def add_globals(env):
@@ -123,12 +125,12 @@ def eval(x, env):
         val = []
         for exp in x[1:]:
             try:
-                #val.append(eval(exp, env))
-                val.append(eval(exp, inner_env))
+                ret = eval(exp, inner_env)
+                if ret:val.append(ret)
             except Exception as e:
                 #env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
                 env.exceptions.append(e)
-        return val
+        return val if len(val) > 1 else val[0]
     else:                          # (proc exp*)
         exps = [eval(exp, env) for exp in x]
         proc = exps.pop(0)
@@ -185,7 +187,7 @@ def run(exp, env):
     stages = 0
     for plugin in env.plugins:
         stages += exp.count(plugin)
-    env.stages = stages
+    env.global_data['stages'] = stages
     return eval(parse(exp), env=env)
 
 
@@ -318,8 +320,23 @@ def pipelines_to_exp(pipes):
     all_pipes = []
     for pipe in pipes:        
         exp = 'READS'
+        params = []
         for m in pipe:
-            exp = '({} {})'.format(m, exp)
+            if m[0] == '?':
+                params.append(m[1:].split('='))
+            else:
+                if params:
+                    setparams = ' '.join(['(setparam {} {})'.format(p[0], p[1]) for p in params])
+                    exp = '(begin {} {})'.format(setparams, exp)
+                    params = []
+                exp = '({} {})'.format(m, exp)
+
+        #### Flush params
+        if params:
+            setparams = ' '.join(['(setparam {} {})'.format(p[0], p[1]) for p in params])
+            exp = '(begin {} {})'.format(setparams, exp)
+            params = []
+
         exp = '(emit {})'.format(exp)
         all_pipes.append(exp)
         

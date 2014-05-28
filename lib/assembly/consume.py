@@ -404,6 +404,7 @@ class ArastConsumer:
                 all_pipes += self.pmanager.parse_input(p)
             wasp_exp = wasp.pipelines_to_exp(all_pipes)
             logging.info('Wasp Expression: {}'.format(wasp_exp))
+            print('Wasp Expression: {}'.format(wasp_exp))
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
         w_engine.run_expression(wasp_exp, job_data)
 
