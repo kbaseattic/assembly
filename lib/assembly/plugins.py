@@ -774,53 +774,16 @@ class ModuleManager():
         if wlink['link']:
             for link in wlink['link']:
                 if link['module']:
-                    assert (self.output_type(link['module']) == self.input_type(module) or 
-                            self.output_type(link['module']) in self.input_type(module)) 
+                    try:
+                        assert (self.output_type(link['module']) == self.input_type(module) or 
+                                self.output_type(link['module']) in self.input_type(module)) 
+                    except AssertionError:
+                        raise Exception('{} and {} have mismatched input/output types'.format(module, link['module']))
         #### Run
         job_data['wasp_chain'] = wlink
         output = plugin.plugin_object.base_call(settings, job_data, self)
         wlink.insert_output(output, self.output_type(module),
                             plugin.name)
-
-
-
-
-
-        # try:  ## If base class has wasp_run
-
-        #     wasp = True
-        # except Exception as e: ## Legacy
-        #     print 'Exception in run_proc', e
-        #     ex_type, ex, tb = sys.exc_info()
-        #     traceback.print_tb(tb)
-        #     output = plugin.plugin_object(settings, job_data, self)
-
-        ########## Legacy Compatibility #########
-        ### Convert old to new: list -> wlink
-        # if type(output) is list:
-        #     output = {self.output_type(module): output}
-
-        # wlink['log'] = plugin.plugin_object.out_module.name
-        # ### Convert new to old: wasp_dict -> list
-        # if self.output_type(module) == 'contigs':
-        #     if type(output) is dict:
-        #         if type(output['contigs']) is list:
-        #             job_data['contigs'] = output['contigs'] 
-        #         else:job_data['contigs'] = [output['contigs']]
-
-        # elif self.output_type(module) == 'reads' and not wasp:
-        #     job_data['reads'] = output['reads']
-        #     wlink['default_output'] = job_data.wasp_data().readsets
-        # job_data['wasp_chain'] = wlink
-        ############################################
-        ### Store Results
-
-
-        # try:
-
-        # except Exception as e:
-        #     print e
-
             
 
     def output_type(self, module):

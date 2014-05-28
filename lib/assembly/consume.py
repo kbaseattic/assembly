@@ -439,14 +439,15 @@ class ArastConsumer:
         res = self.upload(url, user, token, self.out_report_name)
         report_info = asmtypes.FileInfo(self.out_report_name, shock_url=url, shock_id=res['data']['id'])
         self.metadata.update_job(uid, 'report', [asmtypes.set_factory('report', [report_info])])
-        self.metadata.update_job(uid, 'status', 'Complete')
+        status = 'Complete with errors' if job_data['exceptions'] else 'Complete'
+
 
         ## Make compatible with JSON dumps()
         del job_data['out_report']
         del job_data['initial_reads']
         del job_data['raw_reads']
         self.metadata.update_job(uid, 'data', job_data)
-        
+        self.metadata.update_job(uid, 'status', status)
         print '============== JOB COMPLETE ==============='
 
     def update_time_record(self):
