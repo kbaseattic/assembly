@@ -117,12 +117,15 @@ class ArastJob(dict):
         return ft
 
     def upload_results(self, url, token):
-        """ Uploads all filesets and updates shock info """
+        """ Renames and uploads all filesets and updates shock info """
         new_sets = []
-        for fset in self.results:
+        for i,fset in enumerate(self.results):
             new_files = []
             for f,t in zip(fset['file_infos'], fset.type):
-                res = self.upload_file(url, self['user'], token, f['local_file'], filetype=t)
+                new_file = '{}/{}.{}'.format(os.path.dirname(f['local_file']),
+                                             i+1, os.path.basename(f['local_file']))
+                os.rename(f['local_file'], new_file)
+                res = self.upload_file(url, self['user'], token, new_file, filetype=t)
                 f.update({'shock_url': url, 'shock_id': res['data']['id']})
                 new_files.append(f)
             fset.update_fileinfo(new_files)
@@ -130,18 +133,12 @@ class ArastJob(dict):
         self['result_data'] = new_sets
         return new_sets
 
-
     def upload_file(self, url, user, token, file, filetype='default'):
         files = {}
         files["file"] = (os.path.basename(file), open(file, 'rb'))
         sclient = shock.Shock(url, user, token)
-        if filetype == 'contigs' or filetype == 'scaffolds':
-            res = sclient.upload_contigs(file)
-        else:
-            res = sclient.upload_misc(file, filetype)
+        res = sclient.upload_misc(file, filetype)
         return res
-
-
 
     def wasp_data(self):
         """
