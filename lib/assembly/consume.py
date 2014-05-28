@@ -47,7 +47,7 @@ class ArastConsumer:
         self.datapath = self.parser.get('compute','datapath')
         if queue:
             self.queue = queue
-            print('Using queue:{}'.format(self.queue))
+            logging.info('Using queue:{}'.format(self.queue))
         else:
             self.queue = self.parser.get('rabbitmq','default_routing_key')
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
@@ -327,7 +327,6 @@ class ArastConsumer:
                 #logging.info(format_exc(sys.exc_info()))
                 logging.info('No single end files submitted')
 
-        print all_files
         return datapath, all_files
 
     def compute(self, body):
@@ -404,7 +403,7 @@ class ArastConsumer:
             for p in pipelines:
                 all_pipes += self.pmanager.parse_input(p)
             wasp_exp = wasp.pipelines_to_exp(all_pipes)
-            print 'Wasp Expression: ', wasp_exp
+            logging.info('Wasp Expression: ', wasp_exp)
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
         w_engine.run_expression(wasp_exp, job_data)
 
@@ -448,7 +447,7 @@ class ArastConsumer:
         del job_data['raw_reads']
         self.metadata.update_job(uid, 'data', job_data)
         
-        print '=========== JOB COMPLETE ============'
+        print '============== JOB COMPLETE ==============='
 
     def update_time_record(self):
         elapsed_time = time.time() - self.start_time
@@ -473,366 +472,6 @@ class ArastConsumer:
         analysis = quast_report[0]
         analysis_data = quast_tar
         return analysis, analysis_data
-
-#     def run_pipeline(self, pipes, job_data, contigs_only=True):
-#         """
-#         Runs all pipelines in list PIPES
-#         """
-#         all_pipes = []
-#         for p in pipes:
-#             all_pipes += self.pmanager.parse_input(p)
-#         logging.info('{} pipelines:'.format(len(all_pipes)))
-#         for p in all_pipes:
-#             print '->'.join(p)
-#         #include_reads = self.pmanager.output_type(pipeline[-1]) == 'reads'
-#         include_reads = False
-#         pipeline_num = 1
-#         all_files = []
-#         pipe_outputs = []
-#         logfiles = []
-#         ale_reports = {}
-#         final_contigs = []
-#         final_scaffolds = []
-#         output_types = []
-#         exceptions = []
-#         num_pipes = len(all_pipes)
-#         for pipe in all_pipes:
-#             try:
-#                 #job_data = copy.deepcopy(job_data_global)
-#                 #job_data['out_report'] = job_data_global['out_report'] 
-#                 pipeline, overrides = self.pmanager.parse_pipe(pipe)
-#                 job_data.add_pipeline(pipeline_num, pipeline)
-#                 num_stages = len(pipeline)
-#                 pipeline_stage = 1
-#                 pipeline_results = []
-#                 cur_outputs = []
-
-#                 # Reset job data 
-#                 job_data['reads'] = copy.deepcopy(job_data['raw_reads'])
-#                 job_data['processed_reads'] = []
-
-#                 self.out_report.write('\n{0} Pipeline {1}: {2} {0}\n'.format('='*15, pipeline_num, pipe))
-#                 pipe_suffix = '' # filename code for indiv pipes
-#                 pipe_start_time = time.time()
-#                 pipe_alive = True
-
-#                 # Store data record for pipeline
-
-#                 for module_name in pipeline:
-#                     if not pipe_alive:
-#                         self.out_report.write('\n{0} Module Failure, Killing Pipe {0}'.format(
-#                                 'X'*10))
-#                         break
-#                     module_code = '' # unique code for data reuse
-#                     print '\n\n{0} Running module: {1} {2}'.format(
-#                         '='*20, module_name, '='*(35-len(module_name)))
-#                     self.garbage_collect(self.datapath, job_data['user'], 2147483648) # 2GB
-
-#                     ## PROGRESS CALCULATION
-#                     pipes_complete = (pipeline_num - 1) / float(num_pipes)
-#                     stage_complete = (pipeline_stage - 1) / float(num_stages)
-#                     pct_segment = 1.0 / num_pipes
-#                     stage_complete *= pct_segment
-#                     total_complete = pipes_complete + stage_complete
-#                     cur_state = 'Running:[{}%|P:{}/{}|S:{}/{}|{}]'.format(
-#                         int(total_complete * 100), pipeline_num, num_pipes,
-#                         pipeline_stage, num_stages, module_name)
-#                     self.metadata.update_job(job_data['uid'], 'status', cur_state)
-
-#                     ## LOG REPORT For now, module code is 1st and last letter
-#                     short_name = self.pmanager.get_short_name(module_name)
-#                     if short_name:
-#                         #pipe_suffix += short_name.capitalize()
-#                         module_code += short_name.capitalize()
-#                     else:
-#                         #pipe_suffix += module_name[0].upper() + module_name[-1]
-#                         module_code += module_name[0].upper() + module_name[-1]
-#                     mod_overrides =  overrides[pipeline_stage - 1]
-#                     for k in mod_overrides.keys():
-#                                 #pipe_suffix += '_{}{}'.format(k[0], par[k])
-#                         module_code += '_{}{}'.format(k[0], mod_overrides[k])
-#                     pipe_suffix += module_code
-#                     self.out_report.write('PIPELINE {} -- STAGE {}: {}\n'.format(
-#                             pipeline_num, pipeline_stage, module_name))
-#                     logging.debug('New job_data for stage {}: {}'.format(
-#                             pipeline_stage, job_data))
-#                     job_data['params'] = overrides[pipeline_stage-1].items()
-#                     module_start_time = time.time()
-#                     ## RUN MODULE
-#                     # Check if output data exists
-#                     reuse_data = False
-#                     enable_reuse = True # KILL SWITCH
-#                     if enable_reuse:
-#                         for k, pipe in enumerate(pipe_outputs):
-#                             if reuse_data:
-#                                 break
-#                             if not pipe:
-#                                 continue
-#                             # Check that all previous pipes match
-#                             for i in range(pipeline_stage):
-#                                 try:
-#                                     if not pipe[i][0] == cur_outputs[i][0]:
-#                                         break
-#                                 except:
-#                                     pass
-#                                 try:
-#                                     if (pipe[i][0] == module_code and i == pipeline_stage - 1):
-#                                         #and overrides[i].items() == job_data['params']): #copy!
-#                                         print('Found previously computed data, reusing {}.'.format(
-#                                                 module_code))
-#                                         output = [] + pipe[i][1]
-#                                         pfix = (k+1, i+1)
-#                                         alldata = [] + pipe[i][2]
-#                                         reuse_data = True
-#                                         job_data.get_pipeline(pipeline_num).get_module(
-#                                             pipeline_stage)['elapsed_time'] = time.time(
-#                                             job_data.get_pipeline(i).get_module(
-#                                                     pipeline_stage)['elapsed_time'])
-
-#                                         break
-#                                 except: # Previous pipes may be shorter
-#                                     pass
-
-#                     output_type = self.pmanager.output_type(module_name)
-
-#                     if not reuse_data:
-#                         output, alldata, mod_log = self.pmanager.run_module(
-#                             module_name, job_data, all_data=True, reads=include_reads)
-
-#                         ##### Module produced no output, attach log and proceed to next #####
-#                         if not output:
-#                             pipe_alive = False
-#                             try:
-#                                 print mod_log
-#                                 logfiles.append(mod_log)
-#                             except:
-#                                 print 'error attaching ', mod_log
-#                             break
-
-#                         ### New Plugin Compatibility
-#                         if type(output) is dict:
-#                             output = output[output_type]
-
-#                         ##### Prefix outfiles with pipe stage (only assembler modules) #####
-#                         alldata = [asm.prefix_file_move(
-#                                 file, "P{}_S{}_{}".format(pipeline_num, pipeline_stage, module_name)) 
-#                                     for file in alldata]
-#                         module_elapsed_time = time.time() - module_start_time
-#                         job_data.get_pipeline(pipeline_num).get_module(
-#                             pipeline_stage)['elapsed_time'] = module_elapsed_time
-
-
-#                         if alldata: #If log was renamed
-#                             mod_log = asm.prefix_file(mod_log, "P{}_S{}_{}".format(
-#                                     pipeline_num, pipeline_stage, module_name))
-
-#                     if output_type == 'contigs' or output_type == 'scaffolds': #Assume assembly contigs
-#                         if reuse_data:
-#                             p_num, p_stage = pfix
-#                         else:
-#                             p_num, p_stage = pipeline_num, pipeline_stage
-
-#                         # If plugin returned scaffolds
-#                         if type(output) is tuple and len(output) == 2:
-#                             out_contigs = output[0]
-#                             out_scaffolds = output[1]
-#                             cur_scaffolds = [asm.prefix_file(
-#                                     file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
-#                                         for file in out_scaffolds]
-#                         else:
-#                             out_contigs = output
-#                         cur_contigs = [asm.prefix_file(
-#                                 file, "P{}_S{}_{}".format(p_num, p_stage, module_name)) 
-#                                     for file in out_contigs]
-
-#                         #job_data['reads'] = asm.arast_reads(alldata)
-#                         job_data['contigs'] = cur_contigs
-
-#                     elif output_type == 'reads': #Assume preprocessing
-#                         if include_reads and reuse_data: # data was prefixed and moved
-#                             for d in output:
-#                                 files = [asm.prefix_file(f, "P{}_S{}_{}".format(
-#                                             pipeline_num, pipeline_stage, module_name)) for f in d['files']]
-#                                 d['files'] = files
-#                                 d['short_reads'] = [] + files
-#                         job_data['reads'] = output
-#                         job_data['processed_reads'] = list(job_data['reads'])
-                        
-#                     else: # Generic return, don't use in further stages
-#                         pipeline_results += output
-#                         logging.info('Generic plugin output: {}'.format(output))
-   
-
-#                     if pipeline_stage == num_stages: # Last stage, add contig for assessment
-#                         if output and (output_type == 'contigs' or output_type == 'scaffolds'): #If a contig was produced
-#                             fcontigs = cur_contigs
-#                             rcontigs = [asm.rename_file_symlink(f, 'P{}_{}'.format(
-#                                         pipeline_num, pipe_suffix)) for f in fcontigs]
-#                             try:
-#                                 rscaffolds = [asm.rename_file_symlink(f, 'P{}_{}_{}'.format(
-#                                             pipeline_num, pipe_suffix, 'scaff')) for f in cur_scaffolds]
-#                                 if rscaffolds:
-#                                     scaffold_data = {'files': rscaffolds, 'name': pipe_suffix}
-#                                     final_scaffolds.append(scaffold_data)
-#                                     output_types.append(output_type)
-#                             except:
-#                                 pass
-#                             if rcontigs:
-#                                 contig_data = {'files': rcontigs, 'name': pipe_suffix, 'alignment_bam': []}
-#                                 final_contigs.append(contig_data)
-#                                 output_types.append(output_type)
-#                     try:
-#                         logfiles.append(mod_log)
-#                     except:
-#                         print 'error attaching ', mod_log
-#                     pipeline_stage += 1
-#                     cur_contigs = []
-#                     cur_scaffolds = []
-
-#                     cur_outputs.append([module_code, output, alldata])
-#                 pipe_elapsed_time = time.time() - pipe_start_time
-#                 pipe_ftime = str(datetime.timedelta(seconds=int(pipe_elapsed_time)))
-#                 job_data.get_pipeline(pipeline_num)['elapsed_time'] = pipe_elapsed_time
-
-
-
-#                 if not output:
-#                     self.out_report.write('ERROR: No contigs produced. See module log\n')
-#                 else:
-
-#                     ## Assessment
-#                     #self.pmanager.run_module('reapr', job_data)
-#                     #print job_data
-#                     # TODO reapr break may be diff from final reapr align!
-#                     # ale_out, _, _ = self.pmanager.run_module('ale', job_data)
-#                     # if ale_out:
-#                     #     job_data.get_pipeline(pipeline_num).import_ale(ale_out)
-#                     #     ale_reports[pipe_suffix] = ale_out
-#                     pipeline_datapath = '{}/{}/pipeline{}/'.format(job_data['datapath'], 
-#                                                                    job_data['job_id'],
-#                                                                    pipeline_num)
-#                     try:
-#                         os.makedirs(pipeline_datapath)
-#                     except:
-#                         logging.info("{} exists, skipping mkdir".format(pipeline_datapath))
-
-#                     # all_files.append(asm.tar_list(pipeline_datapath, pipeline_results, 
-#                     #                     'pipe{}_{}.tar.gz'.format(pipeline_num, pipe_suffix)))
-
-#                     all_files += pipeline_results
-
-#                 self.out_report.write('Pipeline {} total time: {}\n\n'.format(pipeline_num, pipe_ftime))
-#                 job_data.get_pipeline(pipeline_num)['name'] = pipe_suffix
-#                 pipe_outputs.append(cur_outputs)
-#                 pipeline_num += 1
-
-#             except:
-#                 print "ERROR: Pipeline #{} Failed".format(pipeline_num)
-#                 print format_exc(sys.exc_info())
-#                 e = str(sys.exc_info()[1])
-#                 if e.find('Terminated') != -1:
-#                     raise Exception(e)
-#                 exceptions.append(module_name + ':\n' + str(sys.exc_info()[1]))
-#                 pipeline_num += 1
-
-#         ## ANALYSIS: Quast
-#         job_data['final_contigs'] = final_contigs
-#         job_data['final_scaffolds'] = final_scaffolds
-#         job_data['params'] = [] #clear overrides from last stage
-
-#         summary = []  # Quast reports for contigs and scaffolds
-#         try: #Try to assess, otherwise report pipeline errors
-#             if job_data['final_contigs']:
-#                     job_data['contig_type'] = 'contigs'
-#                     quast_report, quast_tar, z1, q_log = self.pmanager.run_module('quast', job_data, 
-#                                                                                   tar=True, meta=True)
-
-
-#                     if quast_report:
-# #                        if type(quast_report) is dict
-#                         summary.append(quast_report[0])
-#                     with open(q_log) as infile:
-#                         self.out_report.write(infile.read())
-#             else:
-#                 quast_report, quast_tar = '',''
-
-#             if job_data['final_scaffolds']:
-#                 scaff_data = dict(job_data)
-#                 scaff_data['final_contigs'] = job_data['final_scaffolds']
-#                 scaff_data['contig_type'] = 'scaffolds'
-#                 scaff_report, scaff_tar, _, scaff_log = self.pmanager.run_module('quast', scaff_data, 
-#                                                                           tar=True, meta=True)
-#                 scaffold_quast = True
-#                 if scaff_report:
-#                     summary.append(scaff_report[0])
-#                 with open(scaff_log) as infile:
-#                     self.out_report.write('\n Quast Report - Scaffold Mode \n')
-#                     self.out_report.write(infile.read())
-#             else:
-#                 scaffold_quast = False
-#         except:
-#             if exceptions:
-#                 if len(exceptions) > 1:
-#                     raise Exception('Multiple Errors')
-#                 else:
-#                     raise Exception(exceptions[0])
-#             else:
-#                 raise Exception(str(sys.exc_info()[1]))
-
-
-#         ## CONCAT MODULE LOG FILES
-#         self.out_report.write("\n\n{0} Begin Module Logs {0}\n".format("="*10))
-#         for log in logfiles:
-#             self.out_report.write("\n\n{0} Begin Module {0}\n".format("="*10))
-#             try:
-#                 with open(log) as infile:
-#                     self.out_report.write(infile.read())
-#             except:
-#                 self.out_report.write("Error writing log file")
-
-
-
-#         ## Format Returns
-#         ctg_analysis = quast_tar.rsplit('/', 1)[0] + '/{}_ctg_qst.tar.gz'.format(job_data['job_id'])
-#         try:
-#             os.rename(quast_tar, ctg_analysis)
-#             return_files = [ctg_analysis]
-#         except:
-#             #summary = ''
-#             return_files = []
-
-#         if scaffold_quast:
-#             scf_analysis = scaff_tar.rsplit('/', 1)[0] + '/{}_scf_qst.tar.gz'.format(job_data['job_id'])
-#             #summary = quast_report[0]
-#             os.rename(scaff_tar, scf_analysis)
-#             return_files.append(scf_analysis)
-
-#         contig_files = []
-#         for data in final_contigs + final_scaffolds:
-#             for f in data['files']:
-#                 contig_files.append(os.path.realpath(f))
-
-#         return_files += all_files
-
-#         ## Deduplicate
-#         seen = set()
-#         for f in return_files:
-#             seen.add(f)
-#         return_files = [f for f in seen]
-
-#         #if exceptions:        
-#             # if len(exceptions) > 1:
-#             #     raise Exception('Multiple Errors')
-#             # else:
-#             #     raise Exception(exceptions[0])
-
-#         if contig_files:
-#             return_files.append(asm.tar_list('{}/{}'.format(job_data['datapath'], job_data['job_id']),
-#                                              contig_files, '{}_assemblies.tar.gz'.format(
-#                         job_data['job_id'])))
-#         print "return files: {}".format(return_files)
-
-#         return return_files, summary, contig_files, exceptions
 
 
     def upload(self, url, user, token, file, filetype='default'):
@@ -944,7 +583,7 @@ class UpdateTimer(threading.Thread):
     def run(self):
         while True:
             if self.done_flag.is_set():
-                print 'Stopping Timer Thread'
+                logging.info('Stopping Timer Thread')
                 return
             elapsed_time = time.time() - self.start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
