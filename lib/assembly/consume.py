@@ -454,6 +454,7 @@ class ArastConsumer:
         del job_data['initial_reads']
         del job_data['raw_reads']
         self.metadata.update_job(uid, 'data', job_data)
+        self.metadata.update_job(uid, 'result_data', uploaded_fsets)
         self.metadata.update_job(uid, 'status', status)
         print '============== JOB COMPLETE ==============='
 
