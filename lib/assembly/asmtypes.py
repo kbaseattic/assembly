@@ -57,13 +57,20 @@ class FileSet(dict):
 
 class ReadSet(FileSet):
     def __init__(self, set_type, file_infos,  **kwargs):
+        self['insert'] = None
+        self['stdev'] = None
         FileSet.__init__(self, set_type, file_infos, **kwargs)
         self.__dict__.update(kwargs)
         self['type'] = set_type
 
     @property
-    def insert_len(self):
-        return self.insert or None
+    def insert(self):
+        return self['insert'] or None
+
+    @property
+    def stdev(self):
+        return self['stdev'] or None
+
 
 class ContigSet(FileSet):
     def __init__(self, set_type, file_infos,  **kwargs):

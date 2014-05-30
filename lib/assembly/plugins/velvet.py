@@ -5,6 +5,8 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class VelvetAssembler(BaseAssembler, IPlugin):
+    new_version = True
+
 
     def run(self, reads=None):
         """ 
@@ -13,88 +15,53 @@ class VelvetAssembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [self.bin_velveth, self.outpath, self.hash_length]
-        paired_count = 1                    
-        single_count = 1
-        pair_data = {}
 
-        # #### Add Paired Reads ####
-        # for pair_num, pairset in enumerate(self.data.readsets.paired):
-        #     if pair_num == 0: p_suffix = ''
-        #     else: p_suffix = str(pair_num + 1)
-        #     read1 = pairset.files[0]
-        #     cmd_args.append('-shortPaired' + p_suffix)
-        #     cmd_args.append('-' + infer_filetype(read1))
-        #     try:
-        #         read2 = pairset.files[1]
-        #         cmd_args.append('-separate')
-        #         cmd_args.append(read1)
-        #         cmd_args.append(read2)
-        #     except:
-        #         cmd_args.append(read1)
-
-        # #### Add Single Reads ####
-
-        #     elif d['type'] == 'single':
-        #         cmd_args.append('-' + 'short' + s_suffix)
-        #         cmd_args.append('-' + infer_filetype(read1))
-        #         cmd_args.append(read1)
-        #         single_count += 1
-
-
-        for i,d in enumerate(reads):
-            if paired_count == 1:
-                p_suffix = ''
-            else:
-                p_suffix = str(paired_count)
-            if single_count == 1:
-                s_suffix = ''
-            else:
-                s_suffix = str(single_count)
-
-            read1 = d['files'][0]
-
-            if d['type'] == 'paired':
-                cmd_args.append('-' + 'shortPaired' + p_suffix)
-                cmd_args.append('-' + infer_filetype(read1))
-                paired_count += 1
-                try:
-                    read2 = d['files'][1] # If 2 files
-                    cmd_args.append('-separate')
-                    cmd_args.append(read1)
-                    cmd_args.append(read2)
-                except:
-                    cmd_args.append(read1)
-
-                try:
-                    #pair_data[p_suffix] = (d['insert'], d['stdev'])
-                    pair_data[p_suffix] = (self.insert_info[i])
-                except:
-                    pass
-            elif d['type'] == 'single':
-                cmd_args.append('-' + 'short' + s_suffix)
-                cmd_args.append('-' + infer_filetype(read1))
+        #### Add Paired Reads ####
+        pair_info = {}
+        for pair_num, pairset in enumerate(self.data.readsets_paired):
+            if pair_num == 0: p_suffix = ''
+            else: p_suffix = str(pair_num + 1)
+            read1 = pairset.files[0]
+            cmd_args.append('-shortPaired' + p_suffix)
+            cmd_args.append('-' + infer_filetype(read1))
+            try:
+                read2 = pairset.files[1]
+                cmd_args.append('-separate')
                 cmd_args.append(read1)
-                single_count += 1
-                
-        logging.info("Running subprocess:{}".format(cmd_args))
+                cmd_args.append(read2)
+            except:
+                cmd_args.append(read1)
+            ## Store (insert,stdev)
+            if pairset.insert:
+                pair_info[p_suffix] = (pairset.insert, pairset.stdev)
+
+        #### Add Single Reads ####
+        for s_num, s_set in enumerate(self.data.readsets_single):
+            if s_num == 0: s_suffix = ''
+            else: s_suffix = str(s_num + 1)
+            read = s_set.files[0]
+            cmd_args.append('-' + 'short' + s_suffix)
+            cmd_args.append('-' + infer_filetype(read))
+            cmd_args.append(read)
+
         self.arast_popen(cmd_args)        
+
         cmd_args = [self.bin_velvetg, self.outpath, '-exp_cov', 'auto']
 
         ## Velvet only supports one library?
-        if len(pair_data) == 1:
-            for suf in pair_data.keys():
-                try:
-                    insert = pair_data[suf][0]
-                    stdev = pair_data[suf][1]
-                    cmd_args += ['-ins_length{}'.format(suf), insert, 
-                                 '-ins_length{}_sd'.format(suf), stdev]
-                except:
-                    pass
+
+        for suf in pair_info.keys():
+            try:
+                insert = pair_info[suf][0]
+                stdev = pair_info[suf][1]
+                cmd_args += ['-ins_length{}'.format(suf), insert, 
+                             '-ins_length{}_sd'.format(suf), stdev]
+            except:pass
+
         self.arast_popen(cmd_args)        
         contigs = [self.outpath + '/contigs.fa']
         if not os.path.exists(contigs[0]):
             contigs = []
-            #raise Exception("No contigs")
         return {'contigs': contigs}
 
 def infer_filetype(file):

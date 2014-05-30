@@ -109,6 +109,7 @@ def eval(x, env):
             return val
         except Exception as e: 
            #env.exceptions.append(e)
+            print traceback.format_tb(sys.exc_info()[2])
             env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
     elif x[0] == 'get':
         (_, key, exp) = x
@@ -271,7 +272,6 @@ class WaspEngine():
 
         init_link = WaspLink()
         init_link['default_output'] = job_data.wasp_data().readsets
-        print 'init'
         job_data['initial_data'] = asmtypes.FileSetContainer(job_data.wasp_data().referencesets)
         self.assembly_env.update({self.constants_reads: init_link})
         self.assembly_env.update({'best_contig': wasp_functions.best_contig})
