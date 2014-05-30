@@ -230,7 +230,7 @@ class BasePlugin(object):
         plugin_data['out_report'] = self.out_module
         self.plugin_engine = wasp.WaspEngine(self.pmanager, plugin_data)
 
-        #### Get default outputs of last module
+        #### Get default outputs of last module and pass on persistent data
         if job_data['wasp_chain']['link']:
             all_sets = []
             for link in job_data['wasp_chain']['link']:
@@ -242,9 +242,11 @@ class BasePlugin(object):
                     all_sets += [fileset for fileset in link['default_output']]
                 else:
                     raise Exception('Wasp Link Error')
-            self.data = asmtypes.FileSetContainer(all_sets)
+            data = asmtypes.FileSetContainer(all_sets)
         else: 
-            self.data = job_data.wasp_data()
+            data = job_data.wasp_data()
+
+        self.data = asmtypes.FileSetContainer(data.filesets + job_data['initial_data'].filesets)
 
     def linuxRam(self):
         """Returns the RAM of a linux system"""

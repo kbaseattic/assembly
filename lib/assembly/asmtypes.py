@@ -107,6 +107,7 @@ class FileSetContainer(dict):
     def find_and_update(self, id, newdict):
         self.find(id).update(newdict)
 
+
     @property
     def readsets(self):
         """ Returns a list of all ReadSet objects"""

@@ -129,7 +129,10 @@ def eval(x, env):
                 if ret:val.append(ret)
             except Exception as e:
                 #env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
+                print e
                 env.exceptions.append(e)
+
+        print val
         return val if len(val) > 1 else val[0]
     else:                          # (proc exp*)
         exps = [eval(exp, env) for exp in x]
@@ -265,10 +268,11 @@ class WaspEngine():
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
         self.assembly_env.plugins = self.pmanager.plugins
         self.job_data = job_data
-        self.id = uuid.uuid4()
 
         init_link = WaspLink()
         init_link['default_output'] = job_data.wasp_data().readsets
+        print 'init'
+        job_data['initial_data'] = asmtypes.FileSetContainer(job_data.wasp_data().referencesets)
         self.assembly_env.update({self.constants_reads: init_link})
         self.assembly_env.update({'best_contig': wasp_functions.best_contig})
 

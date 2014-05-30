@@ -146,11 +146,9 @@ class ArastJob(dict):
         Compatibility layer for wasp data types.  
         Scans self for certain data types and populates a FileSetContainer
         """
-
         all_sets = []
-
         #### Convert Old Reads Format to ReadSets
-        for set_type in ['reads']:
+        for set_type in ['reads', 'reference']:
             if set_type in self:
                 for fs in self[set_type]:
                     ### Get supported set attributes (ins, std, etc)
@@ -174,9 +172,9 @@ class ArastJob(dict):
                                                          name=contig_data['name']))
 
         #### Convert Contig/Ref format
-        for set_type in ['contigs', 'reference']:
-            if set_type in self:
-                all_sets.append(asmtypes.set_factory(set_type, [asmtypes.FileInfo(fs) for fs in self[set_type]]))
+        # for set_type in ['contigs', 'reference']:
+        #     if set_type in self:
+        #         all_sets.append(asmtypes.set_factory(set_type, [asmtypes.FileInfo(fs) for fs in self[set_type]]))
 
         return asmtypes.FileSetContainer(all_sets)
     
