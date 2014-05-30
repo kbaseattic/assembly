@@ -257,8 +257,11 @@ sub install_quast {
 }
 
 sub install_jgi_rqc {
-    my $dir = 'jgi_rqc';
+    my $app = 'jgi_rqc';
     git('git@bitbucket.org:sebhtml/jgi-rqc-pipeline.git');
+    run("mv jgi-rqc-pipeline $app");
+    run("cd $app; rm -rf .git");
+    run("mv $app $dest_dir/");
 }
 
 sub install_ray {
