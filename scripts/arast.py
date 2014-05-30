@@ -271,9 +271,10 @@ def main():
                 if args.watch:
                         os.system('clear')
                 print response
-                print 'Press CTRL-C to quit.'
                 if not args.watch:
                         break
+                else:
+                    print 'Press CTRL-C to quit.'
                 ### Spinner loop
                 spinners = ['-', '\\', '|', '/'] 
                 sleep_seconds = 25
