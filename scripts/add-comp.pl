@@ -262,6 +262,7 @@ sub install_jgi_rqc {
     run("mv jgi-rqc-pipeline $app");
     run("cd $app; rm -rf .git");
     run("mv $app $dest_dir/");
+    run("pip install pymysql");
 }
 
 sub install_ray {
