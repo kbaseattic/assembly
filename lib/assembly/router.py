@@ -365,7 +365,7 @@ class JobResource:
         elif resource == 'data':
             return self.get_job_data(userid, job_id)
         elif resource == 'report':
-            return 'Report placeholder'
+            return self.get_report(userid, job_id)
         elif resource == 'status':
             return self.status(job_id=job_id, **kwargs)
         elif resource == 'kill':
@@ -495,6 +495,14 @@ class JobResource:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
         return json.dumps(doc['result_data'])
+
+    def get_report(self, userid=None, job_id=None):
+        """ Converts old style nodes to File Handles with Shock information """
+        if not job_id:
+            raise cherrypy.HTTPError(403)
+        doc = metadata.get_job(userid, job_id)
+        return json.dumps(doc['report'])
+
 
 class StaticResource:
 
