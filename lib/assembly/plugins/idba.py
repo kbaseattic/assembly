@@ -43,12 +43,16 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         base = os.path.join(self.outpath, 'run')
         cmd_args += ['-r', read_file, '-o', base, '--maxk', self.max_k] 
         self.arast_popen(cmd_args, cwd=self.outpath)
-        #self.outpath = base
-        contig ="{}/contig.fa".format(base)
-        if os.path.exists(contig):
-            return [contig]
-        else:
-            return []
+
+        contigs = os.path.join(base, 'contig.fa')
+        scaffolds = os.path.join(base, 'scaffold.fa')
+
+        output = {}
+        if os.path.exists(contigs):
+            output['contigs'] = [contigs]
+        if os.path.exists(scaffolds):
+            output['scaffolds'] = [scaffolds]
+        return output
 
 def infer_filetype(file):
     filemap = {'.fa':'fasta',
