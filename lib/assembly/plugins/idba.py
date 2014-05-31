@@ -5,32 +5,38 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class IdbaAssembler(BaseAssembler, IPlugin):
-    def run(self, reads):
+    new_version = True
+
+    def run(self):
         """ 
         Build the command and run.
         Return list of contig file(s)
         """
-	d = reads[0]
-        cwd = os.getcwd()
-        cmd_args = [os.path.join(cwd, self.bin_idba_ud)]
-        read_file = d['files'][0]
-        if d['type'] == 'paired':
-            if len(d['files']) == 2 :
-                parts = d['files'][0].rsplit('.',1)
-                ## TODO move this to idba folder
-                merged_read = parts[0] + '.idba_merged.fa'
-                merge_cmd = [os.path.join(cwd, self.bin_fq2fa), '--merge', '--filter',
-                             d['files'][0],
-                             d['files'][1],
-                             merged_read]
-                self.arast_popen(merge_cmd, overrides=False)
-                read_file = merged_read
+        # Only supports one set of reads
+        assert len(self.data.readsets) == 1
+        readset = self.data.readsets[0]
+        assert readset.type == 'paired'
 
-        # If in fastq
+        cmd_args = [self.bin_idba_ud]
+        read_file = readset.files[0]
+
+        #Merge file if pairs are separate
+        if len(readset.files) == 2 :
+            parts = readset.files[0].rsplit('.',1)
+            ## TODO move this to idba folder
+            merged_read = parts[0] + '.idba_merged.fa'
+            merge_cmd = [self.bin_fq2fa, '--merge', '--filter',
+                         readset.files[0],
+                         readset.files[1],
+                         merged_read]
+            self.arast_popen(merge_cmd, overrides=False)
+            read_file = merged_read
+
+        # Convert if files are fastq
         if infer_filetype(read_file) == 'fastq':
             parts = read_file.rsplit('.', 1)
             fa_file = '{}.fasta'.format(parts[0])
-            fqfa_command = [os.path.join(cwd, self.bin_fq2fa), read_file, fa_file]
+            fqfa_command = [self.bin_fq2fa, read_file, fa_file]
             self.arast_popen(fqfa_command, overrides=False)
             read_file = fa_file
 
