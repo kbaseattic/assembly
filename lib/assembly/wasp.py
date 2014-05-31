@@ -285,7 +285,7 @@ class WaspEngine():
         ## Record results into job_data
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
-        for w in w_chain + self.assembly_env.emissions:
+        for w in self.assembly_env.emissions + w_chain:
             try: job_data.add_results(w['default_output'])
             except: pass
         job_data['exceptions'] = [str(e) for e in self.assembly_env.exceptions]
