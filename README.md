@@ -30,7 +30,7 @@ make test
 Deploying AssembyRAST server on KBase infrastructure
 ----------
 * start with a fresh KBase image (last tested on v14) with security group 'assembly-rast-group'
-* log in as ubuntu and get root access with 'sudo su'
+* log in as ubuntu and get root access with `sudo su`
 * enter the following commands:
 
 ```
