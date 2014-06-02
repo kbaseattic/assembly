@@ -13,6 +13,7 @@ Deploying and Testing AssembyRAST client on KBase infrastructure
 * log in as ubuntu and get root access with 'sudo su'
 * enter the following commands:
 
+```
 cd /kb
 git clone ssh://kbase@git.kbase.us/dev_container
 cd /kb/dev_container
@@ -24,7 +25,7 @@ git fetch origin
 git checkout RC
 make deploy
 make test
-
+```
 
 Deploying AssembyRAST server on KBase infrastructure
 ----------
@@ -32,6 +33,7 @@ Deploying AssembyRAST server on KBase infrastructure
 * log in as ubuntu and get root access with 'sudo su'
 * enter the following commands:
 
+```
 cd /kb
 git clone ssh://kbase@git.kbase.us/dev_container
 cd /kb/dev_container/modules
@@ -40,7 +42,7 @@ cd /kb/dev_container
 ./bootstrap /kb/runtime
 source user-env.sh
 make deploy-service
-
+```
 
 Dependencies
 ----------
