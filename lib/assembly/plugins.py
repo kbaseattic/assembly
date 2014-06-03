@@ -354,17 +354,8 @@ class BasePlugin(object):
                     sub_file.write(line)
             sub_file.close()
             sub_reads.append(sub_name)
-            
-        bwa_data = copy.deepcopy(self.job_data)
-        #bwa_data['processed_reads'][0]['files'] = sub_reads
-        bwa_data['initial_reads'][0]['files'] = sub_reads
-        bwa_data['contigs'] = [contig_file]
-        bwa_data['out_report'] = open(os.path.join(self.outpath, 'estimate_ins.log'), 'w')
-
-        #job_data['final_contigs'] = [contig_file]
-        samfiles, _, bwa_log = self.pmanager.run_module('bwa', bwa_data)
-        self.job_data['logfiles'].append(bwa_log)
-        samfile = samfiles[0]
+        exp = '(bwa (contigs {}) (paired_reads {} {}))'.format(contig_file, reads[0], reads[1])
+        samfile = self.plugin_engine.run_expression(exp).files[0]
         if os.path.getsize(samfile) == 0:
             logging.error('Error estimating insert length')
             raise Exception('estimate ins failed')
@@ -447,6 +438,9 @@ class BaseScaffolder(BasePlugin):
 
         self.out_module.close()
         return output
+
+    def wasp_run(self):
+        return self.run()
 
     # Must implement run() method
     @abc.abstractmethod
