@@ -24,9 +24,12 @@ class SpadesAssembler(BaseAssembler, IPlugin):
                     break
                 if len(readset.files) == 1: # Interleaved
                     cmd_args += ['--pe{}-12'.format(pe_num), readset.files[0]]
-                elif len(readset.files) == 2: # 2 Files
+                elif len(readset.files) >= 2: # 2 Files
                     cmd_args += ['--pe{}-1'.format(pe_num), readset.files[0],
                                  '--pe{}-2'.format(pe_num), readset.files[1]]
+                    for extra in readset.files[2:]:
+                        self.out_module.write('WARNING: Not using {}'.format(extra))
+                        print('WARNING: Not using {}'.format(extra))
                 else:
                     raise Exception('Spades module file error')
                 pe_num += 1
