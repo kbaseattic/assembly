@@ -65,14 +65,19 @@ class ReadSet(FileSet):
 
     @property
     def insert(self):
-        return self['insert'] or None
+        return self['insert']
 
     @property
     def stdev(self):
-        return self['stdev'] or None
+        return self['stdev']
 
 
 class ContigSet(FileSet):
+    def __init__(self, set_type, file_infos,  **kwargs):
+        FileSet.__init__(self, set_type, file_infos, **kwargs)
+        self.__dict__.update(kwargs)
+
+class ScaffoldSet(FileSet):
     def __init__(self, set_type, file_infos,  **kwargs):
         FileSet.__init__(self, set_type, file_infos, **kwargs)
         self.__dict__.update(kwargs)
@@ -93,6 +98,8 @@ def set_factory(set_type, file_infos, **kwargs):
         return ReadSet(set_type, file_infos, **kwargs)
     elif set_type == 'contigs':
         return ContigSet(set_type, file_infos, **kwargs)
+    elif set_type == 'scaffolds':
+        return ScaffoldSet(set_type, file_infos, **kwargs)
     elif set_type == 'reference':
         return ReferenceSet(set_type, file_infos, **kwargs)
     else:
@@ -150,6 +157,15 @@ class FileSetContainer(dict):
     @property
     def contigfiles(self):
         return [contigfile for contigset in self.contigsets for contigfile in contigset.files]
+
+    @property
+    def scaffoldsets(self):
+        """ Returns a list of all ScaffoldSet objects"""
+        return [fileset for fileset in self.filesets if type(fileset) is ScaffoldSet]
+
+    @property
+    def scaffoldfiles(self):
+        return [scaffoldfile for scaffoldset in self.scaffoldsets for scaffoldfile in scaffoldset.files]
 
     @property
     def referencesets(self):
