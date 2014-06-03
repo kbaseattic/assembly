@@ -7,12 +7,15 @@ from yapsy.IPlugin import IPlugin
 from assembly import get_qual_encoding
 
 class Bowtie2Aligner(BaseAligner, IPlugin):
-    def run(self, contig_file, reads, merged_pair=False):
+    def run(self):
         """ 
         Map READS to CONTIGS and return alignment.
         Set MERGED_PAIR to True if reads[1] is a merged
         paired end file
         """
+        contig_file = self.data.contigfiles[0]
+        reads = self.data.readfiles
+
         ## Index contigs using IS algorithm
         prefix = os.path.join(self.outpath, 'bt2')
         cmd_args = [self.build_bin, '-f', contig_file, prefix]
@@ -32,4 +35,4 @@ class Bowtie2Aligner(BaseAligner, IPlugin):
 
         if not os.path.exists(samfile):
             raise Exception('Unable to complete alignment')
-        return samfile
+        return {'alignment': samfile}
