@@ -86,6 +86,10 @@ def eval(x, env):
         wlink = WaspLink()
         wlink['default_output'] = asmtypes.set_factory('contigs', x[1:])
         return wlink
+    elif x[0] == 'paired_reads':          # Create a fileset
+        wlink = WaspLink()
+        wlink['default_output'] = asmtypes.set_factory('paired', x[1:])
+        return wlink
     elif x[0] == 'if':             # (if test conseq alt)
         (_, test, conseq, alt) = x
         return eval((conseq if eval(test, env) else alt), env)
