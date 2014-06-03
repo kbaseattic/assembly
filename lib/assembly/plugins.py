@@ -374,19 +374,6 @@ class BaseAssembler(BasePlugin):
     INPUT = 'reads'
     OUTPUT = 'contigs'
 
-    def __call__(self, settings, job_data, manager):
-        self.run_checks(settings, job_data)
-        logging.info("{} Settings: {}".format(self.name, settings))
-        self.init_settings(settings, job_data, manager)
-        valid_files = self.get_valid_reads(job_data)
-        output = self.run(valid_files)
-        if type(output) is tuple and len(output) == 2:
-            contigs = output[0]
-            scaffolds = output[1]
-            return contigs, scaffolds
-        self.out_module.close()
-        return output
-
     def wasp_run(self):
         return self.run()
 
@@ -419,24 +406,6 @@ class BaseScaffolder(BasePlugin):
     INPUT = 'reads, contigs'
     OUTPUT = 'scaffolds'
 
-    def __call__(self, settings, job_data, manager):
-        self.pmanager = manager
-        self.run_checks(settings, job_data)
-        logging.info("{} Settings: {}".format(self.name, settings))
-        self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data, manager)
-
-        if len(job_data['initial_reads']) > 1:
-            raise Exception('Cannot scaffold with single end')
-        else:
-            contig_file = job_data['contigs'][0]
-        #read_records = job_data['processed_reads']
-        read_records = copy.deepcopy(job_data['initial_reads'])
-        output = self.run(read_records, contig_file, job_data)
-
-        self.out_module.close()
-        return output
-
     def wasp_run(self):
         return self.run()
 
@@ -459,16 +428,6 @@ class BasePreprocessor(BasePlugin):
     # Default behavior for run()
     INPUT = 'reads'
     OUTPUT = 'reads'
-
-    def __call__(self, settings, job_data, manager):
-        self.run_checks(settings, job_data)
-        logging.info("{} Settings: {}".format(self.name, settings))
-        self.init_settings(settings, job_data, manager)
-        valid_files = self.get_valid_reads(job_data)
-        output = self.run(valid_files)
-
-        self.out_module.close()
-        return output
 
     def wasp_run(self):
         if len(self.data.readsets) != 1:
@@ -502,17 +461,6 @@ class BaseAnalyzer(BasePlugin):
     INPUT = 'reads'
     OUTPUT = 'report'
 
-    def __call__(self, settings, job_data, manager):
-        self.run_checks(settings, job_data)
-        logging.info("{} Settings: {}".format(self.name, settings))
-        self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data, manager)
-        valid_files = self.get_valid_reads(job_data)
-        output = self.run(valid_files)
-
-        self.out_module.close()
-        return output
-
     def wasp_run(self):
         return self.run()
 
@@ -531,16 +479,8 @@ class BasePostprocessor(BasePlugin):
     INPUT = 'contigs, reads'
     OUTPUT = 'contigs'
 
-    def __call__(self, settings, job_data, manager):
-        self.run_checks(settings, job_data)
-        logging.info("{} Settings: {}".format(self.name, settings))
-        self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data, manager)
-        valid_files = self.get_valid_reads(job_data)
-        output = self.run(valid_files)
-
-        self.out_module.close()
-        return output
+    def wasp_run(self):
+        return self.run()
 
     # Must implement run() method
     @abc.abstractmethod
@@ -565,23 +505,6 @@ class BaseAssessment(BasePlugin):
     INPUT = 'contigs', 'scaffolds'
     OUTPUT = 'report' 
 
-    def __call__(self, settings, job_data, manager, meta=False):
-        self.run_checks(settings, job_data)
-        logging.info("{} Settings: {}".format(self.name, settings))
-        self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data, manager)
-        
-        if meta: # Use all contigs for whole job
-            contigs = job_data['final_contigs']
-            
-        else:
-            contigs = job_data['contigs']
-        a_reads = copy.deepcopy(job_data['raw_reads'])
-        output = self.run(contigs, a_reads)
-
-        self.out_module.close()
-        return output
-
     def wasp_run(self):
         return self.run()
         
@@ -595,28 +518,9 @@ class BaseAssessment(BasePlugin):
         return
 
 class BaseMetaAssembler(BasePlugin):
-    """
-
-    """
     # Default behavior for run()
     INPUT = 'contigs'
     OUTPUT = 'contigs'
-
-    def __call__(self, settings, job_data, manager):
-        #### WASP style
-        logging.info("{} Settings: {}".format(self.name, settings))
-        self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data, manager)
-        inputs = job_data['wasp_chain']['link']
-        contigs = []
-        for i,input in enumerate(inputs):
-            contigs.append({'files': input['default_output'], 
-                            'name': '{}_P{}'.format(job_data['job_id'], i),
-                            'alignment_bam' : []})
-
-        output = self.run(contigs)
-        self.out_module.close()
-        return output
 
     def wasp_run(self):
         return self.run()
@@ -639,32 +543,8 @@ class BaseAligner(BasePlugin):
     INPUT = ['contigs', 'reads']
     OUTPUT = 'alignment'
 
-    def __call__(self, settings, job_data, manager):
-        self.run_checks(settings, job_data)
-        logging.info("{} Settings: {}".format(self.name, settings))
-        self.outpath = self.create_directories(job_data)
-        self.init_settings(settings, job_data, manager)
-        contig_file = job_data['contigs'][0]
-        #read_records = job_data['processed_reads']
-        read_records = job_data['initial_reads']
-        if len(read_records) > 1:
-            raise NotImplementedError('Alignment of multiple libraries not impl')
-        read_lib = read_records[0]
-        read_files = read_lib['files']
-        if len(read_files) == 1 and read_lib['type'] == 'paired':
-            merged_pair = True
-        else:
-            merged_pair = False
-        
-        output = self.run(contig_file, read_files, merged_pair)
-
-        self.out_module.close()
-        return [output] #TODO return multiple samfiles for each library
-
-
     def wasp_run(self):
         return self.run()
-
 
     # Must implement run() method
     @abc.abstractmethod
@@ -717,42 +597,6 @@ class ModuleManager():
             plugins.append(plugin.name)
         print "Plugins found [{}]: {}".format(num_plugins, sorted(plugins))
 
-    def run_module(self, module, job_data, tar=False, 
-                   all_data=False, reads=False, meta=False, 
-                   overrides=True):
-        """
-        Keyword Arguments:
-        module -- name of plugin
-        job_data -- dict of job parameters
-        tar -- return tar of all output, rather than module.OUTPUT file
-        all_data -- return module.OUTPUT and list of all files in self.outdir
-        reads -- include files if module.OUTPUT == 'reads'
-          Not recommended for large read files.
-
-        """
-        if len(job_data) == 1:
-            job_data = job_data[0]
-        if not self.has_plugin(module):
-            raise Exception("No plugin named {}".format(module))
-        plugin = self.pmanager.getPluginByName(module)
-        settings = plugin.details.items('Settings')
-        plugin.plugin_object.update_settings(job_data)
-        if meta:
-            output = plugin.plugin_object(settings, job_data, self, meta=True)
-        else:
-            output = plugin.plugin_object(settings, job_data, self)
-        log = plugin.plugin_object.out_module.name
-        if tar:
-            tarfile = plugin.plugin_object.tar_output(job_data['job_id'])
-            return output, tarfile, [], log
-        if all_data:
-            if not reads and plugin.plugin_object.OUTPUT == 'reads':
-                #Don't return all files from plugins that output reads 
-                data = []
-            else:
-                data = plugin.plugin_object.get_all_output_files()
-            return output, data, log
-        return output, [], log
 
     def run_proc(self, module, wlink, job_data, parameters):
         """ Run module adapter for wasp interpreter
