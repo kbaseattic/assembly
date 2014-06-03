@@ -8,11 +8,14 @@ from yapsy.IPlugin import IPlugin
 
 class ReaprAssessment(BaseAssessment, IPlugin):
     OUTPUT = 'contigs'
-    def run(self, contigs, reads):
+    def run(self):
         """ 
         Build the command and run.
         Return list of file(s)
         """
+        contigs = self.data.contigfiles
+        reads = self.data.readsets
+
         # Fix contig names with 'reapr facheck'
         if len(contigs) > 1:
             raise Exception('Reapr: multiple contig files!')
@@ -23,15 +26,11 @@ class ReaprAssessment(BaseAssessment, IPlugin):
         fixed_contig = fixed_contig + '.fa'
         if len(reads) > 1:
             raise Exception('Reapr: multiple libraries not yet supported!')
-        readfiles = reads[0]['files']
+        readfiles = reads[0].files
         
-        #Map with BWA and produce bam
-        bwa_data = copy.deepcopy(self.job_data)
-        bwa_data['processed_reads'][0]['files'] = readfiles
-        bwa_data['contigs'] = [fixed_contig]
-        bwa_data['out_report'] = open(os.path.join(self.outpath, 'bwa.log'), 'w')
-        samfiles, _, _ = self.pmanager.run_module('bwa', bwa_data)
-        samfile = samfiles[0]
+        exp = '(bwa (contigs {}) READS)'.format(contigs[0])
+        samfile = self.plugin_engine.run_expression(exp).files[0]
+
         bamfile = samfile.replace('.sam', '.bam')
         cmd_args = ['samtools', 'view',
                     '-bSho', bamfile, samfile]
@@ -89,6 +88,6 @@ class ReaprAssessment(BaseAssessment, IPlugin):
         self.job_data['bam_sorted'] = undupfile
         broken = os.path.join(self.outpath, '04.break.broken_assembly.fa')
         if os.path.exists(broken):
-            return [broken]
-        return
+            return {'contigs': [broken]}
+
 
