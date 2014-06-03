@@ -365,7 +365,6 @@ class BasePlugin(object):
         stdev = int(float(re.split('\=|\s', results)[-2]))
         logging.info('Estimated Insert Length: {}'.format(insert_size))
         return insert_size, stdev
-
     
 class BaseAssembler(BasePlugin):
     """
@@ -561,7 +560,7 @@ class BaseAssessment(BasePlugin):
 
     """
     # Default behavior for run()
-    INPUT = 'contigs'
+    INPUT = 'contigs', 'scaffolds'
     OUTPUT = 'report' 
 
     def __call__(self, settings, job_data, manager, meta=False):
