@@ -122,8 +122,9 @@ class ArastJob(dict):
         for i,fset in enumerate(self.results):
             new_files = []
             for f,t in zip(fset['file_infos'], fset.type):
-                new_file = '{}/{}.{}'.format(os.path.dirname(f['local_file']),
-                                             i+1, os.path.basename(f['local_file']))
+                ext = f['local_file'].split('.')[-1]
+                new_file = '{}/{}.{}.{}'.format(os.path.dirname(f['local_file']),
+                                             i+1, fset.name, ext)
                 os.symlink(f['local_file'], new_file)
                 res = self.upload_file(url, self['user'], token, new_file, filetype=t)
                 f.update({'shock_url': url, 'shock_id': res['data']['id'], 
