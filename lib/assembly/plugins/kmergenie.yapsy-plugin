@@ -1,0 +1,17 @@
+[Core]
+Name = kmergenie
+Module = kmergenie
+
+[Settings]
+short_name = kgen
+executable = ../../bin/kmergenie/kmergenie
+filetypes = fasta,fa,fastq,fq
+
+[Parameters]
+
+[Documentation]
+Author = Chris Bun
+Version = 0.1
+Description = Informed and automated k-mer size selection for genome assembly
+Stages = preporcess
+References = doi: 10.1093/bioinformatics/btt310
