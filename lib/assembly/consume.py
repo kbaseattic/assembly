@@ -396,7 +396,7 @@ class ArastConsumer:
 
         #### Parse pipeline to wasp exp
         wasp_exp = pipelines[0][0]
-        if wasp_exp == 'auto':
+        if pipelines[0] == 'auto':
             wasp_exp = recipes.auto
         elif not '(' in wasp_exp:
             all_pipes = []

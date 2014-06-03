@@ -136,8 +136,6 @@ def eval(x, env):
                 #env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
                 print e
                 env.exceptions.append(e)
-
-        print val
         return val if len(val) > 1 else val[0]
     else:                          # (proc exp*)
         exps = [eval(exp, env) for exp in x]

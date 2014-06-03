@@ -44,9 +44,7 @@ class BasePlugin(object):
     def base_call(self, settings, job_data, manager, strict=False):
         """ Plugin wrapper """
         ### Compatibility
-        if self.new_version:
-            self.init_settings(settings, job_data, manager)
-            print "Updated plugin"
+        self.init_settings(settings, job_data, manager)
         output = self.wasp_run()
         self.out_module.close()
         return output
