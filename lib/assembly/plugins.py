@@ -13,6 +13,7 @@ import re
 import multiprocessing
 import signal
 from yapsy.PluginManager import PluginManager
+from yapsy.IPluginLocator import IPluginLocator
 from threading  import Thread
 from Queue import Queue, Empty
 
@@ -240,11 +241,11 @@ class BasePlugin(object):
                     all_sets += [fileset for fileset in link['default_output']]
                 else:
                     raise Exception('Wasp Link Error')
-            data = asmtypes.FileSetContainer(all_sets)
+            self.data = asmtypes.FileSetContainer(all_sets)
         else: 
-            data = job_data.wasp_data()
-
-        self.data = asmtypes.FileSetContainer(data.filesets + job_data['initial_data'].filesets)
+            self.data = job_data.wasp_data()
+        self.initial_data = job_data['initial_data']
+                                             
 
     def linuxRam(self):
         """Returns the RAM of a linux system"""
@@ -512,6 +513,9 @@ class BaseAnalyzer(BasePlugin):
         self.out_module.close()
         return output
 
+    def wasp_run(self):
+        return self.run()
+
     # Must implement run() method
     @abc.abstractmethod
     def run(self, libraries):
@@ -677,7 +681,10 @@ class ModuleManager():
         self.threads = threads
         self.kill_list = kill_list
         self.job_list = job_list # Running jobs
+        
         self.pmanager = PluginManager()
+        # locator = self.pmanager.getPluginLocator()
+        # locator.setPluginInfoExtension('asp')
         self.pmanager.setPluginPlaces(["plugins"])
         self.pmanager.collectPlugins()
         self.pmanager.locatePlugins()
