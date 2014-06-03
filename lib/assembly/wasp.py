@@ -102,6 +102,7 @@ def eval(x, env):
             env.parameters[param] = env.find(value)[value]
         except:
             env.parameters[param] = value
+        
     elif x[0] == 'define':         # (define var exp)
         (_, var, exp) = x
         env[var] = eval(exp, env)
@@ -238,6 +239,8 @@ class WaspLink(dict):
                     if os.path.exists(out): # These are files, convert to FileInfo format
                         outputs.append(asmtypes.FileInfo(out))
                         are_files = True
+                    else:
+                        raise Exception('Not a file')
                 except: # Not a file
                     outputs = outvalue
                     break

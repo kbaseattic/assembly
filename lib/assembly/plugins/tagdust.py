@@ -7,11 +7,14 @@ from yapsy.IPlugin import IPlugin
 from assembly import get_qual_encoding
 
 class TagdustPreprocessor(BasePreprocessor, IPlugin):
-    def run(self, reads):
+    def run(self):
         """ 
         Build the command and run.
 
         """
+        reads = self.data.readsets
+        raw_reads = self.initial_data.readsets
+
         processed_reads = []
         raw_reads = self.job_data['raw_reads']
         for i, file_set in enumerate(reads):

@@ -20,7 +20,7 @@ class QuastAssessment(BaseAssessment, IPlugin):
             assert len(contigsets) != 0
         else: scaffolds = False
 
-        ref = self.data.referencefiles or None
+        ref = self.initial_data.referencefiles or None
         
         cmd_args = [os.path.join(os.getcwd(),self.executable), 
                     '--min-contig', self.min_contig,
