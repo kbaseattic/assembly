@@ -98,7 +98,10 @@ def eval(x, env):
         env.find(var)[var] = eval(exp, env)
     elif x[0] == 'setparam': 
         (_, param, value) = x
-        env.parameters[param] = value
+        try:
+            env.parameters[param] = env.find(value)[value]
+        except:
+            env.parameters[param] = value
     elif x[0] == 'define':         # (define var exp)
         (_, var, exp) = x
         env[var] = eval(exp, env)
