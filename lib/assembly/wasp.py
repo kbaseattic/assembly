@@ -120,7 +120,7 @@ def eval(x, env):
         chain = eval(exp, env)
         assert type(chain) is WaspLink
         val = chain.get_value(key)
-        if type(val) is asmtypes.FileSet:
+        if isinstance(val, asmtypes.FileSet):
             chain['default_output'] = val
             return chain
         else: # A value
