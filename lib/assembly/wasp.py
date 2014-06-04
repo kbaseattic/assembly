@@ -65,7 +65,8 @@ def add_globals(env):
       'equal?':op.eq, 'eq?':op.is_, 'length':len, 'cons':lambda x,y:[x]+y,
       'car':lambda x:x[0],'cdr':lambda x:x[1:], 'append':op.add,  
       'list':lambda *x:list(x), 'list?': lambda x:isa(x,list), 
-      'null?':lambda x:x==[], 'symbol?':lambda x: isa(x, Symbol)})
+      'null?':lambda x:x==[], 'symbol?':lambda x: isa(x, Symbol),
+      'slice': lambda x,begin,end: x[begin:end]})
     return env
 
 isa = isinstance
@@ -317,9 +318,8 @@ class WaspEngine():
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
         for w in self.assembly_env.emissions + w_chain:
-            print 'Output', w
             try: job_data.add_results(w['default_output'])
-            except: pass
+            except: print 'Output', w
         job_data['exceptions'] = [str(e) for e in self.assembly_env.exceptions]
         return w_chain[0]
 
@@ -331,7 +331,6 @@ class WaspEngine():
              links = []
              for link in inlinks:
                  if type(link) is list:
-                     print 'adding', link
                      links += link
                  else:
                      links.append(link)
