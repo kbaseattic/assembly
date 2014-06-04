@@ -82,11 +82,11 @@ def eval(x, env):
     elif x[0] == 'quote':          # (quote exp)
         (_, exp) = x
         return exp
-    elif x[0] == 'contigs':          # Create a fileset
+    elif x[0] == 'contigs':          # Create a fileset (contigs FILENAME)
         wlink = WaspLink()
         wlink['default_output'] = asmtypes.set_factory('contigs', x[1:])
         return wlink
-    elif x[0] == 'paired_reads':          # Create a fileset
+    elif x[0] == 'paired_reads':          # Create a fileset (paired_reads READ1 ... )
         wlink = WaspLink()
         wlink['default_output'] = asmtypes.set_factory('paired', x[1:])
         return wlink
@@ -102,10 +102,25 @@ def eval(x, env):
             env.parameters[param] = env.find(value)[value]
         except:
             env.parameters[param] = value
-        
     elif x[0] == 'define':         # (define var exp)
         (_, var, exp) = x
         env[var] = eval(exp, env)
+    elif x[0] == 'sort':
+        seq = eval(x[1], env)
+        try: pred = x[2]
+        except: pred = '<'
+        try: 
+            k = x[3]
+            assert k == ':key'
+            lam = x[4]
+            eval(['define', 'sort_func', lam], env)
+        except: lam = None
+        rev = pred == '>'
+        if lam:
+            l = sorted(seq, key=lambda n: eval(['sort_func', n], env), reverse=rev)
+        else:
+            l = sorted(seq, reverse=rev)
+        return l
     elif x[0] == 'lambda':         # (lambda (var*) exp)
         (_, vars, exp) = x
         return lambda *args: eval(exp, Env(vars, args, env))
@@ -142,11 +157,15 @@ def eval(x, env):
                 env.exceptions.append(e)
         return val if len(val) > 1 else val[0]
     else:                          # (proc exp*)
+
         exps = [eval(exp, env) for exp in x]
         proc = exps.pop(0)
         env.next_stage(x[0])
-        return proc(env, *exps)
-
+        try: ## Assembly functions
+            return proc(*exps, env=env)
+        except Exception as e:
+            print e
+            return proc(*exps)
 ################ parse, read, and user interaction
 
 def read(s):
@@ -282,7 +301,8 @@ class WaspEngine():
         init_link['default_output'] = job_data.wasp_data().readsets
         job_data['initial_data'] = asmtypes.FileSetContainer(job_data.wasp_data().referencesets)
         self.assembly_env.update({self.constants_reads: init_link})
-        self.assembly_env.update({'best_contig': wasp_functions.best_contig})
+        self.assembly_env.update({'best_contig': wasp_functions.best_contig,
+                                  'n50': wasp_functions.n50})
 
     def run_expression(self, exp, job_data=None):
         if not job_data:
@@ -294,14 +314,19 @@ class WaspEngine():
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
         for w in self.assembly_env.emissions + w_chain:
+            print 'Output', w
             try: job_data.add_results(w['default_output'])
             except: pass
         job_data['exceptions'] = [str(e) for e in self.assembly_env.exceptions]
         return w_chain[0]
 
     def get_wasp_func(self, module, job_data):
-         def run_module(env, *inlinks):
+         def run_module(*inlinks, **kwargs):
             # WaspLinks keep track of the recursive pipelines
+             print 'in'
+             print inlinks
+             #print kwargs
+             env = kwargs['env']
              wlink = WaspLink(module, inlinks)
              self.pmanager.run_proc(module, wlink, job_data, env.parameters)
              return wlink
