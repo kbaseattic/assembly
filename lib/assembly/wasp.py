@@ -152,8 +152,10 @@ def eval(x, env):
                 ret = eval(exp, inner_env)
                 if ret:val.append(ret)
             except Exception as e:
+
                 #env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
                 print e
+                print traceback.format_tb(sys.exc_info()[2])
                 env.exceptions.append(e)
         return val if len(val) > 1 else val[0]
     else:                          # (proc exp*)
@@ -165,6 +167,7 @@ def eval(x, env):
             return proc(*exps, env=env)
         except Exception as e:
             print e
+            print traceback.format_tb(sys.exc_info()[2])
             return proc(*exps)
 ################ parse, read, and user interaction
 
@@ -323,11 +326,16 @@ class WaspEngine():
     def get_wasp_func(self, module, job_data):
          def run_module(*inlinks, **kwargs):
             # WaspLinks keep track of the recursive pipelines
-             print 'in'
-             print inlinks
-             #print kwargs
              env = kwargs['env']
-             wlink = WaspLink(module, inlinks)
+             ## Flatten inlinks if lists are present
+             links = []
+             for link in inlinks:
+                 if type(link) is list:
+                     print 'adding', link
+                     links += link
+                 else:
+                     links.append(link)
+             wlink = WaspLink(module, links)
              self.pmanager.run_proc(module, wlink, job_data, env.parameters)
              return wlink
          return run_module
