@@ -35,6 +35,8 @@ class QuastAssessment(BaseAssessment, IPlugin):
 
         #### Add Contig files ####
         cmd_args += contigfiles
+        cmd_args += ['-l', '"{}"'.format(', '.join([cset.name for cset in contigsets]))]
+        
 
         #### Run Quast ####
         self.arast_popen(cmd_args)
