@@ -531,8 +531,9 @@ class ArastConsumer:
             try:
                 self.compute(body)
             except Exception as e:
-                status = "[FAIL] {}".format(format_tb(sys.exc_info()[2]))
-                print logging.error(status)
+                tb = '\n'.join(format_tb(sys.exc_info()[2]))
+                status = "[FAIL] {}".format(e)
+                print logging.error(tb) 
                 self.metadata.update_job(uid, 'status', status)
         ch.basic_ack(delivery_tag=method.delivery_tag)
 

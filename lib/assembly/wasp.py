@@ -242,15 +242,14 @@ class WaspLink(dict):
             name = '{}_{}'.format(module_name, outtype)
             if not type(outvalue) is list: 
                 outvalue = [outvalue]
-
             ## Store default output
             if default_type == outtype:
-                for f in outvalue:
-                    if isinstance(f, asmtypes.FileSet):
-                        self['default_output'] = f
-                    else:
-                        self['default_output'] = asmtypes.set_factory(outtype,[asmtypes.FileInfo(f)],
-                                                                      name=name)
+                if isinstance(outvalue[0], asmtypes.FileSet):
+                    self['default_output'] = outvalue
+                else: # Files
+                    print outvalue
+                    self['default_output'] = asmtypes.set_factory(outtype, [asmtypes.FileInfo(f) for f in outvalue],
+                                                                  name=name)
             ## Store all outputs and values
             outputs = []
             filesets = []
@@ -298,10 +297,11 @@ class WaspEngine():
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
         self.assembly_env.plugins = self.pmanager.plugins
         self.job_data = job_data
-
         init_link = WaspLink()
-        init_link['default_output'] = job_data.wasp_data().readsets
-        job_data['initial_data'] = asmtypes.FileSetContainer(job_data.wasp_data().referencesets)
+        job_data['initial_data'] = asmtypes.FileSetContainer(job_data.wasp_data().referencesets +
+                                                             job_data.wasp_data().readsets)
+        init_link['default_output'] = list(job_data['initial_data'].readsets)
+        
         self.assembly_env.update({self.constants_reads: init_link})
         self.assembly_env.update({'best_contig': wasp_functions.best_contig,
                                   'n50': wasp_functions.n50})
