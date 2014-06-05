@@ -7,6 +7,7 @@ This is a service to assemble genomes and metagenomes with user's choice of asse
 software.
 It currently supports more than 20 assemblers and processing modules.
 
+[REST API](REST_API.md)
 
 Deploying and Testing AssemblyRAST client on KBase infrastructure
 ----------
