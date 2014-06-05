@@ -519,8 +519,9 @@ class ArastConsumer:
         channel.start_consuming()
 
     def callback(self, ch, method, properties, body):
-        print " [*] %r:%r" % (method.routing_key, body)
         params = json.loads(body)
+        display = ['ARASTUSER', 'job_id', 'message']
+        print ' [+] Incoming:', ', '.join(['{}: {}'.format(k, params[k]) for k in display])
         job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
         uid = job_doc['_id']
         ## Check if job was not killed
