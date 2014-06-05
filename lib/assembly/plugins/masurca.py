@@ -6,7 +6,7 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class MasurcaAssembler(BaseAssembler, IPlugin):
-    def run(self, reads):
+    def run(self):
         """ 
         Build the command and run.
         Return list of contig file(s)
@@ -24,30 +24,31 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
         cf.write('END\n')
 
         cf.write('DATA\n')
-        for pair in [lib for lib in reads if lib['type'] == 'paired']:
+        for readset in self.data.readsets_paired:
             lib_count = 1
             try:
-                insert = pair['insert']
-                stdev = pair['stdev']
+                insert = readset.insert
+                stdev = readset.stdev
+                assert insert is not None
             except:
-                print 'No insert size data'
-                return
-            files = ' '.join(pair['files'])
+                insert_size, _ = self.estimate_insert_stdev(contig_file, read_files)
+            files = ' '.join(readset.files)
             cf.write('PE= p{} {} {} {}\n'.format(
                     lib_count, insert, stdev, files))
             lib_count += 1
-        for jump in [lib for lib in reads if lib['type'] == 'jump']:
-            lib_count = 1
-            try:
-                insert = jump['insert']
-                stdev = jump['stdev']
-            except:
-                print 'No insert size data'
-                return
-            files = ' '.join(jump['files'])
-            cf.write('PE= p{} {} {} {}\n'.format(
-                    lib_count, insert, stdev, files))
-            lib_count += 1
+        # for jump in [lib for lib in reads if lib['type'] == 'jump']:
+        #     lib_count = 1
+        #     try:
+        #         insert = jump['insert']
+        #         stdev = jump['stdev']
+        #     except:
+        #         print 'No insert size data'
+        #         return
+        #     files = ' '.join(jump['files'])
+        #     cf.write('PE= p{} {} {} {}\n'.format(
+        #             lib_count, insert, stdev, files))
+        #     lib_count += 1
+
         cf.write('END\n')
 
         cf.write('PARAMETERS\n')
@@ -77,20 +78,19 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
         self.arast_popen([self.executable, config_fname], cwd=self.outpath)
         self.arast_popen('bash {}'.format(os.path.join(self.outpath, 'assemble.sh')), cwd=self.outpath, shell=True)
 
-        try:
-            mv_scaffolds = os.path.join(self.outpath, 'genome.scf.fasta')
-            scaffolds = os.path.join(self.outpath, 'CA', '10-gapclose', 'genome.scf.fasta')
-            os.rename(scaffolds, mv_scaffolds)
-            contigs = os.path.join(self.outpath, 'CA', '10-gapclose','genome.ctg.fasta')
-            mv_contigs = os.path.join(self.outpath, 'genome.ctg.fasta')
-            os.rename(contigs, mv_contigs)
-            if os.path.exists(mv_contigs):
-                return [mv_contigs]
-            # if os.path.exists(mv_scaffolds):
-            #     return [mv_scaffolds]
-        except:
-            pass
-        return []
 
+        mv_scaffolds = os.path.join(self.outpath, 'genome.scf.fasta')
+        scaffolds = os.path.join(self.outpath, 'CA', '10-gapclose', 'genome.scf.fasta')
+        os.rename(scaffolds, mv_scaffolds)
+        contigs = os.path.join(self.outpath, 'CA', '10-gapclose','genome.ctg.fasta')
+        mv_contigs = os.path.join(self.outpath, 'genome.ctg.fasta')
+        os.rename(contigs, mv_contigs)
+        output = {}
+        if os.path.exists(mv_contigs):
+            output['contigs'] = [mv_contigs]
+        if os.path.exists(mv_scaffolds):
+            output['scaffolds'] = [mv_scaffolds]
+
+        return output
 
     
