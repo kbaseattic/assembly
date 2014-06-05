@@ -5,7 +5,7 @@
 import os
 import itertools
 import uuid
-
+import logging
 import traceback, sys
 
 
@@ -132,9 +132,10 @@ def eval(x, env):
             env.emissions.append(val)
             return val
         except Exception as e: 
-           #env.exceptions.append(e)
-            print traceback.format_tb(sys.exc_info()[2])
-            env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
+            print ' [!]: {} -- {}'.format(to_string(exp), e)
+            logging.info('\n'.join(traceback.format_tb(sys.exc_info()[2])))
+            env.exceptions.append('\n'.join(traceback.format_tb(sys.exc_info()[2])))
+            return
     elif x[0] == 'get':
         (_, key, exp) = x
         chain = eval(exp, env)
@@ -153,23 +154,20 @@ def eval(x, env):
                 ret = eval(exp, inner_env)
                 if ret:val.append(ret)
             except Exception as e:
-
-                #env.exceptions.append(traceback.format_tb(sys.exc_info()[2]))
-                print e
-                print traceback.format_tb(sys.exc_info()[2])
-                env.exceptions.append(e)
-        return val if len(val) > 1 else val[0]
+                if list(e):
+                    print ' [!]:', e
+                    env.exceptions.append('\n'.join(traceback.format_tb(sys.exc_info()[2])))
+        if val:
+            return val if len(val) > 1 else val[0]
     else:                          # (proc exp*)
-
         exps = [eval(exp, env) for exp in x]
         proc = exps.pop(0)
         env.next_stage(x[0])
         try: ## Assembly functions
             return proc(*exps, env=env)
-        except Exception as e:
-            print e
-            print traceback.format_tb(sys.exc_info()[2])
+        except IndexError as e: ## Built-in functions
             return proc(*exps)
+
 ################ parse, read, and user interaction
 
 def read(s):

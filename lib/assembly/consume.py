@@ -530,8 +530,7 @@ class ArastConsumer:
         else:
             try:
                 self.compute(body)
-            except:
-                print sys.exc_info()
+            except Exception as e:
                 status = "[FAIL] {}".format(format_tb(sys.exc_info()[2]))
                 print logging.error(status)
                 self.metadata.update_job(uid, 'status', status)
