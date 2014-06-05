@@ -17,9 +17,6 @@ from yapsy.IPluginLocator import IPluginLocator
 from threading  import Thread
 from Queue import Queue, Empty
 
-# Debugging
-import sys, traceback
-
 # A-Rast modules
 import assembly
 import asmtypes
@@ -434,7 +431,7 @@ class BasePreprocessor(BasePlugin):
             raise Exception('Preprocessing plugins consume a single readset')
 
         #### Save and restore insert data
-        orig = self.data.readsets[0]
+        orig = copy.deepcopy(self.data.readsets[0])
         orig.update_files(self.run()['reads'])
         orig['name'] = '{}_reads'.format(self.name)
         return {'reads': orig}
