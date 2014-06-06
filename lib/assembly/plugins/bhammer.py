@@ -36,6 +36,8 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
         # Get processed reads
 
         processed_reads = []
+        extra_reads = []
+
         cpath = os.path.join(self.outpath, 'corrected')
         
         if os.path.exists(os.path.join(cpath, 'dataset.info')):
@@ -50,6 +52,7 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
                     processed_reads += [left, cor['right reads'][i]]
             if 'single reads' in cor:
                 for single in cor['single reads']:
-                    processed_reads.append(single)
+                    extra_reads.append(single)
 
-        return {'reads': processed_reads}
+        return {'reads': processed_reads,
+                'extra': extra_reads}
