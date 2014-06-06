@@ -165,9 +165,8 @@ def eval(x, env):
         env.next_stage(x[0])
         try: ## Assembly functions
             return proc(*exps, env=env)
-        except IndexError as e: ## Built-in functions
+        except TypeError as e: ## Built-in functions
             return proc(*exps)
-
 ################ parse, read, and user interaction
 
 def read(s):
