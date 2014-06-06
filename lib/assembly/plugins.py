@@ -430,11 +430,17 @@ class BasePreprocessor(BasePlugin):
         if len(self.data.readsets) != 1:
             raise Exception('Preprocessing plugins consume a single readset')
 
-        #### Save and restore insert data
+        #### Save and restore insert data, handle extra output
         orig = copy.deepcopy(self.data.readsets[0])
-        orig.update_files(self.run()['reads'])
+        output = self.run()
+        orig.update_files(output['reads'])
         orig['name'] = '{}_reads'.format(self.name)
-        return {'reads': orig}
+        readsets = [orig]
+        try:
+            readsets.append(asmtypes.set_factory('single', output['extra'], 
+                                                 name='{}_single'.format(self.name)))
+        except:pass
+        return {'reads': readsets}
 
     # Must implement run() method
     @abc.abstractmethod
