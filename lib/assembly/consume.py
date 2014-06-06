@@ -402,6 +402,7 @@ class ArastConsumer:
             all_pipes = []
             for p in pipelines:
                 all_pipes += self.pmanager.parse_input(p)
+            print all_pipes
             wasp_exp = wasp.pipelines_to_exp(all_pipes)
             logging.info('Wasp Expression: {}'.format(wasp_exp))
             print('Wasp Expression: {}'.format(wasp_exp))

@@ -697,32 +697,32 @@ class ModuleManager():
         stages = phelper.parse_branches(pipe)
         return stages
 
-    def parse_pipe(self, pipe):
-        """ Returns the pipeline(s)z of modules.
-        Returns parameter overrides from string.
-        e.g Input: [sga_ec 'kiki ?k=31 velvet ?ins=500' sspace]
-        Output: [kiki, velvet, a5], [{k:31}, {ins:500}, {}]
-        """
+    # def parse_pipe(self, pipe):
+    #     """ Returns the pipeline(s)z of modules.
+    #     Returns parameter overrides from string.
+    #     e.g Input: [sga_ec 'kiki ?k=31 velvet ?ins=500' sspace]
+    #     Output: [kiki, velvet, a5], [{k:31}, {ins:500}, {}]
+    #     """
 
-        # Parse param overrides
-        overrides = []
-        pipeline = []
-        module_num = -1
-        for group in pipe:
-            for word in group.split('+'):
-                if word.lower() == 'none':
-                    pass
-                elif not word.startswith('?') and self.has_plugin(word): # is module
-                    module_num = module_num + 1
-                    pipeline.append(word)
-                    overrides.append({})
+    #     # Parse param overrides
+    #     overrides = []
+    #     pipeline = []
+    #     module_num = -1
+    #     for group in pipe:
+    #         for word in group.split('+'):
+    #             if word.lower() == 'none':
+    #                 pass
+    #             elif not word.startswith('?') and self.has_plugin(word): # is module
+    #                 module_num = module_num + 1
+    #                 pipeline.append(word)
+    #                 overrides.append({})
 
-                elif word[1:-1].find('=') != -1: # is param
-                    kv = word[1:].split('=')
-                    overrides[module_num] = dict(overrides[module_num].items() +
-                                                 dict([kv]).items())
+    #             elif word[1:-1].find('=') != -1: # is param
+    #                 kv = word[1:].split('=')
+    #                 overrides[module_num] = dict(overrides[module_num].items() +
+    #                                              dict([kv]).items())
 
-        return pipeline, overrides
+    #     return pipeline, overrides
 
 
 ##### Helper Functions ######
