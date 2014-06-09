@@ -105,7 +105,12 @@ def eval(x, env):
             env.parameters[param] = value
     elif x[0] == 'define':         # (define var exp)
         (_, var, exp) = x
-        env[var] = eval(exp, env)
+        try: env[var] = eval(exp, env)
+        except Exception as e: 
+            print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
+            logging.info('\n'.join(traceback.format_tb(sys.exc_info()[2])))
+            env.exceptions.append('\n'.join(traceback.format_tb(sys.exc_info()[2])))
+            env[var] = None
     elif x[0] == 'sort':
         seq = eval(x[1], env)
         try: pred = x[2]
