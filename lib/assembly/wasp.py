@@ -151,6 +151,15 @@ def eval(x, env):
             return chain
         else: # A value
             return val
+    elif x[0] == 'all_files': ## Gets all data from module directory
+        (_, exp) = x
+        chain = eval(exp, env)
+        assert type(chain) is WaspLink
+        all_files = ls_recursive(chain['outpath'])
+        module = chain['module']
+        chain['default_output'] = asmtypes.set_factory('misc', all_files, 
+                                                       name='{}.all_files'.format(module))
+        return chain
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate
         inner_env = Env(outer=env)
         val = []
@@ -410,3 +419,12 @@ def pipelines_to_exp(pipes):
     #### Form final expression
     final_exp = '(begin {} (quast {}))'.format(' '.join(defs), ' '.join(all_pipes))
     return final_exp
+
+
+def ls_recursive(path):
+    """ Returns list of all files in a dir"""
+    allfiles = []
+    for root, sub_dirs, files in os.walk(path):
+        for f in files:
+            allfiles.append(os.path.join(root, f))
+    return allfiles
