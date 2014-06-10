@@ -64,23 +64,16 @@ def tar_directory(outpath, directory, tarname):
     return outfile
 
 def tar_list(outpath, file_list, tarname):
+    """ Tars a file list. Attempts to find the highest common path"""
+    common_path = os.path.commonprefix(file_list)
     outfile = outpath + '/tar/'
-
-    try:
-        os.makedirs(outfile)
-    except:
-        pass
-
+    try: os.makedirs(outfile)
+    except: pass
     outfile += tarname
     targs = ['tar', '-czvf', outfile]
-    for file in file_list:
-        f = './' + os.path.basename(file)
-        targs.append('-C')
-        targs.append(os.path.split(file)[0])
-        targs.append(f)
-    
+    targs += [os.path.relpath(path, common_path) for path in file_list]
     logging.debug("Tar command: %s: " % targs)
-    t = subprocess.Popen(targs)
+    t = subprocess.Popen(targs, cwd=common_path)
     t.wait()
     return outfile
 
