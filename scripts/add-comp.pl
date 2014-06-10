@@ -34,6 +34,7 @@ Compute server components:
       fastx        - FastX preprocessing toolkit (v0.0.13)
       gam_ngs      - GAM-NGS assembler merger (git)
       idba         - IDBA_UD assembler (v1.1.1)
+      jgi_rqc      - JGI rolling QC (git)
       kiki         - Kiki assembler (git)
       masurca      - MaSuRCA assembler (v2.0.0)
       pacbio       - SMRT Analysis Software (v2.1.1)
@@ -62,7 +63,8 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 if ($help) { print $usage; exit 0 }
 
 my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki masurca quast ray reapr screed seqtk solexa spades velvet); 
-my @special_comps = qw (pacbio);
+my @special_comps = qw (pacbio jgi_rqc);
+
 my @all_comps = (@regular_comps, @special_comps);
 my %supported = map { $_ => 1 } @all_comps;
 
@@ -252,6 +254,16 @@ sub install_quast {
     my $file = "$dir.tar.gz";
     download($dir, $file, "https://downloads.sourceforge.net/project/quast");
     run("cp -r -T $dir $dest_dir/quast");
+}
+
+sub install_jgi_rqc {
+    my $app = 'jgi_rqc';
+    git('git@bitbucket.org:sebhtml/jgi-rqc-pipeline.git');
+    run("mv jgi-rqc-pipeline $app");
+    run("cd $app; rm -rf .git");
+    run("mv $app $dest_dir/");
+    run("pip install pymysql");
+    run("pip install MySQL-python");
 }
 
 sub install_ray {
