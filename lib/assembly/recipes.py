@@ -22,20 +22,20 @@ auto1 = """
 
 """
 
-auto4 = """
+auto = """
 (begin
- (define pp (bhammer (trim_sort READS)))
+ (define pp (bhammer READS))
  (define kval (get best_k (kmergenie pp)))
  (define vt (begin (setparam hash_length kval) (velvet pp)))
  (define sp (spades pp))
  (define id (idba pp))
- (define gam (gam_ngs (slice (sort (list sp id vt) > :key (lambda (c) (n50 c))) 0 2)))
- (quast (emit gam) (emit sp) (emit id) (emit vt))
+ (define gam (gam_ngs (sort (list sp id vt) > :key (lambda (c) (n50 c)))))
+ (tar (all_files (quast (emit gam) (emit sp) (emit id) (emit vt))) :name report)
 )
 
 """
 
-auto = """
+auto9 = """
 (begin
  (define pp READS)
  (define kval (get best_k (kmergenie pp)))
@@ -43,7 +43,7 @@ auto = """
  (define sp (spades pp))
  (define id (idba pp))
  (define gam (gam_ngs (slice (sort (list sp id vt) > :key (lambda (c) (n50 c))) 0 2)))
- (quast (emit gam) (emit sp) (emit id) (emit vt))
+ (quast (emit gam) (emit (get scaffolds sp)) (emit id) (emit (sspace vt)))
 )
 
 """

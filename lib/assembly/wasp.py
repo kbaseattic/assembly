@@ -437,7 +437,7 @@ def pipelines_to_exp(pipes):
             all_pipes[i] = pipe.replace(*replacement)
     
     #### Form final expression
-    final_exp = '(begin {} (quast {}))'.format(' '.join(defs), ' '.join(all_pipes))
+    final_exp = '(begin {} (tar (all_files (quast {})) :name analysis))'.format(' '.join(defs), ' '.join(all_pipes))
     return final_exp
 
 
