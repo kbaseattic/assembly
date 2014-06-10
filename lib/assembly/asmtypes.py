@@ -89,7 +89,9 @@ class ReferenceSet(FileSet):
         assert len(file_infos) < 2
 
 def set_factory(set_type, file_infos, **kwargs):
-    
+    if type(file_infos) is not list:
+        file_infos = [file_infos]
+
     for i,f in enumerate(file_infos):
         if type(f) is not FileInfo and os.path.exists(f):
             file_infos[i] = FileInfo(f)
