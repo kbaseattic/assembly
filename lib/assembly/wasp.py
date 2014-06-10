@@ -11,6 +11,7 @@ import traceback, sys
 
 
 #### Arast Libraries
+import assembly as utils
 import asmtypes
 import wasp_functions
 
@@ -28,9 +29,11 @@ class Env(dict):
             self.global_data = outer.global_data
             self.plugins = outer.plugins
             self.exceptions = outer.exceptions
+            self.outpath = outer.outpath
         else:
             self.emissions = []
             self.uid = job_data['uid']
+            self.outpath = os.path.join(job_data['datapath'], str(job_data['job_id']))
             self.meta = meta
             self.global_data = {'stage': 1,
                                 'stages': 0}
@@ -155,11 +158,27 @@ def eval(x, env):
         (_, exp) = x
         chain = eval(exp, env)
         assert type(chain) is WaspLink
-        all_files = ls_recursive(chain['outpath'])
+        all_files = utils.ls_recursive(chain['outpath'])
         module = chain['module']
         chain['default_output'] = asmtypes.set_factory('misc', all_files, 
                                                        name='{}.all_files'.format(module))
         return chain
+    elif x[0] == 'tar': ## Tar outputs from WaspLink(s)
+        try: split = x[1:].index(':name')
+        except: split = None
+        wlinks = [eval(exp, env) for exp in x[1:split]]
+        if split:
+            tar_name = '{}.tar.gz'.format(x[split+1])
+        else: # Generate Tar Name
+            tar_name = '{}.tar.gz'.format('_'.join([w['module'] for w in wlinks]))
+        chain = WaspLink('tar', wlinks)
+        filelist = []
+        for w in wlinks:
+            filelist += w.files
+        chain['default_output'] = asmtypes.set_factory(
+            'tar', utils.tar_list(env.outpath, filelist, tar_name), name=tar_name)
+        return chain
+        
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate
         inner_env = Env(outer=env)
         val = []
@@ -350,7 +369,7 @@ class WaspEngine():
              return wlink
          return run_module
 
-###### Utitlity
+###### Utility
 def _longest_common_exp(s1, s2):
     m = [[0] * (1 + len(s2)) for i in xrange(1 + len(s1))]
     longest, x_longest = 0, 0
@@ -421,10 +440,3 @@ def pipelines_to_exp(pipes):
     return final_exp
 
 
-def ls_recursive(path):
-    """ Returns list of all files in a dir"""
-    allfiles = []
-    for root, sub_dirs, files in os.walk(path):
-        for f in files:
-            allfiles.append(os.path.join(root, f))
-    return allfiles
