@@ -7,13 +7,13 @@ def read(fname):
 
 setup(
     name = "ar_client",
-    version = "0.3.9.1",
+    version = "0.3.9.2",
     author = "Chris Bun",
     author_email = "chrisbun@gmail.com",
     description = ("A commandline client for the KBASE Assembly Service"),
     url = "http://www.kbase.us/services/assembly",
     packages = find_packages(),
-    install_requires = ['requests>=2.1.0', 'appdirs'],
+    install_requires = ['requests>=2.1.0', 'appdirs', 'httplib2'],
     entry_points={'console_scripts':[
             'arast = assembly.arast:main']},
 )

@@ -3,9 +3,8 @@ Assembly Services
 
 Overview
 ----------
-Services to assemble genomes and metagenomes with user's choice of assembly algorithm. 
-Currently supports single microbial genome assembly using velvet and/or kiki.
-More to come...
+Service to assemble genomes and metagenomes with user's choice of assembly algorithm. 
+Currently supports more than 20 assemblers and processing modules. More to come...
 
 
 Deploying and Testing AssembyRAST client on KBase infrastructure

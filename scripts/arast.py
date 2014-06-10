@@ -23,7 +23,7 @@ import assembly.config as conf
 from assembly.auth_token import *
 import traceback
 
-my_version = '0.3.9.1'
+my_version = '0.3.9.2'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -266,13 +266,28 @@ def main():
 
     elif args.command == 'stat':
         while True:
+            try:
+                response = aclient.get_job_status(args.stat_n, args.job)
                 if args.watch:
                         os.system('clear')
-                response = aclient.get_job_status(args.stat_n, args.job)
                 print response
                 if not args.watch:
                         break
-                time.sleep(2)			
+                else:
+                    print 'Press CTRL-C to quit.'
+                ### Spinner loop
+                spinners = ['-', '\\', '|', '/'] 
+                sleep_seconds = 25
+                spins_per_sec = 4
+                for i in range(sleep_seconds * spins_per_sec):
+                    os.system('clear')
+                    print('[{}] Assembly Service Status').format(spinners[i%4])
+                    print response
+                    print 'Press CTRL-C to quit.'
+                    time.sleep(1.0/spins_per_sec)			
+            except KeyboardInterrupt:
+                break
+                
 
     elif args.command == 'get':
         if args.assembly:

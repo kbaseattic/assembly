@@ -28,13 +28,14 @@ module KBaseAssembly {
     } SingleEndLibrary;
 
     /* 
-       @optional insert_size_mean insert_size_std_dev read_orientation_outward
+       @optional handle_2 insert_size_mean insert_size_std_dev interleaved read_orientation_outward 
     */
     typedef structure {
 	Handle handle_1;
 	Handle handle_2;
         float insert_size_mean;
         float insert_size_std_dev;
+	bool interleaved;
         bool read_orientation_outward;
     } PairedEndLibrary;
 

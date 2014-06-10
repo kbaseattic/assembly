@@ -22,6 +22,7 @@ from prettytable import PrettyTable
 from traceback import format_exc
 
 # Import A-RAST libs
+import asmtypes
 import metadata as meta
 import shock
 from nexus import client as nexusclient
@@ -103,7 +104,7 @@ def route_job(body):
     routing_key = determine_routing_key (1, client_params)
     job_id = metadata.get_next_job_id(client_params['ARASTUSER'])
     if not client_params['data_id']:
-        data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
+        data_id, _ = register_data(body)
         client_params['data_id'] = data_id
         
     client_params['job_id'] = job_id
@@ -116,26 +117,25 @@ def route_job(body):
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
     msg = json.dumps(p)
-
     send_message(msg, routing_key)
     response = str(job_id)
     return response
+
+def route_data(body):
+    data_id, _ = register_data(body)
+    return json.dumps({"data_id": data_id})
 
 def register_data(body):
     """ User is only submitting libraries, return data ID """
     if not check_valid_client(body):
         return "Client too old, please upgrade"
     client_params = json.loads(body) #dict of params
-    data_id = metadata.get_next_data_id(client_params['ARASTUSER'])
-    client_params['data_id'] = data_id
-
-    # Inserting a blank job
-    uid = metadata.insert_job(client_params)
-    logging.info("Inserting data record: %s" % client_params)
-    p = dict(client_params)
-    #analyze_data(json.dumps(dict(client_params)))
-    response = json.dumps({"data_id": data_id})
-    return response
+    keep = ['assembly_data', 'client', 'ARASTUSER', 'message', 'version']
+    data_info = {}
+    for key in keep:
+        try: data_info[key] = client_params[key]
+        except: pass
+    return metadata.insert_data(data_info['ARASTUSER'], data_info)
 
 def analyze_data(body): #run fastqc
     """Send data to compute node for analysis, wait for result"""
@@ -241,7 +241,8 @@ def start(config_file, mongo_host=None, mongo_port=None,
                                        int(parser.get('assembly', 'mongo_port')),
                                        parser.get('meta', 'mongo.db'),
                                        parser.get('meta', 'mongo.collection'),
-                                       parser.get('meta', 'mongo.collection.auth'))
+                                       parser.get('meta', 'mongo.collection.auth'),
+                                       parser.get('meta', 'mongo.collection.data'))
 
     ##### CherryPy ######
     conf = {
@@ -332,7 +333,7 @@ class JobResource:
         return 'Kill request sent for job {}'.format(job_id)
 
     @cherrypy.expose
-    def default(self, job_id, *args, **kwargs):
+    def default(self, job_id=None, *args, **kwargs):
         if len(args) == 0: # /user/USER/job/JOBID/
             pass
         else:
@@ -342,23 +343,37 @@ class JobResource:
         except:
             raise cherrypyHTTPError(403)
 
+        ### No job_id, return all
+        if not job_id:  
+            return self.status(job_id=job_id, format='json', **kwargs)
+
+        ### job_id 
         if resource == 'shock_node':
             return self.get_shock_node(userid, job_id)
         elif resource == 'assembly':
-            return self.get_assembly_nodes(userid, job_id)
+            try: asm = args[1]
+            except IndexError: asm = None
+            return self.get_assembly_nodes(userid, job_id, asm)
+        elif resource == 'assemblies':
+            try: asm = args[1]
+            except IndexError: asm = None
+            return self.get_assembly_handles(userid, job_id, asm)
+        elif resource == 'results':
+            try: args = args[1:]
+            except IndexError: args = ()
+            return self.get_results(userid, job_id, *args)
         elif resource == 'data':
             return self.get_job_data(userid, job_id)
         elif resource == 'report':
-            return 'Report placeholder'
+            return self.get_report(userid, job_id)
         elif resource == 'status':
             return self.status(job_id=job_id, **kwargs)
         elif resource == 'kill':
             user = authenticate_request()
             return self.kill(job_id=job_id, userid=user)
         else:
-            return resource
+            raise cherrypyHTTPError(403, 'Resource {} not found.'.format(resource))
 
-        #@cherrypy.expose
     def get_job_data(self, userid, job_id=None):
         if userid == 'OPTIONS':
             return ('New Data Request') # To handle initial html OPTIONS requess
@@ -394,7 +409,7 @@ class JobResource:
             except:
                 records = 100
 
-            docs = metadata.list_jobs(kwargs['userid'])
+            docs = [sanitize_doc(d) for d in metadata.list_jobs(kwargs['userid'])]
             pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
             if docs:
                 try:
@@ -407,7 +422,8 @@ class JobResource:
                     try:
                         row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
                     except:
-                        row = ['err','err','err']
+                        #row = ['err','err','err']
+                        continue
                     try:
                         row.append(str(doc['computation_time']))
                     except:
@@ -431,15 +447,62 @@ class JobResource:
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
 
-    def get_assembly_nodes(self, userid=None, job_id=None):
+    def get_assembly_nodes(self, userid=None, job_id=None, asm=None):
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
         try:
-            result_data = doc['contig_ids']
-        except:
+            if asm:
+                if asm.isdigit() and asm != '0':
+                    result_data = doc['contig_ids'].items()[int(asm)-1]
+                elif asm == 'auto':
+                    result_data = doc['contig_ids'].items()[0]
+            else:
+                result_data = doc['contig_ids']
+        except Exception as e:
+            print e
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
+
+    def get_assembly_handles(self, userid=None, job_id=None, asm=None):
+        """ Converts old style nodes to File Handles with Shock information """
+
+        if not job_id:
+            raise cherrypy.HTTPError(403)
+        doc = metadata.get_job(userid, job_id)
+
+        #### Convert (hack) into FileInfo
+        file_handles = []
+        try:
+            if asm:
+                if asm.isdigit() and asm != '0':
+                    result_data = [doc['contig_ids'].items()[int(asm)-1]]
+                elif asm == 'auto':
+                    result_data = [doc['contig_ids'].items()[0]]
+            else:
+                result_data = doc['contig_ids'].items()
+        except Exception as e:
+            print e
+            raise cherrypy.HTTPError(500)
+
+        return json.dumps([asmtypes.FileInfo(filename=f[0], 
+                                          shock_url=cherrypy.config['ar_shock_url'],
+                                          shock_id=f[1]) for f in result_data])
+
+    def get_results(self, userid=None, job_id=None, *args):
+        """ Converts old style nodes to File Handles with Shock information """
+        if not job_id:
+            raise cherrypy.HTTPError(403)
+        doc = metadata.get_job(userid, job_id)
+        return json.dumps(doc['result_data'])
+
+    def get_report(self, userid=None, job_id=None):
+        """ Converts old style nodes to File Handles with Shock information """
+        if not job_id:
+            raise cherrypy.HTTPError(403)
+        doc = metadata.get_job(userid, job_id)
+        return json.dumps(doc['report'])
+
 
 class StaticResource:
 
@@ -502,7 +565,6 @@ class StaticResource:
     serve._cp_config = {'tools.staticdir.on' : False}
 
 class FilesResource:
-    @cherrypy.expose
     def default(self, userid=None):
         testResponse = {}
         return '{}s files!'.format(userid)
@@ -517,24 +579,14 @@ class DataResource:
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
         #Return data id
-        return register_data(json.dumps(params))
+        return route_data(json.dumps(params))
 
     @cherrypy.expose
     def default(self, data_id=None, userid=None):
-        ## /user/USERID/data/
-        if not data_id:
-            docs = metadata.get_docs_distinct_data_id(userid)
-            summarized_docs = []
-            for d in docs: ## return summarized docs
-                summarized_docs.append({k: d[k] for k in ('data_id', 'filename')})
-            return json.dumps(summarized_docs)
-        ## /user/USERID/data/            
-        doc = metadata.get_doc_by_data_id(data_id, userid)
-
-        status = {k: doc[k] for k in ('assembly_data', 'ids', 'data_id', 'filename', 'file_sizes', 
-                                      'single', 'pair', 'version') if k in doc}
-        return json.dumps(status)
-
+        if not data_id: ## /user/USERID/data/
+            return json_util.dumps(list(metadata.get_data_docs(userid)))
+        else: ## /user/USERID/data/<data.id>
+            return json_util.dumps(metadata.get_data_docs(userid, data_id))
 
         
 class UserResource(object):
@@ -639,3 +691,10 @@ class Root(object):
     def default(self):
         print 'root'
 
+def sanitize_doc(doc):
+    """ Removes unwanted information in response data """
+    to_remove = ['oauth_token', '_id', 'data']
+    for k in to_remove:
+        try: del doc[k]
+        except KeyError: pass
+    return doc
