@@ -164,7 +164,7 @@ def eval(x, env):
                                                        name='{}.all_files'.format(module))
         return chain
     elif x[0] == 'tar': ## Tar outputs from WaspLink(s)
-        try: split = x[1:].index(':name')
+        try: split = x.index(':name')
         except: split = None
         wlinks = [eval(exp, env) for exp in x[1:split]]
         if split:
