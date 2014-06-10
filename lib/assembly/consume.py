@@ -16,7 +16,6 @@ import socket
 import multiprocessing
 import re
 import threading
-import tarfile
 import subprocess
 from plugins import ModuleManager
 from job import ArastJob
@@ -349,8 +348,10 @@ class ArastConsumer:
         jobpath = os.path.join(datapath, str(job_id))
         try:
             os.makedirs(jobpath)
-        except:
+        except Exception as e:
+            print e
             raise Exception ('Data Error')
+
 
         ### Create job log
         self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
@@ -534,6 +535,7 @@ class ArastConsumer:
             except Exception as e:
                 tb = '\n'.join(format_tb(sys.exc_info()[2]))
                 status = "[FAIL] {}".format(e)
+                print e
                 print logging.error(tb) 
                 self.metadata.update_job(uid, 'status', status)
         ch.basic_ack(delivery_tag=method.delivery_tag)
