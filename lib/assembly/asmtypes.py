@@ -8,13 +8,14 @@ import client
 #### Single Files #####
 class FileInfo(dict):
     def __init__(self, filename, shock_url=None, shock_id=None, name=None,
-                 filesize=None, create_time=None, metadata=None, *args):
+                 filesize=None, create_time=None, metadata=None, keep_name=False, *args):
         dict.__init__(self, *args)
         self.update({'shock_url': shock_url,
                      'shock_id' : shock_id,
                      'filesize': filesize,
                      'filename': os.path.basename(filename),
                      'local_file': filename,
+                     'keep_name': keep_name,
                      'create_time': create_time,
                      'metadata': metadata})
         self.id = uuid.uuid4()
@@ -88,13 +89,13 @@ class ReferenceSet(FileSet):
         self.__dict__.update(kwargs)
         assert len(file_infos) < 2
 
-def set_factory(set_type, file_infos, **kwargs):
+def set_factory(set_type, file_infos, keep_name=False, **kwargs):
     if type(file_infos) is not list:
         file_infos = [file_infos]
 
     for i,f in enumerate(file_infos):
         if type(f) is not FileInfo and os.path.exists(f):
-            file_infos[i] = FileInfo(f)
+            file_infos[i] = FileInfo(f, keep_name=keep_name)
             
     if set_type in ['paired', 'single']:
         return ReadSet(set_type, file_infos, **kwargs)

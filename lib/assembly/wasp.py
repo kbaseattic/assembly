@@ -161,7 +161,8 @@ def eval(x, env):
         all_files = utils.ls_recursive(chain['outpath'])
         module = chain['module']
         chain['default_output'] = asmtypes.set_factory('misc', all_files, 
-                                                       name='{}.all_files'.format(module))
+                                                       name='{}.all_files'.format(module),
+                                                       keep_name=True)
         return chain
     elif x[0] == 'tar': ## Tar outputs from WaspLink(s)
         try: split = x.index(':name')
@@ -176,7 +177,7 @@ def eval(x, env):
         for w in wlinks:
             filelist += w.files
         chain['default_output'] = asmtypes.set_factory(
-            'tar', utils.tar_list(env.outpath, filelist, tar_name), name=tar_name)
+            'tar', utils.tar_list(env.outpath, filelist, tar_name), name=tar_name, keep_name=True)
         return chain
         
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate

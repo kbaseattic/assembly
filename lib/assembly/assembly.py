@@ -77,6 +77,14 @@ def tar_list(outpath, file_list, tarname):
     t.wait()
     return outfile
 
+def ls_recursive(path):
+    """ Returns list of all files in a dir"""
+    allfiles = []
+    for root, sub_dirs, files in os.walk(path):
+        for f in files:
+            allfiles.append(os.path.join(root, f))
+    return allfiles
+
 def prefix_file_move(file, prefix):
     """ Adds prefix to file, returns new file name, moves file"""
     if os.path.isdir(file):

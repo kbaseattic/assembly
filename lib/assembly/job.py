@@ -126,9 +126,11 @@ class ArastJob(dict):
                     file_suffix = '_{}'.format(j+1)
                 else: file_suffix = ''
                 ext = f['local_file'].split('.')[-1]
-                new_file = '{}/{}.{}{}.{}'.format(os.path.dirname(f['local_file']),
-                                             i+1, fset.name, file_suffix, ext)
-                os.symlink(f['local_file'], new_file)
+                if not f['keep_name']:
+                    new_file = '{}/{}.{}{}.{}'.format(os.path.dirname(f['local_file']),
+                                                      i+1, fset.name, file_suffix, ext)
+                    os.symlink(f['local_file'], new_file)
+                else: new_file = f['local_file']
                 res = self.upload_file(url, self['user'], token, new_file, filetype=fset.type)
                 f.update({'shock_url': url, 'shock_id': res['data']['id'], 
                           'filename': os.path.basename(new_file)})

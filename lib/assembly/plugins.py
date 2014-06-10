@@ -220,13 +220,13 @@ class BasePlugin(object):
                 self.extra_params.append(kv)
             setattr(self, kv[0], kv[1])
 
-
         #### Initialize Internal Wasp Engine ####
         plugin_data = copy.deepcopy(job_data)
         plugin_data['out_report'] = self.out_module
         self.plugin_engine = wasp.WaspEngine(self.pmanager, plugin_data)
 
         #### Get default outputs of last module and pass on persistent data
+        job_data['wasp_chain']['outpath'] = self.outpath
         if job_data['wasp_chain']['link']:
             all_sets = []
             for link in job_data['wasp_chain']['link']:
