@@ -566,8 +566,8 @@ class ModuleManager():
         self.job_list = job_list # Running jobs
         
         self.pmanager = PluginManager()
-        # locator = self.pmanager.getPluginLocator()
-        # locator.setPluginInfoExtension('asp')
+        locator = self.pmanager.getPluginLocator()
+        locator.setPluginInfoExtension('asm-plugin')
         self.pmanager.setPluginPlaces(["plugins"])
         self.pmanager.collectPlugins()
         self.pmanager.locatePlugins()
