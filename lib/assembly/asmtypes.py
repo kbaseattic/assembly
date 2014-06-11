@@ -42,6 +42,10 @@ class FileSet(dict):
         return [f['local_file'] for f in self['file_infos']]
 
     @property
+    def shock_nodes(self):
+        return [fi['shock_id'] for fi in self['file_infos']]
+
+    @property
     def name(self):
         return self['name'] or None
 
