@@ -139,6 +139,233 @@ class ArastConsumer:
             all_files.append(file_set)
         return datapath, all_files                    
 
+    def compute(self, body):
+        error = False
+        params = json.loads(body)
+        job_id = params['job_id']
+        uid = params['_id']
+        user = params['ARASTUSER']
+        token = params['oauth_token']
+        pipelines = params['pipeline']
+
+        #support legacy arast client
+        if len(pipelines) > 0:
+            if type(pipelines[0]) is not list:
+                pipelines = [pipelines]
+                
+        ### Download files (if necessary)
+        datapath, all_files = self.get_data(body)
+        rawpath = datapath + '/raw/'
+        jobpath = os.path.join(datapath, str(job_id))
+        try:
+            os.makedirs(jobpath)
+        except Exception as e:
+            print e
+            raise Exception ('Data Error')
+
+
+        ### Create job log
+        self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
+        self.out_report = open(self.out_report_name, 'w')
+
+        ### Create data to pass to pipeline
+        reads = []
+        reference = []
+        for fileset in all_files:
+            if len(fileset['files']) != 0:
+                if (fileset['type'] == 'single' or 
+                    fileset['type'] == 'paired'):
+                    reads.append(fileset)
+                elif fileset['type'] == 'reference':
+                    reference.append(fileset)
+                else:
+                    raise Exception('fileset error')
+
+        job_data = ArastJob({'job_id' : params['job_id'], 
+                    'uid' : params['_id'],
+                    'user' : params['ARASTUSER'],
+                    'reads': reads,
+                    'logfiles': [],
+                    'reference': reference,
+                    'initial_reads': list(reads),
+                    'raw_reads': copy.deepcopy(reads),
+                    'params': [],
+                    'exceptions': [],
+                    'pipeline_data': {},
+                    'datapath': datapath,
+                    'out_report' : self.out_report})
+                    
+
+        self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
+        self.job_list.append(job_data)
+        self.start_time = time.time()
+        self.done_flag = threading.Event()
+        timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
+        timer_thread.start()
+        
+        url = "http://%s" % (self.shockurl)
+        status = ''
+
+        #### Parse pipeline to wasp exp
+        wasp_exp = pipelines[0][0]
+        if pipelines[0] == 'auto':
+            wasp_exp = recipes.auto
+        elif not '(' in wasp_exp:
+            all_pipes = []
+            for p in pipelines:
+                all_pipes += self.pmanager.parse_input(p)
+            print all_pipes
+            wasp_exp = wasp.pipelines_to_exp(all_pipes)
+            logging.info('Wasp Expression: {}'.format(wasp_exp))
+            print('Wasp Expression: {}'.format(wasp_exp))
+        w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
+        w_engine.run_expression(wasp_exp, job_data)
+
+        ###### Upload all result files and place them into appropriate tags
+        uploaded_fsets = job_data.upload_results(url, token)
+        
+        for i, job in enumerate(self.job_list):
+            if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
+                self.job_list.pop(i)
+        self.done_flag.set()
+
+        # Format report
+        new_report = open('{}.tmp'.format(self.out_report_name), 'w')
+
+        ### Log exceptions
+        if len(job_data['exceptions']) > 0:
+            new_report.write('PIPELINE ERRORS\n')
+            for i,e in enumerate(job_data['exceptions']):
+                new_report.write('{}: {}\n'.format(i, e))
+        try: ## Get Quast output
+            quast_report = job_data['wasp_chain'].find_module('quast')['default_output'].files
+            for sum in quast_report:
+                with open(sum) as s:
+                    new_report.write(s.read())
+        except:
+            new_report.write('No Summary File Generated!\n\n\n')
+        self.out_report.close()
+        with open(self.out_report_name) as old:
+            new_report.write(old.read())
+
+        for log in job_data['logfiles']:
+            new_report.write('\n{1} {0} {1}\n'.format(os.path.basename(log), '='*20))
+            with open(log) as l:
+                new_report.write(l.read())
+        new_report.close()
+        os.remove(self.out_report_name)
+        shutil.move(new_report.name, self.out_report_name)
+        res = self.upload(url, user, token, self.out_report_name)
+        report_info = asmtypes.FileInfo(self.out_report_name, shock_url=url, shock_id=res['data']['id'])
+
+        self.metadata.update_job(uid, 'report', [asmtypes.set_factory('report', [report_info])])
+        status = 'Complete with errors' if job_data['exceptions'] else 'Complete'
+
+        ## Make compatible with JSON dumps()
+        del job_data['out_report']
+        del job_data['initial_reads']
+        del job_data['raw_reads']
+        self.metadata.update_job(uid, 'data', job_data)
+        self.metadata.update_job(uid, 'result_data', uploaded_fsets)
+        self.metadata.update_job(uid, 'status', status)
+
+        #### Legacy Support
+        filesets = uploaded_fsets.append(asmtypes.set_factory('report', [report_info]))
+        download_ids = {fi['filename']: fi['shock_id'] for fset in uploaded_fsets for fi in fset['file_infos']}
+        self.metadata.update_job(uid, 'result_data_legacy', [download_ids])
+
+        
+        ###################
+
+
+        print '============== JOB COMPLETE ==============='
+
+    def update_time_record(self):
+        elapsed_time = time.time() - self.start_time
+        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
+        self.metadata.update_job(uid, 'computation_time', ftime)
+
+    def run_read_analysis(self, job_data, modules):
+        results = []
+        #self.metadata.update_job(job_data['uid', 'modules', modules])
+        for module in modules:
+            self.metadata.update_job(job_data['uid'], 
+                                     'status', 'Analysis:{}'.format(module))
+            output, _, mod_log = self.pmanager.run_module(
+                module, job_data, all_data=True)
+            results += output
+        return results
+
+    def run_asm_analysis(self, job_data):
+        ## TEMPORARY
+        quast_report, quast_tar, _, _ = self.pmanager.run_module('quast', job_data, 
+                                                                 tar=True, meta=True)
+        analysis = quast_report[0]
+        analysis_data = quast_tar
+        return analysis, analysis_data
+
+
+    def upload(self, url, user, token, file, filetype='default'):
+        files = {}
+        files["file"] = (os.path.basename(file), open(file, 'rb'))
+        logging.debug("Message sent to shock on upload: %s" % files)
+        sclient = shock.Shock(url, user, token)
+        if filetype == 'contigs' or filetype == 'scaffolds':
+            res = sclient.upload_contigs(file)
+        else:
+            res = sclient.upload_misc(file, filetype)
+        return res
+
+    def download(self, url, user, token, node_id, outdir):
+        sclient = shock.Shock(url, user, token)
+        downloaded = sclient.curl_download_file(node_id, outdir=outdir)
+        return extract_file(downloaded)
+
+    def fetch_job(self):
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+                host = self.arasturl))
+        channel = connection.channel()
+        channel.basic_qos(prefetch_count=1)
+        result = channel.queue_declare(queue=self.queue,
+                                       exclusive=False,
+                                       auto_delete=False,
+                                       durable=True)
+
+        logging.basicConfig(format=("%(asctime)s %s %(levelname)-8s %(message)s",proc().name))
+        print proc().name, ' [*] Fetching job...'
+
+        channel.basic_qos(prefetch_count=1)
+        channel.basic_consume(self.callback,
+                              queue=self.queue)
+
+        channel.start_consuming()
+
+    def callback(self, ch, method, properties, body):
+        params = json.loads(body)
+        display = ['ARASTUSER', 'job_id', 'message']
+        print ' [+] Incoming:', ', '.join(['{}: {}'.format(k, params[k]) for k in display])
+        job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
+        uid = job_doc['_id']
+        ## Check if job was not killed
+        if job_doc['status'] == 'Terminated':
+            print 'Job {} was killed, skipping'.format(params['job_id'])
+        else:
+            try:
+                self.compute(body)
+            except Exception as e:
+                tb = '\n'.join(format_tb(sys.exc_info()[2]))
+                status = "[FAIL] {}".format(e)
+                print e
+                print logging.error(tb) 
+                self.metadata.update_job(uid, 'status', status)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    def start(self):
+        self.fetch_job()
+
+
+###### Legacy Support ######
+
     def _get_data_old(self, body):
         params = json.loads(body)
         #filepath = self.datapath + str(params['data_id'])
@@ -330,220 +557,6 @@ class ArastConsumer:
 
         return datapath, all_files
 
-    def compute(self, body):
-        error = False
-        params = json.loads(body)
-        job_id = params['job_id']
-        uid = params['_id']
-        user = params['ARASTUSER']
-        token = params['oauth_token']
-        pipelines = params['pipeline']
-
-        #support legacy arast client
-        if len(pipelines) > 0:
-            if type(pipelines[0]) is not list:
-                pipelines = [pipelines]
-                
-        ### Download files (if necessary)
-        datapath, all_files = self.get_data(body)
-        rawpath = datapath + '/raw/'
-        jobpath = os.path.join(datapath, str(job_id))
-        try:
-            os.makedirs(jobpath)
-        except Exception as e:
-            print e
-            raise Exception ('Data Error')
-
-
-        ### Create job log
-        self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
-        self.out_report = open(self.out_report_name, 'w')
-
-        ### Create data to pass to pipeline
-        reads = []
-        reference = []
-        for fileset in all_files:
-            if len(fileset['files']) != 0:
-                if (fileset['type'] == 'single' or 
-                    fileset['type'] == 'paired'):
-                    reads.append(fileset)
-                elif fileset['type'] == 'reference':
-                    reference.append(fileset)
-                else:
-                    raise Exception('fileset error')
-
-        job_data = ArastJob({'job_id' : params['job_id'], 
-                    'uid' : params['_id'],
-                    'user' : params['ARASTUSER'],
-                    'reads': reads,
-                    'logfiles': [],
-                    'reference': reference,
-                    'initial_reads': list(reads),
-                    'raw_reads': copy.deepcopy(reads),
-                    'params': [],
-                    'exceptions': [],
-                    'pipeline_data': {},
-                    'datapath': datapath,
-                    'out_report' : self.out_report})
-                    
-
-        self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
-        self.job_list.append(job_data)
-        self.start_time = time.time()
-        self.done_flag = threading.Event()
-        timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
-        timer_thread.start()
-        
-        url = "http://%s" % (self.shockurl)
-        status = ''
-
-        #### Parse pipeline to wasp exp
-        wasp_exp = pipelines[0][0]
-        if pipelines[0] == 'auto':
-            wasp_exp = recipes.auto
-        elif not '(' in wasp_exp:
-            all_pipes = []
-            for p in pipelines:
-                all_pipes += self.pmanager.parse_input(p)
-            print all_pipes
-            wasp_exp = wasp.pipelines_to_exp(all_pipes)
-            logging.info('Wasp Expression: {}'.format(wasp_exp))
-            print('Wasp Expression: {}'.format(wasp_exp))
-        w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
-        w_engine.run_expression(wasp_exp, job_data)
-
-        ###### Upload all result files and place them into appropriate tags
-        uploaded_fsets = job_data.upload_results(url, token)
-        
-        for i, job in enumerate(self.job_list):
-            if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
-                self.job_list.pop(i)
-        self.done_flag.set()
-
-        # Format report
-        new_report = open('{}.tmp'.format(self.out_report_name), 'w')
-
-        ### Log exceptions
-        if len(job_data['exceptions']) > 0:
-            new_report.write('PIPELINE ERRORS\n')
-            for i,e in enumerate(job_data['exceptions']):
-                new_report.write('{}: {}\n'.format(i, e))
-        try: ## Get Quast output
-            quast_report = job_data['wasp_chain'].find_module('quast')['default_output'].files
-            for sum in quast_report:
-                with open(sum) as s:
-                    new_report.write(s.read())
-        except:
-            new_report.write('No Summary File Generated!\n\n\n')
-        self.out_report.close()
-        with open(self.out_report_name) as old:
-            new_report.write(old.read())
-
-        for log in job_data['logfiles']:
-            new_report.write('\n{1} {0} {1}\n'.format(os.path.basename(log), '='*20))
-            with open(log) as l:
-                new_report.write(l.read())
-        new_report.close()
-        os.remove(self.out_report_name)
-        shutil.move(new_report.name, self.out_report_name)
-        res = self.upload(url, user, token, self.out_report_name)
-        report_info = asmtypes.FileInfo(self.out_report_name, shock_url=url, shock_id=res['data']['id'])
-
-
-        self.metadata.update_job(uid, 'report', [asmtypes.set_factory('report', [report_info])])
-        status = 'Complete with errors' if job_data['exceptions'] else 'Complete'
-
-        ## Make compatible with JSON dumps()
-        del job_data['out_report']
-        del job_data['initial_reads']
-        del job_data['raw_reads']
-        self.metadata.update_job(uid, 'data', job_data)
-        self.metadata.update_job(uid, 'result_data', uploaded_fsets)
-        self.metadata.update_job(uid, 'status', status)
-        print '============== JOB COMPLETE ==============='
-
-    def update_time_record(self):
-        elapsed_time = time.time() - self.start_time
-        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
-        self.metadata.update_job(uid, 'computation_time', ftime)
-
-    def run_read_analysis(self, job_data, modules):
-        results = []
-        #self.metadata.update_job(job_data['uid', 'modules', modules])
-        for module in modules:
-            self.metadata.update_job(job_data['uid'], 
-                                     'status', 'Analysis:{}'.format(module))
-            output, _, mod_log = self.pmanager.run_module(
-                module, job_data, all_data=True)
-            results += output
-        return results
-
-    def run_asm_analysis(self, job_data):
-        ## TEMPORARY
-        quast_report, quast_tar, _, _ = self.pmanager.run_module('quast', job_data, 
-                                                                 tar=True, meta=True)
-        analysis = quast_report[0]
-        analysis_data = quast_tar
-        return analysis, analysis_data
-
-
-    def upload(self, url, user, token, file, filetype='default'):
-        files = {}
-        files["file"] = (os.path.basename(file), open(file, 'rb'))
-        logging.debug("Message sent to shock on upload: %s" % files)
-        sclient = shock.Shock(url, user, token)
-        if filetype == 'contigs' or filetype == 'scaffolds':
-            res = sclient.upload_contigs(file)
-        else:
-            res = sclient.upload_misc(file, filetype)
-        return res
-
-    def download(self, url, user, token, node_id, outdir):
-        sclient = shock.Shock(url, user, token)
-        downloaded = sclient.curl_download_file(node_id, outdir=outdir)
-        return extract_file(downloaded)
-
-    def fetch_job(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host = self.arasturl))
-        channel = connection.channel()
-        channel.basic_qos(prefetch_count=1)
-        result = channel.queue_declare(queue=self.queue,
-                                       exclusive=False,
-                                       auto_delete=False,
-                                       durable=True)
-
-        logging.basicConfig(format=("%(asctime)s %s %(levelname)-8s %(message)s",proc().name))
-        print proc().name, ' [*] Fetching job...'
-
-        channel.basic_qos(prefetch_count=1)
-        channel.basic_consume(self.callback,
-                              queue=self.queue)
-
-        channel.start_consuming()
-
-    def callback(self, ch, method, properties, body):
-        params = json.loads(body)
-        display = ['ARASTUSER', 'job_id', 'message']
-        print ' [+] Incoming:', ', '.join(['{}: {}'.format(k, params[k]) for k in display])
-        job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
-        uid = job_doc['_id']
-        ## Check if job was not killed
-        if job_doc['status'] == 'Terminated':
-            print 'Job {} was killed, skipping'.format(params['job_id'])
-        else:
-            try:
-                self.compute(body)
-            except Exception as e:
-                tb = '\n'.join(format_tb(sys.exc_info()[2]))
-                status = "[FAIL] {}".format(e)
-                print e
-                print logging.error(tb) 
-                self.metadata.update_job(uid, 'status', status)
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-
-    def start(self):
-        self.fetch_job()
 
 
 ### Helper functions ###
