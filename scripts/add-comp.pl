@@ -256,14 +256,27 @@ sub install_quast {
     run("cp -r -T $dir $dest_dir/quast");
 }
 
+# $dest_dir is a global variable
+# global variables are bad.
+# the run() command does not save the current
+# working directory, so this is hard to write
+# an installer with this function...
 sub install_jgi_rqc {
     my $app = 'jgi_rqc';
     git('git@bitbucket.org:sebhtml/jgi-rqc-pipeline.git');
+    git('git@bitbucket.org:sebhtml/jgi-assets.git');
     run("mv jgi-rqc-pipeline $app");
+    run("mv jgi-assets/*zip $app");
     run("cd $app; rm -rf .git");
-    run("mv $app $dest_dir/");
+    run("cd $app; unzip cplusmersampler.zip");
+    run("mv $app/cplusmersampler $app/readqc/tools/");
+    run("cd $app; rm cplusmersampler.zip");
+    run("mv $app $dest_dir");
     run("pip install pymysql");
     run("pip install MySQL-python");
+
+    # clean everything
+    run("rm -rf *");
 }
 
 sub install_ray {
