@@ -31,7 +31,9 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
                 stdev = readset.stdev
                 assert insert is not None
             except:
-                insert_size, _ = self.estimate_insert_stdev(contig_file, read_files)
+                ## Run Velvet to generate contig
+                velvet_results = self.plugin_engine.run_expression('(velvet (paired_reads {}))'.format(' '.join(readset.files)))
+                insert, stdev = self.estimate_insert_stdev(velvet_results.files[0], readset.files)
             files = ' '.join(readset.files)
             cf.write('PE= p{} {} {} {}\n'.format(
                     lib_count, insert, stdev, files))
