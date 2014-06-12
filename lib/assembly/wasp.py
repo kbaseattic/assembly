@@ -200,6 +200,8 @@ def eval(x, env):
         try: ## Assembly functions
             return proc(*exps, env=env)
         except TypeError as e: ## Built-in functions
+            print e
+            print '\n'.join(traceback.format_tb(sys.exc_info()[2]))
             return proc(*exps)
 ################ parse, read, and user interaction
 
@@ -391,7 +393,7 @@ def _longest_common_exp(s1, s2):
     if open_parens and close_parens >= open_parens:
         return lcs[:-(close_parens - open_parens)]
 
-def pipelines_to_exp(pipes):
+def pipelines_to_exp(pipes, job_id):
     all_pipes = []
     for pipe in pipes:        
         exp = 'READS'
@@ -437,7 +439,7 @@ def pipelines_to_exp(pipes):
             all_pipes[i] = pipe.replace(*replacement)
     
     #### Form final expression
-    final_exp = '(begin {} (tar (all_files (quast {})) :name analysis))'.format(' '.join(defs), ' '.join(all_pipes))
+    final_exp = '(begin {} (tar (all_files (quast {})) :name {}_analysis))'.format(' '.join(defs), ' '.join(all_pipes), job_id)
     return final_exp
 
 
