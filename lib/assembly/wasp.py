@@ -273,21 +273,21 @@ class WaspLink(dict):
     def insert_output(self, output, default_type, module_name):
         """ Parses the output dict of a completed module and stores the 
         data and information within the WaspLink object """
+        filesets = []
         for outtype, outvalue in output.items():
             name = '{}_{}'.format(module_name, outtype)
             if not type(outvalue) is list: 
                 outvalue = [outvalue]
             ## Store default output
             if default_type == outtype:
+                print 'inserting'
                 if isinstance(outvalue[0], asmtypes.FileSet):
                     self['default_output'] = outvalue
                 else: # Files
-                    print outvalue
                     self['default_output'] = asmtypes.set_factory(outtype, [asmtypes.FileInfo(f) for f in outvalue],
                                                                   name=name)
             ## Store all outputs and values
             outputs = []
-            filesets = []
             are_files = False
             for out in outvalue:
                 try:
@@ -296,7 +296,7 @@ class WaspLink(dict):
                         are_files = True
                     else:
                         raise Exception('Not a file')
-                except: # Not a file
+                except Exception as e: # Not a file
                     outputs = outvalue
                     break
             if are_files:

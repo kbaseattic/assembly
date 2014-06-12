@@ -238,10 +238,9 @@ class ArastConsumer:
             for i,e in enumerate(job_data['exceptions']):
                 new_report.write('{}: {}\n'.format(i, e))
         try: ## Get Quast output
-            quast_report = job_data['wasp_chain'].find_module('quast')['default_output'].files
-            for sum in quast_report:
-                with open(sum) as s:
-                    new_report.write(s.read())
+            quast_report = job_data['wasp_chain'].find_module('quast')['data'].find_type('report')[0].files[0]
+            with open(quast_report) as q:
+                new_report.write(q.read())
         except:
             new_report.write('No Summary File Generated!\n\n\n')
         self.out_report.close()

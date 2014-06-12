@@ -41,19 +41,11 @@ class QuastAssessment(BaseAssessment, IPlugin):
         #### Run Quast ####
         self.arast_popen(cmd_args)
         
-        #### Collect and return all files ####
-        all_files = []
-        for root, sub, files in os.walk(self.outpath):
-            for file in files:
-                all_files.append(os.path.join(root, file))
-                
         output = {}
         report = os.path.join(self.outpath, 'report.txt')
         if not os.path.exists(report):
             print 'No Quast Output'
             report = None
         else: output['report'] = report
-        output['all_files'] = all_files
-        output['n50s'] = (100000, 1)
         return output
     
