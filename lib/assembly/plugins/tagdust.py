@@ -17,7 +17,6 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
 
         processed_reads = []
         for i, file_set in enumerate(reads):
-            new_file_set = file_set
             new_files = []
             td_unsynced_files = []
             td_synced_files = []
@@ -44,7 +43,7 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
                 new_files += td_synced_files
             else:
                 new_files += td_unsynced_files
-            processed_reads += new_files
+            processed_reads.append(new_files)
 
         return {'reads': processed_reads}
 

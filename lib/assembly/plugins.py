@@ -109,7 +109,7 @@ class BasePlugin(object):
                     except Empty:
                         break
                     else: # got line
-                        logging.info(line)
+                        logging.info(line.strip())
                         self.is_urgent_output(line)
                         self.out_module.write(line)
                 time.sleep(5)
@@ -419,7 +419,8 @@ class BaseScaffolder(BasePlugin):
 
 class BasePreprocessor(BasePlugin):
     """
-    A postprocessing plugin should implement a run() function
+    A preprocessing plugin should return a list of processed reads.
+    For multiple libraries, return a list of list of reads.
 
     """
     # Default behavior for run()
@@ -427,15 +428,18 @@ class BasePreprocessor(BasePlugin):
     OUTPUT = 'reads'
 
     def wasp_run(self):
-        if len(self.data.readsets) != 1:
-            raise Exception('Preprocessing plugins consume a single readset')
-
         #### Save and restore insert data, handle extra output
-        orig = copy.deepcopy(self.data.readsets[0])
+        orig_sets = copy.deepcopy(self.data.readsets)
         output = self.run()
-        orig.update_files(output['reads'])
-        orig['name'] = '{}_reads'.format(self.name)
-        readsets = [orig]
+        if type(output['reads'][0]) is list:  ## Multiple Libraries
+            for i, readset in enumerate(output['reads']):
+                orig_sets[i].update_files(readset)
+                orig_sets[i]['name'] = '{}_reads'.format(self.name)
+                readsets = orig_sets
+        else:
+            orig_sets[0].update_files(output['reads'])
+            orig_sets[0]['name'] = '{}_reads'.format(self.name)
+            readsets = orig_sets
         try:
             readsets.append(asmtypes.set_factory('single', output['extra'], 
                                                  name='{}_single'.format(self.name)))

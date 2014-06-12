@@ -17,31 +17,29 @@ class TrimSortPreprocessor(BasePreprocessor, IPlugin):
         """
 
         processed_reads = []
-        readset = self.data.readsets[0]
+        for readset in self.data.readsets:
+            cmd_args = [os.path.join(os.getcwd(), self.bin_dynamictrim)]
+            cmd_args += readset.files
+            cmd_args += ['-p', self.probcutoff, '-d', self.outpath]
+            self.arast_popen(cmd_args, cwd=self.outpath)
 
-        cmd_args = [os.path.join(os.getcwd(), self.bin_dynamictrim)]
-        cmd_args += readset.files
-        cmd_args += ['-p', self.probcutoff, '-d', self.outpath]
-        self.arast_popen(cmd_args, cwd=self.outpath)
+            trimmed = [os.path.join(self.outpath, 
+                         "{}.{}".format(os.path.basename(f), "trimmed"))
+                       for f in readset.files]
 
-        trimmed = [os.path.join(self.outpath, 
-                     "{}.{}".format(os.path.basename(f), "trimmed"))
-                   for f in readset.files]
+            cmd_args = ([os.path.join(os.getcwd(), self.bin_lengthsort)] + 
+                        trimmed + 
+                        ['-l', self.length] +
+                        ['-d', self.outpath])
 
-        cmd_args = ([os.path.join(os.getcwd(), self.bin_lengthsort)] + 
-                    trimmed + 
-                    ['-l', self.length] +
-                    ['-d', self.outpath])
+            self.arast_popen(cmd_args, cwd=self.outpath)
 
-        self.arast_popen(cmd_args, cwd=self.outpath)
-
-        if readset.type == 'single':
-            sorted_files = glob.glob(self.outpath + '/*.single')
-        else:
-            sorted_files = glob.glob(self.outpath + '/*.paired*')
-        for f in sorted_files:
-            os.rename(f, "{}.fq".format(f))
-        new_files = ["{}.fq".format(f) for f in sorted_files]
-
+            if readset.type == 'single':
+                sorted_files = glob.glob(self.outpath + '/*.single')
+            else:
+                sorted_files = glob.glob(self.outpath + '/*.paired*')
+            for f in sorted_files:
+                os.rename(f, "{}.fq".format(f))
+            new_files = ["{}.fq".format(f) for f in sorted_files]
         processed_reads.append(new_files)
-        return {'reads': new_files}
+        return {'reads': processed_reads}
