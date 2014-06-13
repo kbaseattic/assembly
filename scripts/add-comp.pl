@@ -263,6 +263,8 @@ sub install_quast {
 # an installer with this function...
 sub install_jgi_rqc {
     my $app = 'jgi_rqc';
+
+    # fetch product assets
     git('git@bitbucket.org:sebhtml/jgi-rqc-pipeline.git');
     git('git@bitbucket.org:sebhtml/jgi-assets.git');
     run("mv jgi-rqc-pipeline $app");
@@ -272,9 +274,16 @@ sub install_jgi_rqc {
     run("mkdir $app/assets");
     run("mv $app/cplusmersampler $app/assets");
     run("cd $app; rm cplusmersampler.zip");
+
+    # apply patches
+    run("wget https://raw.githubusercontent.com/sebhtml/assembly/issue-26/patches/jgi_rqc-dash-support.patch");
+    run("patch -p1 < jgi_rqc-dash-support.patch");
+
+    # install the product
     run("mv $app $dest_dir");
     run("pip install pymysql");
     run("pip install MySQL-python");
+
 
     # clean everything
     run("rm -rf *");
