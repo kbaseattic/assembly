@@ -269,7 +269,8 @@ sub install_jgi_rqc {
     run("mv jgi-assets/*zip $app");
     run("cd $app; rm -rf .git");
     run("cd $app; unzip cplusmersampler.zip");
-    run("mv $app/cplusmersampler $app/readqc/tools/");
+    run("mkdir $app/assets");
+    run("mv $app/cplusmersampler $app/assets");
     run("cd $app; rm cplusmersampler.zip");
     run("mv $app $dest_dir");
     run("pip install pymysql");
