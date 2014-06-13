@@ -261,6 +261,8 @@ sub install_quast {
 # the run() command does not save the current
 # working directory, so this is hard to write
 # an installer with this function...
+# I think there should be a single shell script for every
+# product that is being installed.
 sub install_jgi_rqc {
     my $app = 'jgi_rqc';
 
@@ -277,7 +279,7 @@ sub install_jgi_rqc {
 
     # apply patches
     run("wget https://raw.githubusercontent.com/sebhtml/assembly/issue-26/patches/jgi_rqc-dash-support.patch");
-    run("patch -p1 < jgi_rqc-dash-support.patch");
+    run("patch -p0 < jgi_rqc-dash-support.patch");
 
     # install the product
     run("mv $app $dest_dir");
