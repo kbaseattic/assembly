@@ -256,14 +256,41 @@ sub install_quast {
     run("cp -r -T $dir $dest_dir/quast");
 }
 
+# $dest_dir is a global variable
+# global variables are bad.
+# the run() command does not save the current
+# working directory, so this is hard to write
+# an installer with this function...
+# I think there should be a single shell script for every
+# product that is being installed.
 sub install_jgi_rqc {
     my $app = 'jgi_rqc';
+
+    # fetch product assets
     git('git@bitbucket.org:sebhtml/jgi-rqc-pipeline.git');
+    git('git@bitbucket.org:sebhtml/jgi-assets.git');
     run("mv jgi-rqc-pipeline $app");
+    run("mv jgi-assets/*zip $app");
     run("cd $app; rm -rf .git");
-    run("mv $app $dest_dir/");
+    run("cd $app; unzip cplusmersampler.zip");
+    run("mkdir $app/assets");
+    run("mv $app/cplusmersampler $app/assets");
+    run("cd $app; rm cplusmersampler.zip");
+
+    # apply patches
+    run("wget https://raw.githubusercontent.com/sebhtml/assembly/issue-26/patches/jgi_rqc-dash-support.patch");
+    run("patch -p0 < jgi_rqc-dash-support.patch");
+    run("wget https://raw.githubusercontent.com/sebhtml/assembly/issue-26/patches/jgi_rqc-dash-support-for-os_utility2.patch");
+    run("patch -p0 < jgi_rqc-dash-support-for-os_utility2.patch");
+
+    # install the product
+    run("mv $app $dest_dir");
     run("pip install pymysql");
     run("pip install MySQL-python");
+
+
+    # clean everything
+    run("rm -rf *");
 }
 
 sub install_ray {
