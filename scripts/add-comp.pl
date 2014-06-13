@@ -280,6 +280,8 @@ sub install_jgi_rqc {
     # apply patches
     run("wget https://raw.githubusercontent.com/sebhtml/assembly/issue-26/patches/jgi_rqc-dash-support.patch");
     run("patch -p0 < jgi_rqc-dash-support.patch");
+    run("wget https://raw.githubusercontent.com/sebhtml/assembly/issue-26/patches/jgi_rqc-dash-support-for-os_utility2.patch");
+    run("patch -p0 < jgi_rqc-dash-support-for-os_utility2.patch");
 
     # install the product
     run("mv $app $dest_dir");

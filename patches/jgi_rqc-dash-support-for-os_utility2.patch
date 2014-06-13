@@ -1,0 +1,11 @@
+--- jgi_rqc/lib/os_utility2.py	2014-06-13 17:31:22.826609000 +0000
++++ jgi_rqc/lib/os_utility2.py	2014-06-13 17:31:40.350609000 +0000
+@@ -38,7 +38,7 @@
+     ##
+     stdOut, stdErr, exitCode = runCommand("module load %s && which %s" % (moduleName, binName), True, log)
+     
+-    if stdErr.find("ERROR") != -1 or stdErr.find("command not found") != -1: ## module loading fails
++    if stdErr.find("ERROR") != -1 or stdErr.find("not found") != -1: ## module loading fails
+         paths = os.path.join(get_run_path(), "tools")
+         paths = paths + ":" + os.path.join(get_run_path(), "readqc/tools")
+         paths = paths + ":" + os.path.join(get_run_path(), "assemblyqc/tools")
