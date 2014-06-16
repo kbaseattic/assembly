@@ -76,6 +76,7 @@ p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, requir
 p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=False, const=True, help="Get assemblies only")
 p_get.add_argument("--stdout", action="store_true", help="Print assembly to stdout")
 p_get.add_argument("-o", "--outdir", action="store", help="Download to specified dir")
+p_get.add_argument("-w", "--wait", action="store_true", help="Wait until job is done")
 
 p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
@@ -289,6 +290,12 @@ def main():
                 
 
     elif args.command == 'get':
+        if args.wait:
+            stat = aclient.wait_for_job(args.job_id[0])
+            if 'FAIL' in stat:
+                print stat
+                sys.exit()
+
         if args.assembly:
             try:
                 if type(args.assembly) is int:
