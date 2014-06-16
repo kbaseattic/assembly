@@ -38,6 +38,12 @@ if ($help) {
     exit 0;
 }
 
+if (!$jobid) {
+    my @lines = <STDIN>;
+    my $line = pop @lines;
+    ($jobid) = $line =~ /(\d+)/;
+}
+
 $jobid or die $usage;
 
 # my $target = $ENV{HOME}. "/kb/assembly";
