@@ -441,9 +441,11 @@ class JobResource:
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
+        print doc
         try:
-            result_data = doc['result_data']
-        except:
+            result_data = doc['result_data_legacy'][0]
+        except Exception as e:
+            print e
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
 
@@ -454,11 +456,11 @@ class JobResource:
         try:
             if asm:
                 if asm.isdigit() and asm != '0':
-                    result_data = doc['contig_ids'].items()[int(asm)-1]
+                    result_data = doc['contig_ids'][0].items()[int(asm)-1]
                 elif asm == 'auto':
-                    result_data = doc['contig_ids'].items()[0]
+                    result_data = doc['contig_ids'][0].items()[0]
             else:
-                result_data = doc['contig_ids']
+                result_data = doc['contig_ids'][0]
         except Exception as e:
             print e
             raise cherrypy.HTTPError(500)
