@@ -94,9 +94,17 @@ class ReferenceSet(FileSet):
         assert len(file_infos) < 2
 
 def set_factory(set_type, file_infos, keep_name=False, **kwargs):
-    if type(file_infos) is not list:
-        file_infos = [file_infos]
+    """
+    Creates a particular FileSet (e.g ReadSet) depending on set_type.
+    file_infos is a list of filepaths, FileInfos, or a FileSet.
+    If file_infos is a FileSet, it will convert it to the correct class
+    according to set_type.
+    """
 
+    if isinstance(file_infos, FileSet):
+        file_infos = file_infos['file_infos']
+    elif type(file_infos) is not list:
+        file_infos = [file_infos]
     for i,f in enumerate(file_infos):
         if type(f) is not FileInfo and os.path.exists(f):
             file_infos[i] = FileInfo(f, keep_name=keep_name)
