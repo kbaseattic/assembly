@@ -268,6 +268,19 @@ sub install_jgi_rqc {
 
     # fetch product assets
     git('git@bitbucket.org:sebhtml/jgi-rqc-pipeline.git');
+
+    # apply patches
+
+    @patches = ();
+    push(@patches, "jgi_rqc-dash-support.patch");
+    push(@patches, "jgi_rqc-dash-support-for-os_utility2.patch");
+    push(@patches, "fix_logger.patch");
+
+    for my $patch (@patches) {
+        run("wget https://raw.githubusercontent.com/sebhtml/assembly/issue-26/patches/jgi-rqc-pipeline/$patch");
+        run("patch -p1 < $patch");
+    }
+
     git('git@bitbucket.org:sebhtml/jgi-assets.git');
     run("mv jgi-rqc-pipeline $app");
     run("mv jgi-assets/*zip $app");
@@ -277,17 +290,14 @@ sub install_jgi_rqc {
     run("mv $app/cplusmersampler $app/assets");
     run("cd $app; rm cplusmersampler.zip");
 
-    # apply patches
-    run("wget https://raw.githubusercontent.com/sebhtml/assembly/issue-26/patches/jgi_rqc-dash-support.patch");
-    run("patch -p0 < jgi_rqc-dash-support.patch");
-    run("wget https://raw.githubusercontent.com/sebhtml/assembly/issue-26/patches/jgi_rqc-dash-support-for-os_utility2.patch");
-    run("patch -p0 < jgi_rqc-dash-support-for-os_utility2.patch");
-
     # install the product
     run("mv $app $dest_dir");
+
+    # install dependencies
     run("pip install pymysql");
     run("pip install MySQL-python");
 
+    # apt-get install -y gnuplot
 
     # clean everything
     run("rm -rf *");
