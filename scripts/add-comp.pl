@@ -271,7 +271,7 @@ sub install_jgi_rqc {
 
     # apply patches
 
-    @patches = ();
+    my @patches = ();
     push(@patches, "jgi_rqc-dash-support.patch");
     push(@patches, "jgi_rqc-dash-support-for-os_utility2.patch");
     push(@patches, "fix_logger.patch");

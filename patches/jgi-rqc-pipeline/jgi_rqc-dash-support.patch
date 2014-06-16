@@ -1,5 +1,5 @@
---- upstream/jgi_rqc/lib/os_utility.py	2014-06-13 16:56:39.826609000 +0000
-+++ destination/jgi_rqc/lib/os_utility.py	2014-06-13 16:58:15.390609000 +0000
+--- upstream/jgi-rqc-pipeline/lib/os_utility.py	2014-06-13 16:56:39.826609000 +0000
++++ destination/jgi-rqc-pipeline/lib/os_utility.py	2014-06-13 16:58:15.390609000 +0000
 @@ -297,7 +297,14 @@
      ##
      stdOut, stdErr, exitCode = runCommand("module load %s && which %s" % (moduleName, binName), True, log)
