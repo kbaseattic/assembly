@@ -280,7 +280,6 @@ class WaspLink(dict):
                 outvalue = [outvalue]
             ## Store default output
             if default_type == outtype:
-                print 'inserting'
                 if isinstance(outvalue[0], asmtypes.FileSet):
                     self['default_output'] = outvalue
                 else: # Files

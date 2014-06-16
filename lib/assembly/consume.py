@@ -270,10 +270,12 @@ class ArastConsumer:
 
         #### Legacy Support
         filesets = uploaded_fsets.append(asmtypes.set_factory('report', [report_info]))
-        download_ids = {fi['filename']: fi['shock_id'] for fset in uploaded_fsets for fi in fset['file_infos']}
-        self.metadata.update_job(uid, 'result_data_legacy', [download_ids])
+        contigsets = [fset for fset in uploaded_fsets if fset.type == 'contigs']
 
-        
+        download_ids = {fi['filename']: fi['shock_id'] for fset in uploaded_fsets for fi in fset['file_infos']}
+        contig_ids = {fi['filename']: fi['shock_id'] for fset in contigsets for fi in fset['file_infos']}
+        self.metadata.update_job(uid, 'result_data_legacy', [download_ids])
+        self.metadata.update_job(uid, 'contig_ids', [contig_ids])
         ###################
 
 
