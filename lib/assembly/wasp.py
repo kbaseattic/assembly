@@ -86,14 +86,23 @@ def eval(x, env):
     elif x[0] == 'quote':          # (quote exp)
         (_, exp) = x
         return exp
-    elif x[0] == 'contigs':          # Create a fileset (contigs FILENAME)
+
+    ####### Casting to FileSet Types
+    elif x[0] in ['contigs', 'paired', 'single', 'reference']:
         wlink = WaspLink()
-        wlink['default_output'] = asmtypes.set_factory('contigs', x[1:])
+        eval_files = []
+        try:
+            for exp in x[1:]:
+                eval_files += eval(exp, env).files
+            wlink['default_output'] = asmtypes.set_factory(x[0], eval_files, 
+                                                           name='{}_override'.format(x[0]))
+        except Exception as e:
+            print e
+            wlink['default_output'] = asmtypes.set_factory('contigs', x[1:])
         return wlink
-    elif x[0] == 'paired_reads':          # Create a fileset (paired_reads READ1 ... )
-        wlink = WaspLink()
-        wlink['default_output'] = asmtypes.set_factory('paired', x[1:])
-        return wlink
+    ##################################
+
+
     elif x[0] == 'if':             # (if test conseq alt)
         (_, test, conseq, alt) = x
         return eval((conseq if eval(test, env) else alt), env)
@@ -268,6 +277,9 @@ class WaspLink(dict):
     @property
     def files(self):
         """ Return default results of current link """
+        out = self['default_output']
+        if type(out) is list:
+            return [f for fset in out for f in fset.files]
         return self['default_output'].files
 
     def insert_output(self, output, default_type, module_name):
@@ -332,8 +344,9 @@ class WaspEngine():
         self.assembly_env.plugins = self.pmanager.plugins
         self.job_data = job_data
         init_link = WaspLink()
-        job_data['initial_data'] = asmtypes.FileSetContainer(job_data.wasp_data().referencesets +
-                                                             job_data.wasp_data().readsets)
+        if 'initial_data' not in job_data:
+            job_data['initial_data'] = asmtypes.FileSetContainer(job_data.wasp_data().referencesets +
+                                                                 job_data.wasp_data().readsets)
         init_link['default_output'] = list(job_data['initial_data'].readsets)
         
         self.assembly_env.update({self.constants_reads: init_link})
