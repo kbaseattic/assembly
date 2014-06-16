@@ -3,7 +3,8 @@ import json
 import requests
 import subprocess
 import os
-
+import time
+import re
 
 from shock import Shock
 
@@ -101,7 +102,7 @@ class Client:
                 asm_file = self.shock.download_file(nodes_map.values()[0], outdir=outdir)
                 with open(asm_file) as f:
                     for line in f:
-                        print line
+                        print line,
             else:
                 for node_id in nodes_map.values():
                     self.shock.download_file(node_id, outdir=outdir)
@@ -161,6 +162,12 @@ class Client:
 
     def get_config(self):
         return requests.get('http://{}/admin/system/config'.format(self.url)).content
+
+    def wait_for_job(self, job_id):
+        stat = self.get_job_status(1, job_id)
+        while not re.search('(complete|fail)', stat, re.IGNORECASE):
+            time.sleep(5)
+        return stat
 
 
 ##### ARAST JSON SPEC METHODS #####

@@ -1,0 +1,48 @@
+TOP_DIR = $(shell pwd)
+TARGET ?= $(TOP_DIR)/deployment
+DEPLOY_RUNTIME ?= /usr
+
+TOOLS_DIR = $(TOP_DIR)/tools
+WRAP_PERL_TOOL = wrap_perl
+WRAP_PERL_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PERL_TOOL).sh
+SRC_PERL = $(wildcard scripts/ar-*.pl)
+WRAP_PYTHON_TOOL = wrap_python
+WRAP_PYTHON_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PYTHON_TOOL).sh
+SRC_PYTHON = $(wildcard scripts/arast.py)
+ABS_PATH_TOOL = abs_path
+ABS_PATH_SCRIPT = bash $(TOOLS_DIR)/$(ABS_PATH_TOOL).sh
+
+deploy: deploy-client
+
+deploy-client: deploy-libs deploy-scripts
+
+deploy-libs: 
+	mkdir -p $(TARGET)/lib
+	rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
+
+deploy-scripts:
+	mkdir -p $(TARGET)/bin; \
+	mkdir -p $(TARGET)/plbin; \
+	export KB_TOP=$(TARGET); \
+	export KB_RUNTIME=$(DEPLOY_RUNTIME); \
+	export KB_PERL_PATH=$(TARGET)/lib bash ; \
+	for src in $(SRC_PERL) ; do \
+		basefile=`basename $$src`; \
+		base=`basename $$src .pl`; \
+		echo install $$src $$base ; \
+		cp $$src $(TARGET)/plbin/ ; \
+		$(WRAP_PERL_SCRIPT) "$(TARGET)/plbin/$$basefile" $(TARGET)/bin/$$base ; \
+	done; \
+	mkdir -p $(TARGET)/pybin; \
+	export KB_PYTHON_PATH=$(TARGET)/lib bash ; \
+	for src in $(SRC_PYTHON) ; do \
+		basefile=`basename $$src`; \
+		base=`basename $$src .py`; \
+		echo install $$src $$base ; \
+		cp $$src $(TARGET)/pybin/ ; \
+		$(WRAP_PYTHON_SCRIPT) "$(TARGET)/pybin/$$basefile" $(TARGET)/bin/$$base ; \
+	done; \
+	scripts=`$(ABS_PATH_SCRIPT) $(TARGET)/bin`; \
+	echo "Assembly scripts deployed in $$scripts"
+
+
