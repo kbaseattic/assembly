@@ -1,5 +1,5 @@
-TOP_DIR = .
-TARGET ?= deployment
+TOP_DIR = $(shell pwd)
+TARGET ?= $(TOP_DIR)/deployment
 DEPLOY_RUNTIME ?= /usr
 
 TOOLS_DIR = $(TOP_DIR)/tools
