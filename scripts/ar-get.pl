@@ -7,7 +7,7 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar-get [-h] -j JOB_ID [-a [ASSEMBLY]] [-l min_len] [--stdout] [-s server_addr]
+Usage: ar-get [-h] -j JOB_ID [-a [ASSEMBLY]] [--stdout] [-s server_addr]
 
 Download result data
 
@@ -19,7 +19,6 @@ Optional arguments:
   -h, --help            show this help message and exit
   -a [ASSEMBLY], --assembly [ASSEMBLY]
                         get contigs for the i-th assembly only
-  -l min_contig_len     filter contigs by minimal length
   -s server_addr        specify ARAST server address
   --stdout              print assembled contigs in FASTA to stdout
 
