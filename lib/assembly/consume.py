@@ -268,16 +268,14 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'result_data', uploaded_fsets)
         self.metadata.update_job(uid, 'status', status)
 
-        #### Legacy Support
+        ###### Legacy Support #######
         filesets = uploaded_fsets.append(asmtypes.set_factory('report', [report_info]))
-        contigsets = [fset for fset in uploaded_fsets if fset.type == 'contigs']
-
+        contigsets = [fset for fset in uploaded_fsets if fset.type == 'contigs' or fset.type == 'scaffolds']
         download_ids = {fi['filename']: fi['shock_id'] for fset in uploaded_fsets for fi in fset['file_infos']}
         contig_ids = {fi['filename']: fi['shock_id'] for fset in contigsets for fi in fset['file_infos']}
         self.metadata.update_job(uid, 'result_data_legacy', [download_ids])
         self.metadata.update_job(uid, 'contig_ids', [contig_ids])
         ###################
-
 
         print '============== JOB COMPLETE ==============='
 
@@ -612,6 +610,9 @@ class UpdateTimer(threading.Thread):
         while True:
             if self.done_flag.is_set():
                 logging.info('Stopping Timer Thread')
+                elapsed_time = time.time() - self.start_time
+                ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
+                self.meta.update_job(self.uid, 'computation_time', ftime)
                 return
             elapsed_time = time.time() - self.start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
