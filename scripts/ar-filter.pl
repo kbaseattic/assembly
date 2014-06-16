@@ -1,7 +1,7 @@
 
 use strict;
 use Getopt::Long;
-use gjoseqlib;
+use assembly::gjoseqlib;
 
 my $usage = <<End_of_Usage;
 
