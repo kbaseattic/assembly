@@ -133,7 +133,7 @@ def eval(x, env):
     elif x[0] == 'lambda':         # (lambda (var*) exp)
         (_, vars, exp) = x
         return lambda *args: eval(exp, Env(vars, args, env))
-    elif x[0] == 'emit':          # (emit exp) Store each intermediate for return
+    elif x[0] == 'upload':          # (upload exp) Store each intermediate for return
         (_,  exp) = x
         try:
             val = eval(exp, env)
@@ -200,8 +200,8 @@ def eval(x, env):
         try: ## Assembly functions
             return proc(*exps, env=env)
         except TypeError as e: ## Built-in functions
-            print e
-            print '\n'.join(traceback.format_tb(sys.exc_info()[2]))
+            logging.info(e)
+            logging.info('\n'.join(traceback.format_tb(sys.exc_info()[2])))
             return proc(*exps)
 ################ parse, read, and user interaction
 
@@ -413,7 +413,7 @@ def pipelines_to_exp(pipes, job_id):
             exp = '(begin {} {})'.format(setparams, exp)
             params = []
 
-        exp = '(emit {})'.format(exp)
+        exp = '(upload {})'.format(exp)
         all_pipes.append(exp)
         
     #### Check for duplicates and redefine
