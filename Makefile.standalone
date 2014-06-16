@@ -9,6 +9,8 @@ SRC_PERL = $(wildcard scripts/ar-*.pl)
 WRAP_PYTHON_TOOL = wrap_python
 WRAP_PYTHON_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PYTHON_TOOL).sh
 SRC_PYTHON = $(wildcard scripts/arast.py)
+ABS_PATH_TOOL = abs_path
+ABS_PATH_SCRIPT = bash $(TOOLS_DIR)/$(ABS_PATH_TOOL).sh
 
 deploy: deploy-client
 
@@ -40,7 +42,7 @@ deploy-scripts:
 		cp $$src $(TARGET)/pybin/ ; \
 		$(WRAP_PYTHON_SCRIPT) "$(TARGET)/pybin/$$basefile" $(TARGET)/bin/$$base ; \
 	done; \
-	scripts=`readlink -f $(TARGET)/bin`; \
+	scripts=`$(ABS_PATH_SCRIPT) $(TARGET)/bin`; \
 	echo "Assembly scripts deployed in $$scripts"
 
 
