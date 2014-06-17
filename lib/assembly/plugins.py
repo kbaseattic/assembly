@@ -350,7 +350,7 @@ class BasePlugin(object):
                     sub_file.write(line)
             sub_file.close()
             sub_reads.append(sub_name)
-        exp = '(bwa (contigs {}) (paired_reads {} {}))'.format(contig_file, reads[0], reads[1])
+        exp = '(bwa (contigs {}) (paired {} {}))'.format(contig_file, reads[0], reads[1])
         samfile = self.plugin_engine.run_expression(exp).files[0]
         if os.path.getsize(samfile) == 0:
             logging.error('Error estimating insert length')
