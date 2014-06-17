@@ -147,6 +147,7 @@ class ArastConsumer:
         user = params['ARASTUSER']
         token = params['oauth_token']
         pipelines = params['pipeline']
+        recipe = params['recipe']
 
         #support legacy arast client
         if len(pipelines) > 0:
@@ -207,7 +208,10 @@ class ArastConsumer:
 
         #### Parse pipeline to wasp exp
         wasp_exp = pipelines[0][0]
-        if pipelines[0] == 'auto':
+        if recipe:
+            try: wasp_exp = getattr(recipes, recipe[0])
+            except AttributeError: raise Exception('"{}" recipe not found.'.format(recipe[0]))
+        elif pipelines[0] == 'auto':
             wasp_exp = recipes.auto
         elif not '(' in wasp_exp:
             all_pipes = []
@@ -216,7 +220,7 @@ class ArastConsumer:
             print all_pipes
             wasp_exp = wasp.pipelines_to_exp(all_pipes, params['job_id'])
             logging.info('Wasp Expression: {}'.format(wasp_exp))
-            print('Wasp Expression: {}'.format(wasp_exp))
+        print('Wasp Expression: {}'.format(wasp_exp))
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
         w_engine.run_expression(wasp_exp, job_data)
 
@@ -317,6 +321,7 @@ class ArastConsumer:
         params = json.loads(body)
         display = ['ARASTUSER', 'job_id', 'message']
         print ' [+] Incoming:', ', '.join(['{}: {}'.format(k, params[k]) for k in display])
+        logging.info(params)
         job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
         uid = job_doc['_id']
         ## Check if job was not killed
@@ -327,7 +332,7 @@ class ArastConsumer:
             try:
                 self.compute(body)
             except Exception as e:
-                tb = '\n'.join(format_tb(sys.exc_info()[2]))
+                tb = format_exc()
                 status = "[FAIL] {}".format(e)
                 print e
                 print logging.error(tb) 
