@@ -1,23 +1,41 @@
-auto2 = """
+scaffolds = """
 (begin
  (define pp (bhammer (sga_preprocess READS)))
  (define sp (spades pp))
  (define id (idba pp))
  (define gam (gam_ngs sp id))
- (quast (emit (sspace pp gam)) (emit (get scaffolds sp)) (emit (get scaffolds id)))
+ (quast (upload (sspace pp gam)) (upload (get scaffolds sp)) (upload (get scaffolds id)))
 )
 """
 
-auto1 = """
+auto333 = """
 (begin
- (define pp (bhammer (sga_preprocess READS)))
- (define kval (get best_k (kmergenie pp)))
+ (define pp (bhammer READS))
+ (define kval (get best_k (kmergenie READS)))
  (define vt (begin (setparam hash_length kval) (velvet pp)))
  (define ki (begin (setparam k kval) (kiki pp)))
  (define sp (spades pp))
  (define id (idba pp))
- (define gam (gam_ngs (slice (sort (list sp id vt ki) > :key (lambda (c) (n50 c))) 0 2)))
- (quast (emit gam) (emit sp) (emit id) (emit vt) (emit ki))
+ (define ma (masurca pp))
+ (define di (discovar pp))
+ (define allsort (sort (list sp id vt ki ma di) > :key (lambda (c) (get ale_score (ale c)))))
+ (define gam (gam_ngs (slice allsort 0 3)))
+ (tar (all_files (quast gam di ma id sp ki vt) :name analysis))
+)
+
+"""
+
+super = """
+(begin
+ (define pp (bhammer READS))
+ (define kval (get best_k (kmergenie READS)))
+ (define vt (begin (setparam hash_length kval) (velvet pp)))
+ (define sp (spades pp))
+ (define id (idba pp))
+ (define ma (masurca pp))
+ (define di (discovar pp))
+ (define gam (gam_ngs (sort (list sp id vt ma di) > :key (lambda (c) (n50 c)))))
+ (tar (all_files (quast (upload gam) (upload sp) (upload id) (upload vt) (upload ma) (upload di))) :name analysis)
 )
 
 """
@@ -25,28 +43,12 @@ auto1 = """
 auto = """
 (begin
  (define pp (bhammer READS))
- (define kval (get best_k (kmergenie pp)))
+ (define kval (get best_k (kmergenie READS)))
  (define vt (begin (setparam hash_length kval) (velvet pp)))
  (define sp (spades pp))
- (define id (idba pp))
- (define gam (gam_ngs (sort (list sp id vt) > :key (lambda (c) (n50 c)))))
- (tar (all_files (quast (emit gam) (emit sp) (emit id) (emit vt))) :name report)
+ (define allsort (sort (list sp vt) > :key (lambda (c) (get ale_score (ale c)))))
+ (define gam (gam_ngs allsort))
+ (define newsort (sort (list gam sp vt) > :key (lambda (c) (get ale_score (ale c)))))
+ (tar (all_files (quast newsort) :name analysis))
 )
-
 """
-
-auto9 = """
-(begin
- (define pp READS)
- (define kval (get best_k (kmergenie pp)))
- (define vt (begin (setparam hash_length kval) (velvet pp)))
- (define sp (spades pp))
- (define id (idba pp))
- (define gam (gam_ngs (slice (sort (list sp id vt) > :key (lambda (c) (n50 c))) 0 2)))
- (quast (emit gam) (emit (get scaffolds sp)) (emit id) (emit (sspace vt)))
-)
-
-"""
-
-
-
