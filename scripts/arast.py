@@ -38,9 +38,10 @@ p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', hel
 data_group = p_run.add_mutually_exclusive_group()
 p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
 #p_run.add_argument("-u", "--urls",  action="append",  nargs='*', help="specify url(s) of sequence file")
-data_group.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
+data_group.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
 p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
 p_run.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline. None will invoke automatic mode")
+p_run.add_argument("-r", "--recipe", action="store", dest="recipe", nargs='*', help="invoke a recipe")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("-q", "--queue", action="store", dest="queue", help=argparse.SUPPRESS)
 data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
@@ -244,7 +245,7 @@ def main():
                     f_set = client.FileSet(f_type, f_infos, **f_set_args)
                     adata.add_set(f_set)
 
-        arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version']
+        arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe']
                      if k in options}
         arast_msg['assembly_data'] = adata
         arast_msg['client'] = 'CLI'
