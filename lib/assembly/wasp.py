@@ -205,8 +205,7 @@ def eval(x, env):
         try: ## Assembly functions
             return proc(*exps, env=env)
         except TypeError as e: ## Built-in functions
-            print(traceback.format_exc())
-            logging.info('\n'.join(traceback.format_tb(sys.exc_info()[2])))
+            logging.info(traceback.format_exc())
             return proc(*exps)
 ################ parse, read, and user interaction
 

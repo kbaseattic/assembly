@@ -7,7 +7,6 @@ from yapsy.IPlugin import IPlugin
 from assembly import get_qual_encoding
 
 class BwaAligner(BaseAligner, IPlugin):
-    new_version = True
     def run(self, contig_file=None, reads=None, merged_pair=False):
         contig_file = self.data.contigfiles[0]
         ## Index contigs using IS algorithm
