@@ -8,8 +8,6 @@ import uuid
 import logging
 import traceback, sys
 
-
-
 #### Arast Libraries
 import assembly as utils
 import asmtypes
@@ -97,11 +95,10 @@ def eval(x, env):
             wlink['default_output'] = asmtypes.set_factory(x[0], eval_files, 
                                                            name='{}_override'.format(x[0]))
         except Exception as e:
-            print e
-            wlink['default_output'] = asmtypes.set_factory('contigs', x[1:])
+            print type(e).__name__
+            wlink['default_output'] = asmtypes.set_factory(x[0], x[1:])
         return wlink
     ##################################
-
 
     elif x[0] == 'if':             # (if test conseq alt)
         (_, test, conseq, alt) = x
@@ -150,8 +147,8 @@ def eval(x, env):
             return val
         except Exception as e: 
             print ' [!]: {} -- {}'.format(to_string(exp), e)
-            logging.info('\n'.join(traceback.format_tb(sys.exc_info()[2])))
-            env.exceptions.append('\n'.join(traceback.format_tb(sys.exc_info()[2])))
+            print traceback.format_exc())
+            env.exceptions.append(traceback.format_exc())
             return
     elif x[0] == 'get':
         (_, key, exp) = x
