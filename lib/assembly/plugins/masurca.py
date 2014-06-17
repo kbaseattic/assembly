@@ -32,12 +32,13 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
                 assert insert is not None
             except:
                 ## Run Velvet to generate contig
-                velvet_results = self.plugin_engine.run_expression('(velvet (paired_reads {}))'.format(' '.join(readset.files)))
+                velvet_results = self.plugin_engine.run_expression('(velvet (paired {}))'.format(' '.join(readset.files)))
                 insert, stdev = self.estimate_insert_stdev(velvet_results.files[0], readset.files)
             files = ' '.join(readset.files)
             cf.write('PE= p{} {} {} {}\n'.format(
                     lib_count, insert, stdev, files))
             lib_count += 1
+
         # for jump in [lib for lib in reads if lib['type'] == 'jump']:
         #     lib_count = 1
         #     try:
