@@ -1,10 +1,17 @@
---- jgi_rqc/lib/os_utility2.py	2014-06-13 17:31:22.826609000 +0000
-+++ jgi_rqc/lib/os_utility2.py	2014-06-13 17:31:40.350609000 +0000
-@@ -38,7 +38,7 @@
+--- upstream/jgi-rqc-pipeline/lib/os_utility.py	2014-06-13 16:56:39.826609000 +0000
++++ destination/jgi-rqc-pipeline/lib/os_utility.py	2014-06-13 16:58:15.390609000 +0000
+@@ -297,7 +297,14 @@
      ##
      stdOut, stdErr, exitCode = runCommand("module load %s && which %s" % (moduleName, binName), True, log)
      
 -    if stdErr.find("ERROR") != -1 or stdErr.find("command not found") != -1: ## module loading fails
++
++    # The code is looking for 'command not found', but dash just says 'not found'.
++    # seb@bigmem:~/kbase-stuff/assembly$ dash -c command-12345678
++    # dash: 1: command-12345678: not found
++    # seb@bigmem:~/kbase-stuff/assembly$ bash -c command-12345678
++    # bash: command-12345678: command not found
++
 +    if stdErr.find("ERROR") != -1 or stdErr.find("not found") != -1: ## module loading fails
          paths = os.path.join(get_run_path(), "tools")
          paths = paths + ":" + os.path.join(get_run_path(), "readqc/tools")

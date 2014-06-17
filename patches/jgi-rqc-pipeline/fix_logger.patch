@@ -1,0 +1,11 @@
+--- upstream/jgi-rqc-pipeline/readqc/lib/readqc_utils.py	2014-06-16 16:19:13.026609000 +0000
++++ destination/jgi-rqc-pipeline/readqc/lib/readqc_utils.py	2014-06-16 16:21:53.142609000 +0000
+@@ -1356,7 +1356,7 @@
+ 	chmod(dup_path, "0755")
+ 	
+ 	log_path = os.path.join(output_path, "log")
+-	makeDir(os.path.join(output_path, log_path))
++	makeDir(log_path)
+ 	chmod(log_path, "0755")
+ 	
+ 	summary_file = t_file_name + ".bwa.summary"
