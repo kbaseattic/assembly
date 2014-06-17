@@ -88,9 +88,6 @@ class MetadataConnection:
     def get_next_job_id(self, user):
         return self.get_next_id(user, 'ids')
 
-
-
-
     def update_job(self, job_id, field, value):
         jobs = self.get_jobs()
         jobs.update({'_id' : job_id},
