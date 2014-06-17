@@ -7,16 +7,17 @@ from yapsy.IPlugin import IPlugin
 from assembly import get_qual_encoding
 
 class SgaPreprocessor(BasePreprocessor, IPlugin):
-    def run(self, reads):
+    new_version = True
+
+    def run(self, reads=None):
         """ 
         Build the command and run.
         Return list of reads
         """
         processed_reads = []
-        for file_set in reads: # preprocess all pairs/reads!!!
-            new_file_set = dict(file_set)
-            new_file_set['files'] = []
-            for f in file_set['files']:
+        for readset in self.data.readsets:
+            new_reads = []
+            for f in readset.files:
                 cmd_args = [os.path.join(os.getcwd(), self.executable), 'preprocess']
                 if self.quality_trim:
                     cmd_args += ['-q', self.quality_trim]
@@ -26,22 +27,19 @@ class SgaPreprocessor(BasePreprocessor, IPlugin):
                     cmd_args += ['-m', self.min_length]
                 if self.permute_ambiguous:
                     cmd_args.append('--permute-ambiguous')
-                files = file_set['files']                    
 
                 # Get file name for prefix
                 cmd_args.append('-o')
                 basename = os.path.basename(f)
                 base = basename[0:basename.rfind('.')]
-                #base = os.path.basename(f).split('.')[0]
                 pp_file = os.path.join(self.outpath,
                                        "{}.pp.fastq".format(base))
                 cmd_args.append(pp_file)
                 cmd_args.append(f)
-                if get_qual_encoding(files[0]) == 'phred64':
+                if get_qual_encoding(f) == 'phred64':
                     cmd_args.append('--phred64')
-                logging.info("SGA Plugin: {}".format(cmd_args))
                 self.arast_popen(cmd_args, cwd=self.outpath)
-                new_file_set['files'].append(pp_file)
-            processed_reads.append(new_file_set)
-        return processed_reads
+                new_reads.append(pp_file)
+            processed_reads.append(new_reads)
+        return {'reads': processed_reads}
 

@@ -5,7 +5,9 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class SpadesAssembler(BaseAssembler, IPlugin):
-    def run(self, reads):
+    new_version = True
+
+    def run(self):
         """ 
         Build the command and run.
         Return list of contig file(s)
@@ -14,17 +16,25 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [self.executable]
-        for lib in reads:
-            if lib['type'] == 'paired':
-                if len(lib['files']) == 1: # Interleaved
-                    cmd_args += ['--12', lib['files'][0]]
-                elif len(lib['files']) == 2: # 2 Files
-                    cmd_args += ['-1', lib['files'][0],
-                                 '-2', lib['files'][1]]
+        pe_num = 1
+        for readset in self.data.readsets:
+            if readset.type == 'paired':
+                if pe_num == 6:
+                    print '> 5 pairs not supported!'
+                    break
+                if len(readset.files) == 1: # Interleaved
+                    cmd_args += ['--pe{}-12'.format(pe_num), readset.files[0]]
+                elif len(readset.files) >= 2: # 2 Files
+                    cmd_args += ['--pe{}-1'.format(pe_num), readset.files[0],
+                                 '--pe{}-2'.format(pe_num), readset.files[1]]
+                    for extra in readset.files[2:]:
+                        self.out_module.write('WARNING: Not using {}'.format(extra))
+                        print('WARNING: Not using {}'.format(extra))
                 else:
                     raise Exception('Spades module file error')
-            elif lib['type'] == 'single':
-                cmd_args += ['-s', lib['files'][0]]
+                pe_num += 1
+            elif readset.type == 'single':
+                cmd_args += ['-s', readset.files[0]]
         if self.only_assembler == 'True':
             cmd_args.append('--only-assembler')
 
@@ -42,8 +52,11 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         cmd_args += ['-t', self.process_threads_allowed]  # number of threads = 4
         self.arast_popen(cmd_args)
         contigs = os.path.join(self.outpath, 'contigs.fasta')
-        #contigs = os.path.join(self.outpath, 'scaffolds.fasta')
+        scaffolds = os.path.join(self.outpath, 'scaffolds.fasta')
 
+        output = {}
         if os.path.exists(contigs):
-            return [contigs]
-        return
+            output['contigs'] = [contigs]
+        if os.path.exists(scaffolds):
+            output['scaffolds'] = [scaffolds]
+        return output

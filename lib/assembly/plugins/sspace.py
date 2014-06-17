@@ -8,21 +8,26 @@ from vendor import assemstats2 as astats
 from yapsy.IPlugin import IPlugin
 
 class SspaceScaffolder(BaseScaffolder, IPlugin):
-    def run(self, read_records, contig_file, job_data):
+    new_version = True
+
+    def run(self):
         """ 
         Build the command and run.
         Return list of contig file(s)
         """
-        ## Get insert size
-        if len(read_records) > 1:
-            raise NotImplementedError
-        reads = read_records[0]
-        read_files = reads['files']
+        print self.data.filesets
 
-        if reads['type'] == 'single':
+        job_data = self.job_data
+        if not len(self.data.readsets) == 1:
+            raise Exception('SSPACE takes one set of reads, {} given'.format(len(self.data.readsets)))
+        reads = self.data.readsets[0]
+        read_files = reads.files
+        contig_file = self.data.contigfiles[0]
+
+        if reads.type == 'single':
             raise Exception('Cannot scaffold with single end')
         try:
-            insert_size = int(reads['insert'])
+            insert_size = int(reads.insert)
         except:
             insert_size, _ = self.estimate_insert_stdev(contig_file, read_files)
             
@@ -83,5 +88,5 @@ class SspaceScaffolder(BaseScaffolder, IPlugin):
         final_scaffolds = os.path.join(self.outpath,
                                        str(job_data['job_id']) + 
                                        '.final.scaffolds.fasta')
-        return [], [final_scaffolds]
+        return {'scaffolds': final_scaffolds}
         

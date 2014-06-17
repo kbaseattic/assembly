@@ -67,6 +67,10 @@ def parse_branches(pipe):
     all_pipes = []
     for pipe in cart[0]:
         all_pipes.append(list(itertools.chain(*pipe)))
+
+    #### Remove occurences of 'none'
+    for i, p in enumerate(all_pipes):
+        all_pipes[i] = [mod for mod in p if mod != 'none']
     return all_pipes
    
 def expand_sweep(module):

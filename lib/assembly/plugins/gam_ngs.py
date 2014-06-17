@@ -1,70 +1,34 @@
-import glob
 import logging
 import os
-import copy
-import itertools
-import subprocess
 from plugins import BaseMetaAssembler
 from yapsy.IPlugin import IPlugin
+import asmtypes
 
 class GamNgsAssembler(BaseMetaAssembler, IPlugin):
-    def run(self, contigs, type='pairwise'):
-        """ 
-        Other types: iterative, smart
-        """
-        libfiles = []
-        if len(contigs) < 2:
-            return []
-        for data in contigs:
-            libfile = os.path.join(self.outpath, data['name'] + '.txt')
-            lib = open(libfile, 'w')
-            if not data['alignment_bam']:
-                #Map with BWA and produce bam
-                bwa_data = copy.deepcopy(self.job_data)
-                bwa_data['contigs'] = data['files']
-                bwa_data['out_report'] = open(os.path.join(self.outpath, 'bwa.log'), 'w')
-                samfiles, _, _ = self.pmanager.run_module('bwa', bwa_data)
-                for samfile in samfiles:
-                    #insert, stdev = self.estimate_insert_stdev()
-                    bamfile = samfile.replace('.sam', '.bam')
-                    cmd_args = ['samtools', 'view',
-                                '-bSho', bamfile, samfile]
-                    self.arast_popen(cmd_args, overrides=False)
-                    sortedfile = os.path.join(self.outpath, data['name'])
-                    cmd_args = ['samtools', 'sort', bamfile, sortedfile]
-                    self.arast_popen(cmd_args, overrides=False)
-                    undupfile = sortedfile + '_undup.bam'
-                    sortedfile = sortedfile + '.bam'
-                    ## Remove duplicates
-                    cmd_args = ['samtools', 'rmdup', sortedfile, undupfile]
-                    self.arast_popen(cmd_args, overrides=False)
-                    if not os.path.exists(undupfile):
-                        logging.warning('Unable to perform alignment')
-                        continue
-                    cmd_args = ['samtools', 'index', undupfile]
-                    self.arast_popen(cmd_args, overrides=False)
+    new_version = True
 
-                    data['alignment_bam'].append(undupfile)
-                    lib.write('{}\n'.format(undupfile))
-                    lib.write('50 10000\n')
-            lib.close()
-            libfiles.append({'file': libfile, 'name': data['name'], 'contigs': data['files'][0]})
-            
+    def run(self):
+        contigsets = self.data.contigsets
+        if len(contigsets) < 2:
+            raise Exception('Fewer than 2 contig sets')
         merged_files = []
 
-        if type == 'pairwise':
-            pairwise = itertools.product(libfiles, libfiles)
-            for pair in pairwise:
-                if pair[0] == pair[1]:
-                    continue
-                mfile = self.merge(pair[0], pair[1])
-                if mfile:
-                    merged_files.append(mfile)
-        #elif type == 'iterative':
+        if len(contigsets) == 2:
+            mfile = self.merge(contigsets[0], contigsets[1])
+            if mfile:
+                merged_files.append(mfile)
+        elif len(contigsets) > 2:
+            mfile = contigsets[0]
+            for i, cset in enumerate(contigsets[1:]):
+                mfile = asmtypes.set_factory('contigs', [self.merge(mfile, cset)],
+                                             name='merged{}_contigs'.format(i+1))
+            merged_files = mfile.files
             
-        return merged_files
+        return {'contigs': merged_files}
 
-    def merge(self, asm1, asm2):
+    def merge(self, contigset1, contigset2):
+        asm1 = self.prepare_lib(contigset1)
+        asm2 = self.prepare_lib(contigset2)
         a1_name = asm1['name']
         a2_name = asm2['name']
         merge_name = a1_name + '_gam_' + a2_name
@@ -81,3 +45,37 @@ class GamNgsAssembler(BaseMetaAssembler, IPlugin):
         if os.path.exists(merged_file):
             return merged_file
         
+
+    def prepare_lib(self, cset):
+        libfile = os.path.join(self.outpath, cset.name + '.lib')
+        lib = open(libfile, 'w')
+        bwa_results = self.plugin_engine.run_expression('(bwa (contigs {}) READS)'.format(cset.files[0]))
+        samfile = bwa_results.files[0]
+        bamfile = samfile.replace('.sam', '.bam')
+        cmd_args = ['samtools', 'view',
+                    '-bSho', bamfile, samfile]
+        self.arast_popen(cmd_args, overrides=False)
+        sortedfile = os.path.join(self.outpath, cset.name)
+        cmd_args = ['samtools', 'sort', bamfile, sortedfile]
+        self.arast_popen(cmd_args, overrides=False)
+        undupfile = sortedfile + '_undup.bam'
+        sortedfile = sortedfile + '.bam'
+
+        ## Remove duplicates
+        cmd_args = ['samtools', 'rmdup', sortedfile, undupfile]
+        self.arast_popen(cmd_args, overrides=False)
+        if not os.path.exists(undupfile):
+            logging.warning('Unable to perform alignment')
+            raise Exception('Unable to perform alignment')
+        cmd_args = ['samtools', 'index', undupfile]
+        self.arast_popen(cmd_args, overrides=False)
+
+        lib.write('{}\n'.format(undupfile))
+        lib.write('50 10000\n')
+        lib.close()
+        return {'file': libfile, 
+                'name': cset.name, 
+                'contigs': cset.files[0]}
+
+            
+            

@@ -23,7 +23,7 @@ import assembly.config as conf
 from assembly.auth_token import *
 import traceback
 
-my_version = '0.3.8.3'
+my_version = '0.3.9.2'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -38,15 +38,17 @@ p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', hel
 data_group = p_run.add_mutually_exclusive_group()
 p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
 #p_run.add_argument("-u", "--urls",  action="append",  nargs='*', help="specify url(s) of sequence file")
-data_group.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
-p_run.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline. None will invoke automatic mode")
+data_group.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
+cmd_group = p_run.add_mutually_exclusive_group()
+cmd_group.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
+cmd_group.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline. None will invoke automatic mode")
+cmd_group.add_argument("-r", "--recipe", action="store", dest="recipe", nargs='*', help="invoke a recipe")
+cmd_group.add_argument("-w", "--wasp", action="store", dest="wasp", nargs='*', help="invoke a wasp expression")
 p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_run.add_argument("-q", "--queue", action="store", dest="queue", help=argparse.SUPPRESS)
 data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
 p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
-#p_run.add_argument("--all-data", action="store_true", help="save all data for return")
 p_run.add_argument("--curl", action="store_true", help="Use curl for http requests")
 
 # stat -h
@@ -228,9 +230,9 @@ def main():
                     
             all_types = ['paired', 'single', 'reference']
             for f_list, f_type in zip(file_lists, all_types):
-                f_infos = []
-                f_set_args = {}
                 for ls in f_list:
+                    f_infos = []
+                    f_set_args = {}
                     for word in ls:
                         if not (os.path.isfile(word) or '=' in word):
                             raise Exception('{} is not valid input!'.format(word))
@@ -242,10 +244,10 @@ def main():
                             kv = word.split('=')
                             f_set_args[kv[0]] = kv[1]
 
-                f_set = client.FileSet(f_type, f_infos, **f_set_args)
-                adata.add_set(f_set)
+                    f_set = client.FileSet(f_type, f_infos, **f_set_args)
+                    adata.add_set(f_set)
 
-        arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version']
+        arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp']
                      if k in options}
         arast_msg['assembly_data'] = adata
         arast_msg['client'] = 'CLI'
@@ -272,9 +274,10 @@ def main():
                 if args.watch:
                         os.system('clear')
                 print response
-                print 'Press CTRL-C to quit.'
                 if not args.watch:
                         break
+                else:
+                    print 'Press CTRL-C to quit.'
                 ### Spinner loop
                 spinners = ['-', '\\', '|', '/'] 
                 sleep_seconds = 25
@@ -298,7 +301,7 @@ def main():
 
         if args.assembly:
             try:
-                if type(args.assembly) is int:
+                if type(args.assembly) is str:
                     aclient.get_assemblies(job_id=args.job_id[0], asm_id=args.assembly, stdout=args.stdout, outdir=args.outdir)
                 else:
                     aclient.get_assemblies(job_id=args.job_id[0], stdout=args.stdout, outdir=args.outdir)

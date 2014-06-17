@@ -6,12 +6,12 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class PacbioAssembler(BaseAssembler, IPlugin):
-    def run(self, reads):
+    def run(self):
         """ 
         Build the command and run.
         Return list of contig file(s)
         """
-        
+
         cmd_args = [self.executable]
 
         cmd_args += ['--cov',     self.coverage]
@@ -19,14 +19,13 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         cmd_args += ['--minlong', self.min_long_read_length]
         cmd_args += ['--np',      self.nproc]
 
-        # cmd_args += self.get_files(reads)
-
+        reads = self.data.readsets
         for lib in reads:
             if lib['type'] == 'paired':
-                if len(lib['files']) == 2: # 2 Files
-                    cmd_args += ['-p', lib['files'][0], lib['files'][1]]
+                if len(lib.files) == 2: # 2 Files
+                    cmd_args += ['-p', lib.files[0], lib.files[1]]
             elif lib['type'] == 'single':
-                cmd_args += ['-f', lib['files'][0]]
+                cmd_args += ['-f', lib.files[0]]
 
         cmd_args.append('-o')
         cmd_args.append(self.outpath + 'pacbio')
@@ -37,7 +36,7 @@ class PacbioAssembler(BaseAssembler, IPlugin):
         contigs = os.path.join(self.outpath, 'contigs.fa')
 
         if os.path.exists(contigs):
-            return [contigs]
+            return {'contigs': [contigs]}
         return
 
         

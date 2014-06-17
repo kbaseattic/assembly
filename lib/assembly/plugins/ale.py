@@ -7,25 +7,24 @@ from plugins import BaseAssessment
 from yapsy.IPlugin import IPlugin
 
 class AleAssessment(BaseAssessment, IPlugin):
-    def run(self, contigs, reads):
+    def run(self):
         """ 
         Build the command and run.
         Return list of file(s)
         """
-        bamfile = ''
-        #bamfile = self.job_data['bam_sorted']
-        if bamfile == '':
-            #Map with BWA and produce bam
-            bwa_data = dict(self.job_data)
-            bwa_data['contigs'] = contigs
-            bwa_data['out_report'] = open(os.path.join(self.outpath, 'ale_bwa.log'), 'w')
-            samfiles, _, _ = self.pmanager.run_module('bowtie2', bwa_data)
-            samfile = samfiles[0]
-        cmd_args = [self.executable, samfile, contigs[0],
+        contigs = self.data.contigfiles[0]
+        exp = '(bowtie2 (contigs {}) READS)'.format(contigs)
+        samfile = self.plugin_engine.run_expression(exp).files[0]
+        cmd_args = [self.executable, samfile, contigs,
                     os.path.join(self.outpath, 'ale.txt')]
         self.arast_popen(cmd_args)
         report = os.path.join(self.outpath, 'ale.txt')
+        output = {}
         if os.path.exists(report):
-            return report
+            output['report'] =  report
+            ## Parse report for ALE Score
+            with open(report) as r:
+                output['ale_score'] = r.readline().split(' ')[2].strip()
+        return output
 
 

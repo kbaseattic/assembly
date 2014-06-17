@@ -7,18 +7,20 @@ from yapsy.IPlugin import IPlugin
 from assembly import get_qual_encoding
 
 class FilterByLengthPreprocessor(BasePreprocessor, IPlugin):
-    def run(self, reads):
+    def run(self):
         """ 
         Build the command and run.
 
         """
         processed_reads = []
-        raw_reads = self.job_data['raw_reads']
+        reads = self.data.readsets
+        raw_reads = self.initial_data.readsets
+
         for i, file_set in enumerate(reads):
             new_file_set = file_set
             new_files = []
             new_synced_files = []
-            for f in file_set['files']:
+            for f in file_set.files:
                 fixes = os.path.basename(f).rsplit('.', 1)
                 filtered_file = os.path.join(self.outpath, fixes[0] + '.filtered.' + fixes[1])
                 synced_file = os.path.join(self.outpath, fixes[0] + '.filtered_sync.' + fixes[1])
@@ -31,17 +33,16 @@ class FilterByLengthPreprocessor(BasePreprocessor, IPlugin):
                 new_synced_files.append(synced_file)
             
             if self.sync == 'True':
-                if file_set['type'] == 'paired' and len(new_files) == 2:
+                if file_set.type == 'paired' and len(new_files) == 2:
                     # sync
-                    raw_file = raw_reads[i]['files'][0]
+                    raw_file = raw_reads[i].files[0]
                     cmd_args = [self.sync_bin, raw_file, 
                                 new_files[0], new_files[1],
                                 new_synced_files[0], new_synced_files[1]]
                     self.arast_popen(cmd_args, cwd=self.outpath)
-                new_file_set['files'] = new_synced_files
+                new_file += new_synced_files
             else:
-                new_file_set['files'] = new_files
-
-            processed_reads.append(new_file_set)
-        return processed_reads
+                new_files += new_files
+            processed_reads += new_files
+        return {'reads': processed_reads}
 

@@ -5,6 +5,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy.numarray as na
 
+import asmtypes
+import shock 
+
 class ArastJob(dict):
     """
 
@@ -12,7 +15,12 @@ class ArastJob(dict):
     def __init__(self, *args):
         dict.__init__(self, *args)
         self['pipelines'] = [] # List of ArastPipeline
-        
+        self['out_contigs'] = []
+        self['out_scaffolds'] = []
+        self['logfiles'] = []
+        self['out_reports'] = []
+        self['out_results'] = []
+
     def make_plots(self):
         pass
 
@@ -89,7 +97,94 @@ class ArastJob(dict):
             if pipeline['number'] == number:
                 return pipeline
 
+    def add_results(self, filesets):
+        if filesets:
+            if not type(filesets) is list:
+                filesets = [filesets]
+            for f in filesets:
+                self['out_results'].append(f)
 
+    @property
+    def results(self):
+        """Return all output FileSets"""
+        return self['out_results']
+
+    def get_all_ftypes(self):
+        ft = []
+        for fileset in self.get_all_filesets():
+            for fileinfo in fileset['file_infos']:
+                ft.append((fileinfo['local_file'], fileset['type']))
+        return ft
+
+    def upload_results(self, url, token):
+        """ Renames and uploads all filesets and updates shock info """
+        new_sets = []
+        for i,fset in enumerate(self.results):
+            new_files = []
+            for j, f in enumerate(fset['file_infos']):
+                if len(fset['file_infos']) > 1:
+                    file_suffix = '_{}'.format(j+1)
+                else: file_suffix = ''
+                ext = f['local_file'].split('.')[-1]
+                if not f['keep_name']:
+                    new_file = '{}/{}.{}{}.{}'.format(os.path.dirname(f['local_file']),
+                                                      i+1, fset.name, file_suffix, ext)
+                    os.symlink(f['local_file'], new_file)
+                else: new_file = f['local_file']
+                res = self.upload_file(url, self['user'], token, new_file, filetype=fset.type)
+                f.update({'shock_url': url, 'shock_id': res['data']['id'], 
+                          'filename': os.path.basename(new_file)})
+                new_files.append(f)
+            fset.update_fileinfo(new_files)
+            new_sets.append(fset)
+        self['result_data'] = new_sets
+        return new_sets
+
+    def upload_file(self, url, user, token, file, filetype='default'):
+        files = {}
+        files["file"] = (os.path.basename(file), open(file, 'rb'))
+        sclient = shock.Shock(url, user, token)
+        res = sclient.upload_misc(file, filetype)
+        return res
+
+    def wasp_data(self):
+        """
+        Compatibility layer for wasp data types.  
+        Scans self for certain data types and populates a FileSetContainer
+        """
+        all_sets = []
+        #### Convert Old Reads Format to ReadSets
+        for set_type in ['reads', 'reference']:
+            if set_type in self:
+                for fs in self[set_type]:
+                    ### Get supported set attributes (ins, std, etc)
+                    kwargs = {}
+                    for key in ['insert', 'stdev']:
+                        if key in fs:
+                            kwargs[key] = fs[key]
+                    all_sets.append(asmtypes.set_factory(fs['type'], 
+                                                         [asmtypes.FileInfo(f) for f in fs['files']], 
+                                                         **kwargs))
+
+        #### Convert final_contigs from pipeline mode
+        if 'final_contigs' in self:
+            if self['final_contigs']: ## Not empty
+                ## Remove left over contigs
+                del(self['contigs'])
+                for contig_data in self['final_contigs']:
+                    all_sets.append(asmtypes.set_factory('contigs', 
+                                                         [asmtypes.FileInfo(fs,) for fs in contig_data['files']],
+                                                         #{'name':contig_data['name']}))
+                                                         name=contig_data['name']))
+
+        #### Convert Contig/Ref format
+        # for set_type in ['contigs', 'reference']:
+        #     if set_type in self:
+        #         all_sets.append(asmtypes.set_factory(set_type, [asmtypes.FileInfo(fs) for fs in self[set_type]]))
+
+        return asmtypes.FileSetContainer(all_sets)
+    
+        
 class ArastPipeline(dict):
     """ Pipeline object """
     

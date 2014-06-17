@@ -313,7 +313,7 @@ sub install_ray {
 }
 
 sub install_reapr {
-    my $dir = 'Reapr_1.0.15';
+    my $dir = 'Reapr_1.0.17';
     my $file = "$dir.tar.gz";
     download($dir, $file, "ftp://ftp.sanger.ac.uk/pub4/resources/software/reapr");
     run("cd $dir; ./install.sh");

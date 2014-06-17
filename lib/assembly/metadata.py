@@ -9,23 +9,29 @@ import uuid
 from ConfigParser import SafeConfigParser
 
 class MetadataConnection:
-    def __init__(self, host, port, db, collection, auth_collection):
+    def __init__(self, host, port, db, collection, auth_collection, data_collection=None):
         self.host = host
         self.port = port
         self.db = db
         self.collection = collection
         self.auth_collection = auth_collection
-        
+        self.data_collection = data_collection
+
         # Connect
         self.connection = pymongo.Connection(self.host, self.port)
         self.database = self.connection[self.db]
         
         # Get local data
         self.jobs = self.get_jobs()
+        self.data_collection = self.get_data()
 
     def get_jobs(self):
         """Fetch approriate database and collection for jobs."""
         return self.database[self.collection]
+
+    def get_data(self):
+        """Fetch approriate database and collection for jobs."""
+        return self.database[self.data_collection]
 
     def insert_job(self, data):
         jobs = self.get_jobs()
@@ -82,35 +88,11 @@ class MetadataConnection:
     def get_next_job_id(self, user):
         return self.get_next_id(user, 'ids')
 
-    def get_next_data_id(self, user):
-        return self.get_next_id(user, 'data')
-
-    def get_doc_by_data_id(self, data_id, user):
-        try:
-            job = self.get_jobs().find_one({'ARASTUSER': user,'data_id':int(data_id)})
-        except:
-            job = None
-            logging.error("Data %s does not exist" % data_id)
-        return job
-
-    def get_docs_distinct_data_id(self, user):
-        docs = []
-        distinct_ids = [int(id) for id in self.jobs.find(
-                {'ARASTUSER': user}).distinct('data_id')]
-        ## remove dupes due to str/int variability
-        dset = set()
-        for d in distinct_ids:
-            dset.add(d)
-        for d in sorted(dset):
-            doc = self.get_jobs().find_one({'ARASTUSER': user,'data_id':int(d)})
-            if doc:
-                docs.append(doc)
-        return docs
-
     def update_job(self, job_id, field, value):
         jobs = self.get_jobs()
         jobs.update({'_id' : job_id},
                     {'$set' : {field : value}})
+
         if jobs.find_one({'_id' : job_id}) is not None:
             logging.info("Job updated: %s:%s:%s" % (job_id, field, value))
         else:
@@ -141,8 +123,6 @@ class MetadataConnection:
         col = database[self.auth_collection]
         try:
             auth_info = col.find_one({'globus_user': user})
-            print 'found'
-            print auth_info
         except:
             return None
         return auth_info
@@ -160,3 +140,21 @@ class MetadataConnection:
                    'token_time', token_time)
         
         
+######## DATA COLLECTION ############
+    def insert_data(self, user, data):
+        if not 'data_id' in data:
+            data['data_id'] = self.get_next_data_id(user)
+        uid = self.data_collection.insert(data)
+        return data['data_id'], uid
+
+    def get_next_data_id(self, user):
+        return self.get_next_id(user, 'data')
+
+
+    def get_data_docs(self, user, data_id=None):
+        if data_id:
+            doc = self.data_collection.find_one({'ARASTUSER': user,'data_id':int(data_id)})
+        else:
+            print user
+            doc = self.data_collection.find({'ARASTUSER': user})
+        return doc
