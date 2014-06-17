@@ -117,8 +117,7 @@ def eval(x, env):
         try: env[var] = eval(exp, env)
         except Exception as e: 
             print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
-            logging.info('\n'.join(traceback.format_tb(sys.exc_info()[2])))
-            env.exceptions.append('\n'.join(traceback.format_tb(sys.exc_info()[2])))
+            env.exceptions.append(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':
         seq = eval(x[1], env)
@@ -147,7 +146,7 @@ def eval(x, env):
             return val
         except Exception as e: 
             print ' [!]: {} -- {}'.format(to_string(exp), e)
-            print traceback.format_exc())
+            print traceback.format_exc()
             env.exceptions.append(traceback.format_exc())
             return
     elif x[0] == 'get':
@@ -195,8 +194,8 @@ def eval(x, env):
                 if ret:val.append(ret)
             except Exception as e:
                 if list(e):
-                    print ' [!]:', e
-                    env.exceptions.append('\n'.join(traceback.format_tb(sys.exc_info()[2])))
+                    print(traceback.format_exc())
+                    env.exceptions.append(traceback.format_exc())
         if val:
             return val if len(val) > 1 else val[0]
     else:                          # (proc exp*)
@@ -206,7 +205,7 @@ def eval(x, env):
         try: ## Assembly functions
             return proc(*exps, env=env)
         except TypeError as e: ## Built-in functions
-            logging.info(e)
+            print(traceback.format_exc())
             logging.info('\n'.join(traceback.format_tb(sys.exc_info()[2])))
             return proc(*exps)
 ################ parse, read, and user interaction
