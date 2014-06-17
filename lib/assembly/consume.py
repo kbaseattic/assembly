@@ -147,7 +147,11 @@ class ArastConsumer:
         user = params['ARASTUSER']
         token = params['oauth_token']
         pipelines = params['pipeline']
-        recipe = params['recipe']
+        recipe = None
+        try: ## In case legacy
+            recipe = params['recipe']
+            wasp_in = params['wasp']
+        except:pass
 
         #support legacy arast client
         if len(pipelines) > 0:
@@ -211,9 +215,11 @@ class ArastConsumer:
         if recipe:
             try: wasp_exp = getattr(recipes, recipe[0])
             except AttributeError: raise Exception('"{}" recipe not found.'.format(recipe[0]))
+        elif wasp_in:
+            wasp_exp = wasp_in[0]
         elif pipelines[0] == 'auto':
             wasp_exp = recipes.auto
-        elif not '(' in wasp_exp:
+        else:
             all_pipes = []
             for p in pipelines:
                 all_pipes += self.pmanager.parse_input(p)
