@@ -163,7 +163,6 @@ class ArastConsumer:
             print e
             raise Exception ('Data Error')
 
-
         ### Create job log
         self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
         self.out_report = open(self.out_report_name, 'w')
@@ -199,7 +198,7 @@ class ArastConsumer:
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         self.job_list.append(job_data)
         self.start_time = time.time()
-        self.done_flag = threading.Event()
+
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
         timer_thread.start()
         
@@ -227,7 +226,7 @@ class ArastConsumer:
         for i, job in enumerate(self.job_list):
             if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
                 self.job_list.pop(i)
-        self.done_flag.set()
+
 
         # Format report
         new_report = open('{}.tmp'.format(self.out_report_name), 'w')
@@ -279,31 +278,6 @@ class ArastConsumer:
 
         print '============== JOB COMPLETE ==============='
 
-    def update_time_record(self):
-        elapsed_time = time.time() - self.start_time
-        ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
-        self.metadata.update_job(uid, 'computation_time', ftime)
-
-    def run_read_analysis(self, job_data, modules):
-        results = []
-        #self.metadata.update_job(job_data['uid', 'modules', modules])
-        for module in modules:
-            self.metadata.update_job(job_data['uid'], 
-                                     'status', 'Analysis:{}'.format(module))
-            output, _, mod_log = self.pmanager.run_module(
-                module, job_data, all_data=True)
-            results += output
-        return results
-
-    def run_asm_analysis(self, job_data):
-        ## TEMPORARY
-        quast_report, quast_tar, _, _ = self.pmanager.run_module('quast', job_data, 
-                                                                 tar=True, meta=True)
-        analysis = quast_report[0]
-        analysis_data = quast_tar
-        return analysis, analysis_data
-
-
     def upload(self, url, user, token, file, filetype='default'):
         files = {}
         files["file"] = (os.path.basename(file), open(file, 'rb'))
@@ -349,6 +323,7 @@ class ArastConsumer:
         if job_doc['status'] == 'Terminated':
             print 'Job {} was killed, skipping'.format(params['job_id'])
         else:
+            self.done_flag = threading.Event()
             try:
                 self.compute(body)
             except Exception as e:
@@ -358,6 +333,7 @@ class ArastConsumer:
                 print logging.error(tb) 
                 self.metadata.update_job(uid, 'status', status)
         ch.basic_ack(delivery_tag=method.delivery_tag)
+        self.done_flag.set()
 
     def start(self):
         self.fetch_job()
