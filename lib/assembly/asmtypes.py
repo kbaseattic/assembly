@@ -8,8 +8,11 @@ import client
 #### Single Files #####
 class FileInfo(dict):
     def __init__(self, filename, shock_url=None, shock_id=None, name=None,
-                 filesize=None, create_time=None, metadata=None, keep_name=False, *args):
+                 create_time=None, metadata=None, keep_name=False, *args):
         dict.__init__(self, *args)
+        if filename:
+            assert os.path.exists(filename)
+            filesize = os.path.getsize(filename)
         self.update({'shock_url': shock_url,
                      'shock_id' : shock_id,
                      'filesize': filesize,
