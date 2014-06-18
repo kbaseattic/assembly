@@ -631,8 +631,11 @@ class ModuleManager():
         #### Run
         job_data['wasp_chain'] = wlink
         output = plugin.plugin_object.base_call(settings, job_data, self)
-        wlink.insert_output(output, self.output_type(module),
+        ot = self.output_type(module)
+        wlink.insert_output(output, ot,
                             plugin.name)
+        if not wlink.output:
+            raise Exception('"{}" module failed to produce {}'.format(module, ot))
             
 
     def output_type(self, module):

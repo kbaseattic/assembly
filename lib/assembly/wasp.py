@@ -123,7 +123,6 @@ def eval(x, env):
             env[var] = None
     elif x[0] == 'sort':
         seq = [link for link in eval(x[1], env) if link is not None and link.output]
-
         logging.debug(seq)
         if len(seq) == 1: return seq
         try: pred = x[2]
