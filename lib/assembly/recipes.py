@@ -25,7 +25,7 @@ auto333 = """
 
 """
 
-super = """
+superduper = """
 (begin
  (define pp (bhammer READS))
  (define kval (get best_k (kmergenie READS)))
@@ -48,7 +48,7 @@ auto = """
  (define sp (spades pp))
  (define allsort (sort (list sp vt) > :key (lambda (c) (get ale_score (ale c)))))
  (define gam (gam_ngs allsort))
- (define newsort (sort (list gam sp vt) > :key (lambda (c) (get ale_score (ale c)))))
- (tar (all_files (quast newsort) :name analysis))
+ (define newsort (sort (list (upload gam) (upload sp) (upload vt)) > :key (lambda (c) (get ale_score (ale c)))))
+ (tar (all_files (quast newsort)) :name analysis))
 )
 """
