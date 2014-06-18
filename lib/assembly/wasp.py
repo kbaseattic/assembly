@@ -73,6 +73,7 @@ def add_globals(env):
 isa = isinstance
 
 def eval(x, env):
+    logging.debug(x)
     "Evaluate an expression in an environment."
     if isa(x, Symbol):             # variable reference
         try:
@@ -121,7 +122,10 @@ def eval(x, env):
             env.exceptions.append(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':
-        seq = eval(x[1], env)
+        seq = [link for link in eval(x[1], env) if link is not None and link.output]
+
+        logging.debug(seq)
+        if len(seq) == 1: return seq
         try: pred = x[2]
         except: pred = '<'
         try: 
@@ -277,6 +281,10 @@ class WaspLink(dict):
         if type(out) is list:
             return [f for fset in out for f in fset.files]
         return self['default_output'].files
+
+    @property
+    def output(self):
+        return self['default_output']
 
     def insert_output(self, output, default_type, module_name):
         """ Parses the output dict of a completed module and stores the 
