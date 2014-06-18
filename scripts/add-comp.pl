@@ -36,6 +36,7 @@ Compute server components:
       idba         - IDBA_UD assembler (v1.1.1)
       jgi_rqc      - JGI rolling QC (git)
       kiki         - Kiki assembler (git)
+      kmergenie    - KmerGenie (v1.6663)
       masurca      - MaSuRCA assembler (v2.0.0)
       pacbio       - SMRT Analysis Software (v2.1.1)
       quast        - QUAST assembly evaluator (v2.2)
@@ -62,7 +63,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki masurca quast ray reapr screed seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki kmergenie masurca quast ray reapr screed seqtk solexa spades velvet); 
 my @special_comps = qw (pacbio jgi_rqc);
 
 my @all_comps = (@regular_comps, @special_comps);
@@ -207,6 +208,14 @@ sub install_kiki {
     chdir("kiki");
     run("mkdir -p bin; cd bin; cmake ..; make ki");
     run("cp bin/ki $dest_dir/");
+}
+
+sub install_kmergenie {
+    my $dir = 'kmergenie-1.6663';
+    my $file = "$dir.tar.gz";
+    download($dir, $file, 'http://kmergenie.bx.psu.edu');
+    run("cd $dir; make");
+    run("cp -r -T $dir $dest_dir/kmergenie");
 }
 
 sub install_masurca {
