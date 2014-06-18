@@ -148,6 +148,7 @@ class ArastConsumer:
         token = params['oauth_token']
         pipelines = params['pipeline']
         recipe = None
+        wasp_in = None
         try: ## In case legacy
             recipe = params['recipe']
             wasp_in = params['wasp']
