@@ -441,7 +441,6 @@ class JobResource:
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
-        print doc
         try:
             result_data = doc['result_data_legacy'][0]
         except Exception as e:
