@@ -117,6 +117,7 @@ def eval(x, env):
         try: env[var] = eval(exp, env)
         except Exception as e: 
             print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
+            print traceback.format_exc()
             env.exceptions.append(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':

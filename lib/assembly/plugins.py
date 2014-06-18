@@ -236,6 +236,8 @@ class BasePlugin(object):
                     all_sets.append(link['default_output']) # Single FileSet
                 elif type(link['default_output']) is list:
                     all_sets += [fileset for fileset in link['default_output']]
+                elif not link['default_output']:
+                    raise Exception('"{}" stage failed to produce any output.'.format(link['module']))
                 else:
                     raise Exception('Wasp Link Error')
             self.data = asmtypes.FileSetContainer(all_sets)
@@ -431,15 +433,15 @@ class BasePreprocessor(BasePlugin):
         #### Save and restore insert data, handle extra output
         orig_sets = copy.deepcopy(self.data.readsets)
         output = self.run()
-        if type(output['reads'][0]) is list:  ## Multiple Libraries
-            for i, readset in enumerate(output['reads']):
-                orig_sets[i].update_files(readset)
-                orig_sets[i]['name'] = '{}_reads'.format(self.name)
-                readsets = orig_sets
-        else:
-            orig_sets[0].update_files(output['reads'])
-            orig_sets[0]['name'] = '{}_reads'.format(self.name)
-            readsets = orig_sets
+        if output['reads']:
+            if type(output['reads'][0]) is list:  ## Multiple Libraries
+                for i, readset in enumerate(output['reads']):
+                    orig_sets[i].update_files(readset)
+                    orig_sets[i]['name'] = '{}_reads'.format(self.name)
+            else:
+                orig_sets[0].update_files(output['reads'])
+                orig_sets[0]['name'] = '{}_reads'.format(self.name)
+        readsets = orig_sets
         try:
             readsets.append(asmtypes.set_factory('single', output['extra'], 
                                                  name='{}_single'.format(self.name)))
