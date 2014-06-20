@@ -44,7 +44,13 @@ class BasePlugin(object):
         ### Compatibility
         self.init_settings(settings, job_data, manager)
         output = self.wasp_run()
+        print('Closing file {}'.format(self.out_module))
         self.out_module.close()
+
+        #### If this was an internal plugin run, restore outer plugin logfile
+        if hasattr(self, 'out_module_outer'):
+            if self.out_module_outer[0] == self.__repr__():
+                self.out_module = self.out_module_outer[1]
         return output
 
     def arast_popen(self, cmd_args, overrides=True, **kwargs):
@@ -83,8 +89,10 @@ class BasePlugin(object):
 
         if cmd_args[0].find('..') != -1 and not shell:
             cmd_args[0] = os.path.abspath(cmd_args[0])
+        print 'writing', self.out_module.name
         self.out_module.write("Command: {}\n".format(cmd_string))
-        self.out_report.write('Command: {}\n'.format(cmd_string))
+        try: self.out_report.write('Command: {}\n'.format(cmd_string))
+        except: print 'Could not write to report: {}'.format(cmd_string)
         m_start_time = time.time()
         print cmd_args
         try:
@@ -130,7 +138,8 @@ class BasePlugin(object):
                 e.returncode, e.output)
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
-        self.out_report.write("Process time: {}\n\n".format(m_ftime))
+        try: self.out_report.write('Command: {}\n'.format(m_ftime))
+        except: print 'Could not write to report: {}'.format(cmd_string)
 
     def is_urgent_output(self, line):
         """ 
@@ -202,6 +211,8 @@ class BasePlugin(object):
         self.job_data = job_data
         self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
+        if hasattr(self, 'out_module'):
+            self.out_module_outer = (self.__repr__(), self.out_module)
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
         job_data['logfiles'].append(self.out_module.name)
         for kv in settings:
@@ -222,7 +233,8 @@ class BasePlugin(object):
 
         #### Initialize Internal Wasp Engine ####
         plugin_data = copy.deepcopy(job_data)
-        plugin_data['out_report'] = self.out_module
+        out_internal = open('{}.{}'.format(self.out_module.name, self.name), 'w')
+        plugin_data['out_report'] = self.out_report
         self.plugin_engine = wasp.WaspEngine(self.pmanager, plugin_data)
 
         #### Get default outputs of last module and pass on persistent data
