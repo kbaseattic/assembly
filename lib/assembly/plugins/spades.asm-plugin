@@ -7,10 +7,12 @@ short_name = Sp
 executable = ../../bin/spades/bin/spades.py
 filetypes = fasta,fa,fastq,fq
 only_assembler = True
+mismatch_correction = True
 read_length = short
 
 [Parameters]
 only_assembler = True (bool)
+mismatch_correction = True (bool)
 read_length = short (short, medium, medium2, long)
 
 

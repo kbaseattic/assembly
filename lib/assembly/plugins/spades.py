@@ -50,6 +50,8 @@ class SpadesAssembler(BaseAssembler, IPlugin):
 
         cmd_args += ['-o', self.outpath]
         cmd_args += ['-t', self.process_threads_allowed]  # number of threads = 4
+        if self.mismatch_correction == 'True':
+            cmd_args.append('--mismatch-correction')
         self.arast_popen(cmd_args)
         contigs = os.path.join(self.outpath, 'contigs.fasta')
         scaffolds = os.path.join(self.outpath, 'scaffolds.fasta')
