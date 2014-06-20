@@ -130,7 +130,7 @@ sub install_a5 {
     chdir("a5");
     my $dir = "a5_miseq_linux_20140604";
     my $file = "$dir.tar.gz";
-    download($dir, $file, "http://sourceforge.net/projects/ngopt/files/");
+    download($dir, $file, "http://sourceforge.net/projects/ngopt/files");
     run("cp -r -T $dir $dest_dir/a5");
 }
 
