@@ -34,7 +34,10 @@ class VelvetAssembler(BaseAssembler, IPlugin):
             ## Store (insert,stdev)
             if pairset.insert:
                 pair_info[p_suffix] = (pairset.insert, pairset.stdev)
-
+            elif self.auto_insert == 'True':
+                velvet_results = self.plugin_engine.run_expression('(velvet (paired {}))'.format(' '.join(pairset.files)))
+                insert, stdev = self.estimate_insert_stdev(velvet_results.files[0], pairset.files)
+                pair_info[p_suffix] = (insert, stdev)
         #### Add Single Reads ####
         for s_num, s_set in enumerate(self.data.readsets_single):
             if s_num == 0: s_suffix = ''
@@ -54,10 +57,11 @@ class VelvetAssembler(BaseAssembler, IPlugin):
             try:
                 insert = pair_info[suf][0]
                 stdev = pair_info[suf][1]
-                cmd_args += ['-ins_length{}'.format(suf), insert, 
-                             '-ins_length{}_sd'.format(suf), stdev]
+                cmd_args += ['-ins_length{}'.format(suf), str(insert), 
+                             '-ins_length{}_sd'.format(suf), str(stdev)]
             except:pass
 
+        logging.info(cmd_args)
         self.arast_popen(cmd_args)        
         contigs = [self.outpath + '/contigs.fa']
         if not os.path.exists(contigs[0]):
