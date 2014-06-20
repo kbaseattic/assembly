@@ -16,6 +16,8 @@ from yapsy.PluginManager import PluginManager
 from yapsy.IPluginLocator import IPluginLocator
 from threading  import Thread
 from Queue import Queue, Empty
+import traceback
+
 
 # A-Rast modules
 import assembly
@@ -41,16 +43,23 @@ class BasePlugin(object):
 
     def base_call(self, settings, job_data, manager, strict=False):
         """ Plugin wrapper """
+        ### This might be a recursive call, backup Plugin object attrs
+        ### !!! This won't work in parallel
+        try: 
+            backup = self._save()
+            logging.info('Previous instance found, backing up.')
+        except AttributeError: pass
+
         ### Compatibility
         self.init_settings(settings, job_data, manager)
         output = self.wasp_run()
-        print('Closing file {}'.format(self.out_module))
         self.out_module.close()
 
         #### If this was an internal plugin run, restore outer plugin logfile
-        if hasattr(self, 'out_module_outer'):
-            if self.out_module_outer[0] == self.__repr__():
-                self.out_module = self.out_module_outer[1]
+        try: 
+            self._restore(backup) 
+            logging.info('Restored Plugin Object self attributes')
+        except UnboundLocalError: pass
         return output
 
     def arast_popen(self, cmd_args, overrides=True, **kwargs):
@@ -89,7 +98,6 @@ class BasePlugin(object):
 
         if cmd_args[0].find('..') != -1 and not shell:
             cmd_args[0] = os.path.abspath(cmd_args[0])
-        print 'writing', self.out_module.name
         self.out_module.write("Command: {}\n".format(cmd_string))
         try: self.out_report.write('Command: {}\n'.format(cmd_string))
         except: print 'Could not write to report: {}'.format(cmd_string)
@@ -211,8 +219,6 @@ class BasePlugin(object):
         self.job_data = job_data
         self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
         self.out_report = job_data['out_report'] #Job log file
-        if hasattr(self, 'out_module'):
-            self.out_module_outer = (self.__repr__(), self.out_module)
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
         job_data['logfiles'].append(self.out_module.name)
         for kv in settings:
@@ -222,7 +228,6 @@ class BasePlugin(object):
                 setattr(self, kv[0], abs)
             else:
                 setattr(self, kv[0], kv[1])
-        self.insert_info = self.get_insert_info(self.job_data['initial_reads'])
 
         #### Set custom parameters
         self.extra_params = []
@@ -257,7 +262,19 @@ class BasePlugin(object):
             self.data = job_data.wasp_data()
         self.initial_data = job_data['initial_data']
                                              
+    def _save(self):
+        attrs = ['outpath', 'job_data', 'out_report', 'out_module', 'data']
+        saved = {'repr': self.__repr__()}
+        for attr in attrs:
+            saved[attr] = getattr(self, attr)
+        return saved
 
+    def _restore(self, data):
+        assert self.__repr__() == data['repr']
+        attrs = ['outpath', 'job_data', 'out_report', 'out_module', 'data']
+        for attr in attrs:
+            setattr(self, attr, data[attr])
+ 
     def linuxRam(self):
         """Returns the RAM of a linux system"""
         totalMemory = os.popen("free -m").readlines()[1].split()[1]
