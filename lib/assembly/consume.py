@@ -603,4 +603,7 @@ class UpdateTimer(threading.Thread):
             elapsed_time = time.time() - self.start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
             self.meta.update_job(self.uid, 'computation_time', ftime)
-            time.sleep(self.interval)
+            if int(elapsed_time) < self.interval:
+                time.sleep(3)
+            else:
+                time.sleep(self.interval)
