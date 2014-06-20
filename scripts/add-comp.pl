@@ -128,10 +128,10 @@ sub install_basic {
 sub install_a5 {
     run("mkdir -p a5");
     chdir("a5");
-    my $dir = "ngopt_a5pipeline_linux-x64_20120518";
+    my $dir = "a5_miseq_linux_20140604";
     my $file = "$dir.tar.gz";
-    download($dir, $file, "http://ngopt.googlecode.com/files");
-    run("cp -r -T $dir $dest_dir/a5")
+    download($dir, $file, "http://sourceforge.net/projects/ngopt/files/");
+    run("cp -r -T $dir $dest_dir/a5");
 }
 
 sub install_a6 {
