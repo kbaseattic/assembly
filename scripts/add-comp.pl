@@ -120,7 +120,7 @@ sub install_basic {
 
     # run("apt-get -q -y update");
     run("apt-get -y install " . join(" ", @apt));
-    for (@pip) { run("pip install $_") }
+    run("pip install "        . join(" ", @pip));
 }
 
 sub install_a5 {
