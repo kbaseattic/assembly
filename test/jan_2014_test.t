@@ -5,9 +5,13 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 
-# $ENV{ARASTURL}      = "140.221.84.124";
+my $arg_url   = "-s $ENV{ARASTURL}"   if $ENV{ARASTURL};   # default: 140.221.84.124
+my $arg_queue = "-q $ENV{ARASTQUEUE}" if $ENV{ARASTQUEUE};
+
 $ENV{KB_DEPLOYMENT} = "/kb/deployment" unless defined $ENV{KB_DEPLOYMENT};
 $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
+
+
 
 # Test new assemblers: SPAdes, Ray, PacBio
 #   using the new upload and run mechanism
@@ -64,7 +68,7 @@ done_testing($testCount);
 sub upload {
     my $dataset = shift;
     my $data_id;
-    my $command = "ar-upload -s $ENV{ARASTURL} $dataset";
+    my $command = "ar-upload $arg_url $dataset";
     eval {$data_id = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " Data ID: $data_id");
     diag("unable to run $command") if $@;
@@ -78,7 +82,7 @@ sub run_on_data {
     my $data_id = shift;
     my $dataset = shift;
     my $jobid;
-    my $command = "ar-run -s $ENV{ARASTURL} -a $assembler --data $data_id -m \"Run $assembler on $dataset (id=$data_id)\"";
+    my $command = "ar-run $arg_url $arg_queue -a $assembler --data $data_id -m \"Run $assembler on $dataset (id=$data_id)\"";
     print "$command\n";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
@@ -93,7 +97,7 @@ sub run {
     my $file_inputs = shift;
     my ($name) = split(/\s+/, $assembler);
     my $jobid;
-    my $command = "ar-run -s $ENV{ARASTURL} -a $assembler $file_inputs -m \"$name run command on $file_inputs\"";
+    my $command = "ar-run $arg_url $arg_queue -a $assembler $file_inputs -m \"$name run command on $file_inputs\"";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
@@ -115,7 +119,7 @@ sub get {
     my $done;
     print "Waiting for job $jobid to complete.";
     while (1) {
-	my $stat = `ar-stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
+	my $stat = `ar-stat $arg_url -j $jobid 2>/dev/null`;
         if ($stat =~ /(success|complete)/i) {
             $done = 1;
             print " [done]\n";
@@ -130,7 +134,7 @@ sub get {
     print " [done]\n";
     
     if ($done) {
-        my $command = "ar-get -s $ENV{ARASTURL} -j $jobid";
+        my $command = "ar-get $arg_url -j $jobid";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;

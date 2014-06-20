@@ -4,7 +4,9 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 
-$ENV{ARASTURL}      = "140.221.84.124";
+my $arg_url   = "-s $ENV{ARASTURL}"   if $ENV{ARASTURL};   # default: 140.221.84.124
+my $arg_queue = "-q $ENV{ARASTQUEUE}" if $ENV{ARASTQUEUE};
+
 $ENV{KB_DEPLOYMENT} = "/kb/deployment" unless defined $ENV{KB_DEPLOYMENT};
 $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 
@@ -62,7 +64,7 @@ sub run {
     my $assembler = shift;
     my $file_inputs = shift;
     my $jobid;
-    my $command = "ar-run -s $ENV{ARASTURL} -a $assembler $file_inputs -m \"$assembler run command on $file_inputs\"";
+    my $command = "ar-run $arg_url $arg_queue -a $assembler $file_inputs -m \"$assembler run command on $file_inputs\"";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
@@ -84,7 +86,7 @@ sub get {
     my $done;
     print "Waiting for job $jobid to complete.";
     while (1) {
-	my $stat = `ar-stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
+	my $stat = `ar-stat $arg_url -j $jobid 2>/dev/null`;
         if ($stat =~ /(success|complete)/i) {
             $done = 1;
             print " [done]\n";
@@ -99,7 +101,7 @@ sub get {
     print " [done]\n";
     
     if ($done) {
-        my $command = "ar-get -s $ENV{ARASTURL} -j $jobid";
+        my $command = "ar-get $arg_url -j $jobid";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;

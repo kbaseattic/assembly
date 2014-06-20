@@ -131,6 +131,7 @@ class Client:
         stat = self.get_job_status(1, job_id)
         while not re.search('(complete|fail)', stat, re.IGNORECASE):
             time.sleep(5)
+            stat = self.get_job_status(1, job_id)
         return stat
 
 

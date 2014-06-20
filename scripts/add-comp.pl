@@ -121,8 +121,8 @@ sub install_basic {
     my @pip = qw(pika python-daemon pymongo requests yapsy numpy biopython);
 
     # run("apt-get -q -y update");
-    for (@apt) { run("apt-get -y install $_") }
-    for (@pip) { run("pip install $_") }
+    run("apt-get -y install " . join(" ", @apt));
+    run("pip install "        . join(" ", @pip));
 }
 
 sub install_a5 {
