@@ -39,6 +39,7 @@ Compute server components:
       kmergenie    - KmerGenie (v1.6663)
       masurca      - MaSuRCA assembler (v2.0.0)
       pacbio       - SMRT Analysis Software (v2.1.1)
+      prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
       quast        - QUAST assembly evaluator (v2.2)
       ray          - Ray assembler (git)
       reapr        - REAPR reference-free evaluator (v1.0.15)
@@ -63,7 +64,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki kmergenie masurca quast ray reapr screed seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr screed seqtk solexa spades velvet); 
 my @special_comps = qw (pacbio jgi_rqc);
 
 my @all_comps = (@regular_comps, @special_comps);
@@ -256,6 +257,14 @@ sub install_pacbio {
 
     # source $AR_DIR/bin/smrt/install/smrtanalysis-2.1.1.128549/etc/setup.sh
     # https://github.com/PacificBiosciences/SMRT-Analysis/wiki/SMRT-Pipe-Reference-Guide-v2.1
+}
+
+sub install_prodigal {
+    my $dir = 'Prodigal-2.60';
+    my $file = "$dir.tar.gz";
+    download($dir, $file, "https://prodigal.googlecode.com/files");
+    run("cd $dir; make");
+    run("cp -r -T $dir $dest_dir/prodigal");
 }
 
 sub install_quast {
