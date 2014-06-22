@@ -37,7 +37,7 @@ Compute server components:
       jgi_rqc      - JGI rolling QC (git)
       kiki         - Kiki assembler (git)
       kmergenie    - KmerGenie (v1.6663)
-      masurca      - MaSuRCA assembler (v2.0.0)
+      masurca      - MaSuRCA assembler (v2.2.1)
       pacbio       - SMRT Analysis Software (v2.1.1)
       prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
       quast        - QUAST assembly evaluator (v2.3)
@@ -220,9 +220,10 @@ sub install_kmergenie {
 }
 
 sub install_masurca {
-    my $dir = 'MaSuRCA-2.1.0';
+    my $dir = 'MaSuRCA-2.2.1';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA');
+    # download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA');
+    download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA/v2.2.1');
     run("cd $dir; ./install.sh");
     run("cp -r -T $dir $dest_dir/masurca");
 }
