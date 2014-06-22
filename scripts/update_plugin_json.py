@@ -3,11 +3,11 @@ import os
 import json
 import re
 
-PLUGIN_DIR = '../lib/ar_server/plugins/'
+PLUGIN_DIR = '../lib/assembly/plugins/'
 OUT_JSON = 'ar_modules.json'
 
 plugin_configs = [p for p in os.listdir(PLUGIN_DIR) 
-                  if re.search('yapsy', p)]
+                  if re.search('-plugin', p)]
 
 plugins_data = []
 for plugin_config in plugin_configs:
