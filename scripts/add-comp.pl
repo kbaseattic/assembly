@@ -40,7 +40,7 @@ Compute server components:
       masurca      - MaSuRCA assembler (v2.0.0)
       pacbio       - SMRT Analysis Software (v2.1.1)
       prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
-      quast        - QUAST assembly evaluator (v2.2)
+      quast        - QUAST assembly evaluator (v2.3)
       ray          - Ray assembler (git)
       reapr        - REAPR reference-free evaluator (v1.0.15)
       screed       - Screed assembly statistics library (git)
@@ -268,7 +268,7 @@ sub install_prodigal {
 }
 
 sub install_quast {
-    my $dir = 'quast-2.2';
+    my $dir = 'quast-2.3';
     my $file = "$dir.tar.gz";
     download($dir, $file, "https://downloads.sourceforge.net/project/quast");
     run("cp -r -T $dir $dest_dir/quast");
