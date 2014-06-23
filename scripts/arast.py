@@ -311,8 +311,8 @@ def main():
         else:
             try:
                 aclient.get_job_data(job_id=args.job_id[0], outdir=args.outdir)
-            except:
-                print 'Invalid job id'
+            except ValueError:
+                print 'Invalid job id: {}'.format(args.job_id[0])
 
     elif args.command == 'avail':
         try:

@@ -444,8 +444,7 @@ class JobResource:
         try:
             result_data = doc['result_data_legacy'][0]
         except Exception as e:
-            print e
-            raise cherrypy.HTTPError(500)
+            raise cherrypy.HTTPError(403)
         return json.dumps(result_data)
 
     def get_assembly_nodes(self, userid=None, job_id=None, asm=None):
