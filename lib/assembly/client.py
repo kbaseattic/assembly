@@ -1,3 +1,4 @@
+import bisect
 import collections
 import datetime
 import json
@@ -111,6 +112,28 @@ class Client:
         r = requests.get(url, headers=self.headers)
         return r.content
 
+    def get_data_list(self):
+        url = 'http://{}/user/{}/data'.format(self.url, self.user)
+        r = requests.get(url, headers=self.headers)
+        li = json.loads(r.content)
+        li.sort(key=lambda e: e["data_id"])
+        return li
+
+    def get_data_list_table(self, stat_n=15):
+        li = self.get_data_list()
+        li = li[-stat_n:]
+        lines = []
+        
+        assembly_data_to_lines(li)
+        
+        return json.dumps(data)
+
+    def get_data_json(self, data_id=None):
+        li = self.get_data_list()
+        keys = [e["data_id"] for e in li]
+        data = li[bisect.bisect_left(keys, data_id)]
+        return json.dumps(data)
+
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
         r = requests.get(url, headers=self.headers)
@@ -167,3 +190,39 @@ class AssemblyData(dict):
 
     def add_set(self, file_set):
         self['file_sets'].append(file_set)
+
+
+##### Helper methods #####
+def assembly_data_to_lines(data):
+    lines = []
+    data_key = "assembly_data"
+    lib_key  = "file_sets"
+    info_key = "file_infos"
+
+    if data_key in data:
+        data = data[data_key]
+
+    for lib in data.get(lib_key, []):
+        libtype = lib.get("type", "unknown")
+        files = []
+        for info in lib.get(info_key, []):
+            filename = info.get("filename", "")
+            filesize = info.get("filesize", -1)
+            filesize = sizeof_fmt(filesize)
+            files.append("%s (%s" % (filename, filesize))
+        lines.append(", ".join([libtype, files]))
+    
+    return lines
+
+    # if lib_key in data:
+    #     libs = data[lib_key]
+    #     for lib in libs:
+    #         if info_key in lib[info_key]:
+                
+
+def sizeof_fmt(num):
+    for x in ['bytes','KB','MB','GB']:
+        if num < 1024.0 and num > -1024.0:
+            return "%3.1f%s" % (num, x)
+        num /= 1024.0
+    return "%3.1f%s" % (num, 'TB')    

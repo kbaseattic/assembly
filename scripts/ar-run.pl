@@ -77,5 +77,5 @@ if (!$have_data) {
     $argv .= "--data $data_id";
 }
 
-system "$arast run $argv";
+!system "$arast run $argv" or die $!;
 

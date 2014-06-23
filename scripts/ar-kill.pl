@@ -36,5 +36,5 @@ if ($help) {
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-system "$arast kill @ARGV";
+!system "$arast kill @ARGV" or die $!;
                     

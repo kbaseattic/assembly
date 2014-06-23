@@ -32,13 +32,8 @@ if ($help) {
     exit 0;
 }
 
-# my $target = $ENV{HOME}. "/kb/assembly";
-# my $arast  = "ar_client/ar_client/ar_client.py";
-# system "$target/$arast stat @ARGV";
-
-
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-system "$arast stat @ARGV";
+!system "$arast stat @ARGV" or die $!;
                     

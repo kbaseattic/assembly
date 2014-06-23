@@ -62,6 +62,11 @@ sub test_run_from_stdin {
     text_to_file($out, "job_id");
 }
 
+sub test_stat_list_data {
+    my $cmd = "ar-stat $arg_url --list-data";
+    my $out = sysout($cmd);
+}
+
 sub test_setup {
     test_login();
     test_download_simple_file();

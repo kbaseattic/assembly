@@ -54,12 +54,15 @@ p_run.add_argument("--curl", action="store_true", help="Use curl for http reques
 # stat -h
 p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
 p_stat.add_argument("-j", "--job", action="store", help="get status of specific job")
+p_stat.add_argument("-l", "--list-data", action="store_true", dest="list_data", help="list data objects")
 p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
 p_stat.add_argument("-n", dest="stat_n", action="store", default=15, type=int, help="specify number of records to show")
 
+# avail
 p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
 p_avail.add_argument("-v", "--verbose", action="store_true", help="show module details")
 
+# upload
 p_upload = subparsers.add_parser('upload', description='Upload a read set', help='Upload a read library or set of libraries, returns a data ID for future use')
 p_upload.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
 p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
@@ -68,6 +71,7 @@ p_upload.add_argument("-r", "--reference", action="append", dest="reference", na
 p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_upload.add_argument("--json", action="store_true", help="Print data info json object to STDOUT")
 
+# kill
 p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
 p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
 p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs")
@@ -268,6 +272,13 @@ def main():
             print 'Data ID: {}'.format(arast_msg['data_id'])
 
     elif args.command == 'stat':
+        if args.list_data:
+            response = aclient.get_data_info()
+            print response
+            print "\n"
+            sys.exit()
+        
+        # default: print job information
         while True:
             try:
                 response = aclient.get_job_status(args.stat_n, args.job)
