@@ -21,7 +21,7 @@ Options:
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
       regular      - regular components (modules to be deployed on all compute nodes)
-      special      - special components (large modules: acbio, allpaths-lg, etc)
+      special      - special components (large modules: pacbio, allpaths-lg, etc)
       all          - all components
 
       a5           - A5 pipeline (v.20120518)
@@ -37,16 +37,16 @@ Compute server components:
       jgi_rqc      - JGI rolling QC (git)
       kiki         - Kiki assembler (git)
       kmergenie    - KmerGenie (v1.6663)
-      masurca      - MaSuRCA assembler (v2.0.0)
+      masurca      - MaSuRCA assembler (v2.2.1)
       pacbio       - SMRT Analysis Software (v2.1.1)
       prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
-      quast        - QUAST assembly evaluator (v2.2)
+      quast        - QUAST assembly evaluator (v2.3)
       ray          - Ray assembler (git)
-      reapr        - REAPR reference-free evaluator (v1.0.15)
+      reapr        - REAPR reference-free evaluator (v1.0.17)
       screed       - Screed assembly statistics library (git)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
-      spades       - SPAdes assembler (v3.0)
+      spades       - SPAdes assembler (v3.1.0)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -64,8 +64,8 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr screed seqtk solexa spades velvet); 
-my @special_comps = qw (pacbio jgi_rqc);
+my @regular_comps = qw (basic a5 a6 ale bowtie bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr screed seqtk solexa spades velvet); 
+my @special_comps = qw (discovar pacbio jgi_rqc);
 
 my @all_comps = (@regular_comps, @special_comps);
 my %supported = map { $_ => 1 } @all_comps;
@@ -220,9 +220,10 @@ sub install_kmergenie {
 }
 
 sub install_masurca {
-    my $dir = 'MaSuRCA-2.1.0';
+    my $dir = 'MaSuRCA-2.2.1';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA');
+    # download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA');
+    download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA/v2.2.1');
     run("cd $dir; ./install.sh");
     run("cp -r -T $dir $dest_dir/masurca");
 }
@@ -268,7 +269,7 @@ sub install_prodigal {
 }
 
 sub install_quast {
-    my $dir = 'quast-2.2';
+    my $dir = 'quast-2.3';
     my $file = "$dir.tar.gz";
     download($dir, $file, "https://downloads.sourceforge.net/project/quast");
     run("cp -r -T $dir $dest_dir/quast");
@@ -403,6 +404,7 @@ sub check_gcc {
     my $info = `gcc --version |head -1`;
     my ($version) = $info =~ /(4[0-9.]+)/;
     if ($version < 4.7) {
+        die "gcc verion 4.7 or above required.\n" if ! `which get-apt 2>/dev/null`;
         run("add-apt-repository -y ppa:ubuntu-toolchain-r/test");
         # run("apt-get -q -y update");
         run("apt-get -y install gcc-4.7 g++-4.7");

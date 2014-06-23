@@ -7,6 +7,9 @@ short_name = pd
 executable = ../../bin/prodigal/prodigal
 filetypes = fasta,fa
 
+[Parameters]
+
+
 [Documentation]
 Author = Chris Bun
 Version = 1.0
