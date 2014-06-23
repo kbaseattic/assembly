@@ -52,7 +52,7 @@ def send_kill_message(user, job_id):
     uid = job_doc['_id']
     if job_doc['status'] == 'queued':
         metadata.update_job(uid, 'status', 'Terminated')
-    elif re.search("Running", job_doc['status']):
+    elif re.search("Running", job_doc['status']) or re.search("Stage", job_doc['status']):
         msg = json.dumps({'user':user, 'job_id':job_id})
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host='localhost'))
