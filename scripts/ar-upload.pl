@@ -13,11 +13,15 @@ use JSON;
 use Term::ReadKey;
 use Text::Table;
 
-use Bio::KBase::Auth;
-use Bio::KBase::AuthToken;
-use Bio::KBase::workspace::Client;
-
 our $cli_upload_compatible_version = "0.3.8.2"; 
+
+my $have_kbase = 0;
+eval {
+    require Bio::KBase::Auth;
+    require Bio::KBase::AuthToken;
+    require Bio::KBase::workspace::Client;
+    $have_kbase = 1;
+};
 
 my $usage = <<End_of_Usage;
 
@@ -75,7 +79,7 @@ if ($help) { print $usage; exit 0;}
 my $config = get_arast_config();
 $config->{URL} = $server if $server;
 
-my ($user, $token) = authenticate($config);
+my ($user, $token) = authenticate($config); verify_auth($user, $token);
 my $shock = get_shock($config, $user, $token);
 
 my $input_data = process_input_args(\@se_args, \@pe_args, \@ref_args, \%params);
@@ -85,6 +89,7 @@ print encode_json($input_data)."\n" if $ws_json;
 submit_data($input_data, $config, $user, $token);
 
 if (@ws_args) {
+    die "Dependency error: Bio::KBase modules not found.\n" if !$have_kbase;
     my ($obj_name, $ws_name) = @ws_args;
     my ($curr_url, $curr_name) = current_workspace();
     $ws_url  ||= $curr_url;
@@ -143,6 +148,7 @@ sub current_workspace {
         $ws_url  = $ENV{KB_WORKSPACEURL};
         $ws_name = $ENV{KB_WORKSPACE};
     } else {
+        die "Dependency error: Bio::KBase modules not found.\n" if !$have_kbase;
         my $kb_conf_file = $Bio::KBase::Auth::ConfPath;
         my $cfg = new Config::Simple($kb_conf_file) if -s $kb_conf_file;
         $ws_url  = $cfg->param("workspace_deluxe.url") if $cfg;
@@ -159,32 +165,39 @@ sub authenticate {
     if ($ENV{KB_RUNNING_IN_IRIS}) {
         $user  = $ENV{KB_AUTH_USER_ID};
         $token = $ENV{KB_AUTH_TOKEN};
-        if (!$user || $token) {
-            print "Please authenticate with KBase credentials\n";
-            exit 0;
-        }
         return ($user, $token);
     } 
 
     my $ar_auth_file = glob join('/', '~/.config', $config->{APPNAME}, $config->{OAUTH_FILENAME});
     my ($user, $token) = get_arast_user_token($ar_auth_file);
-    my @auth_params = (token => $token) if $token;
-    my $auth = Bio::KBase::AuthToken->new(@auth_params); # Auth will try to read ~/.kbase_config if necessary
-    if (! $token) {
-        if (! $auth->token) {
-            print "Please authenticate with KBase credentials\n";
-            my $kb_user = get_input("KBase Login");
-            my $kb_pass = get_input("KBase Password", "hide");
-            $auth = Bio::KBase::AuthToken->new( user_id => $kb_user, password => $kb_pass );
-        }
-        $user = $auth->user_id;
-        $token = $auth->token;
-        $token or die "Authentication error.\n";
-        my $date = DateTime->now->ymd;
-        set_arast_user_token($ar_auth_file, $user, $token, $date);
-    }
     
+    if ($have_kbase) {
+        my @auth_params = (token => $token) if $token;
+        my $auth = Bio::KBase::AuthToken->new(@auth_params); # Auth will try to read ~/.kbase_config if necessary
+        if (! $token) {
+            if (! $auth->token) {
+                print "Please authenticate with KBase credentials\n";
+                my $kb_user = get_input("KBase Login");
+                my $kb_pass = get_input("KBase Password", "hide");
+                $auth = Bio::KBase::AuthToken->new( user_id => $kb_user, password => $kb_pass );
+            }
+            $user = $auth->user_id;
+            $token = $auth->token;
+            $token or die "Authentication error.\n";
+            my $date = DateTime->now->ymd;
+            set_arast_user_token($ar_auth_file, $user, $token, $date);
+        }
+    }    
+
     return ($user, $token);
+}
+
+sub verify_auth {
+    my ($user, $token) = @_;
+    unless ($user && $token) {
+       print "Please authenticate with KBase credentials\n";
+       exit 0;
+   }
 }
 
 sub upload_files_in_input_data {

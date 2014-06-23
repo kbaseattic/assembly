@@ -3,6 +3,8 @@
 # 2014/06/22 new client interface test
 
 use strict vars;
+
+use Carp;
 use Test::More;
 use Data::Dumper;
 use English;
@@ -36,6 +38,12 @@ teardown();
 #   Tests
 # ----------------------------------------------------------
 
+sub test_upload {
+    my $lib = "--pair b99_1.fq b99_2.fq";
+    my $cmd = "ar-upload $arg_url $lib";
+    my $out = sysout($cmd);
+}
+
 
 sub test_setup {
     test_login();
@@ -63,17 +71,28 @@ sub test_crash2 { sysrun("sh -c 'echo bad exit...; exit 99'") }
 # ----------------------------------------------------------
 #   Maintenance routines
 # ----------------------------------------------------------
+
 sub setup {
     my $dir  = "ar_tmp_dir"; 
     my $root = -w "/mnt" ? "/mnt" : ".";
     my $tmp = "$root/$dir";
-    if (1) { !system("rm -rf $tmp") or die "Could not write to $tmp" }
-    system "mkdir -p $tmp";
+    # run("rm -rf $tmp");
+    run("mkdir -p $tmp");
     chdir($tmp);
+    download_reads();
+}
+
+sub download_reads {
+    my @files = qw(b99_1.fq b99_2.fq m120404.bas.h5 lambda.fasta lambda.fasta);
+    foreach my $f (@files) {
+        next if -s $f;
+        my $cmd = "wget http://www.mcs.anl.gov/~fangfang/test/$f";
+        run($cmd);
+    }
 }
 
 sub teardown {
-    unlink "smg.fa" if -e "smg.fa";
+    # unlink "smg.fa" if -e "smg.fa";
     # unlink glob "job*.tar";
 }
 
@@ -108,6 +127,9 @@ sub sysout {
     print $out;
     return $out;
 }
+
+
+sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
 
 sub abbrev_cmd { length $_[0] < 50 ? $_[0] : substr($_[0], 0, 50)."..." }
 
