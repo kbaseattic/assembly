@@ -3,7 +3,9 @@ use strict vars;
 use warnings;
 use Test::More;
 
-$ENV{ARASTURL}      = "140.221.84.124";
+my $arg_url   = "-s $ENV{ARASTURL}"   if $ENV{ARASTURL};   # default: 140.221.84.124
+my $arg_queue = "-q $ENV{ARASTQUEUE}" if $ENV{ARASTQUEUE};
+
 $ENV{KB_DEPLOYMENT} = "/kb/deployment" unless defined $ENV{KB_DEPLOYMENT};
 $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 
@@ -31,7 +33,7 @@ sub login {
 
 sub avail {
     print "List available assembler and preprocessing modules..\n";
-    my $command = "ar-avail -s $ENV{ARASTURL}";
+    my $command = "ar-avail $arg_url";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
@@ -39,7 +41,7 @@ sub avail {
 
 sub run {
     my $jobid;
-    my $command = "ar-run -s $ENV{ARASTURL} -a kiki -f smg.fa";
+    my $command = "ar-run $arg_url $arg_queue -a kiki -f smg.fa";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
@@ -51,7 +53,7 @@ sub run {
 }
 
 sub stat {
-    my $command = "ar-stat -s $ENV{ARASTURL}";
+    my $command = "ar-stat $arg_url";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("could not execute $command") if $@;
@@ -59,18 +61,18 @@ sub stat {
 
 sub get {
     my $jobid;
-    my $command = "ar-run -s $ENV{ARASTURL}  -a kiki -f smg.fa";
+    my $command = "ar-run $arg_url $arg_queue  -a kiki -f smg.fa";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
     chomp($jobid);
     $jobid = $1 if $jobid =~ /(\d+)/;
 
-    `ar-stat -s $ENV{ARASTURL}`;
+    `ar-stat $arg_url`;
     print "Waiting for job to complete.";
     my $done;
     while (1) {
-        my $stat = `ar-stat -s $ENV{ARASTURL} -j $jobid 2>/dev/null`;
+        my $stat = `ar-stat $arg_url -j $jobid 2>/dev/null`;
         if ($stat =~ /(complete|success)/i) {
             $done = 1;
             print " [done]\n";
@@ -85,13 +87,13 @@ sub get {
 
     if ($done) {
         print "Get full results for completed job $jobid..\n";
-        $command = "ar-get -s $ENV{ARASTURL} -j $jobid";
+        $command = "ar-get $arg_url -j $jobid";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
 
         print "Get assembled contigs in FASTA for completed job $jobid..\n";
-        $command = "ar-get -s $ENV{ARASTURL} -j $jobid -a --stdout > contigs_$jobid.fa";
+        $command = "ar-get $arg_url -j $jobid -a --stdout > contigs_$jobid.fa";
         eval {!system($command) or die $!;};
         ok(!$@, (caller(0))[3]);
         diag("unable to run $command") if $@;
@@ -99,7 +101,7 @@ sub get {
     }
 
     my $invalid_id = '999999999999999999';
-    my $stat = `ar-get -s $ENV{ARASTURL} -j $invalid_id`;
+    my $stat = `ar-get $arg_url -j $invalid_id`;
     if ($stat =~ /invalid/) {
         print "Correctly identified invalid job\n";
     }

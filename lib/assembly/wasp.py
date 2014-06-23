@@ -73,6 +73,7 @@ def add_globals(env):
 isa = isinstance
 
 def eval(x, env):
+    logging.debug(x)
     "Evaluate an expression in an environment."
     if isa(x, Symbol):             # variable reference
         try:
@@ -95,7 +96,6 @@ def eval(x, env):
             wlink['default_output'] = asmtypes.set_factory(x[0], eval_files, 
                                                            name='{}_override'.format(x[0]))
         except Exception as e:
-            print type(e).__name__
             wlink['default_output'] = asmtypes.set_factory(x[0], x[1:])
         return wlink
     ##################################
@@ -117,10 +117,13 @@ def eval(x, env):
         try: env[var] = eval(exp, env)
         except Exception as e: 
             print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
+            print traceback.format_exc()
             env.exceptions.append(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':
-        seq = eval(x[1], env)
+        seq = [link for link in eval(x[1], env) if link is not None and link.output]
+        logging.debug(seq)
+        if len(seq) == 1: return seq
         try: pred = x[2]
         except: pred = '<'
         try: 
@@ -277,6 +280,10 @@ class WaspLink(dict):
             return [f for fset in out for f in fset.files]
         return self['default_output'].files
 
+    @property
+    def output(self):
+        return self['default_output']
+
     def insert_output(self, output, default_type, module_name):
         """ Parses the output dict of a completed module and stores the 
         data and information within the WaspLink object """
@@ -380,25 +387,6 @@ class WaspEngine():
          return run_module
 
 ###### Utility
-def _longest_common_exp(s1, s2):
-    m = [[0] * (1 + len(s2)) for i in xrange(1 + len(s1))]
-    longest, x_longest = 0, 0
-    for x in xrange(1, 1 + len(s1)):
-        for y in xrange(1, 1 + len(s2)):
-            if s1[x - 1] == s2[y - 1]:
-                m[x][y] = m[x - 1][y - 1] + 1
-                if m[x][y] > longest:
-                    longest = m[x][y]
-                    x_longest = x
-            else:
-                m[x][y] = 0
-    lcs = s1[x_longest - longest: x_longest]
-    
-    #### Remove extra parens
-    open_parens = lcs.count('(')
-    close_parens = lcs.count(')')
-    if open_parens and close_parens >= open_parens:
-        return lcs[:-(close_parens - open_parens)]
 
 def pipelines_to_exp(pipes, job_id):
     all_pipes = []
@@ -430,15 +418,18 @@ def pipelines_to_exp(pipes, job_id):
     defs = []
     reversed_pairs = set()
     lces = set()
+
     for pipe1, pipe2 in itertools.permutations(all_pipes, 2):
         reversed_pairs.add((pipe2, pipe1))
         if not (pipe1, pipe2) in reversed_pairs:
-            lce = _longest_common_exp(pipe1, pipe2)
-            if lce not in lces and lce:
-                lces.add(lce)
-                replacements.append((lce.strip(), 'val{}'.format(val_num)))
-                defs.append('(define val{} {})'.format(val_num, lce.strip()))
-                val_num += 1
+            for n in get_orphans(pipe1):
+                for m in get_orphans(pipe2):
+                    if n == m and to_string(n) not in lces:
+                        lce = to_string(n)
+                        lces.add(lce)
+                        replacements.append((lce.strip(), 'val{}'.format(val_num)))
+                        defs.append('(define val{} {})'.format(val_num, lce.strip()))
+                        val_num += 1
 
     #### Replace defined expressions
     for replacement in replacements:
@@ -450,3 +441,22 @@ def pipelines_to_exp(pipes, job_id):
     return final_exp
 
 
+def _has_sibling(exp_list, exp):
+    if not exp_list:
+        return False
+    siblings = 0
+    for e in exp_list:
+        if type(e) is list:
+            siblings += 1
+    return exp in exp_list and siblings > 1
+
+def orphans(exp_list, parent=None):
+    for i,l in enumerate(exp_list):
+        if type(l) is list:
+            for e in orphans(l, parent=exp_list):
+                yield e
+        elif i == 0 and not _has_sibling(parent, exp_list):
+            yield exp_list
+
+def get_orphans(pipe_string):
+    return [o for o in orphans(read_from(tokenize(pipe_string)))]

@@ -21,7 +21,7 @@ Options:
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
       regular      - regular components (modules to be deployed on all compute nodes)
-      special      - special components (large modules: acbio, allpaths-lg, etc)
+      special      - special components (large modules: pacbio, allpaths-lg, etc)
       all          - all components
 
       a5           - A5 pipeline (v.20120518)
@@ -36,15 +36,17 @@ Compute server components:
       idba         - IDBA_UD assembler (v1.1.1)
       jgi_rqc      - JGI rolling QC (git)
       kiki         - Kiki assembler (git)
-      masurca      - MaSuRCA assembler (v2.0.0)
+      kmergenie    - KmerGenie (v1.6663)
+      masurca      - MaSuRCA assembler (v2.2.1)
       pacbio       - SMRT Analysis Software (v2.1.1)
-      quast        - QUAST assembly evaluator (v2.2)
+      prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
+      quast        - QUAST assembly evaluator (v2.3)
       ray          - Ray assembler (git)
-      reapr        - REAPR reference-free evaluator (v1.0.15)
+      reapr        - REAPR reference-free evaluator (v1.0.17)
       screed       - Screed assembly statistics library (git)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
-      spades       - SPAdes assembler (v3.0)
+      spades       - SPAdes assembler (v3.1.0)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -62,8 +64,8 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie bwa discovar fastqc fastx gam_ngs idba kiki masurca quast ray reapr screed seqtk solexa spades velvet); 
-my @special_comps = qw (pacbio jgi_rqc);
+my @regular_comps = qw (basic a5 a6 ale bowtie bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr screed seqtk solexa spades velvet); 
+my @special_comps = qw (discovar pacbio jgi_rqc);
 
 my @all_comps = (@regular_comps, @special_comps);
 my %supported = map { $_ => 1 } @all_comps;
@@ -119,17 +121,17 @@ sub install_basic {
     my @pip = qw(pika python-daemon pymongo requests yapsy numpy biopython);
 
     # run("apt-get -q -y update");
-    for (@apt) { run("apt-get -y install $_") }
-    for (@pip) { run("pip install $_") }
+    run("apt-get -y install " . join(" ", @apt));
+    run("pip install "        . join(" ", @pip));
 }
 
 sub install_a5 {
     run("mkdir -p a5");
     chdir("a5");
-    my $dir = "ngopt_a5pipeline_linux-x64_20120518";
+    my $dir = "a5_miseq_linux_20140604";
     my $file = "$dir.tar.gz";
-    download($dir, $file, "http://ngopt.googlecode.com/files");
-    run("cp -r -T $dir $dest_dir/a5")
+    download($dir, $file, "http://sourceforge.net/projects/ngopt/files");
+    run("cp -r -T $dir $dest_dir/a5");
 }
 
 sub install_a6 {
@@ -209,10 +211,19 @@ sub install_kiki {
     run("cp bin/ki $dest_dir/");
 }
 
-sub install_masurca {
-    my $dir = 'MaSuRCA-2.1.0';
+sub install_kmergenie {
+    my $dir = 'kmergenie-1.6663';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA');
+    download($dir, $file, 'http://kmergenie.bx.psu.edu');
+    run("cd $dir; make");
+    run("cp -r -T $dir $dest_dir/kmergenie");
+}
+
+sub install_masurca {
+    my $dir = 'MaSuRCA-2.2.1';
+    my $file = "$dir.tar.gz";
+    # download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA');
+    download($dir, $file, 'ftp://ftp.genome.umd.edu/pub/MaSuRCA/v2.2.1');
     run("cd $dir; ./install.sh");
     run("cp -r -T $dir $dest_dir/masurca");
 }
@@ -249,8 +260,16 @@ sub install_pacbio {
     # https://github.com/PacificBiosciences/SMRT-Analysis/wiki/SMRT-Pipe-Reference-Guide-v2.1
 }
 
+sub install_prodigal {
+    my $dir = 'Prodigal-2.60';
+    my $file = "$dir.tar.gz";
+    download($dir, $file, "https://prodigal.googlecode.com/files");
+    run("cd $dir; make");
+    run("cp -r -T $dir $dest_dir/prodigal");
+}
+
 sub install_quast {
-    my $dir = 'quast-2.2';
+    my $dir = 'quast-2.3';
     my $file = "$dir.tar.gz";
     download($dir, $file, "https://downloads.sourceforge.net/project/quast");
     run("cp -r -T $dir $dest_dir/quast");
@@ -363,9 +382,9 @@ sub install_solexa {
 }
 
 sub install_spades {
-    my $dir = 'SPAdes-3.0.0';
+    my $dir = 'SPAdes-3.1.0';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.0.0');
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.1.0');
     chdir($dir);
     run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
     run("chmod 755 install/bin/spades.py");
@@ -385,6 +404,7 @@ sub check_gcc {
     my $info = `gcc --version |head -1`;
     my ($version) = $info =~ /(4[0-9.]+)/;
     if ($version < 4.7) {
+        die "gcc verion 4.7 or above required.\n" if ! `which get-apt 2>/dev/null`;
         run("add-apt-repository -y ppa:ubuntu-toolchain-r/test");
         # run("apt-get -q -y update");
         run("apt-get -y install gcc-4.7 g++-4.7");

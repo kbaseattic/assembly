@@ -1,7 +1,7 @@
 
 use strict;
 use Getopt::Long;
-use gjoseqlib;
+use assembly::gjoseqlib;
 
 my $usage = <<End_of_Usage;
 
@@ -27,9 +27,9 @@ if ($help) {
     exit 0;
 }
 
-my @seqs = read_fasta();
+my @seqs = gjoseqlib::read_fasta();
 @seqs = grep { length $_->[2] >= $minlen } @seqs;
 
-print_alignment_as_fasta(\@seqs);
+gjoseqlib::print_alignment_as_fasta(\@seqs);
 
 

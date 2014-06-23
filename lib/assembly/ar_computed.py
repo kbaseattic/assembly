@@ -35,6 +35,11 @@ def start(arast_server, config, num_threads, queue):
     print " [.] Starting Assembly Service Compute Node"    
     cparser = SafeConfigParser()
     cparser.read(config)
+    logging.getLogger('yapsy').setLevel(logging.WARNING)
+    logging.getLogger('yapsy').propagate = True
+    logging.getLogger('pika').propagate = True
+    logging.getLogger('pika').setLevel(logging.WARNING)
+
     arasturl =  cparser.get('assembly','arast_url')
     arastport = cparser.get('assembly','arast_port')
     if arast_server != '':

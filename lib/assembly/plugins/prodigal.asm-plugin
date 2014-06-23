@@ -1,0 +1,18 @@
+[Core]
+Name = prodigal
+Module = prodigal
+
+[Settings]
+short_name = pd
+executable = ../../bin/prodigal/prodigal
+filetypes = fasta,fa
+
+[Parameters]
+
+
+[Documentation]
+Author = Chris Bun
+Version = 1.0
+Description = Prodigal
+Stages = post-process
+References = 

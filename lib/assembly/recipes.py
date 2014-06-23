@@ -25,7 +25,7 @@ auto333 = """
 
 """
 
-super = """
+superduper = """
 (begin
  (define pp (bhammer READS))
  (define kval (get best_k (kmergenie READS)))
@@ -43,12 +43,31 @@ super = """
 auto = """
 (begin
  (define pp (bhammer READS))
- (define kval (get best_k (kmergenie READS)))
+ (define kval (get best_k (kmergenie pp)))
  (define vt (begin (setparam hash_length kval) (velvet pp)))
  (define sp (spades pp))
- (define allsort (sort (list sp vt) > :key (lambda (c) (get ale_score (ale c)))))
- (define gam (gam_ngs allsort))
- (define newsort (sort (list gam sp vt) > :key (lambda (c) (get ale_score (ale c)))))
- (tar (all_files (quast newsort) :name analysis))
+ (define id (idba pp))
+ (define toptwo (slice (sort (list id sp vt) > :key (lambda (c) (n50 c))) 0 2))
+ (define gam (gam_ngs toptwo))
+ (define newsort (sort (list (upload gam) (upload sp) (upload vt) (upload id)) > :key (lambda (c) (get ale_score (ale c)))))
+ (tar (all_files (quast newsort)) :name analysis))
+)
+"""
+
+
+tune_velvet = """
+(begin
+ (define pp (sga_preprocess READS))
+ (define bh (bhammer READS))
+ (define ppbh (bhammer pp))
+ (define kpp (get best_k (kmergenie pp)))
+ (define kbh (get best_k (kmergenie bh)))
+ (define kppbh (get best_k (kmergenie ppbh)))
+ (define k (get best_k (kmergenie READS)))
+ (define vtpp (begin (setparam hash_length kpp) (velvet pp)))
+ (define vtbh (begin (setparam hash_length kbh) (velvet bh)))
+ (define vtppbh (begin (setparam hash_length kppbh) (velvet ppbh)))
+ (define vt (begin (setparam hash_length k) (velvet READS)))
+ (tar (all_files (quast vt vtpp vtbh vtppbh)) :name analysis))
 )
 """

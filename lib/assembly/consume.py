@@ -148,6 +148,7 @@ class ArastConsumer:
         token = params['oauth_token']
         pipelines = params['pipeline']
         recipe = None
+        wasp_in = None
         try: ## In case legacy
             recipe = params['recipe']
             wasp_in = params['wasp']
@@ -199,7 +200,6 @@ class ArastConsumer:
                     'datapath': datapath,
                     'out_report' : self.out_report})
                     
-
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         self.job_list.append(job_data)
         self.start_time = time.time()
@@ -305,6 +305,7 @@ class ArastConsumer:
         return extract_file(downloaded)
 
     def fetch_job(self):
+
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host = self.arasturl))
         channel = connection.channel()
@@ -313,7 +314,6 @@ class ArastConsumer:
                                        exclusive=False,
                                        auto_delete=False,
                                        durable=True)
-
         logging.basicConfig(format=("%(asctime)s %s %(levelname)-8s %(message)s",proc().name))
         print proc().name, ' [*] Fetching job...'
 
@@ -348,7 +348,6 @@ class ArastConsumer:
 
     def start(self):
         self.fetch_job()
-
 
 ###### Legacy Support ######
 
@@ -604,4 +603,7 @@ class UpdateTimer(threading.Thread):
             elapsed_time = time.time() - self.start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
             self.meta.update_job(self.uid, 'computation_time', ftime)
-            time.sleep(self.interval)
+            if int(elapsed_time) < self.interval:
+                time.sleep(3)
+            else:
+                time.sleep(self.interval)

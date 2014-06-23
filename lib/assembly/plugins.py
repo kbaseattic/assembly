@@ -16,6 +16,8 @@ from yapsy.PluginManager import PluginManager
 from yapsy.IPluginLocator import IPluginLocator
 from threading  import Thread
 from Queue import Queue, Empty
+import traceback
+
 
 # A-Rast modules
 import assembly
@@ -41,10 +43,23 @@ class BasePlugin(object):
 
     def base_call(self, settings, job_data, manager, strict=False):
         """ Plugin wrapper """
+        ### This might be a recursive call, backup Plugin object attrs
+        ### !!! This won't work in parallel
+        try: 
+            backup = self._save()
+            logging.info('Previous instance found, backing up.')
+        except AttributeError: pass
+
         ### Compatibility
         self.init_settings(settings, job_data, manager)
         output = self.wasp_run()
         self.out_module.close()
+
+        #### If this was an internal plugin run, restore outer plugin logfile
+        try: 
+            self._restore(backup) 
+            logging.info('Restored Plugin Object self attributes')
+        except UnboundLocalError: pass
         return output
 
     def arast_popen(self, cmd_args, overrides=True, **kwargs):
@@ -84,7 +99,8 @@ class BasePlugin(object):
         if cmd_args[0].find('..') != -1 and not shell:
             cmd_args[0] = os.path.abspath(cmd_args[0])
         self.out_module.write("Command: {}\n".format(cmd_string))
-        self.out_report.write('Command: {}\n'.format(cmd_string))
+        try: self.out_report.write('Command: {}\n'.format(cmd_string))
+        except: print 'Could not write to report: {}'.format(cmd_string)
         m_start_time = time.time()
         print cmd_args
         try:
@@ -130,7 +146,8 @@ class BasePlugin(object):
                 e.returncode, e.output)
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
-        self.out_report.write("Process time: {}\n\n".format(m_ftime))
+        try: self.out_report.write('Command: {}\n'.format(m_ftime))
+        except: print 'Could not write to report: {}'.format(cmd_string)
 
     def is_urgent_output(self, line):
         """ 
@@ -211,7 +228,6 @@ class BasePlugin(object):
                 setattr(self, kv[0], abs)
             else:
                 setattr(self, kv[0], kv[1])
-        self.insert_info = self.get_insert_info(self.job_data['initial_reads'])
 
         #### Set custom parameters
         self.extra_params = []
@@ -222,7 +238,8 @@ class BasePlugin(object):
 
         #### Initialize Internal Wasp Engine ####
         plugin_data = copy.deepcopy(job_data)
-        plugin_data['out_report'] = self.out_module
+        out_internal = open('{}.{}'.format(self.out_module.name, self.name), 'w')
+        plugin_data['out_report'] = self.out_report
         self.plugin_engine = wasp.WaspEngine(self.pmanager, plugin_data)
 
         #### Get default outputs of last module and pass on persistent data
@@ -236,6 +253,8 @@ class BasePlugin(object):
                     all_sets.append(link['default_output']) # Single FileSet
                 elif type(link['default_output']) is list:
                     all_sets += [fileset for fileset in link['default_output']]
+                elif not link['default_output']:
+                    raise Exception('"{}" stage failed to produce any output.'.format(link['module']))
                 else:
                     raise Exception('Wasp Link Error')
             self.data = asmtypes.FileSetContainer(all_sets)
@@ -243,7 +262,19 @@ class BasePlugin(object):
             self.data = job_data.wasp_data()
         self.initial_data = job_data['initial_data']
                                              
+    def _save(self):
+        attrs = ['outpath', 'job_data', 'out_report', 'out_module', 'data']
+        saved = {'repr': self.__repr__()}
+        for attr in attrs:
+            saved[attr] = getattr(self, attr)
+        return saved
 
+    def _restore(self, data):
+        assert self.__repr__() == data['repr']
+        attrs = ['outpath', 'job_data', 'out_report', 'out_module', 'data']
+        for attr in attrs:
+            setattr(self, attr, data[attr])
+ 
     def linuxRam(self):
         """Returns the RAM of a linux system"""
         totalMemory = os.popen("free -m").readlines()[1].split()[1]
@@ -431,15 +462,15 @@ class BasePreprocessor(BasePlugin):
         #### Save and restore insert data, handle extra output
         orig_sets = copy.deepcopy(self.data.readsets)
         output = self.run()
-        if type(output['reads'][0]) is list:  ## Multiple Libraries
-            for i, readset in enumerate(output['reads']):
-                orig_sets[i].update_files(readset)
-                orig_sets[i]['name'] = '{}_reads'.format(self.name)
-                readsets = orig_sets
-        else:
-            orig_sets[0].update_files(output['reads'])
-            orig_sets[0]['name'] = '{}_reads'.format(self.name)
-            readsets = orig_sets
+        if output['reads']:
+            if type(output['reads'][0]) is list:  ## Multiple Libraries
+                for i, readset in enumerate(output['reads']):
+                    orig_sets[i].update_files(readset)
+                    orig_sets[i]['name'] = '{}_reads'.format(self.name)
+            else:
+                orig_sets[0].update_files(output['reads'])
+                orig_sets[0]['name'] = '{}_reads'.format(self.name)
+        readsets = orig_sets
         try:
             readsets.append(asmtypes.set_factory('single', output['extra'], 
                                                  name='{}_single'.format(self.name)))
@@ -629,8 +660,11 @@ class ModuleManager():
         #### Run
         job_data['wasp_chain'] = wlink
         output = plugin.plugin_object.base_call(settings, job_data, self)
-        wlink.insert_output(output, self.output_type(module),
+        ot = self.output_type(module)
+        wlink.insert_output(output, ot,
                             plugin.name)
+        if not wlink.output:
+            raise Exception('"{}" module failed to produce {}'.format(module, ot))
             
 
     def output_type(self, module):

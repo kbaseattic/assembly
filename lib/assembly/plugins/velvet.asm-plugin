@@ -8,9 +8,11 @@ bin_velvetg = ../../bin/velvetg
 bin_velveth = ../../bin/velveth
 filetypes = fasta,fa,fastq,fq
 hash_length = 29
+auto_insert = False
 
 [Parameters]
 hash_length = 29
+auto_insert = False
 
 [Documentation]
 Author = Chris Bun
