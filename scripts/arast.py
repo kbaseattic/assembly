@@ -258,7 +258,7 @@ def main():
 
         if args.command == "run":
             response = aclient.submit_job(payload)
-            print response
+            print 'Job ID: {}'.format(response)
         if args.command == "upload":
             response = aclient.submit_data(payload)
             arast_msg.update(json.loads(response))

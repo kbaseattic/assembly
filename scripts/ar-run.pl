@@ -48,16 +48,21 @@ if ($help) {
     exit 0;
 }
 
-# my $target = $ENV{HOME}. "/kb/assembly";
-# my $arast  = "ar_client/ar_client/ar_client.py";
-# system "$target/$arast run @ARGV";
-
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
+my $have_data;
 my $argv;
 for (@ARGV) {
     if (/ /) { $argv .= "\"$_\" " } else { $argv .= "$_ " }
+    $have_data = 1 if /(-f|--single|--pair|--data)/;
+}
+
+if (!$have_data) {
+    my @lines = <STDIN>;
+    my $line = pop @lines;
+    my ($data_id) = $line =~ /(\d+)/;
+    $argv .= "--data $data_id";
 }
 
 system "$arast run $argv";

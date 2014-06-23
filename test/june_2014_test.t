@@ -23,7 +23,7 @@ setup();
 my $testCount = 0;
 foreach my $testname (@tests) {
     my $test = "test_" . $testname;
-    print "\n> Testing $testname\n";
+    print "\n> Testing $testname...\n";
     if (!defined &$test) {
         print "Test routine doesn't exist: $test\n";
         next;
@@ -42,8 +42,25 @@ sub test_upload {
     my $lib = "--pair b99_1.fq b99_2.fq";
     my $cmd = "ar-upload $arg_url $lib";
     my $out = sysout($cmd);
+    like($out, qr/\d+/, whoami(). ": found data ID"); $testCount++;
+    text_to_file($out, "data_id");
 }
 
+sub test_run_auto {
+    my $lib = "--pair b99_1.fq b99_2.fq";
+    my $cmd = "ar-run $arg_url $lib";
+    my $out = sysout($cmd);
+    like($out, qr/\d+/, whoami(). ": found job ID"); $testCount++;
+    text_to_file($out, "job_id");
+}
+
+sub test_run_from_stdin {       
+    -s "data_id" or test_upload();
+    my $cmd = "cat data_id | ar-run $arg_url -a velvet spades";
+    my $out = sysout($cmd);
+    like($out, qr/\d+/, whoami(). ": found job ID"); $testCount++;
+    text_to_file($out, "job_id");
+}
 
 sub test_setup {
     test_login();
@@ -128,9 +145,15 @@ sub sysout {
     return $out;
 }
 
+sub text_to_file {
+    my ($text, $file) = @_;
+    open(F, ">$file") or die "Could not open >$file";
+    print F $text;
+    close(F);
+}
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
 
-sub abbrev_cmd { length $_[0] < 50 ? $_[0] : substr($_[0], 0, 50)."..." }
+sub abbrev_cmd { length $_[0] < 60 ? $_[0] : substr($_[0], 0, 60)."..." }
 
 sub whoami { (caller(1))[3] }
