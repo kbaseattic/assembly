@@ -23,7 +23,7 @@ import assembly.config as conf
 from assembly.auth_token import *
 import traceback
 
-my_version = '0.3.9.3'
+my_version = '0.3.9.4'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -311,8 +311,8 @@ def main():
         else:
             try:
                 aclient.get_job_data(job_id=args.job_id[0], outdir=args.outdir)
-            except:
-                print 'Invalid job id'
+            except ValueError:
+                print 'Invalid job id: {}'.format(args.job_id[0])
 
     elif args.command == 'avail':
         try:

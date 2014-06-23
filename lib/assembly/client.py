@@ -37,14 +37,15 @@ class Client:
         # Get node id
         res = requests.get('http://{}/user/{}/job/{}/shock_node'.format(
                 self.url, self.user, job_id), headers=self.headers)
+        if res.status_code == 403:
+            raise ValueError('Invalid Job Id')
         # Download files
         try:
             nodes_map = json.loads(res.text)
             for node_id in nodes_map.values():
                 self.shock.download_file(node_id, outdir=outdir)
-        except:
-            print traceback.format_tb(sys.exc_info()[2])
-            print sys.exc_info()
+        except Exception as e:
+            print e
             raise Exception("Error retrieving results")
         return 
 
