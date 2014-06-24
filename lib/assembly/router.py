@@ -130,11 +130,12 @@ def register_data(body):
     if not check_valid_client(body):
         return "Client too old, please upgrade"
     client_params = json.loads(body) #dict of params
-    keep = ['assembly_data', 'client', 'ARASTUSER', 'message', 'version']
+    keep = ['assembly_data', 'client', 'ARASTUSER', 'message', 'version', 'kbase_assembly_input']
     data_info = {}
     for key in keep:
         try: data_info[key] = client_params[key]
         except: pass
+    logging.info('Register Data: {}'.format(data_info))
     return metadata.insert_data(data_info['ARASTUSER'], data_info)
 
 def analyze_data(body): #run fastqc
