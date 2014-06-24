@@ -1,4 +1,3 @@
-import bisect
 import collections
 import datetime
 import json
@@ -135,11 +134,10 @@ class Client:
         for r in rows: pt.add_row(r)
         return pt.get_string()
 
-    def get_data_json(self, data_id=None):
-        li = self.get_data_list()
-        keys = [e["data_id"] for e in li]
-        data = li[bisect.bisect_left(keys, data_id)]
-        return json.dumps(data)
+    def get_data_json(self, data_id):
+        url = 'http://{}/user/{}/data/{}'.format(self.url, self.user, data_id)
+        r = requests.get(url, headers=self.headers)
+        return r.content
 
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
