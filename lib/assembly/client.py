@@ -7,6 +7,7 @@ import subprocess
 import os
 import time
 import re
+from prettytable import PrettyTable
 
 from shock import Shock
 
@@ -119,15 +120,20 @@ class Client:
         li.sort(key=lambda e: e["data_id"])
         return li
 
-    def get_data_list_table(self, stat_n=15):
+    def get_data_list_table(self, stat_n=10):
         li = self.get_data_list()
         li = li[-stat_n:]
-        lines = []
-        
+        rows = []
         for data in li:
-            lines += assembly_data_to_lines(data)
-        
-        return json.dumps(lines)
+            data_id = data.get("data_id", "")
+            message = data.get("message", "")
+            data_rows = assembly_data_to_rows(data)
+            data_rows = [ [''] * 2 + r for r in data_rows]
+            rows += [[data_id, message] + [''] * 2]
+            rows += data_rows
+        pt = PrettyTable(["Data ID", "Description", "Type", "Files"]);
+        for r in rows: pt.add_row(r)
+        return pt.get_string()
 
     def get_data_json(self, data_id=None):
         li = self.get_data_list()
@@ -194,33 +200,25 @@ class AssemblyData(dict):
 
 
 ##### Helper methods #####
-def assembly_data_to_lines(data):
-    lines = []
+def assembly_data_to_rows(data):
+    rows = []
     data_key = "assembly_data"
     lib_key  = "file_sets"
     info_key = "file_infos"
 
-    if data_key in data:
-        data = data[data_key]
+    if data_key in data: data = data[data_key]
 
     for lib in data.get(lib_key, []):
-        json.dumps(lib)
         libtype = lib.get("type", "unknown")
         files = []
         for info in lib.get(info_key, []):
             filename = info.get("filename", "")
-            filesize = info.get("filesize", -1)
+            filesize = info.get("filesize", 0)
             filesize = sizeof_fmt(filesize)
             files.append("%s (%s)" % (filename, filesize))
-        lines.append(", ".join([libtype] + files))
+        rows.append([libtype, " ".join(files)])
     
-    return lines
-
-    # if lib_key in data:
-    #     libs = data[lib_key]
-    #     for lib in libs:
-    #         if info_key in lib[info_key]:
-                
+    return rows
 
 def sizeof_fmt(num):
     for x in ['bytes','KB','MB','GB']:
