@@ -124,9 +124,10 @@ class Client:
         li = li[-stat_n:]
         lines = []
         
-        assembly_data_to_lines(li)
+        for data in li:
+            lines += assembly_data_to_lines(data)
         
-        return json.dumps(data)
+        return json.dumps(lines)
 
     def get_data_json(self, data_id=None):
         li = self.get_data_list()
@@ -203,14 +204,15 @@ def assembly_data_to_lines(data):
         data = data[data_key]
 
     for lib in data.get(lib_key, []):
+        json.dumps(lib)
         libtype = lib.get("type", "unknown")
         files = []
         for info in lib.get(info_key, []):
             filename = info.get("filename", "")
             filesize = info.get("filesize", -1)
             filesize = sizeof_fmt(filesize)
-            files.append("%s (%s" % (filename, filesize))
-        lines.append(", ".join([libtype, files]))
+            files.append("%s (%s)" % (filename, filesize))
+        lines.append(", ".join([libtype] + files))
     
     return lines
 

@@ -273,7 +273,7 @@ def main():
 
     elif args.command == 'stat':
         if args.list_data:
-            response = aclient.get_data_info()
+            response = aclient.get_data_list_table()
             print response
             print "\n"
             sys.exit()
