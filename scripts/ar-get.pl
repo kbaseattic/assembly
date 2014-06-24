@@ -46,14 +46,10 @@ if (!$jobid) {
 
 $jobid or die $usage;
 
-# my $target = $ENV{HOME}. "/kb/assembly";
-# my $arast  = "ar_client/ar_client/ar_client.py";
-# system "$target/$arast get @ARGV";
-
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-system "$arast get -j $jobid @ARGV";
+!system "$arast get -j $jobid @ARGV" or die $!;
                     
 if ($ENV{KB_RUNNING_IN_IRIS}) {
     my $dir = "AR$jobid";

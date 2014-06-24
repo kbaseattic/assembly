@@ -27,5 +27,5 @@ if ($help) {
 # my $arast  = "ar_client/ar_client/ar_client.py";
 # system "$target/$arast run @ARGV";
 
-system "arast logout @ARGV";
+!system "arast logout @ARGV" or die $!;
 

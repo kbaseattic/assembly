@@ -32,4 +32,3 @@ my @seqs = gjoseqlib::read_fasta();
 
 gjoseqlib::print_alignment_as_fasta(\@seqs);
 
-

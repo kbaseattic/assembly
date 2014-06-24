@@ -6,6 +6,7 @@ import subprocess
 import os
 import time
 import re
+from prettytable import PrettyTable
 
 from shock import Shock
 
@@ -111,6 +112,33 @@ class Client:
         r = requests.get(url, headers=self.headers)
         return r.content
 
+    def get_data_list(self):
+        url = 'http://{}/user/{}/data'.format(self.url, self.user)
+        r = requests.get(url, headers=self.headers)
+        li = json.loads(r.content)
+        li.sort(key=lambda e: e["data_id"])
+        return li
+
+    def get_data_list_table(self, stat_n=10):
+        li = self.get_data_list()
+        li = li[-stat_n:]
+        rows = []
+        for data in li:
+            data_id = data.get("data_id", "")
+            message = data.get("message", "")
+            data_rows = assembly_data_to_rows(data)
+            data_rows = [ [''] * 2 + r for r in data_rows]
+            rows += [[data_id, message] + [''] * 2]
+            rows += data_rows
+        pt = PrettyTable(["Data ID", "Description", "Type", "Files"]);
+        for r in rows: pt.add_row(r)
+        return pt.get_string()
+
+    def get_data_json(self, data_id):
+        url = 'http://{}/user/{}/data/{}'.format(self.url, self.user, data_id)
+        r = requests.get(url, headers=self.headers)
+        return r.content
+
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
         r = requests.get(url, headers=self.headers)
@@ -167,3 +195,32 @@ class AssemblyData(dict):
 
     def add_set(self, file_set):
         self['file_sets'].append(file_set)
+
+
+##### Helper methods #####
+def assembly_data_to_rows(data):
+    rows = []
+    data_key = "assembly_data"
+    lib_key  = "file_sets"
+    info_key = "file_infos"
+
+    if data_key in data: data = data[data_key]
+
+    for lib in data.get(lib_key, []):
+        libtype = lib.get("type", "unknown")
+        files = []
+        for info in lib.get(info_key, []):
+            filename = info.get("filename", "")
+            filesize = info.get("filesize", 0)
+            filesize = sizeof_fmt(filesize)
+            files.append("%s (%s)" % (filename, filesize))
+        rows.append([libtype, " ".join(files)])
+    
+    return rows
+
+def sizeof_fmt(num):
+    for x in ['bytes','KB','MB','GB']:
+        if num < 1024.0 and num > -1024.0:
+            return "%3.1f%s" % (num, x)
+        num /= 1024.0
+    return "%3.1f%s" % (num, 'TB')    
