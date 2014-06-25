@@ -7,13 +7,14 @@ import client
 
 #### Single Files #####
 class FileInfo(dict):
-    def __init__(self, filename, shock_url=None, shock_id=None, name=None,
-                 create_time=None, metadata=None, keep_name=False, *args):
+    def __init__(self, filename=None, shock_url=None, shock_id=None, name=None,
+                 create_time=None, metadata=None, direct_url=None, keep_name=False, *args):
         dict.__init__(self, *args)
         if filename:
             assert os.path.exists(filename)
             filesize = os.path.getsize(filename)
-        self.update({'shock_url': shock_url,
+        self.update({'direct_url': direct_url,
+                     'shock_url': shock_url,
                      'shock_id' : shock_id,
                      'filesize': filesize,
                      'filename': os.path.basename(filename),
@@ -23,7 +24,6 @@ class FileInfo(dict):
                      'metadata': metadata})
         self.id = uuid.uuid4()
 
-        #TODO Auto populate filesize
         
 ##### Set of Files ######
 class FileSet(dict):
