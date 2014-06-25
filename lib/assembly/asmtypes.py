@@ -3,28 +3,39 @@ import uuid
 
 ### arast ###
 import client
+import assembly as utils
 
 
 #### Single Files #####
 class FileInfo(dict):
-    def __init__(self, filename, shock_url=None, shock_id=None, name=None,
-                 create_time=None, metadata=None, keep_name=False, *args):
+    def __init__(self, filename=None, shock_url=None, shock_id=None, name=None,
+                 create_time=None, metadata=None, direct_url=None, keep_name=False, *args):
         dict.__init__(self, *args)
         if filename:
             assert os.path.exists(filename)
             filesize = os.path.getsize(filename)
-        self.update({'shock_url': shock_url,
+            fname = os.path.basename(filename)
+        else: 
+            filesize = None
+            fname = None
+        self.update({'direct_url': direct_url,
+                     'shock_url': shock_url,
                      'shock_id' : shock_id,
                      'filesize': filesize,
-                     'filename': os.path.basename(filename),
+                     'filename': fname,
                      'local_file': filename,
                      'keep_name': keep_name,
                      'create_time': create_time,
                      'metadata': metadata})
         self.id = uuid.uuid4()
 
-        #TODO Auto populate filesize
-        
+    def fetch_file(self, outdir=None):
+        """ If file has a direct_url, download the file"""
+        downloaded = utils.curl_download_url(self.direct_url, outdir=outdir)
+        self.update({'filesize': os.path.getsize(downloaded),
+                     'filename': os.path.basename(self.direct_url),
+                     'local_file': downloaded})
+
 ##### Set of Files ######
 class FileSet(dict):
     def __init__(self, set_type, file_infos, 
@@ -55,7 +66,6 @@ class FileSet(dict):
     @property
     def type(self):
         return self['type'] or None
-
 
     def update_files(self, files):
         self['file_infos'] = [FileInfo(f) for f in files]

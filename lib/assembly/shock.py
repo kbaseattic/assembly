@@ -55,15 +55,8 @@ def get(url, user='assembly', password='service1234'):
 
 
 def curl_download_file(url, node_id, token, outdir=None):
-    print 'downloading'
-    # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
-    #        '-X', 'GET', '{}/node/{}'.format(url, node_id)]
-
     cmd = ['curl',
            '-X', 'GET', '{}/node/{}'.format(url, node_id)]
-
-    print cmd
-
     r = subprocess.check_output(cmd)
     filename = json.loads(r)['data']['file']['name']
     if outdir:
@@ -76,12 +69,8 @@ def curl_download_file(url, node_id, token, outdir=None):
     else:
         outdir = os.getcwd()
     d_url = '{}/node/{}?download'.format(url, node_id)
-    # cmd = ['curl', '-H', 'Authorization: Globus-Goauthtoken {} '.format(token),
-    #        '-o', filename, d_url]
-
     cmd = ['curl', 
            '-o', filename, d_url]
-
     p = subprocess.Popen(cmd, cwd=outdir)
     p.wait()
     print "File downloaded: {}/{}".format(outdir, filename)
