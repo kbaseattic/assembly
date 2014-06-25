@@ -152,7 +152,7 @@ class Client:
     def get_job_report(self, job_id):
         url = 'http://{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
         r = requests.get(url, headers=self.headers)
-        try:
+        # try:
             
         return r.content
 
