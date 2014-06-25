@@ -126,14 +126,26 @@ class ArastConsumer:
         download_url = 'http://{}'.format(self.shockurl)
         file_sets = params['assembly_data']['file_sets']
         for file_set in file_sets:
+            if file_set['type'] == 'paired_url':
+                file_set['type'] = 'paired'
+            elif file_set['type'] == 'single_url':
+                file_set['type'] = 'single'
             file_set['files'] = [] #legacy
             for file_info in file_set['file_infos']:
-                local_file = os.path.join(filepath, file_info['filename'])
-                if os.path.exists(local_file):
-                    logging.info("Requested data exists on node: {}".format(local_file))
-                else:
-                    local_file = self.download(download_url, user, token, 
-                                               file_info['shock_id'], filepath)
+                #### File is stored on Shock
+                if file_info['filename']:
+                    local_file = os.path.join(filepath, file_info['filename'])
+                    if os.path.exists(local_file):
+                        logging.info("Requested data exists on node: {}".format(local_file))
+                    else:
+                        local_file = self.download_shock(download_url, user, token, 
+                                                   file_info['shock_id'], filepath)
+                elif file_info['direct_url']:
+                    local_file = os.path.join(filepath, os.path.basename(file_info['direct_url']))
+                    if os.path.exists(local_file):
+                        logging.info("Requested data exists on node: {}".format(local_file))
+                    else:
+                        local_file = self.download_url(file_info['direct_url'], filepath)
                 file_info['local_file'] = local_file
                 file_set['files'].append(local_file) #legacy
             all_files.append(file_set)
@@ -299,13 +311,16 @@ class ArastConsumer:
             res = sclient.upload_misc(file, filetype)
         return res
 
-    def download(self, url, user, token, node_id, outdir):
+    def download_shock(self, url, user, token, node_id, outdir):
         sclient = shock.Shock(url, user, token)
         downloaded = sclient.curl_download_file(node_id, outdir=outdir)
         return extract_file(downloaded)
 
-    def fetch_job(self):
+    def download_url(self, url, outdir):
+        downloaded = asm.curl_download_url(url, outdir=outdir)
+        return extract_file(downloaded)
 
+    def fetch_job(self):
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host = self.arasturl))
         channel = connection.channel()
@@ -455,13 +470,13 @@ class ArastConsumer:
                     for word in l:
                         if is_filename(word):
                             baseword = os.path.basename(word)
-                            dl = self.download(url, user, token, 
+                            dl = self.download_shock(url, user, token, 
                                                ids[files.index(baseword)], filepath)
                             if shock.parse_handle(dl): #Shock handle, get real data
                                 logging.info('Found shock handle, getting real data...')
                                 s_addr, s_id = shock.parse_handle(dl)
                                 s_url = 'http://{}'.format(s_addr)
-                                real_file = self.download(s_url, user, token, 
+                                real_file = self.download_shock(s_url, user, token, 
                                                           s_id, filepath)
                                 filedict['files'].append(real_file)
                             else:
@@ -488,13 +503,13 @@ class ArastConsumer:
 
                         if is_filename(word):
                             baseword = os.path.basename(word)
-                            dl = self.download(url, user, token, 
+                            dl = self.download_shock(url, user, token, 
                                                ids[files.index(baseword)], filepath)
                             if shock.parse_handle(dl): #Shock handle, get real data
                                 logging.info('Found shock handle, getting real data...')
                                 s_addr, s_id = shock.parse_handle(dl)
                                 s_url = 'http://{}'.format(s_addr)
-                                real_file = self.download(s_url, user, token, 
+                                real_file = self.download_shock(s_url, user, token, 
                                                           s_id, filepath)
                                 filedict['files'].append(real_file)
                             else:
@@ -521,13 +536,13 @@ class ArastConsumer:
 
                         if is_filename(word):
                             baseword = os.path.basename(word)
-                            dl = self.download(url, user, token, 
+                            dl = self.download_shock(url, user, token, 
                                                ids[files.index(baseword)], filepath)
                             if shock.parse_handle(dl): #Shock handle, get real data
                                 logging.info('Found shock handle, getting real data...')
                                 s_addr, s_id = shock.parse_handle(dl)
                                 s_url = 'http://{}'.format(s_addr)
-                                real_file = self.download(s_url, user, token, 
+                                real_file = self.download_shock(s_url, user, token, 
                                                           s_id, filepath)
                                 filedict['files'].append(real_file)
                             else:
