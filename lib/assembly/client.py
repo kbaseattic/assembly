@@ -140,6 +140,20 @@ class Client:
         r = requests.get(url, headers=self.headers)
         return r.content
 
+    def wait_for_job(self, job_id):
+        stat = self.get_job_status(1, job_id)
+        while not re.search('(complete|fail)', stat, re.IGNORECASE):
+            time.sleep(5)
+            stat = self.get_job_status(1, job_id)
+        return stat
+
+    def get_job_report(self, job_id):
+        url = 'http://{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
+        r = requests.get(url, headers=self.headers)
+        try:
+            
+        return r.content
+
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
         r = requests.get(url, headers=self.headers)
@@ -156,13 +170,6 @@ class Client:
 
     def get_config(self):
         return requests.get('http://{}/admin/system/config'.format(self.url)).content
-
-    def wait_for_job(self, job_id):
-        stat = self.get_job_status(1, job_id)
-        while not re.search('(complete|fail)', stat, re.IGNORECASE):
-            time.sleep(5)
-            stat = self.get_job_status(1, job_id)
-        return stat
 
 
 ##### ARAST JSON SPEC METHODS #####

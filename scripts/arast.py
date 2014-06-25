@@ -81,6 +81,7 @@ p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
 p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, required=True, help="specify which job data to get")
 p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=False, const=True, help="Get assemblies only")
+p_get.add_argument("-r", "--report", action="store_true", help="Print assembly report to stdout")
 p_get.add_argument("--stdout", action="store_true", help="Print assembly to stdout")
 p_get.add_argument("-o", "--outdir", action="store", help="Download to specified dir")
 p_get.add_argument("-w", "--wait", action="store_true", help="Wait until job is done")
@@ -314,6 +315,11 @@ def main():
             if 'FAIL' in stat:
                 print stat
                 sys.exit()
+
+        if args.report:
+            report = aclient.get_job_report(args.job_id[0])
+            print report
+            sys.exit()
 
         if args.assembly:
             try:

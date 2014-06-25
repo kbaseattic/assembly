@@ -67,6 +67,11 @@ sub test_stat_list_data {
     my $out = sysout($cmd);
 }
 
+sub test_get_report {
+    my $cmd = "ar-stat $arg_url --report";
+    
+}
+
 sub test_setup {
     test_login();
     test_download_simple_file();
