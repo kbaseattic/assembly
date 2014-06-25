@@ -6,6 +6,7 @@ import subprocess
 import os
 import time
 import re
+from kbase import typespec_to_assembly_data as kb_to_asm
 from prettytable import PrettyTable
 
 from shock import Shock
@@ -200,20 +201,23 @@ class AssemblyData(dict):
 ##### Helper methods #####
 def assembly_data_to_rows(data):
     rows = []
-    data_key = "assembly_data"
-    lib_key  = "file_sets"
-    info_key = "file_infos"
-
+    data_key  = "assembly_data"
+    kbase_key = "kbase_assembly_input"
+    lib_key   = "file_sets"
+    info_key  = "file_infos"
+    
     if data_key in data: data = data[data_key]
+    else:
+        if kbase_key in data: data = kb_to_asm(data[kbase_key])
 
     for lib in data.get(lib_key, []):
         libtype = lib.get("type", "unknown")
         files = []
         for info in lib.get(info_key, []):
             filename = info.get("filename", "")
-            filesize = info.get("filesize", 0)
-            filesize = sizeof_fmt(filesize)
-            files.append("%s (%s)" % (filename, filesize))
+            filesize = info.get("filesize", None)
+            filesize = " (%s)" % sizeof_fmt(filesize) if filesize else ""
+            files.append("%s%s" % (filename, filesize))
         rows.append([libtype, " ".join(files)])
     
     return rows
