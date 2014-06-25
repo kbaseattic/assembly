@@ -3,6 +3,7 @@ import uuid
 
 ### arast ###
 import client
+import assembly as utils
 
 
 #### Single Files #####
@@ -28,7 +29,13 @@ class FileInfo(dict):
                      'metadata': metadata})
         self.id = uuid.uuid4()
 
-        
+    def fetch_file(self, outdir=None):
+        """ If file has a direct_url, download the file"""
+        downloaded = utils.curl_download_url(self.direct_url, outdir=outdir)
+        self.update({'filesize': os.path.getsize(downloaded),
+                     'filename': os.path.basename(self.direct_url),
+                     'local_file': downloaded})
+
 ##### Set of Files ######
 class FileSet(dict):
     def __init__(self, set_type, file_infos, 
@@ -59,7 +66,6 @@ class FileSet(dict):
     @property
     def type(self):
         return self['type'] or None
-
 
     def update_files(self, files):
         self['file_infos'] = [FileInfo(f) for f in files]
