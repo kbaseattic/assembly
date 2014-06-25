@@ -141,87 +141,6 @@ def get_quala(directory):
                    if re.search(r'\.qa$|\.quala$', file, re.IGNORECASE) is not None]
     return fastq_files
 
-def read_config():
-    pass
-
-def run_bwa(data_dir, ref_name, read_files, prefix):
-    """ Ex: run_bwa(velvet_data, 'contigs.fa', reads_list, 'velvet') """
-    bwa_exec = 'bwa'
-    samtools_exec = 'samtools'
-    tmp_files = []
-
-    ref_file = data_dir + ref_name
-
-    # Run the index on reference
-    bwa_args = [bwa_exec, 'index']
-    bwa_args.append(ref_file)
-    logging.info(bwa_args)
-    p_index = subprocess.Popen(bwa_args)
-    p_index.wait()
-
-    # Align reads to reference
-    bwa_args = [bwa_exec, 'aln']
-    bwa_args.append(ref_file)
-
-    if len(read_files) > 1:
-        # Concatenate read files
-        reads = data_dir + 'reads.fa'
-        destination = open(reads,'wb')
-        for rf in read_files:
-            logging.info("Concatenating read file: %s", rf)
-            shutil.copyfileobj(open(rf,'rb'), destination)
-        destination.close()
-        tmp_files.append(reads)
-    else:
-        reads = read_files[0]
-    bwa_args.append(reads)
-    
-
-    aln_out = data_dir + prefix
-    aln_out += '_aln.sai'
-    aln_outbuffer = open(aln_out, 'wb')
-    tmp_files.append(aln_out)
-    bwa_args.append(aln_out)
-    logging.info(bwa_args)
-    p_aln = subprocess.Popen(bwa_args, stdout=aln_outbuffer)
-    p_aln.wait()
-    aln_outbuffer.close()
-
-    # Create Sam file
-    #bwa samse $ref $dir/aln-$refX$reads.sai $reads > $dir/aln-$refX$reads.sam
-    bwa_args = [bwa_exec, 'samse', ref_file, aln_out, reads]
-    sam_out = data_dir + prefix
-    sam_out += '_aln.sam'
-    sam_outbuffer = open(sam_out, 'wb')
-    tmp_files.append(sam_out)
-    bwa_args.append(sam_out)
-    logging.info(bwa_args)
-    p_sam = subprocess.Popen(bwa_args, stdout=sam_outbuffer)
-    p_sam.wait()
-    sam_outbuffer.close()
-
-    # Create bam file
-    # samtools view -S -b -o $dir/aln-$refX$reads.bam $dir/aln-$refX$reads.sam
-    samtools_args = [samtools_exec, 'view', '-S', '-b', '-o']
-    bam_out = data_dir + prefix
-    bam_out += '_aln.bam'
-    bam_outbuffer = open(bam_out, 'wb')
-    samtools_args.append(bam_out)
-    samtools_args.append(sam_out)
-
-    logging.info(samtools_args)
-    p_bam = subprocess.Popen(samtools_args, stdout=bam_outbuffer)
-    p_bam.wait()
-    bam_outbuffer.close()
-
-    for temp in tmp_files:
-        try:
-            os.remove(temp)
-        except:
-            logging.info("Could not remove %s" % temp)
-
-    return bam_out
-
 def get_qual_encoding(file):
     f = open(file, 'r')
     while True:
@@ -260,6 +179,18 @@ def arast_reads(filelist):
         filedicts.append({'type':'single', 'files':[f]})
     return filedicts
 
+
+def curl_download_url(url, outdir=None):
+    if outdir:
+        try: os.makedirs(outdir)
+        except OSError: pass
+    else: outdir = os.getcwd()
+    p = subprocess.Popen('curl -O {}'.format(url).split(), cwd=outdir)
+    p.wait()
+    downloaded = os.path.join(outdir, os.path.basename(url))
+    if os.path.exists(downloaded):
+        print('File Downloaded:', downloaded)
+        return downloaded
 
 parser = SafeConfigParser()
 #parser.read('arast.conf')
