@@ -9,7 +9,7 @@ import re
 from prettytable import PrettyTable
 
 from shock import Shock
-
+import asmtypes
 #Debug
 import sys
 import traceback
@@ -90,8 +90,10 @@ class Client:
     def upload_data_file_info(self, filename, curl=False):
         """ Returns FileInfo Object """
         res = self.shock.upload_reads(filename, curl=curl)
-        return FileInfo(self.shockurl, res['data']['id'], os.path.getsize(filename),
-                            os.path.basename(filename), str(datetime.datetime.utcnow()))
+        return asmtypes.FileInfo(filename, shock_url=self.shockurl, shock_id=res['data']['id'],
+                                 create_time=str(datetime.datetime.utcnow()))
+        # return FileInfo(self.shockurl, res['data']['id'], os.path.getsize(filename),
+        #                     os.path.basename(filename), str(datetime.datetime.utcnow()))
 
     def submit_job(self, data):
         url = 'http://{}/user/{}/job/new'.format(self.url, self.user)
@@ -164,29 +166,7 @@ class Client:
         return stat
 
 
-##### ARAST JSON SPEC METHODS #####
-
-class FileInfo(dict):
-    def __init__(self, shock_url, shock_id, filesize, filename, create_time, metadata=None, *args):
-        dict.__init__(self, *args)
-        self.update({'shock_url': shock_url,
-                     'shock_id' : shock_id,
-                     'filesize': filesize,
-                     'filename': filename,
-                     'create_time': create_time,
-                     'metadata': metadata})
-
-class FileSet(dict):
-    def __init__(self, set_type, file_infos, 
-                 **kwargs):
-        dict.__init__(self, **kwargs)
-        self.update({'type': set_type,
-                     'file_infos': []})
-        if type(file_infos) is list:
-            for f in file_infos:
-                self['file_infos'].append(f)
-        else:
-            self['file_infos'] = [file_infos]
+##### ARAST JSON SPEC CLASSES #####
 
 class AssemblyData(dict):
     def __init__(self, *args):
