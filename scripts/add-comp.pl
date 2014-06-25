@@ -43,7 +43,6 @@ Compute server components:
       quast        - QUAST assembly evaluator (v2.3)
       ray          - Ray assembler (git)
       reapr        - REAPR reference-free evaluator (v1.0.17)
-      screed       - Screed assembly statistics library (git)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
       spades       - SPAdes assembler (v3.1.0)
@@ -64,7 +63,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr screed seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet); 
 my @special_comps = qw (discovar pacbio jgi_rqc);
 
 my @all_comps = (@regular_comps, @special_comps);
@@ -337,17 +336,6 @@ sub install_reapr {
     download($dir, $file, "ftp://ftp.sanger.ac.uk/pub4/resources/software/reapr");
     run("cd $dir; ./install.sh");
     run("cp -r -T $dir $dest_dir/reapr");
-}
-
-sub install_screed {
-    # screed is a python library; check if it exists
-    my $info = `pydoc screed`;
-    if ($info =~ m|screed/__init__\.py|) {
-        print "Found component screed, skipping...\n"; 
-        return;
-    }
-    git('git://github.com/ged-lab/screed.git');
-    run("cd screed; python setup.py install");
 }
 
 sub install_seqtk {

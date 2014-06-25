@@ -392,6 +392,12 @@ class BasePlugin(object):
         stdev = int(float(re.split('\=|\s', results)[-2]))
         logging.info('Estimated Insert Length: {}'.format(insert_size))
         return insert_size, stdev
+
+    def calculate_genome_size(self, fasta):
+        s = open(fasta).read()
+        s = re.sub(r'>[^\n\r]*', '', s)
+        s = re.sub(r'\s+', '', s)
+        return len(s)
     
 class BaseAssembler(BasePlugin):
     """

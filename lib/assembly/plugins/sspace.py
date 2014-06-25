@@ -4,7 +4,6 @@ import math
 import os
 import subprocess
 from plugins import BaseScaffolder
-from vendor import assemstats2 as astats
 from yapsy.IPlugin import IPlugin
 
 class SspaceScaffolder(BaseScaffolder, IPlugin):
@@ -31,7 +30,7 @@ class SspaceScaffolder(BaseScaffolder, IPlugin):
         except:
             insert_size, _ = self.estimate_insert_stdev(contig_file, read_files)
             
-        genome_size = sum(astats.getLens(contig_file))
+        genome_size = self.calculate_genome_size(contig_file)
         ## Min overlap for extension, decision based on A5
         if  self.m == '-1':
 
