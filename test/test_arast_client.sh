@@ -2,7 +2,7 @@
 
 set -e
 
-# export ARASTURL=140.221.84.124
+# export ARAST_URL=140.221.84.124
 export PATH=/kb/deployment/bin:$PATH
 
 TEST_DIR="test_${$}"
@@ -28,7 +28,7 @@ message "Login with Tester's ID"
 ar-login
 
 message "Check queue status"
-# arast -s $ARASTURL stat
+# arast -s $ARAST_URL stat
 ar-stat
 
 mkdir -p tmpdir

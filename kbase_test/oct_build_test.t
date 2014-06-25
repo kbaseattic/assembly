@@ -3,7 +3,7 @@ use strict vars;
 use warnings;
 use Test::More;
 
-$ENV{ARASTURL}      = "140.221.84.124";
+$ENV{ARAST_URL}      = "140.221.84.124";
 $ENV{KB_DEPLOYMENT} = "/kb/deployment" unless defined $ENV{KB_DEPLOYMENT};
 $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
 
@@ -37,11 +37,11 @@ foreach my $file_inputs (@files)
 	print "Performing Assembler tests for $assembler \n";
 	my $job_id = run($assembler,$file_inputs);
 	$testCount++;
-	stat_try($ENV{ARASTURL});
+	stat_try($ENV{ARAST_URL});
 	$testCount++;
 	get($job_id);
 	$testCount++;
-	stat_try($ENV{ARASTURL});
+	stat_try($ENV{ARAST_URL});
 	$testCount++;
 	my $file_name = "job".$job_id."_".$assembler.".tar";
         print "Moving $file_name to /mnt\n"; 
@@ -60,7 +60,7 @@ sub run {
     my $assembler = shift;
     my $file_inputs = shift;
     my $jobid;
-    my $command = "arast -s $ENV{ARASTURL} run -a $assembler -f $file_inputs --bwa -m \"$assembler run command on $file_inputs\"";
+    my $command = "arast -s $ENV{ARAST_URL} run -a $assembler -f $file_inputs --bwa -m \"$assembler run command on $file_inputs\"";
     eval {$jobid = `$command` or die $!;};
     ok($? == 0, (caller(0))[3] . " jobid: $jobid");
     diag("unable to run $command") if $@;
@@ -82,14 +82,14 @@ sub get {
     my $done;
     print "Waiting for job $jobid to complete.";
     while (!$done) {
-	my $stat = `arast -s $ENV{ARASTURL} stat -j $jobid`;
+	my $stat = `arast -s $ENV{ARAST_URL} stat -j $jobid`;
 	$done = 1 if $stat =~ /complete/;
 	print ".";
 	sleep 10;
     }
     print " [done]\n";
     
-    my $command = "arast -s $ENV{ARASTURL} get -j $jobid";
+    my $command = "arast -s $ENV{ARAST_URL} get -j $jobid";
     eval {!system($command) or die $!;};
     ok(!$@, (caller(0))[3]);
     diag("unable to run $command") if $@;

@@ -9,8 +9,8 @@ use Test::More;
 use Data::Dumper;
 use English;
 
-my $arg_url   = "-s $ENV{ARASTURL}"   if $ENV{ARASTURL};   # default: 140.221.84.124
-my $arg_queue = "-q $ENV{ARASTQUEUE}" if $ENV{ARASTQUEUE};
+my $arg_url   = "-s $ENV{ARAST_URL}"   if $ENV{ARAST_URL};   # default: 140.221.84.124
+my $arg_queue = "-q $ENV{ARAST_QUEUE}" if $ENV{ARAST_QUEUE};
 
 $ENV{KB_DEPLOYMENT} ||= "/kb/deployment";
 $ENV{PATH}            = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
