@@ -18,12 +18,13 @@ from ConfigParser import SafeConfigParser
 from pkg_resources import resource_filename
 
 #arast libs
+import assembly.asmtypes as asmtypes
 import assembly.client as client
 import assembly.config as conf
 from assembly.auth_token import *
 import traceback
 
-my_version = '0.3.9.4'
+my_version = '0.3.9.5'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARASTURL', help='arast server url')
@@ -48,7 +49,9 @@ p_run.add_argument("-m", "--message", action="store", dest="message", help="Atta
 p_run.add_argument("-q", "--queue", action="store", dest="queue", help=argparse.SUPPRESS)
 data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
+p_run.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
 p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
+p_run.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
 p_run.add_argument("--curl", action="store_true", help="Use curl for http requests")
 
 # stat -h
@@ -208,7 +211,9 @@ def main():
                 parser.print_usage()
                 sys.exit()
 
-            if not (args.data_id or args.pair or args.single):
+            if not (args.data_id or 
+                    args.pair or args.pair_url or
+                    args.single or args.single_url):
                 parser.print_usage()
                 sys.exit()
 
@@ -225,7 +230,7 @@ def main():
         except:
             has_data_id = False
         if not has_data_id:
-            all_lists = [args.pair, args.single, args.reference]
+            all_lists = [args.pair, args.pair_url, args.single, args.single_url, args.reference]
             file_lists = []
             for l in all_lists:
                 if l is None:
@@ -233,13 +238,13 @@ def main():
                 else:
                     file_lists.append(l)
                     
-            all_types = ['paired', 'single', 'reference']
+            all_types = ['paired', 'paired_url', 'single', 'single_url', 'reference']
             for f_list, f_type in zip(file_lists, all_types):
                 for ls in f_list:
                     f_infos = []
                     f_set_args = {}
                     for word in ls:
-                        if not (os.path.isfile(word) or '=' in word):
+                        if not (os.path.isfile(word) or '=' in word or is_valid_url(word)):
                             raise Exception('{} is not valid input!'.format(word))
                     for word in ls:
                         if os.path.isfile(word):
@@ -248,8 +253,10 @@ def main():
                         elif '=' in word:
                             kv = word.split('=')
                             f_set_args[kv[0]] = kv[1]
-
-                    f_set = client.FileSet(f_type, f_infos, **f_set_args)
+                        elif is_valid_url(word):
+                            f_info = asmtypes.FileInfo(direct_url=word)
+                            f_infos.append(f_info)
+                    f_set = asmtypes.FileSet(f_type, f_infos, **f_set_args)
                     adata.add_set(f_set)
 
         arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp']
@@ -365,8 +372,16 @@ def main():
     elif args.command == 'kill':
         print aclient.kill_jobs(args.job)
 
-def is_filename(word):
-    return word.find('.') != -1 and word.find('=') == -1
+def is_valid_url(url):
+    import re
+    regex = re.compile(
+        r'^https?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return url is not None and regex.search(url)
 
 if __name__ == '__main__':
     main()
