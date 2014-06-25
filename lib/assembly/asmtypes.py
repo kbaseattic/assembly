@@ -13,11 +13,15 @@ class FileInfo(dict):
         if filename:
             assert os.path.exists(filename)
             filesize = os.path.getsize(filename)
+            fname = os.path.basename(filename)
+        else: 
+            filesize = None
+            fname = None
         self.update({'direct_url': direct_url,
                      'shock_url': shock_url,
                      'shock_id' : shock_id,
                      'filesize': filesize,
-                     'filename': os.path.basename(filename),
+                     'filename': fname,
                      'local_file': filename,
                      'keep_name': keep_name,
                      'create_time': create_time,
