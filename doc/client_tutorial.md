@@ -1,4 +1,4 @@
-# Using the Assembly Service Command-Line Client
+# Using the Assembly Service Command-Line
 
 ## Introduction 
 
