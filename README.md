@@ -9,6 +9,18 @@ It currently supports more than 20 assemblers and processing modules.
 
 [REST API](REST_API.md)
 
+Deploying only the client
+----------
+
+Requirement: Python 2.7+
+Dependencies: see tools/install-client-dependencies.sh
+
+```
+git clone https://github.com/kbase/assembly.git
+cd assembly
+make -f Makefile.standalone
+```
+
 Deploying and Testing AssemblyRAST client on KBase infrastructure
 ----------
 * start with a fresh KBase image (last tested on v15) with security group 'default' or 'assembly-rast-group'
