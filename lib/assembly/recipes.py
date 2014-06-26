@@ -82,3 +82,13 @@ test = """
 """
 
 
+fast = """
+(begin
+ (define pp (tagdust READS))
+ (define kval (get best_k (kmergenie pp)))
+ (define vt (begin (setparam hash_length kval) (velvet pp)))
+ (define sp (spades pp))
+ (define newsort (sort (list sp vt) > :key (lambda (c) (n50 c))))
+ (tar (all_files (quast (upload newsort))) :name analysis)
+)
+"""
