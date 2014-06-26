@@ -12,8 +12,28 @@ It currently supports more than 20 assemblers and processing modules.
 Deploying only the client
 ----------
 
-Requirement: Python 2.7+
-Dependencies: see tools/install-client-dependencies.sh
+Toolchain:
+- make
+- git
+
+Interpreters:
+- Python 2.7+
+- Perl 5
+
+Python packages (with pip):
+- requests
+- appdirs
+- argparse
+- prettytable
+- pymongo
+- httplib2
+
+Perl modules (with CPAN):
+- Config/Simple.pm
+- DateTime.pm
+- JSON.pm
+- Term/ReadKey.pm
+- Text/Table.pm
 
 ```
 git clone https://github.com/kbase/assembly.git

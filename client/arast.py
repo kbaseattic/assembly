@@ -119,6 +119,7 @@ def main():
     #### Get configuration #####
     ARAST_URL = conf.URL
     user_dir = appdirs.user_data_dir(conf.APPNAME, conf.APPAUTHOR)
+
     oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
     expiration = conf.OAUTH_EXP_DAYS
 
@@ -154,10 +155,12 @@ def main():
             token_date_str = oauth_parser.get('auth', 'token_date')
             tdate = datetime.datetime.strptime(token_date_str, '%Y-%m-%d').date()
             cdate = datetime.date.today()
+
             if (cdate - tdate).days > expiration:
                 reauthorize = True
             else:
                 reauthorize = False
+
         if not reauthorize:
             a_user = oauth_parser.get('auth', 'user')
             a_token = oauth_parser.get('auth', 'token')
@@ -177,10 +180,10 @@ def main():
             uparse.set('auth', 'user', a_user)
             uparse.set('auth', 'token', a_token)
             uparse.set('auth', 'token_date', str(datetime.date.today()))
+
             uparse.write(open(oauth_file, 'wb'))
 
     if args.command == 'login':
-        print "Logged in"
         sys.exit()
     
     if args.ARAST_URL:
