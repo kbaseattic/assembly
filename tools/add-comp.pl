@@ -87,6 +87,7 @@ for (@ARGV) {
 my $curr_dir = cwd();
 my $base_dir = dirname(Cwd::abs_path($0));
 $dest_dir  ||= "$base_dir/../bin";
+run("mkdir -p $dest_dir");
 $tmp_dir     = make_tmp_dir($tmp_dir);
 
 for my $c (@comps) {
