@@ -81,18 +81,18 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
         self.arast_popen([self.executable, config_fname], cwd=self.outpath)
         self.arast_popen('bash {}'.format(os.path.join(self.outpath, 'assemble.sh')), cwd=self.outpath, shell=True)
 
-
+        output = {}
         mv_scaffolds = os.path.join(self.outpath, 'genome.scf.fasta')
         scaffolds = os.path.join(self.outpath, 'CA', '10-gapclose', 'genome.scf.fasta')
-        os.rename(scaffolds, mv_scaffolds)
+        if os.path.exists(scaffolds):
+            os.rename(scaffolds, mv_scaffolds)
+            output['scaffolds'] = [mv_scaffolds]
+
         contigs = os.path.join(self.outpath, 'CA', '10-gapclose','genome.ctg.fasta')
         mv_contigs = os.path.join(self.outpath, 'genome.ctg.fasta')
-        os.rename(contigs, mv_contigs)
-        output = {}
-        if os.path.exists(mv_contigs):
+        if os.path.exists(contigs):
+            os.rename(contigs, mv_contigs)
             output['contigs'] = [mv_contigs]
-        if os.path.exists(mv_scaffolds):
-            output['scaffolds'] = [mv_scaffolds]
 
         return output
 
