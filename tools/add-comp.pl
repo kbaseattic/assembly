@@ -14,7 +14,7 @@ my $usage =<<"End_of_Usage";
 Usage: sudo add-comp.pl [ options ] components
 
 Options:
-      -d dest_dir  - destination directory (D = assembly/bin/)
+      -d dest_dir  - destination directory (D = assembly/third_party/)
       -f           - force reinstall even if component exists
       -t tmp_dir   - temporary directory (D = /mnt/tmp)
 
@@ -86,8 +86,7 @@ for (@ARGV) {
 
 my $curr_dir = cwd();
 my $base_dir = dirname(Cwd::abs_path($0));
-$dest_dir  ||= "$base_dir/../bin";
-run("mkdir -p $dest_dir");
+$dest_dir  ||= "$base_dir/../third_party"; run("mkdir -p $dest_dir");
 $tmp_dir     = make_tmp_dir($tmp_dir);
 
 for my $c (@comps) {
@@ -239,7 +238,7 @@ sub install_pacbio {
     # directories
     #   tmpdir   -> /mnt/tmp           # chmod 777 /mnt/tmp
     #   userdata -> /space/smrtdata    # mkdir -p /space/smrtdata; chown ubuntu:ubuntu /space/smrtdata;
-    #                                    ln -s /space/smrtdata $AR_DIR/bin/smrt/userdata                                     
+    #                                    ln -s /space/smrtdata $AR_DIR/third_party/smrt/userdata                                     
     # 
     # SMRT Analysis user:     ubuntu
     # MySQL user/password:    root/root
@@ -256,7 +255,7 @@ sub install_pacbio {
     download($dir, $file, $url);
     run("bash $dest_dir/smrt/admin/bin/smrtupdater --force $file");
 
-    # source $AR_DIR/bin/smrt/install/smrtanalysis-2.1.1.128549/etc/setup.sh
+    # source $AR_DIR/third_party/smrt/install/smrtanalysis-2.1.1.128549/etc/setup.sh
     # https://github.com/PacificBiosciences/SMRT-Analysis/wiki/SMRT-Pipe-Reference-Guide-v2.1
 }
 
