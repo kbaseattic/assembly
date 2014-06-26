@@ -75,6 +75,7 @@ my $rc = GetOptions(
                    ) or die $usage;
 
 if ($help) { print $usage; exit 0;}
+@se_args || @pe_args or die "No input library specified.\n";
 
 my $config = get_arast_config();
 $config->{URL} = $server if $server;

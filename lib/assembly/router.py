@@ -502,6 +502,8 @@ class JobResource:
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
+        if not 'report' in doc:
+            return
         return json.dumps(doc['report'])
 
 
