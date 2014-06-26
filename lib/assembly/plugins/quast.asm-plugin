@@ -2,9 +2,11 @@
 Name = quast
 Module = quast
 
+[Executables]
+executable = quast/quast.py
+
 [Settings]
 short_name = qu
-executable = ../../bin/quast/quast.py
 filetypes = fasta,fa
 min_contig = 500
 scaffold_mode = False

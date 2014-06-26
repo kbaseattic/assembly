@@ -2,10 +2,12 @@
 Name = trim_sort
 Module = trim_sort
 
+[Executables]
+bin_dynamictrim = solexa/DynamicTrim.pl
+bin_lengthsort = solexa/LengthSort.pl
+
 [Settings]
 short_name = dtrim
-bin_dynamictrim = ../../bin/solexa/DynamicTrim.pl
-bin_lengthsort = ../../bin/solexa/LengthSort.pl
 filetypes = fastq,fq
 
 probcutoff = 0.05

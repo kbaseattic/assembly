@@ -2,9 +2,11 @@
 Name = fastqc
 Module = fastqc
 
+[Executables]
+executable = FastQC/fastqc
+
 [Settings]
 short_name = fqc
-executable = ../../bin/FastQC/fastqc
 filetypes = fastq,fq
 
 [Parameters]

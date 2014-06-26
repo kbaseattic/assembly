@@ -2,9 +2,11 @@
 Name = kmergenie
 Module = kmergenie
 
+[Executables]
+executable = kmergenie/kmergenie
+
 [Settings]
 short_name = kgen
-executable = ../../bin/kmergenie/kmergenie
 filetypes = fasta,fa,fastq,fq
 
 [Parameters]

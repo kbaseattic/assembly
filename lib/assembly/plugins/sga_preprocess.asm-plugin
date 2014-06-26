@@ -2,9 +2,11 @@
 Name = sga_preprocess
 Module = sga_preprocess
 
+[Executables]
+executable = a5/bin/sga
+
 [Settings]
 short_name = sgap
-executable = ../../bin/a5/bin/sga
 filetypes = fastq,fq
 
 # From A5 defaults

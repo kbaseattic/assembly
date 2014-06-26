@@ -98,12 +98,15 @@ class BasePlugin(object):
             cmd_string = cmd_args
 
         if cmd_args[0].find('..') != -1 and not shell:
-            cmd_args[0] = os.path.abspath(cmd_args[0])
+            # cmd_args[0] = os.path.abspath(cmd_args[0])
+            raise Exception("Plugin Config not updated: {}".format(cmd_args[0]))
+
         self.out_module.write("Command: {}\n".format(cmd_string))
         try: self.out_report.write('Command: {}\n'.format(cmd_string))
         except: print 'Could not write to report: {}'.format(cmd_string)
         m_start_time = time.time()
-        print cmd_args
+        print "Command args: {}".format(cmd_args)
+        print "Command line: {}\n".format(cmd_string if shell else " ".join(cmd_args))
         try:
             p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, 
                                      stderr=subprocess.STDOUT, preexec_fn=os.setsid, **kwargs)
@@ -606,8 +609,16 @@ class ModuleManager():
         self.threads = threads
         self.kill_list = kill_list
         self.job_list = job_list # Running jobs
-        self.binpath = binpath
-        
+
+        self.root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
+        self.module_bin_path = os.path.join(self.root_path, "module_bin")
+        self.binpath = binpath if os.path.isabs(binpath) else os.path.join(self.root_path, binpath)
+
+        if os.path.isdir(self.binpath) and os.path.exists(self.binpath):
+            print " [.] Binary path -- %s : OKAY" % self.binpath
+        else:
+            raise Exception("Binary directory does not exist: %s" % self.binpath)
+
         self.pmanager = PluginManager()
         locator = self.pmanager.getPluginLocator()
         locator.setPluginInfoExtension('asm-plugin')
@@ -627,11 +638,15 @@ class ModuleManager():
             plugin.plugin_object.setname(plugin.name)
             ## Check for installed binaries
             try:
+                version = plugin.details.get('Documentation', 'Version')
                 executables = plugin.details.items('Executables')
-                full_execs = [(k, os.path.join(self.binpath, v)) for k,v in executables]
+                full_execs = [(k, self.get_executable_path(v)) for k,v in executables]
                 for binary in full_execs:
                     if not os.path.exists(binary[1]):
-                        raise Exception('[ERROR]: {} -- Binary does not exist -- {}'.format(plugin.name, executable))
+                        if float(version) < 1: 
+                            print '[Warning]: {} (v{}) -- Binary does not exist for beta plugin -- {}'.format(plugin.name, version, binary[1])
+                        else:
+                            raise Exception('[ERROR]: {} (v{})-- Binary does not exist -- {}'.format(plugin.name, version, binary[1]))
                 self.executables[plugin.name] = full_execs
             except ConfigParser.NoSectionError: pass
             plugins.append(plugin.name)
@@ -656,8 +671,9 @@ class ModuleManager():
                     settings[k] = v
             settings = settings.items()
         except: 
-            print "Plugin Config not updated!"
-            settings = config_settings
+            # settings = config_settings
+            raise Exception("Plugin Config not updated: {}!".format(module))
+
         #### Check input/output type compatibility
         if wlink['link']:
             for link in wlink['link']:
@@ -709,6 +725,16 @@ class ModuleManager():
         except:
             return None
 
+    def verify_file(self, filename):
+        if not os.path.exists(filename):
+            raise Exception("File not found: %s" % filename)
+        
+    def get_executable_path(self, filename, verify=False):
+        guess1 = os.path.join(self.module_bin_path, filename)
+        guess2 = os.path.join(self.binpath, filename)
+        fullname = guess1 if os.path.exists(guess1) else guess2
+        if verify: verify_file(fullname)
+        return fullname
 
     def has_plugin(self, plugin):
         if not plugin.lower() in self.plugins:

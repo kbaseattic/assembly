@@ -2,9 +2,11 @@
 Name = spades
 Module = spades
 
+[Executables]
+executable = spades/bin/spades.py
+
 [Settings]
 short_name = Sp
-executable = ../../bin/spades/bin/spades.py
 filetypes = fasta,fa,fastq,fq
 only_assembler = True
 mismatch_correction = True

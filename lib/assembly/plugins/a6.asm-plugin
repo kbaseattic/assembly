@@ -2,9 +2,11 @@
 Name = a6
 Module = a6
 
+[Executables]
+executable = a6/bin/a5
+
 [Settings]
 short_name = a6
-executable = ../../bin/a6/bin/a5
 filetypes = fastq,fq,fastq.bz2,fq.bz2
 
 [Parameters]

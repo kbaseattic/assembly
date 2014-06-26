@@ -2,9 +2,11 @@
 Name = reapr
 Module = reapr
 
+[Executables]
+executable = reapr/reapr
+
 [Settings]
 short_name = re
-executable = ../../bin/reapr/reapr
 filetypes = fasta,fa
 a = True
 
