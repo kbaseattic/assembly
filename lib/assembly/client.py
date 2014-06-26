@@ -8,8 +8,8 @@ import time
 import re
 from kbase import typespec_to_assembly_data as kb_to_asm
 from prettytable import PrettyTable
-
 from shock import Shock
+from shock import get as shock_get
 import asmtypes
 #Debug
 import sys
@@ -142,19 +142,41 @@ class Client:
         r = requests.get(url, headers=self.headers)
         return r.content
 
+    def is_job_valid(self, job_id):
+        stat = self.get_job_status(1, job_id)
+        return False if stat.startswith("Could not") else True
+
+    def validate_job(self, job_id):
+        if not self.is_job_valid(job_id):
+            sys.stderr.write("Invalid job ID: {}\n".format(job_id))
+            sys.exit()
+        return
+
     def wait_for_job(self, job_id):
+        self.validate_job(job_id)
         stat = self.get_job_status(1, job_id)
         while not re.search('(complete|fail)', stat, re.IGNORECASE):
             time.sleep(5)
             stat = self.get_job_status(1, job_id)
         return stat
 
-    def get_job_report(self, job_id):
+    def get_job_report(self, job_id, log=False):
         url = 'http://{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
         r = requests.get(url, headers=self.headers)
-        # try:
-            
-        return r.content
+        if not r.content: 
+            sys.stderr.write("Job in progress. Use -w to wait for the job.\n")
+            sys.exit()
+        try:
+            info = json.loads(r.content)[0]['file_infos'][0]
+            url = '{}/node/{}?download'.format(info['shock_url'], info['shock_id'])
+            report = shock_get(url).content
+            if not log:
+                lines = str.splitlines(report, 1)
+                report = ''.join(lines[0:20])
+        except Exception as e:
+            print e
+            raise Exception("Error retrieving job report")
+        return report
 
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
