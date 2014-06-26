@@ -70,7 +70,9 @@ p_avail.add_argument("-v", "--verbose", action="store_true", help="show module d
 p_upload = subparsers.add_parser('upload', description='Upload a read set', help='Upload a read library or set of libraries, returns a data ID for future use')
 p_upload.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
 p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
+p_upload.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
 p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
+p_upload.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
 p_upload.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
 p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_upload.add_argument("--json", action="store_true", help="Print data info json object to STDOUT")
@@ -260,8 +262,8 @@ def main():
                     f_set = asmtypes.FileSet(f_type, f_infos, **f_set_args)
                     adata.add_set(f_set)
 
-        arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp']
-                     if k in options}
+        arast_msg = arast_msg = dict((k, options[k]) for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp'] if k in options)
+
         arast_msg['assembly_data'] = adata
         arast_msg['client'] = 'CLI'
 
