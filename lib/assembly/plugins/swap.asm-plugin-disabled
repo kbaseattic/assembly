@@ -1,0 +1,20 @@
+[Core]
+Name = swap
+Module = swap
+
+[Settings]
+short_name = swp
+executable = ../../bin/swap/swap
+fastq_to_fasta = ../../bin/fastx_toolkit/bin/fastq_to_fasta
+filetypes = fasta,fa,fastq,fq
+k = 31
+
+[Parameters]
+k = 31
+
+[Documentation]
+Author = Chris Bun
+Version = 1.0
+Description = SWAP Assembler
+Stages = assembler
+References = http://sourceforge.net/projects/swapassembler
