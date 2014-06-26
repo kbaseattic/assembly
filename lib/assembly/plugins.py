@@ -221,7 +221,7 @@ class BasePlugin(object):
         self.arast_threads = int(manager.threads)
         self.process_threads_allowed = str(self.process_cores / self.arast_threads)
         self.job_data = job_data
-        self.tools = {'ins_from_sam': '../../bin/getinsertsize.py'}
+        self.tools = {'ins_from_sam': os.path.join(self.pmanager.module_bin_path, 'getinsertsize.py')}
         self.out_report = job_data['out_report'] #Job log file
         self.out_module = open(os.path.join(self.outpath, '{}.out'.format(self.name)), 'w')
         job_data['logfiles'].append(self.out_module.name)
