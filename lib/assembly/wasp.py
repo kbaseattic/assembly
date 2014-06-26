@@ -142,16 +142,22 @@ def eval(x, env):
         (_, vars, exp) = x
         return lambda *args: eval(exp, Env(vars, args, env))
     elif x[0] == 'upload':          # (upload exp) Store each intermediate for return
+
         (_,  exp) = x
         try:
             val = eval(exp, env)
-            env.emissions.append(val)
-            return val
+            results = val
         except Exception as e: 
             print ' [!]: {} -- {}'.format(to_string(exp), e)
             print traceback.format_exc()
             env.exceptions.append(traceback.format_exc())
-            return
+            results = None
+        if type(results) is list:
+            for r in results:
+                env.emissions.append(r)
+        elif results:
+            env.emissions.append(results)
+
     elif x[0] == 'get':
         (_, key, exp) = x
         chain = eval(exp, env)
@@ -364,8 +370,11 @@ class WaspEngine():
         ## Record results into job_data
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
+        print 'emissions'
         for w in self.assembly_env.emissions + w_chain:
-            try: job_data.add_results(w['default_output'])
+            try: 
+                job_data.add_results(w['default_output'])
+                print w['default_output']
             except: print 'Output', w
         job_data['exceptions'] = [str(e) for e in self.assembly_env.exceptions]
         return w_chain[0]
