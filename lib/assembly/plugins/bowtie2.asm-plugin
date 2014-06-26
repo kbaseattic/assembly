@@ -2,9 +2,11 @@
 Name = bowtie2
 Module = bowtie2
 
+[Executables]
+executable = bowtie2/bowtie2
+build_bin = bowtie2/bowtie2-build
+
 [Settings]
-executable = ../../bin/bowtie2/bowtie2
-build_bin = ../../bin/bowtie2/bowtie2-build
 filetypes = fastq,fq
 
 [Parameters]

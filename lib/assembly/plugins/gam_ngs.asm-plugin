@@ -2,10 +2,12 @@
 Name = gam_ngs
 Module = gam_ngs
 
+[Executables]
+bin_create = gam-ngs/bin/gam-create
+bin_merge = gam-ngs/bin/gam-merge
+
 [Settings]
 short_name = gam
-bin_create = ../../bin/gam-ngs/bin/gam-create
-bin_merge = ../../bin/gam-ngs/bin/gam-merge
 filetypes = fasta,fa
 
 [Parameters]

@@ -2,11 +2,12 @@
 Name = filter_by_length
 Module = filter_by_length
 
+[Executables]
+seqtk_bin = seqtk
+sync_bin = sync_paired_end_reads.py
+
 [Settings]
 short_name = ftr
-seqtk_bin = ../../bin/seqtk
-sync_bin = ../../bin/sync_paired_end_reads.py
-# fastx_bin = ../../bin/fastx_toolkit/fastx_trimmer
 filetypes = fasta,fa,fastq,fq
 min = 250
 end = 200

@@ -2,9 +2,11 @@
 Name = ray
 Module = ray
 
+[Executables]
+executable = ray/Ray
+
 [Settings]
 short_name = ra
-executable = ../../bin/ray/Ray
 filetypes = fasta,fa,fastq,fq
 dashes = 1
 k = 31

@@ -2,6 +2,9 @@
 Name = kiki
 Module = kiki
 
+[Executables]
+executable = ki
+
 [Settings]
 short_name = ki
 executable = ../../bin/ki

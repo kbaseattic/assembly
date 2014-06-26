@@ -2,9 +2,11 @@
 Name = ale
 Module = ale
 
+[Executables]
+executable = ale/ALE
+
 [Settings]
 short_name = ale
-executable = ../../bin/ale/ALE
 filetypes = bam,sam,fasta,fa
 
 [Parameters]

@@ -2,9 +2,11 @@
 Name = prodigal
 Module = prodigal
 
+[Executables]
+executable = prodigal/prodigal
+
 [Settings]
 short_name = pd
-executable = ../../bin/prodigal/prodigal
 filetypes = fasta,fa
 
 [Parameters]

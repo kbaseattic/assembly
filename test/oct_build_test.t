@@ -4,8 +4,8 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 
-my $arg_url   = "-s $ENV{ARASTURL}"   if $ENV{ARASTURL};   # default: 140.221.84.124
-my $arg_queue = "-q $ENV{ARASTQUEUE}" if $ENV{ARASTQUEUE};
+my $arg_url   = "-s $ENV{ARAST_URL}"   if $ENV{ARAST_URL};   # default: 140.221.84.124
+my $arg_queue = "-q $ENV{ARAST_QUEUE}" if $ENV{ARAST_QUEUE};
 
 $ENV{KB_DEPLOYMENT} = "/kb/deployment" unless defined $ENV{KB_DEPLOYMENT};
 $ENV{PATH}          = "$ENV{KB_DEPLOYMENT}/bin:$ENV{PATH}";
@@ -40,11 +40,11 @@ foreach my $file_inputs (@files)
 	print "Performing Assembler tests for $assembler \n";
 	my $job_id = run($assembler,$file_inputs);
 	$testCount++;
-	stat_try($ENV{ARASTURL});
+	stat_try($ENV{ARAST_URL});
 	$testCount++;
 	my @results = get($job_id) if $job_id;
 	$testCount++ if $job_id;
-	stat_try($ENV{ARASTURL});
+	stat_try($ENV{ARAST_URL});
 	$testCount++;
         for my $f (@results) {
             print "Moving file $f to /mnt\n"; 

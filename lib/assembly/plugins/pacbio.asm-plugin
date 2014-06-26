@@ -2,13 +2,14 @@
 Name = pacbio
 Module = pacbio
 
+[Executables]
+executable = pacbio.pl
+setup = smrt/install/smrtanalysis-2.1.1.128549/etc/setup.sh
+
 [Settings]
 short_name = pb
-# executable = ../../bin/smrt/install/smrtanalysis-2.1.1.128549/analysis/bin/smrtpipe.py
-executable = ../../bin/pacbio.pl
 filetypes = h5,fastq,fq
 dashes = 1
-setup = ../../bin/smrt/install/smrtanalysis-2.1.1.128549/etc/setup.sh
 nproc = 4
 min_long_read_length = 6000
 genome_size = 5000000
@@ -21,7 +22,7 @@ coverage = 15
 
 [Documentation]
 Author = Fangfang Xia
-Version = 1.0
+Version = 0.5
 Description = PacBio non-hybrid assembly pipeline for SMRT long reads
 Stages = preprocess,assembler,post-process
 References = doi:10.1038/nmeth.2474

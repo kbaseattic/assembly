@@ -193,7 +193,7 @@ def authenticate_request():
         user = m.group(1)
     else:
         print "Auth error"
-        raise cherrypyHTTPError(403, 'Bad Token')
+        raise cherrypy.HTTPError(403, 'Bad Token')
     auth_info = metadata.get_auth_info(user)
     if auth_info:
         # Check exp date
@@ -318,7 +318,7 @@ class JobResource:
         if token_user == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
         if not userid == token_user:
-            raise cherrypyHTTPError(403)
+            raise cherrypy.HTTPError(403)
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
@@ -342,7 +342,7 @@ class JobResource:
         try:
             userid = kwargs['userid']
         except:
-            raise cherrypyHTTPError(403)
+            raise cherrypy.HTTPError(403)
 
         ### No job_id, return all
         if not job_id:  
@@ -373,7 +373,7 @@ class JobResource:
             user = authenticate_request()
             return self.kill(job_id=job_id, userid=user)
         else:
-            raise cherrypyHTTPError(403, 'Resource {} not found.'.format(resource))
+            raise cherrypy.HTTPError(403, 'Resource {} not found.'.format(resource))
 
     def get_job_data(self, userid, job_id=None):
         if userid == 'OPTIONS':
@@ -383,7 +383,7 @@ class JobResource:
             del doc['oauth_token']
             return json.dumps(doc)
         except:
-            raise cherrypyHTTPError(403, 'Could not get data')
+            raise cherrypy.HTTPError(403, 'Could not get data')
 
     @cherrypy.expose
     def status(self, **kwargs):

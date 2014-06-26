@@ -2,12 +2,14 @@
 Name = tagdust
 Module = tagdust
 
+[Executables]
+executable = a6/bin/tagdust
+library = a6/adapter.fasta
+sync = sync_paired_end_reads.py
+
 [Settings]
 short_name = tag
-executable = ../../bin/a6/bin/tagdust
 filetypes = fasta,fa,fastq,fq
-library = ../../bin/a6/adapter.fasta
-sync = ../../bin/sync_paired_end_reads.py
 
 [Parameters]
 

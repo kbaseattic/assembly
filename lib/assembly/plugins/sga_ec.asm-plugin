@@ -2,9 +2,11 @@
 Name = sga_ec
 Module = sga_ec
 
+[Executables]
+executable = a5/bin/sga
+
 [Settings]
 short_name = sgae
-executable = ../../bin/a5/bin/sga
 filetypes = fastq,fq
 dependencies = sga_preprocess
 

@@ -14,10 +14,10 @@ include $(TOP_DIR)/tools/Makefile.common
 TOOLS_DIR = $(TOP_DIR)/tools
 WRAP_PERL_TOOL = wrap_perl
 WRAP_PERL_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PERL_TOOL).sh
-SRC_PERL = $(wildcard scripts/ar-*.pl)
+SRC_PERL = $(wildcard client/*.pl)
 WRAP_PYTHON_TOOL = wrap_python
 WRAP_PYTHON_SCRIPT = bash $(TOOLS_DIR)/$(WRAP_PYTHON_TOOL).sh
-SRC_PYTHON = $(wildcard scripts/arast.py)
+SRC_PYTHON = $(wildcard client/*.py)
 
 
 SERVER_TESTS = $(wildcard server-tests/*.t)

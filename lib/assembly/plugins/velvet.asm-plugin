@@ -2,10 +2,12 @@
 Name = velvet
 Module = velvet
 
+[Executables]
+bin_velvetg = velvetg
+bin_velveth = velveth
+
 [Settings]
 short_name = vt
-bin_velvetg = ../../bin/velvetg
-bin_velveth = ../../bin/velveth
 filetypes = fasta,fa,fastq,fq
 hash_length = 29
 auto_insert = False

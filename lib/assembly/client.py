@@ -6,6 +6,7 @@ import subprocess
 import os
 import time
 import re
+from kbase import typespec_to_assembly_data as kb_to_asm
 from prettytable import PrettyTable
 
 from shock import Shock
@@ -141,6 +142,20 @@ class Client:
         r = requests.get(url, headers=self.headers)
         return r.content
 
+    def wait_for_job(self, job_id):
+        stat = self.get_job_status(1, job_id)
+        while not re.search('(complete|fail)', stat, re.IGNORECASE):
+            time.sleep(5)
+            stat = self.get_job_status(1, job_id)
+        return stat
+
+    def get_job_report(self, job_id):
+        url = 'http://{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
+        r = requests.get(url, headers=self.headers)
+        # try:
+            
+        return r.content
+
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
         r = requests.get(url, headers=self.headers)
@@ -158,13 +173,6 @@ class Client:
     def get_config(self):
         return requests.get('http://{}/admin/system/config'.format(self.url)).content
 
-    def wait_for_job(self, job_id):
-        stat = self.get_job_status(1, job_id)
-        while not re.search('(complete|fail)', stat, re.IGNORECASE):
-            time.sleep(5)
-            stat = self.get_job_status(1, job_id)
-        return stat
-
 
 ##### ARAST JSON SPEC CLASSES #####
 
@@ -180,20 +188,23 @@ class AssemblyData(dict):
 ##### Helper methods #####
 def assembly_data_to_rows(data):
     rows = []
-    data_key = "assembly_data"
-    lib_key  = "file_sets"
-    info_key = "file_infos"
-
+    data_key  = "assembly_data"
+    kbase_key = "kbase_assembly_input"
+    lib_key   = "file_sets"
+    info_key  = "file_infos"
+    
     if data_key in data: data = data[data_key]
+    else:
+        if kbase_key in data: data = kb_to_asm(data[kbase_key])
 
     for lib in data.get(lib_key, []):
         libtype = lib.get("type", "unknown")
         files = []
         for info in lib.get(info_key, []):
             filename = info.get("filename", "")
-            filesize = info.get("filesize", 0)
-            filesize = sizeof_fmt(filesize)
-            files.append("%s (%s)" % (filename, filesize))
+            filesize = info.get("filesize", None)
+            filesize = " (%s)" % sizeof_fmt(filesize) if filesize else ""
+            files.append("%s%s" % (filename, filesize))
         rows.append([libtype, " ".join(files)])
     
     return rows

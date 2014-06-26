@@ -2,9 +2,11 @@
 Name = bwa
 Module = bwa
 
+[Executables]
+executable = bwa
+
 [Settings]
 short_name = bwa
-executable = ../../bin/bwa
 filetypes = fastq,fq
 
 [Parameters]

@@ -76,7 +76,7 @@ def start(arast_server, config, num_threads, queue):
     except:
         logging.error("MongoDB connection error: %s" % sys.exc_info()[0])
         sys.exit()
-    print " [x] MongoDB connection successful."
+    print " [.] MongoDB connection successful."
 
     # Check RabbitMQ status
         #TODO
@@ -86,12 +86,15 @@ def start(arast_server, config, num_threads, queue):
     res = shock.get(url)
     
     if res is not None:
-        print " [x] Shock connection successful"
+        print " [.] Shock connection successful"
     else:
         raise Exception("Shock connection error: {}".format(shockurl))
 
     #### Check data write permissions
+    rootpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
     datapath = cparser.get('compute', 'datapath')
+    if not os.path.isabs(datapath): datapath = os.path.join(rootpath, datapath)
+
     if os.access(datapath, os.W_OK):
         print ' [.] Storage path -- {} : OKAY'.format(datapath)
     else:

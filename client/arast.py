@@ -27,7 +27,7 @@ import traceback
 my_version = '0.3.9.5'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
-parser.add_argument('-s', dest='ARASTURL', help='arast server url')
+parser.add_argument('-s', dest='ARAST_URL', help='arast server url')
 parser.add_argument('-c', '--config', action="store", help='Specify config file')
 parser.add_argument("-v", "--verbose", action="store_true", help="Verbose")
 parser.add_argument('--version', action='version', version='AssemblyRAST Client ' + my_version)
@@ -84,6 +84,7 @@ p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs
 p_get = subparsers.add_parser('get', description='Download result data', help='download data')
 p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, required=True, help="specify which job data to get")
 p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=False, const=True, help="Get assemblies only")
+p_get.add_argument("-r", "--report", action="store_true", help="Print assembly report to stdout")
 p_get.add_argument("--stdout", action="store_true", help="Print assembly to stdout")
 p_get.add_argument("-o", "--outdir", action="store", help="Download to specified dir")
 p_get.add_argument("-w", "--wait", action="store_true", help="Wait until job is done")
@@ -114,7 +115,7 @@ def main():
         clientlog.debug("Logger Debugging mode")
 
     #### Get configuration #####
-    ARASTURL = conf.URL
+    ARAST_URL = conf.URL
     user_dir = appdirs.user_data_dir(conf.APPNAME, conf.APPAUTHOR)
     oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
     expiration = conf.OAUTH_EXP_DAYS
@@ -180,10 +181,10 @@ def main():
         print "Logged in"
         sys.exit()
     
-    if args.ARASTURL:
-        ARASTURL = args.ARASTURL
+    if args.ARAST_URL:
+        ARAST_URL = args.ARAST_URL
 
-    aclient = client.Client(ARASTURL, a_user, a_token)
+    aclient = client.Client(ARAST_URL, a_user, a_token)
 
         
     res_ids = []
@@ -321,6 +322,11 @@ def main():
             if 'FAIL' in stat:
                 print stat
                 sys.exit()
+
+        if args.report:
+            report = aclient.get_job_report(args.job_id[0])
+            print report
+            sys.exit()
 
         if args.assembly:
             try:

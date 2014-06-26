@@ -2,15 +2,17 @@
 Name = idba
 Module = idba
 
+[Executables]
+executable = idba/idba
+bin_idba_ud = idba/idba_ud
+bin_idba_tran = idba/idba_tran
+bin_idba_hybrid = idba/idba_hybrid
+bin_fq2fa = idba/fq2fa
+
 [Settings]
 short_name = idba
 single_lib = True
 # Newest idba is broken
-executable = ../../bin/idba/idba
-bin_idba_ud = ../../bin/idba/idba_ud
-bin_idba_tran = ../../bin/idba/idba_tran
-bin_idba_hybrid = ../../bin/idba/idba_hybrid
-bin_fq2fa = ../../bin/idba/fq2fa
 filetypes = fasta,fa,fastq,fq
 
 max_k = 50
