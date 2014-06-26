@@ -38,7 +38,8 @@ class ArastConsumer:
         self.parser.read(config)
         self.job_list = job_list
         # Load plugins
-        self.pmanager = ModuleManager(threads, kill_queue, job_list)
+        binpath = self.parser.get('compute','binpath')
+        self.pmanager = ModuleManager(threads, kill_queue, job_list, binpath)
 
     # Set up environment
         self.shockurl = shockurl

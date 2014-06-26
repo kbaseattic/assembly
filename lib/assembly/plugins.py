@@ -16,6 +16,7 @@ from yapsy.PluginManager import PluginManager
 from yapsy.IPluginLocator import IPluginLocator
 from threading  import Thread
 from Queue import Queue, Empty
+import ConfigParser
 import traceback
 
 
@@ -601,10 +602,11 @@ class BaseAligner(BasePlugin):
 
 
 class ModuleManager():
-    def __init__(self, threads, kill_list, job_list):
+    def __init__(self, threads, kill_list, job_list, binpath):
         self.threads = threads
         self.kill_list = kill_list
         self.job_list = job_list # Running jobs
+        self.binpath = binpath
         
         self.pmanager = PluginManager()
         locator = self.pmanager.getPluginLocator()
@@ -618,26 +620,20 @@ class ModuleManager():
             raise Exception("No Plugins Found!")
 
         plugins = []
+        self.executables = {}
         for plugin in self.pmanager.getAllPlugins():
             plugin.threads = threads
             self.plugins.append(plugin.name)
             plugin.plugin_object.setname(plugin.name)
-
             ## Check for installed binaries
-            executable = ''
             try:
-                settings = plugin.details.items('Settings')
-                for kv in settings:
-                    executable = kv[1]
-                    if executable.find('/') != -1 : #Hackish "looks like a file"
-                        if os.path.exists(executable):
-                            logging.info("Found file: {}".format(executable))
-                            break
-                        else:
-                            raise Exception()
-                    ## TODO detect binaries not in "executable" setting
-            except:
-                raise Exception('[ERROR]: {} -- Binary does not exist -- {}'.format(plugin.name, executable))
+                executables = plugin.details.items('Executables')
+                full_execs = [(k, os.path.join(self.binpath, v)) for k,v in executables]
+                for binary in full_execs:
+                    if not os.path.exists(binary[1]):
+                        raise Exception('[ERROR]: {} -- Binary does not exist -- {}'.format(plugin.name, executable))
+                self.executables[plugin.name] = full_execs
+            except ConfigParser.NoSectionError: pass
             plugins.append(plugin.name)
         print "Plugins found [{}]: {}".format(num_plugins, sorted(plugins))
 
@@ -649,9 +645,19 @@ class ModuleManager():
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
         plugin = self.pmanager.getPluginByName(module)
-        settings = plugin.details.items('Settings')
-        settings = update_settings(settings, parameters)
 
+        config_settings = plugin.details.items('Settings')
+        config_settings = update_settings(config_settings, parameters)
+
+        try:
+            settings = {k:v for k,v in self.executables[module]}
+            for k,v in config_settings: ## Don't override
+                if not k in settings:
+                    settings[k] = v
+            settings = settings.items()
+        except: 
+            print "Plugin Config not updated!"
+            settings = config_settings
         #### Check input/output type compatibility
         if wlink['link']:
             for link in wlink['link']:
