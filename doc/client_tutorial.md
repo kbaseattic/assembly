@@ -130,9 +130,13 @@ ar-run --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test"
 
 This command should return as soon as the data is uploaded. Note we
 are also explicitly invoking the `tagdust` preprocessing module and
-the `idba` assembler using the `-p` pipeline option. We will describe
-the available modules and pipeline support in the Advanced Features
-section.
+the `idba` assembler using the `-p` pipeline option. You can use the
+`ar-avail` command to list all the modules supported. We will describe
+those and the pipeline support in the Advanced Features section.
+
+Both the `ar-run` and `ar-upload` commands allow you to specify a
+reference genome with the `--reference genome.fasta` option. It will
+be used to score the assemblies in the evaluation step. 
 
 ### Job management
 
@@ -204,7 +208,10 @@ FIXME: A BETTER PICTURE NEEDED
 
 ## Advanced Features
 
-### PacBio assembly
+### More options
+
+PacBio assembly
+URL support
 
 ### Modules
 
