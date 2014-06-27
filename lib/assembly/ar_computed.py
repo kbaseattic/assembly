@@ -29,7 +29,7 @@ mgr = multiprocessing.Manager()
 job_list = mgr.list()
 kill_list = mgr.list()
 
-def start(arast_server, config, num_threads, queue):
+def start(arast_server, config, num_threads, queue, datapath):
 
     #### Get default configuration from ar_compute.conf
     print " [.] Starting Assembly Service Compute Node"    
@@ -92,7 +92,7 @@ def start(arast_server, config, num_threads, queue):
 
     #### Check data write permissions
     rootpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
-    datapath = cparser.get('compute', 'datapath')
+    datapath = datapath or cparser.get('compute', 'datapath')
     if not os.path.isabs(datapath): datapath = os.path.join(rootpath, datapath)
 
     if os.access(datapath, os.W_OK):
@@ -109,7 +109,7 @@ def start(arast_server, config, num_threads, queue):
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
         compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads, 
-                                        queue, kill_list, job_list, ctrl_conf)
+                                        queue, kill_list, job_list, ctrl_conf, datapath)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
 
@@ -159,19 +159,15 @@ parser.add_argument("-t", "--threads", help="specify number of worker threads",
                     action="store", required=False)
 parser.add_argument("-q", "--queue", help="specify a queue to pull from",
                     action="store", required=False)
+parser.add_argument("-d", "--compute-data", dest='datapath', help="specify a directory for computation data",
+                    action="store", required=False)
 
 args = parser.parse_args()
 if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
 arasturl = ''
-if args.server:
-    arasturl = args.server
-if args.queue:
-    queue = args.queue
-else:
-    queue = None
-if args.threads:
-    num_threads = args.threads
-else:
-    num_threads = None
-start(arasturl, args.config, num_threads, queue)
+arasturl = args.server or None
+queue = args.queue or None
+num_threads = args.threads or None
+datapath = args.datapath or None
+start(arasturl, args.config, num_threads, queue, datapath)
