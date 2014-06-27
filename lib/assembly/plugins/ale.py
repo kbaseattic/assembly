@@ -24,7 +24,10 @@ class AleAssessment(BaseAssessment, IPlugin):
             output['report'] =  report
             ## Parse report for ALE Score
             with open(report) as r:
-                output['ale_score'] = float(r.readline().split(' ')[2].strip())
+                ale_score = float(r.readline().split(' ')[2].strip())
+                self.out_module.write('ALE Score: {}'.format(ale_score))
+                print('ALE Score: {}'.format(ale_score))
+                output['ale_score'] = ale_score
         return output
 
 
