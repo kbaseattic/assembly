@@ -19,53 +19,84 @@ my $metadata = { creator => $user,
                  type              => 'Narrative',
                  ws_name           => $workspace };
 
-my $worksheets = markdown_to_narrative_worksheets($markdown);
+my $cells = markdown_to_narrative_cells($markdown);
 
 my $obj = { metadata => $metadata,
             nbformat => 3,
             nbformat_minor => 0,
-            worksheets => $worksheets };
+            worksheets => [ { cells => $cells, metadata => {} } ] };
 
 print encode_json($obj);
 
-sub markdown_to_narrative_worksheets {
+sub markdown_to_narrative_cells {
     my ($markdown) = @_;
-    my @lines = `cat $markdown`;
+    my @lines = map { chomp; $_ } `cat $markdown`;
     my @cells;
 
-    my @block;
+    my $prompt = 2;
     my $type = 'markdown';
-    for my $line (@lines) {
-        if ($line =~ /^```/) {
-            if ($type eq 'markdown') {
-                push @cells, markdown_block(\@block) if @block;
-                $type = 'code';
-            }
-            if ($type eq 'code') {
-                push @cells, code_block(\@block) if @block;
-                $type = 'markdown';
-            }
+    my $line = shift @lines;
+    while (defined($line)) {
+        chomp($line);
+        if ($line =~ /^```(\S*)/) {
+            my $lang = $1;
+            my (@block1, @block2);
+            while (defined($line = shift @lines)) {
+                last if $line =~ /^```/;
+                push @block1, $line;
+            } 
+            $line = shift @lines;
+            if ($line =~ /^```out/) {
+                while (defined($line = shift @lines)) {
+                    last if $line =~ /^```/;
+                    push @block2, $line;
+                };
+                $line = shift @lines;
+            } 
+            push @cells, code_block(\@block1, \@block2, $lang, $prompt++) if @block1 || @block2;
+        } else {
+            my @block;
+            while (defined($line) && $line !~ /^```/) {
+                push @block, $line;
+                $line = shift @lines;
+            };
+            push @cells, markdown_block(\@block) if @block;
         }
-        push @block, $line;
     }
+
     wantarray ? @cells : \@cells;
 }
 
 sub markdown_block {
     my ($block) = @_;
-    my $source = join('\n', @$block);
+    my $source = join("\n", @$block);
     { cell_type => 'markdown',
       metadata  => {},
       source    => $source };
 }    
 
 sub code_block {
-    my ($block) = @_;
-    my $input = join('\n', @$block);
-    { cell_type => 'code',
-      collapsed => 'false',
-      language  => 'python',
-      metadata  => {},
-      input     => $input,
-      output    => [] };
+    my ($block1, $block2, $lang, $prompt) = @_;
+    
+    my $input;
+    my @outputs;
+
+    $input = join("\n", @$block1);
+    $input = join(" ", '%inv_run', $input) if $lang eq 'inv';
+    $input = join("\n", '%%bash',  $input) if $lang eq 'bash';
+
+    my $out_text = join('\n', @$block2);
+    my $output = { output_type => 'stream',
+                   stream      => 'stdout',
+                   text        => $out_text } if $out_text;
+    push @outputs, $output if $output;
+
+    { cell_type     => 'code',
+      collapsed     => \0,          # false
+      language      => 'python',
+      metadata      => {},
+      input         => $input,
+      outputs       => \@outputs };
+      # prompt_number => $prompt };
+    
 }

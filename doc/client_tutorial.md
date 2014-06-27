@@ -9,10 +9,11 @@ service as well as give some command-line recipes. You will learn how
 to upload a set of read files, assemble them, inspect the results, and
 get the best assembly for your downstream analysis. 
 
-We believe the default pipeline performs well. However, we encourage you to experiment with alternative assemblers,
-preprocessing tools, and parameter settings. Our service currently
-supports over 20 assemblers and tools, and its modular design allows
-for straightforward extension as sequencing technologies and analysis
+We believe the default pipeline performs well. However, we encourage
+you to experiment with alternative assemblers, preprocessing tools,
+and parameter settings. Our service currently supports over 20
+assemblers and tools, and its modular design allows for
+straightforward extension as sequencing technologies and analysis
 tools evolve. We have also built a powerful pipeline engine that
 allows you to mix and match approaches and evaluate a variety of
 customized pipelines on your datasets.
@@ -31,14 +32,14 @@ The following command will instruct the server to download a file of
 single-end reads specified by the URL and assemble them using the
 velvet assembler. This should take just a couple minutes. 
 
-```bash
+```inv
 ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait > ex1.contigs.fasta
 ```
 
 This command will block until the asesmbly is done. The resulting
 set of contigs will be saved to a FASTA file local to the client.
 
-```bash
+```inv
 ls -l ex1.contigs.fasta
 ```
 
@@ -47,7 +48,7 @@ ls -l ex1.contigs.fasta
 The commands and options we describe in this tutorial are supported on
 the clients of version 0.3.9.7 or newer. To check your client version, type:
 
-```bash
+```inv
 ar-stat --version
 ```
 ```out
@@ -93,7 +94,7 @@ curl http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq > p2.fq
 You can of course skip the above step and submit your own
 files. Here's an example of the upload command:
 
-```bash
+```inv
 ar-upload --pair p1.fq p2.fq > ex2.data_id
 ```
 
@@ -109,7 +110,7 @@ submission.
 To launch our default assembly pipeline on the dataset you submitted
 in the previous section, you can simply type:
 
-```bash
+```inv
 cat ex2.data_id | ar-run > ex3.job_id
 ```
 
@@ -123,7 +124,7 @@ status.
 As we have shown in our very first example, you can also bypass the
 `ar-upload` step and launch a job directly. Here is an example.
 
-```bash
+```inv
 ar-run --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test"
 ```
 
@@ -142,7 +143,7 @@ be used to score the assemblies in the evaluation step.
 To monitor the job and data status, you can use variations of the
 `ar-stat` command. To get the list of recently submitted jobs, type:
 
-```bash
+```inv
 ar-stat
 ```
 
@@ -161,7 +162,7 @@ The status table also gives you the data ID for each job. However, you
 may need to list all the datasets you have uploaded but may not
 necessarily have computed on. For that, you can type:
 
-```bash
+```inv
 ar-stat -l
 ```
 
@@ -177,7 +178,7 @@ can add the `--wait` option to make sure the command waits for the job
 to complete. In the following example, we specify the job ID from a
 file we have saved.
 
-```bash
+```inv
 cat ex3.job_id | ar-get --report --wait
 ```
 
@@ -187,13 +188,13 @@ we will get you the best assembly based on a set of common metrics.
 We are still working on the scoring functions for reference-based
 and reference-free assemblies.
 
-```bash
+```inv
 cat ex3.job_id | ar-get --wait > ex4.contigs.fasta
 ```
 
 To download the whole assembly directory on the server, type:
 
-```bash
+```inv
 cat ex3.job_id | ar-get --download ex5.dir
 ```
 
@@ -201,7 +202,6 @@ Here's an example of an HTML file in the downloaded diretory for
 visually comparing multiple assemblies (currently supported by
 the `quast` module).
 
-FIXME: A BETTER PICTURE NEEDED
 ![quast assembly comparison](http://www.mcs.anl.gov/~fangfang/arast/quast.png)
 
 
