@@ -42,7 +42,8 @@ class FileSet(dict):
                  **kwargs):
         dict.__init__(self, **kwargs)
         self.update({'type': set_type,
-                     'file_infos': []})
+                     'file_infos': [],
+                     'tags': []})
         self.id = uuid.uuid4()
         if type(file_infos) is list:
             for f in file_infos:
