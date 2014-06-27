@@ -49,8 +49,8 @@ auto = """
  (define id (idba pp))
  (define toptwo (slice (sort (list id sp vt) > :key (lambda (c) (n50 c))) 0 2))
  (define gam (gam_ngs toptwo))
- (define newsort (sort (list (upload gam) (upload sp) (upload vt) (upload id)) > :key (lambda (c) (get ale_score (ale c)))))
- (tar (all_files (quast newsort)) :name analysis))
+ (define newsort (sort (list gam sp vt id) > :key (lambda (c) (get ale_score (ale c)))))
+ (tar (all_files (quast (upload newsort))) :name analysis)
 )
 """
 
@@ -69,5 +69,26 @@ tune_velvet = """
  (define vtppbh (begin (setparam hash_length kppbh) (velvet ppbh)))
  (define vt (begin (setparam hash_length k) (velvet READS)))
  (tar (all_files (quast vt vtpp vtbh vtppbh)) :name analysis))
+)
+"""
+
+
+
+test = """
+(begin
+ (define newsort (sort (list (kiki READS) (velvet READS)) > :key (lambda (c) (n50 c))))
+ (tar (all_files (quast (upload newsort))) :name analysis)
+)
+"""
+
+
+fast = """
+(begin
+ (define pp (tagdust READS))
+ (define kval (get best_k (kmergenie pp)))
+ (define vt (begin (setparam hash_length kval) (velvet pp)))
+ (define sp (spades pp))
+ (define newsort (sort (list sp vt) > :key (lambda (c) (n50 c))))
+ (tar (all_files (quast (upload newsort))) :name analysis)
 )
 """
