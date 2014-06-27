@@ -131,6 +131,8 @@ class ArastConsumer:
                 file_set['type'] = 'paired'
             elif file_set['type'] == 'single_url':
                 file_set['type'] = 'single'
+            elif file_set['type'] == 'reference_url':
+                file_set['type'] = 'reference'
             file_set['files'] = [] #legacy
             for file_info in file_set['file_infos']:
                 #### File is stored on Shock

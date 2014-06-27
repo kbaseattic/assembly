@@ -142,7 +142,6 @@ def eval(x, env):
         (_, vars, exp) = x
         return lambda *args: eval(exp, Env(vars, args, env))
     elif x[0] == 'upload':          # (upload exp) Store each intermediate for return
-
         (_,  exp) = x
         try:
             val = eval(exp, env)
@@ -157,6 +156,7 @@ def eval(x, env):
                 env.emissions.append(r)
         elif results:
             env.emissions.append(results)
+        return results
 
     elif x[0] == 'get':
         (_, key, exp) = x
@@ -301,10 +301,13 @@ class WaspLink(dict):
             ## Store default output
             if default_type == outtype:
                 if isinstance(outvalue[0], asmtypes.FileSet):
+                    outvalue['tags'].append(module_name)
                     self['default_output'] = outvalue
+                    
                 else: # Files
                     self['default_output'] = asmtypes.set_factory(outtype, [asmtypes.FileInfo(f) for f in outvalue],
                                                                   name=name)
+                    self['default_output']['tags'].append(module_name)
             ## Store all outputs and values
             outputs = []
             are_files = False
@@ -370,11 +373,9 @@ class WaspEngine():
         ## Record results into job_data
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
-        print 'emissions'
         for w in self.assembly_env.emissions + w_chain:
             try: 
                 job_data.add_results(w['default_output'])
-                print w['default_output']
             except: print 'Output', w
         job_data['exceptions'] = [str(e) for e in self.assembly_env.exceptions]
         return w_chain[0]
