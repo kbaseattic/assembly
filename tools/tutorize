@@ -1,0 +1,71 @@
+#! /usr/bin/env perl
+
+use strict;
+use JSON;
+
+my $usage = "Usage: $0 tutorial.md > narrative.json\n\n";
+
+my $markdown  = shift @ARGV or die $usage;
+
+my $user      = 'fangfang';
+my $narrative = 'Assembly_Servcice_Commands';
+my $workspace = 'fangfang:narratives';
+
+my $metadata = { creator => $user,
+                 data_dependencies => [],
+                 description       => '',
+                 format            => 'ipynb',
+                 name              => $narrative,
+                 type              => 'Narrative',
+                 ws_name           => $workspace };
+
+my $worksheets = markdown_to_narrative_worksheets($markdown);
+
+my $obj = { metadata => $metadata,
+            nbformat => 3,
+            nbformat_minor => 0,
+            worksheets => $worksheets };
+
+print encode_json($obj);
+
+sub markdown_to_narrative_worksheets {
+    my ($markdown) = @_;
+    my @lines = `cat $markdown`;
+    my @cells;
+
+    my @block;
+    my $type = 'markdown';
+    for my $line (@lines) {
+        if ($line =~ /^```/) {
+            if ($type eq 'markdown') {
+                push @cells, markdown_block(\@block) if @block;
+                $type = 'code';
+            }
+            if ($type eq 'code') {
+                push @cells, code_block(\@block) if @block;
+                $type = 'markdown';
+            }
+        }
+        push @block, $line;
+    }
+    wantarray ? @cells : \@cells;
+}
+
+sub markdown_block {
+    my ($block) = @_;
+    my $source = join('\n', @$block);
+    { cell_type => 'markdown',
+      metadata  => {},
+      source    => $source };
+}    
+
+sub code_block {
+    my ($block) = @_;
+    my $input = join('\n', @$block);
+    { cell_type => 'code',
+      collapsed => 'false',
+      language  => 'python',
+      metadata  => {},
+      input     => $input,
+      output    => [] };
+}
