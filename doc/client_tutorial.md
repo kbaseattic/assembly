@@ -114,9 +114,9 @@ cat ex2.data_id | ar-run > ex3.job_id
 ```
 
 If you don't have the data ID saved in a file, you can instead type
-something like `ar-run --data 23`.
+something such as `ar-run --data 23`.
 
-Note the assembly job is asynchrnous. The `ar-run` command should
+Note that the assembly job is asynchrnous. The `ar-run` command should
 return immediately with a job ID with which you can query the job
 status.
 
@@ -127,7 +127,7 @@ As we have shown in our very first example, you can also bypass the
 ar-run --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test"
 ```
 
-This command should return as soon as the data is uploaded. Note we
+This command should return as soon as the data is uploaded. Note that we
 are also explicitly invoking the `tagdust` preprocessing module and
 the `idba` assembler using the `-p` pipeline option. You can use the
 `ar-avail` command to list all the modules supported. We will describe
@@ -182,7 +182,7 @@ cat ex3.job_id | ar-get --report --wait
 ```
 
 You can pick an assembly using numeric or string IDs (e.g.,
-`ar-get --pick 2`, `ar-get --pick spades_contigs`). But by default,
+`ar-get --pick 2`, `ar-get --pick spades_contigs`). By default,
 we will get you the best assembly based on a set of common metrics.
 We are still working on the scoring functions for reference-based
 and reference-free assemblies.
