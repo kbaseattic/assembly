@@ -12,6 +12,9 @@ class QuastAssessment(BaseAssessment, IPlugin):
     def run(self):
 
         contigsets = self.data.contigsets
+
+        for i,c, in enumerate(contigsets):
+            c['tags'].append('quast-{}'.format(i+1))
         contigfiles = self.data.contigfiles
         if len(contigsets) == 0: #Check for scaffolds
             contigsets = self.data.scaffoldsets
