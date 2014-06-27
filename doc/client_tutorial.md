@@ -9,8 +9,7 @@ service as well as give some command-line recipes. You will learn how
 to upload a set of read files, assemble them, inspect the results, and
 get the best assembly for your downstream analysis. 
 
-The default pipeline tends to perform well in our judgment, but you
-are encouraged to experiment with alternative assemblers,
+We believe the default pipeline performs well. However, we encourage you to experiment with alternative assemblers,
 preprocessing tools, and parameter settings. Our service currently
 supports over 20 assemblers and tools, and its modular design allows
 for straightforward extension as sequencing technologies and analysis
@@ -18,7 +17,7 @@ tools evolve. We have also built a powerful pipeline engine that
 allows you to mix and match approaches and evaluate a variety of
 customized pipelines on your datasets.
 
-We will start with a very simple example. We will then step through
+We will start with a very simple example. Then, we will step through
 the commands and options. Since a thorough assembly on a microbial
 genome can take hours, we will be using a partial dataset in the early
 examples for quick turnaround. In the final set of examples, we will
@@ -30,13 +29,13 @@ supports assembly of low-complexity metagenomes.
 
 The following command will instruct the server to download a file of
 single-end reads specified by the URL and assemble them using the
-velvet assembler. It should take just a couple minutes. 
+velvet assembler. This should take just a couple minutes. 
 
 ```bash
 ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait > ex1.contigs.fasta
 ```
 
-This command will block until the asesmbly is done. And the resulting
+This command will block until the asesmbly is done. The resulting
 set of contigs will be saved to a FASTA file local to the client.
 
 ```bash
@@ -66,7 +65,7 @@ ar-login, ar-logout, ar-upload, ar-run, ar-stat, ar-get, ar-kill, ar-avail
 If you are using one of the browser-based clients, you may have
 already signed in using the widget located on the upper-right corner
 of your window. If you are using the command-line client from the
-terminal, you can type the following commands to authenticate or
+terminal, you can type the following commands to authenticate, or
 switch to a different account.
 
 ```
