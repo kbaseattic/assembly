@@ -21,10 +21,10 @@ from pkg_resources import resource_filename
 import assembly.asmtypes as asmtypes
 import assembly.client as client
 import assembly.config as conf
-from assembly.auth_token import *
+import assembly.auth_token as auth
 import traceback
 
-my_version = '0.3.9.6'
+my_version = '0.4.0.0'
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 parser.add_argument('-s', dest='ARAST_URL', help='arast server url')
@@ -52,7 +52,7 @@ p_run.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', he
 p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
 p_run.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
 p_run.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a single end file and parameters")
+p_run.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
 p_run.add_argument("--curl", action="store_true", help="Use curl for http requests")
 
 # stat -h
@@ -74,7 +74,8 @@ p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="S
 p_upload.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
 p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
 p_upload.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
-p_upload.add_argument("-r", "--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
+p_upload.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify a reference contig file")
+p_upload.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
 p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
 p_upload.add_argument("--json", action="store_true", help="Print data info json object to STDOUT")
 
@@ -94,7 +95,7 @@ p_get.add_argument("-w", "--wait", action="store_true", help="Wait until job is 
 
 p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
-
+p_login.add_argument("--rast", action="store_true", help="Print assembly to stdout")
 
 def main():
     global aclient
@@ -167,21 +168,28 @@ def main():
             a_token = oauth_parser.get('auth', 'token')
             # print >> sys.stderr, "Logged in as: {}".format(a_user)
         else:
-            print("Please authenticate with KBase credentials")
-            a_user = raw_input("KBase Login: ")
-            a_pass = getpass.getpass(prompt="KBase Password: ")
-            globus_map = get_token(a_user, a_pass)
-            a_token = globus_map['access_token']
-            try:
-                os.makedirs(user_dir)
-            except:
-                pass
+            if args.rast:
+                print("Please authenticate with RAST credentials")
+                a_user = raw_input("RAST Login: ")
+                a_pass = getpass.getpass(prompt="RAST Password: ")
+                globus_map = auth.get_token(a_user, a_pass, auth_svc=auth.RAST_URL)
+                a_token = globus_map['access_token']
+                a_user = '{}_rast'.format(a_user)
+            else:
+                print("Please authenticate with KBase credentials")
+                a_user = raw_input("KBase Login: ")
+                a_pass = getpass.getpass(prompt="KBase Password: ")
+                globus_map = auth.get_token(a_user, a_pass)
+                a_token = globus_map['access_token']
+                try:
+                    os.makedirs(user_dir)
+                except:
+                    pass
             uparse = SafeConfigParser()
             uparse.add_section('auth')
             uparse.set('auth', 'user', a_user)
             uparse.set('auth', 'token', a_token)
             uparse.set('auth', 'token_date', str(datetime.date.today()))
-
             uparse.write(open(oauth_file, 'wb'))
 
     if args.command == 'login':
