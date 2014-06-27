@@ -264,7 +264,7 @@ def main():
                     f_set = asmtypes.FileSet(f_type, f_infos, **f_set_args)
                     adata.add_set(f_set)
 
-        arast_msg = arast_msg = dict((k, options[k]) for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp'] if k in options)
+        arast_msg = dict((k, options[k]) for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp'] if k in options)
 
         arast_msg['assembly_data'] = adata
         arast_msg['client'] = 'CLI'
