@@ -1,5 +1,6 @@
 import asmtypes
 import wasp
+import os
 from Bio import SeqIO
 
 ####### Decorators
@@ -48,7 +49,7 @@ def n50(contigs):
         if teoN50 < testSum:
             N50 = con
             break
-    print 'N50: ' + str(N50)  
+    print 'N50 of {}: {}'.format(os.path.basename(contig), N50)
     return N50
 
 ####### Wasp expressions
