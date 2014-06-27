@@ -199,7 +199,7 @@ visually comparing multiple assemblies (currently supported by
 the `quast` module).
 
 FIXME: A BETTER PICTURE NEEDED
-![quast assembly comparison](https://github.com/kbase/assembly/blob/master/doc/quast.png)
+![quast assembly comparison](http://www.mcs.anl.gov/~fangfang/arast/quast.png)
 
 
 ## Advanced Features
