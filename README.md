@@ -25,7 +25,6 @@ Python packages (with pip):
 - appdirs
 - argparse
 - prettytable
-- pymongo
 - httplib2
 
 Perl modules (with CPAN):
