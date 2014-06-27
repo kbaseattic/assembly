@@ -7,7 +7,11 @@ def read(fname):
 
 setup(
     name = "ar_client",
+<<<<<<< HEAD
     version = "0.3.9.7",
+=======
+    version = "0.4.0.0",
+>>>>>>> edge
     author = "Chris Bun",
     author_email = "chrisbun@gmail.com",
     description = ("A commandline client for the KBASE Assembly Service"),
