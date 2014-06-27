@@ -195,6 +195,8 @@ def authenticate_request():
         print "Auth error"
         raise cherrypy.HTTPError(403, 'Bad Token')
     auth_info = metadata.get_auth_info(user)
+
+    #### Previous Authorization found
     if auth_info:
         # Check exp date
         auth_time_str = auth_info['token_time']
@@ -206,7 +208,8 @@ def authenticate_request():
             nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
             globus_user = nexus.authenticate_user(token)
             metadata.update_auth_info(globus_user, token, str(ctime))
-            
+
+    #### Validate Token
     else:
         nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
         globus_user = nexus.authenticate_user(token)
@@ -317,7 +320,7 @@ class JobResource:
         token_user = authenticate_request()
         if token_user == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
-        if not userid == token_user:
+        if not (userid == token_user or userid.split('_rast')[0] == token_user):
             raise cherrypy.HTTPError(403)
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
