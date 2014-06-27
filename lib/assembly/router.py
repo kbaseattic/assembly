@@ -341,6 +341,7 @@ class JobResource:
             resource = args[0]
         try:
             userid = kwargs['userid']
+            del kwargs['userid']
         except:
             raise cherrypy.HTTPError(403)
 
@@ -362,7 +363,7 @@ class JobResource:
         elif resource == 'results':
             try: args = args[1:]
             except IndexError: args = ()
-            return self.get_results(userid, job_id, *args)
+            return self.get_results(userid, job_id, *args, **kwargs)
         elif resource == 'data':
             return self.get_job_data(userid, job_id)
         elif resource == 'report':
@@ -490,12 +491,20 @@ class JobResource:
                                           shock_url=cherrypy.config['ar_shock_url'],
                                           shock_id=f[1]) for f in result_data])
 
-    def get_results(self, userid=None, job_id=None, *args):
+    def get_results(self, userid=None, job_id=None, *args, **kwargs):
         """ Converts old style nodes to File Handles with Shock information """
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
-        return json.dumps(doc['result_data'])
+        filesets = doc['result_data']
+        if 'tags' in kwargs:
+            tags = kwargs['tags'].split(',')
+            filesets = []
+            for tag in tags:
+                for fileset in doc['result_data']:
+                    if tag.strip() in fileset['tags']:
+                        filesets.append(fileset)
+        return json.dumps(filesets)
 
     def get_report(self, userid=None, job_id=None):
         """ Converts old style nodes to File Handles with Shock information """
