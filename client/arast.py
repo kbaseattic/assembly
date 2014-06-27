@@ -269,7 +269,6 @@ def main():
         arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp']
                      if k in options}
         arast_msg['assembly_data'] = adata
-        print adata
         arast_msg['client'] = 'CLI'
 
         ##### Send message to Arast Server #####
