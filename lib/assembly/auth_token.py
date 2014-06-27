@@ -4,6 +4,7 @@ import json
 import base64
 
 NEXUS_URL="https://nexus.api.globusonline.org/goauth/token?grant_type=client_credentials"
+RAST_URL="http://rast.nmpdr.org/goauth/token?grant_type=client_credentials"
 
 def get_token(username, password, auth_svc=NEXUS_URL):
     h = httplib2.Http(disable_ssl_certificate_validation=True)

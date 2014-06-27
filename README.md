@@ -17,15 +17,18 @@ Toolchain:
 - git
 
 Interpreters:
-- Python 2.7+
+- Python 2.7.x (with SSL support)
 - Perl 5
 
 Python packages (with pip):
-- requests
 - appdirs
 - argparse
-- prettytable
 - httplib2
+- pkg_resources
+- prettytable
+- requests
+- setuptools
+- ssl (built in)
 
 Perl modules (with CPAN):
 - Config/Simple.pm
