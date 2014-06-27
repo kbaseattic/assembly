@@ -15,7 +15,7 @@ import subprocess
 import shutil
 import glob
 
-import metadata as meta
+# import metadata as meta
 
 from ConfigParser import SafeConfigParser
 

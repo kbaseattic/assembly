@@ -3,5 +3,4 @@
 # pip install requests
 # pip install argparse
 # pip install prettytable
-# pip install pymongo
 # pip install httplib2
