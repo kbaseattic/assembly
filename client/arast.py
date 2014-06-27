@@ -38,8 +38,7 @@ subparsers = parser.add_subparsers(dest='command', title='The commands are')
 p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
 data_group = p_run.add_mutually_exclusive_group()
 p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
-#p_run.add_argument("-u", "--urls",  action="append",  nargs='*', help="specify url(s) of sequence file")
-data_group.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
+
 cmd_group = p_run.add_mutually_exclusive_group()
 cmd_group.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
 cmd_group.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline. None will invoke automatic mode")
@@ -52,6 +51,8 @@ p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Spec
 p_run.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
 p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
 p_run.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
+p_run.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
+p_run.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a single end file and parameters")
 p_run.add_argument("--curl", action="store_true", help="Use curl for http requests")
 
 # stat -h
@@ -236,15 +237,15 @@ def main():
         except:
             has_data_id = False
         if not has_data_id:
-            all_lists = [args.pair, args.pair_url, args.single, args.single_url, args.reference]
+            all_lists = [args.pair, args.pair_url, args.single, args.single_url, args.reference, args.reference_url]
             file_lists = []
             for l in all_lists:
                 if l is None:
                     file_lists.append([])
                 else:
                     file_lists.append(l)
-                    
-            all_types = ['paired', 'paired_url', 'single', 'single_url', 'reference']
+                   
+            all_types = ['paired', 'paired_url', 'single', 'single_url', 'reference', 'reference_url']
             for f_list, f_type in zip(file_lists, all_types):
                 for ls in f_list:
                     f_infos = []
@@ -268,6 +269,7 @@ def main():
         arast_msg = {k:options[k] for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp']
                      if k in options}
         arast_msg['assembly_data'] = adata
+        print adata
         arast_msg['client'] = 'CLI'
 
         ##### Send message to Arast Server #####
