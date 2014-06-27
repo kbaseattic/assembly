@@ -39,7 +39,9 @@ $ docker run -v /mnt/data 6974d25316ad /bin/sh -c "cd /home/assembly/lib/assembl
 ```
 
 ### Using a different location for compute data
+```
 $ docker run -v /path/to/local/dir:/mnt/data 6974d25316ad /bin/sh -c "cd /home/assembly/lib/assembly; ./ar_computed.py -s 10.0.28.15 -c ar_compute.conf"
+```
 
 ### Managing running containers
 ```
