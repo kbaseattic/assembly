@@ -1,3 +1,20 @@
+import sys
+
+def parse(recipe):
+    desc = ''
+    rec = ''
+    for line in recipe.split('\n'):
+        if line.rfind(';') != -1:
+            desc += line[line.rfind(';')+1:].lstrip() + '\n'
+        else:
+            rec += line + '\n'
+    return desc, rec
+
+def get(rname):
+    """ returns the recipe called RNAM """
+    return parse(getattr(sys.modules[__name__], rname))[1]
+
+
 scaffolds = """
 (begin
  (define pp (bhammer (sga_preprocess READS)))
@@ -83,6 +100,8 @@ test = """
 
 
 fast = """
+;;; Runs Tagdust on reads, Kmergenie to choose hash-length for Velvet, and assembles with both Velvet and SPAdes.
+;;; Results are sorted by N50 Score
 (begin
  (define pp (tagdust READS))
  (define kval (get best_k (kmergenie pp)))
@@ -92,3 +111,5 @@ fast = """
  (tar (all_files (quast (upload newsort))) :name analysis)
 )
 """
+
+    

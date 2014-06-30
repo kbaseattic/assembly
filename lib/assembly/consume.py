@@ -228,12 +228,12 @@ class ArastConsumer:
         #### Parse pipeline to wasp exp
         wasp_exp = pipelines[0][0]
         if recipe:
-            try: wasp_exp = getattr(recipes, recipe[0])
+            try: wasp_exp = recipes.get(recipe[0])
             except AttributeError: raise Exception('"{}" recipe not found.'.format(recipe[0]))
         elif wasp_in:
             wasp_exp = wasp_in[0]
         elif pipelines[0] == 'auto':
-            wasp_exp = recipes.auto
+            wasp_exp = recipes.get('auto')
         else:
             all_pipes = []
             for p in pipelines:
