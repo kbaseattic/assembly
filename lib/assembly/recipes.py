@@ -18,7 +18,12 @@ def get_description(rname):
     """ returns the recipe description of RNAME """
     return parse(getattr(sys.modules[__name__], 'recipes')[rname])[0]
 
-
+def get_all():
+    all = {}
+    for k,v in getattr(sys.modules[__name__], 'recipes').items():
+        desc, recipe = parse(v)
+        all[k] = (desc, recipe)
+    return all
 
 recipes = {
     'scaffolds' : """
