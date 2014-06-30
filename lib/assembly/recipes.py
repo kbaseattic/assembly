@@ -22,7 +22,7 @@ def get_all():
     all = {}
     for k,v in getattr(sys.modules[__name__], 'recipes').items():
         desc, recipe = parse(v)
-        all[k] = (desc, recipe)
+        all[k] = {'description': desc, 'recipe': recipe}
     return all
 
 recipes = {
