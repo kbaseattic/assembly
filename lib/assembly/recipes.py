@@ -11,8 +11,12 @@ def parse(recipe):
     return desc, rec
 
 def get(rname):
-    """ returns the recipe called RNAM """
+    """ returns the recipe called RNAME """
     return parse(getattr(sys.modules[__name__], rname))[1]
+
+def get_description(rname):
+    """ returns the recipe description of RNAME """
+    return parse(getattr(sys.modules[__name__], rname))[0]
 
 
 scaffolds = """
