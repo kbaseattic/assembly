@@ -23,6 +23,7 @@ from traceback import format_exc
 
 # Import A-RAST libs
 import asmtypes
+import recipes
 import metadata as meta
 import shock
 from nexus import client as nexusclient
@@ -263,6 +264,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
     root = Root()
     root.user = UserResource()
     root.module = ModuleResource()
+    root.recipe = RecipeResource()
     root.shock = ShockResource({"shockurl": get_upload_url()})
     root.static = StaticResource(static_root)
 
@@ -637,6 +639,23 @@ class ModuleResource:
             with open(parser.get('web', 'ar_modules')) as outfile:
                 return outfile.read()
         else: raise cherrypy.HTTPError(403)
+
+class RecipeResource:
+    @cherrypy.expose
+    def default(self, module_name="avail", *args, **kwargs):
+        reload(recipes)
+        all = recipes.get_all()
+        if module_name == 'avail' or module_name == 'all':
+            return json.dumps(all)
+        else:
+            try: 
+                if args[0] == 'raw':
+                    return json.dumps(all[module_name]['recipe'])
+                elif args[0] == 'description':
+                    return json.dumps(all[module_name]['description'])
+            except IndexError: return json.dumps(all[module_name])
+            except: raise cherrypy.HTTPError(403)
+
 
 class SystemResource:
 
