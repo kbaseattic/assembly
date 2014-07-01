@@ -360,7 +360,7 @@ class JobResource:
         elif resource == 'report':
             return self.get_report(userid, job_id)
         elif resource == 'status':
-            return self.status(job_id=job_id, **kwargs)
+            return self.status(userid, job_id=job_id, **kwargs)
         elif resource == 'kill':
             user = authenticate_request()
             return self.kill(job_id=job_id, userid=user)
@@ -378,13 +378,13 @@ class JobResource:
             raise cherrypy.HTTPError(403, 'Could not get data')
 
     @cherrypy.expose
-    def status(self, **kwargs):
+    def status(self, userid, **kwargs):
         try:
             job_id = kwargs['job_id']
         except:
             job_id = None
         if job_id: # Single job record
-            doc = metadata.get_job(kwargs['userid'], job_id)
+            doc = metadata.get_job(userid, job_id)
             if doc:
                 try:
                     if kwargs['format'] == 'json':
@@ -402,7 +402,7 @@ class JobResource:
             except:
                 records = 100
 
-            docs = [sanitize_doc(d) for d in metadata.list_jobs(kwargs['userid'])]
+            docs = [sanitize_doc(d) for d in metadata.list_jobs(userid)]
             pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
             if docs:
                 try:
@@ -666,7 +666,6 @@ class SystemResource:
 
     def get_connections(self):
         """Returns a list of deduped connection IPs"""
-
         conns = json.loads(requests.get('http://{}:{}/api/connections'.format(
                     self.rmq_host, self.rmq_admin_port), 
                                         auth=(self.rmq_admin_user, self.rmq_admin_pass)).text)
