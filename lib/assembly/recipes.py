@@ -25,6 +25,10 @@ def get_all():
         all[k] = {'description': desc, 'recipe': recipe}
     return all
 
+def set_alias(target_recipe, alias):
+    all = getattr(sys.modules[__name__], 'recipes')
+    all.update({alias: all[target_recipe]})
+
 recipes = {
     'scaffolds' : """
     (begin
@@ -119,3 +123,6 @@ recipes = {
     )
     """
 }
+
+set_alias('fast', 'rast')
+set_alias('auto', 'rast_slow')
