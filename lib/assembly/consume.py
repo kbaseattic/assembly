@@ -33,12 +33,11 @@ from kbase import typespec_to_assembly_data as kb_to_asm
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, arasturl, config, threads, queue, kill_queue, job_list, ctrl_conf, datapath):
+    def __init__(self, shockurl, arasturl, config, threads, queue, kill_queue, job_list, ctrl_conf, datapath, binpath):
         self.parser = SafeConfigParser()
         self.parser.read(config)
         self.job_list = job_list
         # Load plugins
-        binpath = self.parser.get('compute','binpath')
         self.pmanager = ModuleManager(threads, kill_queue, job_list, binpath)
 
     # Set up environment

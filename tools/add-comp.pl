@@ -70,7 +70,6 @@ my @all_comps = (@regular_comps, @special_comps);
 my %supported = map { $_ => 1 } @all_comps;
 
 my @comps;
-# my @comps = @ARGV; @comps = @all_comps if join(' ', @comps) =~ /\ball\b/;
 for (@ARGV) {
     if (/\ball\b/) {
         @comps = @all_comps; last;
@@ -406,15 +405,15 @@ sub check_gcc {
 
 sub check_if_installed {
     my ($c) = @_;
-    my $dir = "$base_dir/../lib/ar_server/plugins";
-    my $yapsy = "$dir/$c.yapsy-plugin";
+    my $dir = "$base_dir/../lib/assembly/plugins";
+    my $yapsy = "$dir/$c.asm-plugin";
     
     return 0 unless -s $yapsy;
     my $found = 1;
     open(F, "<$yapsy") or die "Could not open plugin file $yapsy";
     while (<F>) {
         if (/^(executable|bin_\S+|\S+_bin) = (\S+)/) {
-            my $exe = "$base_dir/../lib/ar_server/$2";
+            my $exe = "$base_dir/../lib/assembly/$2";
             if (! -e $exe) { $found = 0; last; }
         }
     }

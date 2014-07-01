@@ -183,6 +183,9 @@ def authenticate_request():
         raise cherrypy.HTTPError(403, 'Bad Token')
     auth_info = metadata.get_auth_info(user)
 
+    self_path = os.path.join(os.path.dirname( __file__ ))
+    nexus_config_file = os.path.join(self_path, "nexus", "nexus.yml")
+
     #### Previous Authorization found
     if auth_info:
         # Check exp date
@@ -192,13 +195,13 @@ def authenticate_request():
         globus_user = user
         if (ctime - atime).seconds > 15*60: # 15 min auth token
             print 'Token expired, reauthenticating with Globus'
-            nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
+            nexus = nexusclient.NexusClient(config_file = nexus_config_file)
             globus_user = nexus.authenticate_user(token)
             metadata.update_auth_info(globus_user, token, str(ctime))
 
     #### Validate Token
     else:
-        nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
+        nexus = nexusclient.NexusClient(config_file = nexus_config_file)
         globus_user = nexus.authenticate_user(token)
         if globus_user:
             metadata.insert_auth_info(globus_user, token,

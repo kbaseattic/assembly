@@ -1,0 +1,38 @@
+#!/bin/sh
+
+TOP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+
+LIB_DIR=$ARAST_LIB_DIR
+VAR_DIR=$ARAST_VAR_DIR
+
+LIB_DIR=${LIB_DIR:-$TOP_DIR/lib}
+VAR_DIR=${VAR_DIR:-$TOP_DIR/deployment/var}
+
+LIB_DIR=$LIB_DIR/assembly
+LOG_DIR=$VAR_DIR/log
+
+CONTROL_CONFIG=$LIB_DIR/arast.conf
+
+
+mkdir -p $LOG_DIR
+
+args=( --config $CONTROL_CONFIG
+       --logfile $LOG_DIR/ar_server.log )
+
+nohup $LIB_DIR/arastd.py "${args[@]}" > $LOG_DIR/ar_server.out 2>&1 &
+echo $! >$VAR_DIR/ar_server.pid
+pid=$(cat $VAR_DIR/ar_server.pid)
+cmd="$LIB_DIR/arastd.py ${args[@]} > $LOG_DIR/ar_server.out 2>&1 &"
+
+sleep 2
+if [[ -z $(ps -f -p $pid | grep arastd) ]]; then
+    echo "ERROR: ARAST control server failed to start."
+    echo "Command: $cmd"
+    exit 1
+else
+    echo "ARAST control server started: pid = $pid"
+    echo "Command: $cmd"
+    echo
+fi
+
+
