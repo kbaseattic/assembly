@@ -42,7 +42,7 @@ def start(arast_server, config, num_threads, queue, datapath):
 
     arasturl =  cparser.get('assembly','arast_url')
     arastport = cparser.get('assembly','arast_port')
-    if arast_server != '':
+    if arast_server and arast_server != '':
         arasturl = arast_server
     if not num_threads:
         num_threads =  cparser.get('compute','threads')
@@ -165,7 +165,7 @@ parser.add_argument("-d", "--compute-data", dest='datapath', help="specify a dir
 args = parser.parse_args()
 if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
-arasturl = ''
+
 arasturl = args.server or None
 queue = args.queue or None
 num_threads = args.threads or None
