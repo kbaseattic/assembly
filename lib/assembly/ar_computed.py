@@ -29,7 +29,7 @@ mgr = multiprocessing.Manager()
 job_list = mgr.list()
 kill_list = mgr.list()
 
-def start(arast_server, config, num_threads, queue, datapath):
+def start(arast_server, config, num_threads, queue, datapath, binpath):
 
     #### Get default configuration from ar_compute.conf
     print " [.] Starting Assembly Service Compute Node"    
@@ -93,12 +93,19 @@ def start(arast_server, config, num_threads, queue, datapath):
     #### Check data write permissions
     rootpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
     datapath = datapath or cparser.get('compute', 'datapath')
+    binpath = binpath or cparser.get('compute','binpath')
     if not os.path.isabs(datapath): datapath = os.path.join(rootpath, datapath)
+    if not os.path.isabs(binpath): binpath = os.path.join(rootpath, binpath)
 
-    if os.access(datapath, os.W_OK):
+    if os.path.isdir(datapath) and os.access(datapath, os.W_OK):
         print ' [.] Storage path -- {} : OKAY'.format(datapath)
     else:
         raise Exception(' [.] Storage path -- {} : ERROR'.format(datapath))
+
+    if os.path.isdir(binpath) and os.access(datapath, os.R_OK):
+        print " [.] Binary path -- {} : OKAY".format(binpath)
+    else:
+        raise Exception(' [.] Binary directory does not exist -- {} : ERROR'.format(binpath))
 
     ## Start Monitor Thread
     kill_process = multiprocessing.Process(name='killd', target=start_kill_monitor,
@@ -109,7 +116,7 @@ def start(arast_server, config, num_threads, queue, datapath):
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
         compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads, 
-                                        queue, kill_list, job_list, ctrl_conf, datapath)
+                                        queue, kill_list, job_list, ctrl_conf, datapath, binpath)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
 
@@ -161,6 +168,8 @@ parser.add_argument("-q", "--queue", help="specify a queue to pull from",
                     action="store", required=False)
 parser.add_argument("-d", "--compute-data", dest='datapath', help="specify a directory for computation data",
                     action="store", required=False)
+parser.add_argument("-b", "--compute-bin", dest='binpath', help="specify a directory for computation binaries",
+                    action="store", required=False)
 
 args = parser.parse_args()
 if args.verbose:
@@ -170,4 +179,6 @@ arasturl = args.server or None
 queue = args.queue or None
 num_threads = args.threads or None
 datapath = args.datapath or None
-start(arasturl, args.config, num_threads, queue, datapath)
+binpath = args.binpath or None
+
+start(arasturl, args.config, num_threads, queue, datapath, binpath)
