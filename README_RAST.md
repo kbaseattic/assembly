@@ -21,6 +21,7 @@ git clone git@github.com:kbase/assembly.git
 cd /disks/arast/assembly
 source env/client-env-for-rast.sh
 DEPLOY_RUNTIME=$KB_RUNTIME TARGET=/disks/arast/deployment make -f Makefile.standalone
+export PATH=/disks/arast/deployment/bin:$PATH
 ```
 
 ### Start/stop assembly servers
@@ -63,6 +64,7 @@ git clone git@github.com:${USER_GITHUB_ID}/assembly.git
 source /vol/kbase/deployment/user-env.sh
 cd /disks/arast/${USER}/assembly
 DEPLOY_RUNTIME=$KB_RUNTIME make -f Makefile.standalone
+export PATH=/disks/arast/${USER}/assembly/deployment/bin:$PATH
 ```
 
 ### Start service from test server codes
