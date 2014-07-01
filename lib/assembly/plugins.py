@@ -613,11 +613,14 @@ class ModuleManager():
 
         self.root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
         self.module_bin_path = os.path.join(self.root_path, "module_bin")
+        self.plugin_path = os.path.join(self.root_path, "lib", "assembly", "plugins")
+        
+        print "plugin dir = {}".format(self.plugin_path)
 
         self.pmanager = PluginManager()
         locator = self.pmanager.getPluginLocator()
         locator.setPluginInfoExtension('asm-plugin')
-        self.pmanager.setPluginPlaces(["plugins"])
+        self.pmanager.setPluginPlaces([ self.plugin_path ])
         self.pmanager.collectPlugins()
         self.pmanager.locatePlugins()
         self.plugins = ['none']

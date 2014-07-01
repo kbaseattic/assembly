@@ -1,0 +1,7 @@
+#!/bin/sh
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+
+./stop_compute_server && ./stop_control_server
+
