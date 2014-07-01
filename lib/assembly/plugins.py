@@ -609,20 +609,18 @@ class ModuleManager():
         self.threads = threads
         self.kill_list = kill_list
         self.job_list = job_list # Running jobs
+        self.binpath = binpath
 
         self.root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
         self.module_bin_path = os.path.join(self.root_path, "module_bin")
-        self.binpath = binpath if os.path.isabs(binpath) else os.path.join(self.root_path, binpath)
-
-        if os.path.isdir(self.binpath) and os.path.exists(self.binpath):
-            print " [.] Binary path -- %s : OKAY" % self.binpath
-        else:
-            raise Exception("Binary directory does not exist: %s" % self.binpath)
+        self.plugin_path = os.path.join(self.root_path, "lib", "assembly", "plugins")
+        
+        print "plugin dir = {}".format(self.plugin_path)
 
         self.pmanager = PluginManager()
         locator = self.pmanager.getPluginLocator()
         locator.setPluginInfoExtension('asm-plugin')
-        self.pmanager.setPluginPlaces(["plugins"])
+        self.pmanager.setPluginPlaces([ self.plugin_path ])
         self.pmanager.collectPlugins()
         self.pmanager.locatePlugins()
         self.plugins = ['none']
