@@ -70,17 +70,9 @@ def send_kill_message(user, job_id):
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
-    #if params['version'].find('beta'):
-     #   print 'Sent to testing queue'
-      #  return 'jobs.test'
-    try:
-        routing_key = params['queue']
-    except:
-        routing_key = None
-    if routing_key:
-        return routing_key
-    return parser.get('rabbitmq','default_routing_key')
-
+    try: routing_key = params['queue']
+    except: routing_key = None
+    return routing_key or parser.get('rabbitmq','default_routing_key')
 
 def get_upload_url():
     global parser
@@ -90,13 +82,8 @@ def get_upload_url():
 def check_valid_client(body):
     client_params = json.loads(body) #dict of params
     min_version = parser.get('assembly', 'min_cli_version')
-    try:
-        if StrictVersion(client_params['version']) >= StrictVersion(min_version):
-            return True
-        else:
-            return False
-    except:
-        return True
+    try: return StrictVersion(client_params['version']) >= StrictVersion(min_version):
+    except: return True
 
 def route_job(body):
     if not check_valid_client(body):
