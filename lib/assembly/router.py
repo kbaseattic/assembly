@@ -361,7 +361,11 @@ class JobResource:
         elif resource == 'data':
             return self.get_job_data(userid, job_id)
         elif resource == 'report':
-            return self.get_report(userid, job_id)
+            return self.get_report_stats(userid, job_id)
+        elif resource == 'report_handle':
+            return self.get_report_handle(userid, job_id)
+        elif resource == 'log':
+            return self.get_report_log(userid, job_id)
         elif resource == 'status':
             return self.status(userid, job_id=job_id, **kwargs)
         elif resource == 'kill':
@@ -500,14 +504,51 @@ class JobResource:
                         filesets.append(fileset)
         return json.dumps(filesets)
 
-    def get_report(self, userid=None, job_id=None):
+    def get_report_handle(self, userid=None, job_id=None):
         """ Converts old style nodes to File Handles with Shock information """
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
-        if not 'report' in doc:
+        handle = None
+        try: 
+            handle = doc['report']
+        except:
+            logging.warning("Report not available for job: ", job_id)
+        return json.dumps(handle)
+
+    def get_report(self, userid=None, job_id=None):
+        """ Get job report in text """
+        handle = json.loads(self.get_report_handle(userid, job_id))
+        try: 
+            info = handle[0]['file_infos'][0]
+        except:
+            logging.warning("File info not available in job report: ", job_id)
             return
-        return json.dumps(doc['report'])
+        try:
+            url = '{}/node/{}?download'.format(info['shock_url'], info['shock_id'])
+            report = shock.get(url).content
+        except:
+            raise cherrypy.HTTPError(403, 'Could not get report using shock')
+        return report
+
+    def get_report_log(self, userid=None, job_id=None):
+        log = self.get_report(userid, job_id)
+        if self.report_contains_quast(log):
+            lines = str.splitlines(log, 1)
+            log = ''.join(lines[21:])
+        return log
+
+    def get_report_stats(self, userid=None, job_id=None):
+        report = self.get_report(userid, job_id)
+        if not self.report_contains_quast(report):
+            return 
+        lines = str.splitlines("QUAST: " + report, 1)
+        stats = ''.join(lines[0:21])
+        return stats
+
+    def report_contains_quast(self, report):
+        signature = "All statistics are based on contigs of size >= 500 bp"
+        return True if report and report.startswith(signature) else False
 
 
 class StaticResource:
