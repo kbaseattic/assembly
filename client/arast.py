@@ -351,7 +351,7 @@ def main():
             try:
                 report = aclient.get_job_report(args.job)
             except Exception as e:
-                sys.exit("Error retrieving job report: " + e)
+                sys.exit("Error retrieving job report: {}".format(e))
             if report:
                 print report
 
