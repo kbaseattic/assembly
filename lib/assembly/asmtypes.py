@@ -68,6 +68,10 @@ class FileSet(dict):
     def type(self):
         return self['type'] or None
 
+    def add_tag(self, tag):
+        if not tag in self['tags']:
+            self['tags'].append(tag)
+
     def update_files(self, files):
         self['file_infos'] = [FileInfo(f) for f in files]
 
