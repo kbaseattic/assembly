@@ -72,20 +72,6 @@ recipes = {
 
     """,
 
-    'auto' : """
-    (begin
-     (define pp (bhammer READS))
-     (define kval (get best_k (kmergenie pp)))
-     (define vt (begin (setparam hash_length kval) (velvet pp)))
-     (define sp (spades pp))
-     (define id (idba pp))
-     (define toptwo (slice (sort (list id sp vt) > :key (lambda (c) (n50 c))) 0 2))
-     (define gam (gam_ngs toptwo))
-     (define newsort (sort (list gam sp vt id) > :key (lambda (c) (get ale_score (ale c)))))
-     (tar (all_files (quast (upload newsort))) :name analysis)
-    )
-    """,
-
     'tune_velvet' : """
     (begin
      (define pp (sga_preprocess READS))
@@ -121,8 +107,29 @@ recipes = {
      (define newsort (sort (list sp vt) > :key (lambda (c) (n50 c))))
      (tar (all_files (quast (upload newsort))) :name analysis)
     )
+    """,
+
+    'auto': """
+    (begin
+     (define pp (bhammer READS))
+     (define kval (get best_k (kmergenie pp)))
+     (define vt (begin (setparam hash_length kval) (velvet pp)))
+     (define sp (spades pp))
+
+     (if (has_paired READS) 
+	 (prog (define id (idba pp))
+		(define assemblies (list id sp vt)))
+         (define assemblies (list sp vt)))			     
+     (define toptwo (slice (sort assemblies > :key (lambda (c) (n50 c))) 0 2))
+     (define gam (gam_ngs toptwo))
+     (define newsort (sort (cons gam assemblies) > :key (lambda (c) (get ale_score (ale c)))))
+     (tar (all_files (quast (upload newsort))) :name analysis)
+    )
     """
 }
 
 set_alias('fast', 'rast')
 set_alias('auto', 'rast_slow')
+
+
+

@@ -212,6 +212,21 @@ def eval(x, env):
                     env.exceptions.append(traceback.format_exc())
         if val:
             return val if len(val) > 1 else val[0]
+    elif x[0] == 'prog':          # same as begin, but use same env
+        val = []
+        for exp in x[1:]:
+            try:
+                ret = eval(exp, env)
+                if ret:val.append(ret)
+            except Exception as e:
+                if list(e):
+                    print(traceback.format_exc())
+                    env.errors.append(e)
+                    env.exceptions.append(traceback.format_exc())
+        if val:
+            return val if len(val) > 1 else val[0]
+
+
     else:                          # (proc exp*)
         exps = [eval(exp, env) for exp in x]
         proc = exps.pop(0)
@@ -367,7 +382,7 @@ class WaspEngine():
         init_link['default_output'] = list(job_data['initial_data'].readsets)
         
         self.assembly_env.update({self.constants_reads: init_link})
-        self.assembly_env.update({'best_contig': wasp_functions.best_contig,
+        self.assembly_env.update({'has_paired': wasp_functions.has_paired,
                                   'n50': wasp_functions.n50})
 
     def run_expression(self, exp, job_data=None):
