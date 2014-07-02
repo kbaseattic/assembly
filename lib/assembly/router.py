@@ -329,6 +329,7 @@ class JobResource:
 
     @cherrypy.expose
     def default(self, job_id=None, *args, **kwargs):
+        resource = None
         if len(args) == 0: # /user/USER/job/JOBID/
             pass
         else:
@@ -372,7 +373,7 @@ class JobResource:
             user = authenticate_request()
             return self.kill(job_id=job_id, userid=user)
         else:
-            raise cherrypy.HTTPError(403, 'Resource {} not found.'.format(resource))
+            raise cherrypy.HTTPError(403, 'Resource not found: {}'.format(resource))
 
     def get_job_data(self, userid, job_id=None):
         if userid == 'OPTIONS':

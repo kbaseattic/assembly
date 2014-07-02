@@ -151,7 +151,12 @@ class Client:
 
     def is_job_valid(self, job_id):
         stat = self.get_job_status(1, job_id)
-        return False if stat.startswith("Could not") else True
+        return False if stat.startswith("Could not get job status") else True
+
+    def is_job_done(self, job_id):
+        stat = self.get_job_status(1, job_id)
+        match = re.search('(complete|fail)', stat, re.IGNORECASE)
+        return True if match else False
 
     def validate_job(self, job_id):
         if not self.is_job_valid(job_id):
@@ -160,19 +165,17 @@ class Client:
 
     def wait_for_job(self, job_id):
         self.validate_job(job_id)
-        stat = self.get_job_status(1, job_id)
-        while not re.search('(complete|fail)', stat, re.IGNORECASE):
+        while not self.is_job_done(job_id):
             time.sleep(5)
-            stat = self.get_job_status(1, job_id)
-        return stat
+        return self.get_job_status(1, job_id)
 
     def get_job_report(self, job_id, log=False):
         self.validate_job(job_id)
+        if not self.is_job_done(job_id): 
+            sys.stderr.write("Job in progress. Use -w to wait for the job.\n")
+            sys.exit()
         url = 'http://{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
         r = requests.get(url, headers=self.headers)
-        if not r.content: 
-            sys.stderr.write("Job in progress or failed. Use -w to wait for the job.\n")
-            sys.exit()
         return r.content
 
     def get_available_modules(self):

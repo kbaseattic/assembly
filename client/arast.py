@@ -339,7 +339,10 @@ def main():
         aclient.validate_job(args.job)
 
         if args.wait:
-            stat = aclient.wait_for_job(args.job)
+            try:
+                stat = aclient.wait_for_job(args.job)
+            except KeyboardInterrupt:
+                sys.exit()
             if 'FAIL' in stat:
                 print 'Job failed: ', stat
                 sys.exit()
@@ -349,7 +352,8 @@ def main():
                 report = aclient.get_job_report(args.job)
             except Exception as e:
                 sys.exit("Error retrieving job report: " + e)
-            print report
+            if report:
+                print report
 
         elif args.assembly:
             try:
@@ -398,6 +402,7 @@ def main():
 
     elif args.command == 'kill':
         print aclient.kill_jobs(args.job)
+
 
 def is_valid_url(url):
     import re

@@ -71,6 +71,8 @@ export PATH=/disks/arast/${USER}/assembly/deployment/bin:$PATH
 ```bash
 # source runtime for python libraries
 source /vol/kbase/deployment/user-env.sh
+# add gcc-4.7 to library path
+export LD_LIBRARY_PATH=/disks/gcc/gcc-4.7.4/lib64:$LD_LIBRARY_PATH
 
 # customize server options
 export ARAST_URL=localhost
