@@ -120,7 +120,7 @@ def main():
         clientlog.debug("Logger Debugging mode")
 
     #### Get configuration #####
-    ARAST_URL = conf.URL
+    ARAST_URL = '{}:{}'.format(conf.URL, conf.PORT)
     user_dir = user_data_dir(conf.APPNAME, conf.APPAUTHOR)
 
     oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
@@ -145,10 +145,8 @@ def main():
 
     else:
         if args.command == 'logout' or args.command == 'login':
-            try:
-                os.remove(oauth_file)
-            except:
-                pass
+            try: os.remove(oauth_file)
+            except: pass
             if args.command == 'logout':
                 print >> sys.stderr, '[x] Logged out'
                 sys.exit()
@@ -158,50 +156,49 @@ def main():
             token_date_str = oauth_parser.get('auth', 'token_date')
             tdate = datetime.datetime.strptime(token_date_str, '%Y-%m-%d').date()
             cdate = datetime.date.today()
-
-            if (cdate - tdate).days > expiration:
-                reauthorize = True
-            else:
-                reauthorize = False
+            if (cdate - tdate).days > expiration: reauthorize = True
+            else: reauthorize = False
 
         if not reauthorize:
             a_user = oauth_parser.get('auth', 'user')
             a_token = oauth_parser.get('auth', 'token')
             # print >> sys.stderr, "Logged in as: {}".format(a_user)
         else:
-            if args.rast:
-                print("Please authenticate with RAST credentials")
-                a_user = raw_input("RAST Login: ")
-                a_pass = getpass.getpass(prompt="RAST Password: ")
-                globus_map = auth.get_token(a_user, a_pass, auth_svc=auth.RAST_URL)
-                a_token = globus_map['access_token']
+            service_name = 'KBase'
+            service_url = auth.NEXUS_URL
+            try:
+                if args.rast:
+                    service_name = 'RAST'
+                    service_url = auth.RAST_URL
+            except AttributeError: pass
+
+            print("Please authenticate with {} credentials".format(service_name))
+            try:
+                a_user = raw_input("{} Login: ".format(service_name))
+                a_pass = getpass.getpass(prompt="{} Password: ".format(service_name))
+            except KeyboardInterrupt: 
+                print ''
+                sys.exit()
+            login_success = False
+            for attempt in range(2):
+                try: 
+                    globus_map = auth.get_token(a_user, a_pass, auth_svc=service_url)
+                    login_success = True
+                    break
+                except: 
+                    try: a_pass = getpass.getpass(prompt="{} Password: ".format(service_name))
+                    except KeyboardInterrupt: 
+                        print ''
+                        sys.exit()
+            if not login_success:
+                print 'Invalid login/password combination.'
+                sys.exit()
+
+            a_token = globus_map['access_token']
+            if service_name == 'RAST':
                 a_user = '{}_rast'.format(a_user)
-            else:
-                print("Please authenticate with KBase credentials")
-                try:
-                    a_user = raw_input("KBase Login: ")
-                    a_pass = getpass.getpass(prompt="KBase Password: ")
-                except KeyboardInterrupt: 
-                    print ''
-                    sys.exit()
-                login_success = False
-                for attempt in range(2):
-                    try: 
-                        globus_map = auth.get_token(a_user, a_pass)
-                        login_success = True
-                        break
-                    except: 
-                        try: a_pass = getpass.getpass(prompt="KBase Password: ")
-                        except KeyboardInterrupt: 
-                            print ''
-                            sys.exit()
-                if not login_success:
-                    print 'Invalid login/password combination.'
-                    sys.exit()
-                        
-                a_token = globus_map['access_token']
-                try: os.makedirs(user_dir)
-                except OSError: pass
+            try: os.makedirs(user_dir)
+            except OSError: pass
 
             uparse = SafeConfigParser()
             uparse.add_section('auth')
@@ -216,6 +213,7 @@ def main():
     if args.ARAST_URL:
         ARAST_URL = args.ARAST_URL
 
+    logging.info('ARAST_URL: {}'.format(ARAST_URL))
     aclient = client.Client(ARAST_URL, a_user, a_token)
 
         
