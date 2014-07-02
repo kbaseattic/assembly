@@ -24,7 +24,7 @@ import assembly.auth_token as auth
 import traceback
 
 
-my_version = '0.4.0.0'
+my_version = '0.4.0.1'
 
 # setup option/arg parser
 parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
@@ -178,14 +178,31 @@ def main():
                 a_user = '{}_rast'.format(a_user)
             else:
                 print("Please authenticate with KBase credentials")
-                a_user = raw_input("KBase Login: ")
-                a_pass = getpass.getpass(prompt="KBase Password: ")
-                globus_map = auth.get_token(a_user, a_pass)
-                a_token = globus_map['access_token']
                 try:
-                    os.makedirs(user_dir)
-                except:
-                    pass
+                    a_user = raw_input("KBase Login: ")
+                    a_pass = getpass.getpass(prompt="KBase Password: ")
+                except KeyboardInterrupt: 
+                    print ''
+                    sys.exit()
+                login_success = False
+                for attempt in range(2):
+                    try: 
+                        globus_map = auth.get_token(a_user, a_pass)
+                        login_success = True
+                        break
+                    except: 
+                        try: a_pass = getpass.getpass(prompt="KBase Password: ")
+                        except KeyboardInterrupt: 
+                            print ''
+                            sys.exit()
+                if not login_success:
+                    print 'Invalid login/password combination.'
+                    sys.exit()
+                        
+                a_token = globus_map['access_token']
+                try: os.makedirs(user_dir)
+                except OSError: pass
+
             uparse = SafeConfigParser()
             uparse.add_section('auth')
             uparse.set('auth', 'user', a_user)
