@@ -301,7 +301,8 @@ class WaspLink(dict):
             ## Store default output
             if default_type == outtype:
                 if isinstance(outvalue[0], asmtypes.FileSet):
-                    outvalue['tags'].append(module_name)
+                    for out in outvalue:
+                        out['tags'].append(module_name)
                     self['default_output'] = outvalue
                     
                 else: # Files
