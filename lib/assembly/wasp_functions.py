@@ -4,7 +4,7 @@ import os
 from Bio import SeqIO
 
 ####### Decorators
-def wasp_contigs(func):
+def wasp_contigs_wrapped(func):
     """Take a wasp link, run functions on contigs """
     def func_on_contigs(*wasplinks):
         contigs = []
@@ -12,21 +12,33 @@ def wasp_contigs(func):
             contigs += w['default_output'].files
         newlink = wasp.WaspLink()
         output = func(contigs)
-        if type(output) is int:
-            return output
         newlink['default_output'] = asmtypes.set_factory('contigs', [output])
         return newlink
     return func_on_contigs
+
+def wasp_contigs(func):
+    """Take a wasp link, run functions on contigs """
+    def func_on_contigs(*wasplinks):
+        contigs = []
+        for w in wasplinks:
+            contigs += w['default_output'].files
+        return func(contigs)
+    return func_on_contigs
+
+def wasp_filesets(func):
+    """Take a wasp link, run functions on filesets """
+    def func_on_contigs(*wasplinks):
+        try: return func([w['default_output'].files for w in wasplinks])
+        except AttributeError:
+            return func([fset for w in wasplinks for fset in w['default_output']])
+    return func_on_contigs
+
 
 ##### FileSet Functions #####
 ## sorting/filtering
 
 
 ###### Raw data Functions
-@wasp_contigs
-def best_contig(contigs):
-    return contigs[0]
-
 @wasp_contigs
 def n50(contigs):
     ''' https://code.google.com/p/biopyscripts '''
@@ -53,7 +65,14 @@ def n50(contigs):
     return N50
 
 ####### Wasp expressions
-
+@wasp_filesets
+def has_paired(readsets):
+    for r in readsets:
+        if r.type == 'paired':
+            return True
+    return False
+        
+        
 
 
 
