@@ -223,7 +223,10 @@ def assembly_data_to_rows(data):
         libtype = lib.get("type", "unknown")
         files = []
         for info in lib.get(info_key, []):
-            filename = info.get("filename", "")
+            filename = info.get("filename", None)
+            if not filename:
+                filename = info.get("direct_url", "")
+                filename = re.sub(r'.*/', '', filename)
             filesize = info.get("filesize", None)
             filesize = " (%s)" % sizeof_fmt(filesize) if filesize else ""
             files.append("%s%s" % (filename, filesize))
