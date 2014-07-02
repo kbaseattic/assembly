@@ -480,11 +480,13 @@ class BasePreprocessor(BasePlugin):
             else:
                 orig_sets[0].update_files(output['reads'])
                 orig_sets[0]['name'] = '{}_reads'.format(self.name)
+        else: return
         readsets = orig_sets
         try:
-            readsets.append(asmtypes.set_factory('single', output['extra'], 
-                                                 name='{}_single'.format(self.name)))
-        except:pass
+            for extra in output['extra']:
+                readsets.append(asmtypes.set_factory('single', extra, 
+                                                     name='{}_single'.format(self.name)))
+        except Exception as e: print e
         return {'reads': readsets}
 
     # Must implement run() method

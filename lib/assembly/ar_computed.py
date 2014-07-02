@@ -68,7 +68,6 @@ def start(arast_server, config, num_threads, queue, datapath, binpath):
     print " [.] AssemblyRAST host: %s" % arasturl
     print " [.] MongoDB port: %s" % mongo_port
     print " [.] RabbitMQ port: %s" % rmq_port
-    
     # Check MongoDB status
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
