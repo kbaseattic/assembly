@@ -33,7 +33,8 @@ from kbase import typespec_to_assembly_data as kb_to_asm
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, arasturl, config, threads, queue, kill_queue, job_list, ctrl_conf, datapath, binpath):
+    def __init__(self, shockurl, rmq_host, rmq_port, arasturl, config, threads, queue, 
+                 kill_queue, job_list, ctrl_conf, datapath, binpath):
         self.parser = SafeConfigParser()
         self.parser.read(config)
         self.job_list = job_list
@@ -44,6 +45,8 @@ class ArastConsumer:
         self.shockurl = shockurl
         self.arasturl = arasturl
         self.datapath = datapath
+        self.rmq_host = rmq_host
+        self.rmq_port = rmq_port
         if queue:
             self.queue = queue
             logging.info('Using queue:{}'.format(self.queue))
@@ -325,7 +328,7 @@ class ArastConsumer:
 
     def fetch_job(self):
         connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host = self.arasturl))
+                host=self.rmq_host, port=self.rmq_port))
         channel = connection.channel()
         channel.basic_qos(prefetch_count=1)
         result = channel.queue_declare(queue=self.queue,
