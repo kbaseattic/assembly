@@ -108,25 +108,23 @@ def start(arast_server, config, num_threads, queue, datapath, binpath):
 
     ## Start Monitor Thread
     kill_process = multiprocessing.Process(name='killd', target=start_kill_monitor,
-                                           args=(arasturl,))
+                                           args=(rmq_host, rmq_port))
     kill_process.start()
 
     workers = []
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
-        compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads, 
+        compute = consume.ArastConsumer(shockurl, rmq_host, rmq_port, arasturl, config, num_threads, 
                                         queue, kill_list, job_list, ctrl_conf, datapath, binpath)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
-
         workers.append(p)
         p.start()
-
     workers[0].join()
 
-def start_kill_monitor(arasturl):
+def start_kill_monitor(rmq_host, rmq_port):
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host = arasturl))
+            host=rmq_host, port=rmq_port))
     channel = connection.channel()
     channel.exchange_declare(exchange='kill',
                              type='fanout')
@@ -134,11 +132,10 @@ def start_kill_monitor(arasturl):
     queue_name = result.method.queue
     channel.queue_bind(exchange='kill',
                        queue=queue_name)
-    print ' [*] Waiting for kill commands'
     channel.basic_consume(kill_callback,
                           queue=queue_name,
                           no_ack=True)
-
+    print ' [*] Waiting for kill commands'
     channel.start_consuming()
 
 def kill_callback(ch, method, properties, body):
