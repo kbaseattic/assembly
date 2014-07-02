@@ -355,6 +355,7 @@ def main():
             try:
                 stat = aclient.wait_for_job(args.job)
             except KeyboardInterrupt:
+                print
                 sys.exit()
             if 'FAIL' in stat:
                 print 'Job failed: ', stat
