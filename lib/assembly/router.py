@@ -534,22 +534,24 @@ class JobResource:
 
     def get_report_log(self, userid=None, job_id=None):
         log = self.get_report(userid, job_id)
-        if self.report_contains_quast(log):
-            lines = str.splitlines(log, 1)
-            log = ''.join(lines[21:])
+        if not log: return
+        pat = self.get_quast_pattern()
+        log = pat.sub('', log)
         return log
 
     def get_report_stats(self, userid=None, job_id=None):
         report = self.get_report(userid, job_id)
-        if not self.report_contains_quast(report):
-            return 
-        lines = str.splitlines("QUAST: " + report, 1)
-        stats = ''.join(lines[0:21])
-        return stats
+        if not report: return
+        pat = self.get_quast_pattern()
+        m = pat.search(report)
+        if m:
+            stats = "QUAST: " + m.group()
+            return stats
 
-    def report_contains_quast(self, report):
-        signature = "All statistics are based on contigs of size >= 500 bp"
-        return True if report and report.startswith(signature) else False
+    def get_quast_pattern(self):
+        return re.compile(r"(^All statistics are based on contigs(.|\n)*)(?=\nArast Pipeline: Job)",
+                          re.MULTILINE)
+
 
 
 class StaticResource:
