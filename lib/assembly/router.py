@@ -470,43 +470,54 @@ class JobResource:
 
         if not job_id:
             raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
 
-        #### Convert (hack) into FileInfo
-        file_handles = []
-        try:
-            if asm:
-                if asm.isdigit() and asm != '0':
-                    result_data = [doc['contig_ids'].items()[int(asm)-1]]
-                elif asm == 'auto':
-                    result_data = [doc['contig_ids'].items()[0]]
-            else:
-                result_data = doc['contig_ids'].items()
-        except Exception as e:
-            print e
-            raise cherrypy.HTTPError(500)
+        # doc = metadata.get_job(userid, job_id)
+        # filesets = doc['result_data']
+        # for fileset in filesets:
+        #     if asm
 
-        return json.dumps([asmtypes.FileInfo(filename=f[0], 
-                                          shock_url=cherrypy.config['ar_shock_url'],
-                                          shock_id=f[1]) for f in result_data])
+        # filesets = []
+
+
+        # file_handles = []
+        # try:
+        #     if asm:
+        #         if asm.isdigit() and asm != '0':
+        #             result_data = [doc['contig_ids'][0].items()[int(asm)-1]]
+        #         elif asm == 'auto':
+        #             result_data = [doc['contig_ids'][0].items()[0]]
+        #     else:
+        #         result_data = doc['contig_ids'][0]
+        # except Exception as e:
+        #     print e
+        #     raise cherrypy.HTTPError(500)
+
+        # return json.dumps([asmtypes.FileInfo(filename=f[0], 
+        #                                   shock_url=cherrypy.config['ar_shock_url'],
+        #                                   shock_id=f[1]) for f in result_data])
 
     def get_results(self, userid=None, job_id=None, *args, **kwargs):
-        """ Converts old style nodes to File Handles with Shock information """
+        """ Get results file handles with filtering based on type and tags """
         if not job_id:
-            raise cherrypy.HTTPError(403)
+            raise cherrypy.HTTPError(403, "Invalid job ID")
         doc = metadata.get_job(userid, job_id)
-        filesets = doc['result_data']
-        if 'tags' in kwargs:
-            tags = kwargs['tags'].split(',')
-            filesets = []
-            for tag in tags:
-                for fileset in doc['result_data']:
-                    if tag.strip() in fileset['tags']:
-                        filesets.append(fileset)
+        filesets = []
+        try:
+            keep = kwargs.get('type', None)
+            tags = None
+            if 'tags' in kwargs:
+                tags = set(kwargs['tags'].split(','))
+            for fileset in doc['result_data']:
+                pass_tags = not tags or tags & set(fileset['tags'])
+                pass_type = not keep or keep == fileset['type']
+                if pass_tags and pass_type:
+                    filesets.append(fileset)
+        except Exception as e:
+            raise cherrypy.HTTPError(403, "Error getting results: {}".format(e))
         return json.dumps(filesets)
 
     def get_report_handle(self, userid=None, job_id=None):
-        """ Converts old style nodes to File Handles with Shock information """
+        """ Get job report file handles """
         if not job_id:
             raise cherrypy.HTTPError(403)
         doc = metadata.get_job(userid, job_id)
