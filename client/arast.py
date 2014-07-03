@@ -386,7 +386,6 @@ def main():
         try:
             mods = json.loads(aclient.get_available_modules())
             mods = sorted(mods, key=lambda mod: mod['module'])
-            # print json.dumps(mods, indent=4)
             
             if args.verbose:
                 for mod in mods:

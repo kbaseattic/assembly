@@ -476,11 +476,13 @@ class JobResource:
         elif asm == 'auto': tag = 'rank-1'
         else:               tag = asm
 
-        return self.get_results(userid, job_id, tags=tag, type='contigs')
+        results = self.get_results(userid, job_id, tags=tag, type='contigs')
+        handles = self.filesets_to_first_handles(json.loads(results))
+
+        return json.dumps(handles)
 
     def get_results(self, userid=None, job_id=None, *args, **kwargs):
         """ Get results file handles with filtering based on type and tags """
-        print json.dumps(kwargs)
         doc = self.get_validated_job(userid, job_id)
         filesets = []
         try:
@@ -542,7 +544,10 @@ class JobResource:
         return re.compile(r"(^All statistics are based on contigs(.|\n)*)(?=\nArast Pipeline: Job)",
                           re.MULTILINE)
 
-
+    def filesets_to_first_handles(self, filesets):
+        try: handles = [fs['file_infos'][0] for fs in filesets]
+        except: raise cherrypy.HTTPError(403, "Handles not found in filesets")
+        return handles
 
 class StaticResource:
 
