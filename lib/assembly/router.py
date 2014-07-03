@@ -436,12 +436,17 @@ class JobResource:
                     pt.add_row(row)
                 return pt.get_string() + "\n"
 
+    
+    def get_validated_job(self, user=None, job=None):
+        if not job:  raise cherrypy.HTTPError(403, 'Undefined Job ID')
+        if not user: raise cherrypy.HTTPError(403, 'Undefined user ID')
+        doc = metadata.get_job(user, job)
+        if not doc:  raise cherrypy.HTTPError(403, 'Invalid user or job ID')
+        return doc
 
     def get_shock_node(self, userid=None, job_id=None):
         """ GET /user/USER/job/JOB/node """
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
+        doc = self.get_validated_job(userid, job_id)
         try:
             result_data = doc['result_data_legacy'][0]
         except Exception as e:
@@ -449,9 +454,7 @@ class JobResource:
         return json.dumps(result_data)
 
     def get_assembly_nodes(self, userid=None, job_id=None, asm=None):
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
+        doc = self.get_validated_job(userid, job_id)
         try:
             if asm:
                 if asm.isdigit() and asm != '0':
@@ -467,9 +470,7 @@ class JobResource:
 
     def get_assembly_handles(self, userid=None, job_id=None, asm=None):
         """ Converts old style nodes to File Handles with Shock information """
-
-        if not job_id:
-            raise cherrypy.HTTPError(403)
+        doc = self.get_validated_job(userid, job_id)
 
         # doc = metadata.get_job(userid, job_id)
         # filesets = doc['result_data']
@@ -498,9 +499,7 @@ class JobResource:
 
     def get_results(self, userid=None, job_id=None, *args, **kwargs):
         """ Get results file handles with filtering based on type and tags """
-        if not job_id:
-            raise cherrypy.HTTPError(403, "Invalid job ID")
-        doc = metadata.get_job(userid, job_id)
+        doc = self.get_validated_job(userid, job_id)
         filesets = []
         try:
             keep = kwargs.get('type', None)
@@ -518,9 +517,7 @@ class JobResource:
 
     def get_report_handle(self, userid=None, job_id=None):
         """ Get job report file handles """
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
+        doc = self.get_validated_job(userid, job_id)
         handle = None
         try: 
             handle = doc['report']
