@@ -469,42 +469,24 @@ class JobResource:
         return json.dumps(result_data)
 
     def get_assembly_handles(self, userid=None, job_id=None, asm=None):
-        """ Converts old style nodes to File Handles with Shock information """
-        doc = self.get_validated_job(userid, job_id)
+        """ Get assembly file handles"""
 
-        # doc = metadata.get_job(userid, job_id)
-        # filesets = doc['result_data']
-        # for fileset in filesets:
-        #     if asm
+        if not asm:         tag = None
+        elif asm.isdigit(): tag = 'quast-{}'.format(asm)
+        elif asm == 'auto': tag = 'rank-1'
+        else:               tag = asm
 
-        # filesets = []
-
-
-        # file_handles = []
-        # try:
-        #     if asm:
-        #         if asm.isdigit() and asm != '0':
-        #             result_data = [doc['contig_ids'][0].items()[int(asm)-1]]
-        #         elif asm == 'auto':
-        #             result_data = [doc['contig_ids'][0].items()[0]]
-        #     else:
-        #         result_data = doc['contig_ids'][0]
-        # except Exception as e:
-        #     print e
-        #     raise cherrypy.HTTPError(500)
-
-        # return json.dumps([asmtypes.FileInfo(filename=f[0], 
-        #                                   shock_url=cherrypy.config['ar_shock_url'],
-        #                                   shock_id=f[1]) for f in result_data])
+        return self.get_results(userid, job_id, tags=tag, type='contigs')
 
     def get_results(self, userid=None, job_id=None, *args, **kwargs):
         """ Get results file handles with filtering based on type and tags """
+        print json.dumps(kwargs)
         doc = self.get_validated_job(userid, job_id)
         filesets = []
         try:
             keep = kwargs.get('type', None)
             tags = None
-            if 'tags' in kwargs:
+            if 'tags' in kwargs and kwargs['tags']:
                 tags = set(kwargs['tags'].split(','))
             for fileset in doc['result_data']:
                 pass_tags = not tags or tags & set(fileset['tags'])
