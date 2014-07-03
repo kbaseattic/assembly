@@ -51,7 +51,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
     except:
         logging.error("MongoDB connection error!")
         sys.exit()
-    print " [.] MongoDB connection successful."
+    print " [x] MongoDB connection successful."
 
 
     router_kwargs = {'mongo_host': mongo_host, 'mongo_port': mongo_port,
