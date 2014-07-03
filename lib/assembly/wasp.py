@@ -27,6 +27,7 @@ class Env(dict):
             self.global_data = outer.global_data
             self.plugins = outer.plugins
             self.exceptions = outer.exceptions
+            self.errors = outer.errors
             self.outpath = outer.outpath
         else:
             self.emissions = []
@@ -37,6 +38,7 @@ class Env(dict):
                                 'stages': 0}
             self.plugins = []
             self.exceptions = []
+            self.errors = []
 
         self.parameters = {}
         ### Updata job status
@@ -118,6 +120,7 @@ def eval(x, env):
         except Exception as e: 
             print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
             print traceback.format_exc()
+            env.errors.append(e)
             env.exceptions.append(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':
@@ -149,6 +152,7 @@ def eval(x, env):
         except Exception as e: 
             print ' [!]: {} -- {}'.format(to_string(exp), e)
             print traceback.format_exc()
+            env.errors.append(e)
             env.exceptions.append(traceback.format_exc())
             results = None
         if type(results) is list:
@@ -204,9 +208,25 @@ def eval(x, env):
             except Exception as e:
                 if list(e):
                     print(traceback.format_exc())
+                    env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
         if val:
             return val if len(val) > 1 else val[0]
+    elif x[0] == 'prog':          # same as begin, but use same env
+        val = []
+        for exp in x[1:]:
+            try:
+                ret = eval(exp, env)
+                if ret:val.append(ret)
+            except Exception as e:
+                if list(e):
+                    print(traceback.format_exc())
+                    env.errors.append(e)
+                    env.exceptions.append(traceback.format_exc())
+        if val:
+            return val if len(val) > 1 else val[0]
+
+
     else:                          # (proc exp*)
         exps = [eval(exp, env) for exp in x]
         proc = exps.pop(0)
@@ -362,7 +382,7 @@ class WaspEngine():
         init_link['default_output'] = list(job_data['initial_data'].readsets)
         
         self.assembly_env.update({self.constants_reads: init_link})
-        self.assembly_env.update({'best_contig': wasp_functions.best_contig,
+        self.assembly_env.update({'has_paired': wasp_functions.has_paired,
                                   'n50': wasp_functions.n50})
 
     def run_expression(self, exp, job_data=None):
@@ -378,7 +398,8 @@ class WaspEngine():
             try: 
                 job_data.add_results(w['default_output'])
             except: print 'Output', w
-        job_data['exceptions'] = [str(e) for e in self.assembly_env.exceptions]
+        job_data['tracebacks'] = [str(e) for e in self.assembly_env.exceptions]
+        job_data['errors'] = [str(e) for e in self.assembly_env.errors]
         return w_chain[0]
 
     def get_wasp_func(self, module, job_data):

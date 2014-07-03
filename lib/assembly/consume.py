@@ -259,10 +259,10 @@ class ArastConsumer:
         # Format report
         new_report = open('{}.tmp'.format(self.out_report_name), 'w')
 
-        ### Log exceptions
-        if len(job_data['exceptions']) > 0:
+        ### Log errors
+        if len(job_data['errors']) > 0:
             new_report.write('PIPELINE ERRORS\n')
-            for i,e in enumerate(job_data['exceptions']):
+            for i,e in enumerate(job_data['errors']):
                 new_report.write('{}: {}\n'.format(i, e))
         try: ## Get Quast output
             quast_report = job_data['wasp_chain'].find_module('quast')['data'].find_type('report')[0].files[0]
@@ -278,6 +278,13 @@ class ArastConsumer:
             new_report.write('\n{1} {0} {1}\n'.format(os.path.basename(log), '='*20))
             with open(log) as l:
                 new_report.write(l.read())
+
+        ### Log tracebacks
+        if len(job_data['tracebacks']) > 0:
+            new_report.write('EXCEPTION TRACEBACKS\n')
+            for i,e in enumerate(job_data['tracebacks']):
+                new_report.write('{}: {}\n'.format(i, e))
+
         new_report.close()
         os.remove(self.out_report_name)
         shutil.move(new_report.name, self.out_report_name)
