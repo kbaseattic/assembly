@@ -86,9 +86,9 @@ p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
 p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs")
 
 # get
-p_get = subparsers.add_parser('get', description='Download result data', help='download data')
-p_get.add_argument("-j", "--job", action="store", dest="job_id", nargs=1, required=True, help="specify which job data to get")
-p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=False, const=True, help="Get assemblies only")
+p_get = subparsers.add_parser('get', description='Get result data', help='Get data')
+p_get.add_argument("-j", "--job", action="store", required=True, help="Specify which job data to get")
+p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=None, const=True, help="Get assemblies only")
 p_get.add_argument("-r", "--report", action="store_true", help="Print assembly report to stdout")
 p_get.add_argument("--stdout", action="store_true", help="Print assembly to stdout")
 p_get.add_argument("-o", "--outdir", action="store", help="Download to specified dir")
@@ -214,8 +214,10 @@ def main():
         ARAST_URL = args.ARAST_URL
 
     logging.info('ARAST_URL: {}'.format(ARAST_URL))
-    aclient = client.Client(ARAST_URL, a_user, a_token)
-
+    try:
+        aclient = client.Client(ARAST_URL, a_user, a_token)
+    except Exception as e:
+        sys.exit("Error: {}".format(e))
         
     res_ids = []
     file_sizes = []
@@ -347,34 +349,38 @@ def main():
                 
 
     elif args.command == 'get':
-        aclient.validate_job(args.job_id[0])
+        aclient.validate_job(args.job)
 
         if args.wait:
-            stat = aclient.wait_for_job(args.job_id[0])
+            try:
+                stat = aclient.wait_for_job(args.job)
+            except KeyboardInterrupt:
+                print
+                sys.exit()
             if 'FAIL' in stat:
-                print stat
+                print 'Job failed: ', stat
                 sys.exit()
 
         if args.report:
-            # try:
-            report = aclient.get_job_report(args.job_id[0])
-            print report
-            sys.exit()
-
-        if args.assembly:
             try:
-                if type(args.assembly) is str:
-                    aclient.get_assemblies(job_id=args.job_id[0], asm_id=args.assembly, stdout=args.stdout, outdir=args.outdir)
-                else:
-                    aclient.get_assemblies(job_id=args.job_id[0], stdout=args.stdout, outdir=args.outdir)
+                report = aclient.get_job_report(args.job)
+            except Exception as e:
+                sys.exit("Error retrieving job report: {}".format(e))
+            if report:
+                print report
+
+        elif args.assembly:
+            try:
+                assembly_id = args.assembly if type(args.assembly) is str else None
+                aclient.get_assemblies(job_id=args.job, asm_id=assembly_id, stdout=args.stdout, outdir=args.outdir)
             except:
                 print traceback.format_tb(sys.exc_info()[2])
                 print sys.exc_info()
         else:
             try:
-                aclient.get_job_data(job_id=args.job_id[0], outdir=args.outdir)
+                aclient.get_job_data(job_id=args.job, outdir=args.outdir)
             except:
-                print 'Error retrieving job data: {}'.format(args.job_id[0])
+                print 'Error retrieving job data: {}'.format(args.job)
 
     elif args.command == 'avail':
         try:
@@ -410,6 +416,7 @@ def main():
 
     elif args.command == 'kill':
         print aclient.kill_jobs(args.job)
+
 
 def is_valid_url(url):
     import re

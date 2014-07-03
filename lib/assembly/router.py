@@ -329,6 +329,7 @@ class JobResource:
 
     @cherrypy.expose
     def default(self, job_id=None, *args, **kwargs):
+        resource = None
         if len(args) == 0: # /user/USER/job/JOBID/
             pass
         else:
@@ -361,14 +362,18 @@ class JobResource:
         elif resource == 'data':
             return self.get_job_data(userid, job_id)
         elif resource == 'report':
-            return self.get_report(userid, job_id)
+            return self.get_report_stats(userid, job_id)
+        elif resource == 'report_handle':
+            return self.get_report_handle(userid, job_id)
+        elif resource == 'log':
+            return self.get_report_log(userid, job_id)
         elif resource == 'status':
             return self.status(userid, job_id=job_id, **kwargs)
         elif resource == 'kill':
             user = authenticate_request()
             return self.kill(job_id=job_id, userid=user)
         else:
-            raise cherrypy.HTTPError(403, 'Resource {} not found.'.format(resource))
+            raise cherrypy.HTTPError(403, 'Resource not found: {}'.format(resource))
 
     def get_job_data(self, userid, job_id=None):
         if userid == 'OPTIONS':
@@ -431,12 +436,17 @@ class JobResource:
                     pt.add_row(row)
                 return pt.get_string() + "\n"
 
+    
+    def get_validated_job(self, user=None, job=None):
+        if not job:  raise cherrypy.HTTPError(403, 'Undefined Job ID')
+        if not user: raise cherrypy.HTTPError(403, 'Undefined user ID')
+        doc = metadata.get_job(user, job)
+        if not doc:  raise cherrypy.HTTPError(403, 'Invalid user or job ID')
+        return doc
 
     def get_shock_node(self, userid=None, job_id=None):
         """ GET /user/USER/job/JOB/node """
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
+        doc = self.get_validated_job(userid, job_id)
         try:
             result_data = doc['result_data_legacy'][0]
         except Exception as e:
@@ -444,9 +454,7 @@ class JobResource:
         return json.dumps(result_data)
 
     def get_assembly_nodes(self, userid=None, job_id=None, asm=None):
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
+        doc = self.get_validated_job(userid, job_id)
         try:
             if asm:
                 if asm.isdigit() and asm != '0':
@@ -461,53 +469,79 @@ class JobResource:
         return json.dumps(result_data)
 
     def get_assembly_handles(self, userid=None, job_id=None, asm=None):
-        """ Converts old style nodes to File Handles with Shock information """
+        """ Get assembly file handles"""
 
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
+        if not asm:         tag = None
+        elif asm.isdigit(): tag = 'quast-{}'.format(asm)
+        elif asm == 'auto': tag = 'rank-1'
+        else:               tag = asm
 
-        #### Convert (hack) into FileInfo
-        file_handles = []
-        try:
-            if asm:
-                if asm.isdigit() and asm != '0':
-                    result_data = [doc['contig_ids'].items()[int(asm)-1]]
-                elif asm == 'auto':
-                    result_data = [doc['contig_ids'].items()[0]]
-            else:
-                result_data = doc['contig_ids'].items()
-        except Exception as e:
-            print e
-            raise cherrypy.HTTPError(500)
-
-        return json.dumps([asmtypes.FileInfo(filename=f[0], 
-                                          shock_url=cherrypy.config['ar_shock_url'],
-                                          shock_id=f[1]) for f in result_data])
+        return self.get_results(userid, job_id, tags=tag, type='contigs')
 
     def get_results(self, userid=None, job_id=None, *args, **kwargs):
-        """ Converts old style nodes to File Handles with Shock information """
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
-        filesets = doc['result_data']
-        if 'tags' in kwargs:
-            tags = kwargs['tags'].split(',')
-            filesets = []
-            for tag in tags:
-                for fileset in doc['result_data']:
-                    if tag.strip() in fileset['tags']:
-                        filesets.append(fileset)
+        """ Get results file handles with filtering based on type and tags """
+        print json.dumps(kwargs)
+        doc = self.get_validated_job(userid, job_id)
+        filesets = []
+        try:
+            keep = kwargs.get('type', None)
+            tags = None
+            if 'tags' in kwargs and kwargs['tags']:
+                tags = set(kwargs['tags'].split(','))
+            for fileset in doc['result_data']:
+                pass_tags = not tags or tags & set(fileset['tags'])
+                pass_type = not keep or keep == fileset['type']
+                if pass_tags and pass_type:
+                    filesets.append(fileset)
+        except Exception as e:
+            raise cherrypy.HTTPError(403, "Error getting results: {}".format(e))
         return json.dumps(filesets)
 
+    def get_report_handle(self, userid=None, job_id=None):
+        """ Get job report file handles """
+        doc = self.get_validated_job(userid, job_id)
+        handle = None
+        try: 
+            handle = doc['report']
+        except:
+            logging.warning("Report not available for job: ", job_id)
+        return json.dumps(handle)
+
     def get_report(self, userid=None, job_id=None):
-        """ Converts old style nodes to File Handles with Shock information """
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
-        if not 'report' in doc:
+        """ Get job report in text """
+        handle = json.loads(self.get_report_handle(userid, job_id))
+        try: 
+            info = handle[0]['file_infos'][0]
+        except:
+            logging.warning("File info not available in job report: ", job_id)
             return
-        return json.dumps(doc['report'])
+        try:
+            url = '{}/node/{}?download'.format(info['shock_url'], info['shock_id'])
+            report = shock.get(url).content
+        except:
+            raise cherrypy.HTTPError(403, 'Could not get report using shock')
+        return report
+
+    def get_report_log(self, userid=None, job_id=None):
+        log = self.get_report(userid, job_id)
+        if not log: return
+        pat = self.get_quast_pattern()
+        log = pat.sub('', log)
+        return log
+
+    def get_report_stats(self, userid=None, job_id=None):
+        report = self.get_report(userid, job_id)
+        if not report: return
+        pat = self.get_quast_pattern()
+        m = pat.search(report)
+        if m:
+            stats = "QUAST: " + m.group()
+            return stats
+
+    def get_quast_pattern(self):
+        return re.compile(r"(^All statistics are based on contigs(.|\n)*)(?=\nArast Pipeline: Job)",
+                          re.MULTILINE)
+
 
 
 class StaticResource:

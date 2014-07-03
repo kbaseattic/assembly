@@ -35,28 +35,31 @@ class Client:
 
     def get_job_data(self, job_id=None, outdir=None):
         if not job_id:
-            raise NotImplementedError('Job id required')
+            raise NotImplementedError('Job ID required')
         # Get node id
         res = requests.get('http://{}/user/{}/job/{}/shock_node'.format(
                 self.url, self.user, job_id), headers=self.headers)
         if res.status_code == 403:
-            raise ValueError('Invalid Job Id')
+            raise ValueError('Invalid Job ID')
         # Download files
         try:
             nodes_map = json.loads(res.text)
             for node_id in nodes_map.values():
                 self.shock.download_file(node_id, outdir=outdir)
         except Exception as e:
-            print e
-            raise Exception("Error retrieving results")
+            sys.stderr.write("Error retrieving results: {}\n".format(e))
+            sys.exit(1)
+
         return 
 
     def get_assemblies(self, job_id=None, asm_id=None, stdout=False, outdir=None):
         if not job_id:
-            raise NotImplementedError('Job id required')
+            raise NotImplementedError('Job ID required')
         # Get node id
         res = requests.get('http://{}/user/{}/job/{}/assembly'.format(
                 self.url, self.user, job_id), headers=self.headers)
+
+        print "res = {}".format(res.text)
 
         # Download files
         try:
@@ -65,18 +68,22 @@ class Client:
                 asm_file = self.shock.download_file(nodes_map.values()[0], outdir=outdir)
                 with open(asm_file) as f:
                     for line in f:
-                        print line
+                        print line,
             elif asm_id:
-                ordered = collections.OrderedDict(sorted(nodes_map.items()))
-                id = ordered.values()[int(asm_id)-1]
-                self.shock.download_file(id , outdir=outdir)
+                if not 0 <= asm_id <= len(nodes_map.items()):
+                    raise ValueError('Invalid assembly ID')
+                else:
+                    ordered = collections.OrderedDict(sorted(nodes_map.items()))
+                    id = ordered.values()[int(asm_id)-1]
+                    self.shock.download_file(id, outdir=outdir)
             else:
                 for node_id in nodes_map.values():
                     self.shock.download_file(node_id, outdir=outdir)
-        except:
-            print traceback.format_tb(sys.exc_info()[2])
-            print sys.exc_info()
-            raise Exception("Error retrieving results")
+        except Exception as e:
+            # print traceback.format_tb(sys.exc_info()[2])
+            # print sys.exc_info()
+            sys.stderr.write("Error retrieving results: {}\n".format(e))
+            sys.exit(1)
         return 
         
     def upload_data_shock(self, filename, curl=False):
@@ -144,39 +151,32 @@ class Client:
 
     def is_job_valid(self, job_id):
         stat = self.get_job_status(1, job_id)
-        return False if stat.startswith("Could not") else True
+        return False if stat.startswith("Could not get job status") else True
+
+    def is_job_done(self, job_id):
+        stat = self.get_job_status(1, job_id)
+        match = re.search('(complete|fail)', stat, re.IGNORECASE)
+        return True if match else False
 
     def validate_job(self, job_id):
         if not self.is_job_valid(job_id):
-            sys.stderr.write("Invalid job ID: {}\n".format(job_id))
-            sys.exit()
+            sys.exit("Invalid job ID: " + job_id)
         return
 
     def wait_for_job(self, job_id):
         self.validate_job(job_id)
-        stat = self.get_job_status(1, job_id)
-        while not re.search('(complete|fail)', stat, re.IGNORECASE):
+        while not self.is_job_done(job_id):
             time.sleep(5)
-            stat = self.get_job_status(1, job_id)
-        return stat
+        return self.get_job_status(1, job_id)
 
     def get_job_report(self, job_id, log=False):
-        url = 'http://{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
-        r = requests.get(url, headers=self.headers)
-        if not r.content: 
+        self.validate_job(job_id)
+        if not self.is_job_done(job_id): 
             sys.stderr.write("Job in progress. Use -w to wait for the job.\n")
             sys.exit()
-        try:
-            info = json.loads(r.content)[0]['file_infos'][0]
-            url = '{}/node/{}?download'.format(info['shock_url'], info['shock_id'])
-            report = shock_get(url).content
-            if not log:
-                lines = str.splitlines(report, 1)
-                report = ''.join(lines[0:20])
-        except Exception as e:
-            print e
-            raise Exception("Error retrieving job report")
-        return report
+        url = 'http://{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
+        r = requests.get(url, headers=self.headers)
+        return r.content
 
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
@@ -223,7 +223,10 @@ def assembly_data_to_rows(data):
         libtype = lib.get("type", "unknown")
         files = []
         for info in lib.get(info_key, []):
-            filename = info.get("filename", "")
+            filename = info.get("filename", None)
+            if not filename:
+                filename = info.get("direct_url", "")
+                filename = re.sub(r'.*/', '', filename)
             filesize = info.get("filesize", None)
             filesize = " (%s)" % sizeof_fmt(filesize) if filesize else ""
             files.append("%s%s" % (filename, filesize))
