@@ -1,4 +1,5 @@
 import collections
+import contextlib
 import datetime
 import json
 import requests
@@ -47,10 +48,20 @@ class Client:
             for node_id in nodes_map.values():
                 self.shock.download_file(node_id, outdir=outdir)
         except Exception as e:
-            sys.stderr.write("Error retrieving results: {}\n".format(e))
-            sys.exit(1)
-
+            sys.exit("Error retrieving results: {}\n".format(e))
         return 
+
+    def pick_assembly(self, job_id, asm):
+        url = 'http://{}/user/{}/job/{}/assemblies/{}'.format(self.url, self.user, job_id, asm)
+        handles = json.loads(self.req_get(url))
+        try: handle = handles[0]
+        except: raise ValueError('Invalid assembly ID: ' + asm)
+
+        print handle        
+        self.download_shock_handle(handle)
+
+        # print res.text
+        return
 
     def get_assemblies(self, job_id=None, asm_id=None, stdout=False, outdir=None):
         if not job_id:
@@ -175,8 +186,7 @@ class Client:
             sys.stderr.write("Job in progress. Use -w to wait for the job.\n")
             sys.exit()
         url = 'http://{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
-        r = requests.get(url, headers=self.headers)
-        return r.content
+        return self.req_get(url)
 
     def get_available_modules(self):
         url = 'http://{}/module/all/avail/'.format(self.url, self.user)
@@ -195,6 +205,50 @@ class Client:
     def get_config(self):
         return requests.get('http://{}/admin/system/config'.format(self.url)).content
 
+    def req_get(self, url, ret=None):
+        r = requests.get(url, headers=self.headers)
+
+        if r.status_code != requests.codes.ok:
+            cherry = re.compile("^HTTPError: \(\d+, '(.*?)'", re.MULTILINE)
+            match = cherry.search(r.content)
+            msg = match.group(1) if match else r.reason
+            raise requests.exceptions.HTTPError("HTTPError {}: {}".format(r.status_code, msg))
+
+        if   ret == 'text': return r.text
+        elif ret == 'json': return r.json
+        else:               return r.content
+    
+    @contextlib.contextmanager
+    def smart_open(self, filename=None):
+        if filename and filename != '-':
+            fh = open(filename, 'w')
+        else:
+            fh = sys.stdout
+
+        try:
+            yield fh
+        finally:
+            if fh is not sys.stdout:
+                fh.close()
+
+    def download_shock_handle(self, handle):
+        shock_url = handle.get('shock_url') or handle.get('url')
+        shock_id  = handle.get('shock_id')  or handle.get('id')
+        if not shock_url or not shock_id:
+            raise Exception("Invalid shock handle: {}".format(handle))
+        url = "{}/node/{}".format(shock_url, shock_id)
+        print url
+        local_filename = url.split('/')[-1]
+            # NOTE the stream=True parameter
+        r = requests.get(url, stream=True)
+        # with open("junk", 'wb') as f:
+        with self.smart_open() as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    # print >>f, chunk
+                    f.write(chunk)
+                    f.flush()
+        return local_filename
 
 ##### ARAST JSON SPEC CLASSES #####
 
@@ -240,3 +294,7 @@ def sizeof_fmt(num):
             return "%3.1f%s" % (num, x)
         num /= 1024.0
     return "%3.1f%s" % (num, 'TB')    
+
+def dump(var):
+    from pprint import pprint
+    pprint (vars(var))

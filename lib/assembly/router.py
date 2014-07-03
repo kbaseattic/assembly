@@ -496,7 +496,7 @@ class JobResource:
                 if pass_tags and pass_type:
                     filesets.append(fileset)
         except Exception as e:
-            raise cherrypy.HTTPError(403, "Error getting results: {}".format(e))
+            raise cherrypy.HTTPError(403, "No results found for job {}".format(job_id))
         return json.dumps(filesets)
 
     def get_report_handle(self, userid=None, job_id=None):
@@ -504,21 +504,18 @@ class JobResource:
         doc = self.get_validated_job(userid, job_id)
         handle = None
         try: 
-            handle = doc['report']
+            handle = doc['report'][0]['file_infos'][0]
         except:
-            logging.warning("Report not available for job: ", job_id)
+            logging.warning("Report not found for job ", job_id)
         return json.dumps(handle)
 
     def get_report(self, userid=None, job_id=None):
         """ Get job report in text """
         handle = json.loads(self.get_report_handle(userid, job_id))
+        if not handle:
+            raise cherrypy.HTTPError(403, 'Report not found for job {}'.format(job_id))
         try: 
-            info = handle[0]['file_infos'][0]
-        except:
-            logging.warning("File info not available in job report: ", job_id)
-            return
-        try:
-            url = '{}/node/{}?download'.format(info['shock_url'], info['shock_id'])
+            url = '{}/node/{}?download'.format(handle['shock_url'], handle['shock_id'])
             report = shock.get(url).content
         except:
             raise cherrypy.HTTPError(403, 'Could not get report using shock')
@@ -541,7 +538,7 @@ class JobResource:
             return stats
 
     def get_quast_pattern(self):
-        return re.compile(r"(^All statistics are based on contigs(.|\n)*)(?=\nArast Pipeline: Job)",
+        return re.compile(r"(^All statistics are based on contigs(.|\n)*)(?=^Arast Pipeline: Job)",
                           re.MULTILINE)
 
     def filesets_to_first_handles(self, filesets):

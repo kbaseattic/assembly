@@ -88,6 +88,7 @@ p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs
 # get
 p_get = subparsers.add_parser('get', description='Get result data', help='Get data')
 p_get.add_argument("-j", "--job", action="store", required=True, help="Specify which job data to get")
+p_get.add_argument("-p", "--pick", action="store", nargs='?', default=None, const=True, help="Print assembled contigs in FASTA to screen")
 p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=None, const=True, help="Get assemblies only")
 p_get.add_argument("-r", "--report", action="store_true", help="Print assembly report to stdout")
 p_get.add_argument("--stdout", action="store_true", help="Print assembly to stdout")
@@ -148,7 +149,7 @@ def main():
             try: os.remove(oauth_file)
             except: pass
             if args.command == 'logout':
-                print >> sys.stderr, '[x] Logged out'
+                print >> sys.stderr, '[.] Logged out'
                 sys.exit()
     
         # Check if user file exists
@@ -299,7 +300,7 @@ def main():
 
         ##### Send message to Arast Server #####
         payload = json.dumps(arast_msg, sort_keys=True)
-        clientlog.debug(" [x] Sending message: %r" % (payload))
+        clientlog.debug(" [.] Sending message: %r" % (payload))
 
         if args.command == "run":
             response = aclient.submit_job(payload)
@@ -368,6 +369,14 @@ def main():
                 sys.exit("Error retrieving job report: {}".format(e))
             if report:
                 print report
+
+        elif args.pick:
+            try:
+                asm = args.pick if type(args.pick) is str else 'auto'
+                aclient.pick_assembly(args.job, asm)
+            except Exception as e:
+                sys.exit("Error getting assembly: {}".format(e))
+
 
         elif args.assembly:
             try:
