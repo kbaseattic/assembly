@@ -58,7 +58,7 @@ AssemblyRAST Client 0.3.9.7
 Here is the list of client commands. You can use the "-h" option to
 consult the usage information for each command.
 ```
-ar-login, ar-logout, ar-upload, ar-run, ar-stat, ar-get, ar-kill, ar-avail
+ar-login, ar-logout, ar-upload, ar-run, ar-stat, ar-get, ar-filter, ar-kill, ar-avail
 ```
 
 ### Authentication

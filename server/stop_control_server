@@ -19,11 +19,11 @@ pid=`cat $pid_file`
 killtree() {
     local _pid=$1
     local _sig=${2:-TERM}
-    kill -stop ${_pid} 
+    kill -stop ${_pid} 2>/dev/null
     for _child in $(pgrep -P ${_pid}); do
         killtree ${_child} ${_sig}
     done
-    kill -${_sig} ${_pid}
+    kill -${_sig} ${_pid} 2>/dev/null
 }
 
 killtree $pid KILL
