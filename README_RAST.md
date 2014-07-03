@@ -21,7 +21,6 @@ git clone git@github.com:kbase/assembly.git
 cd /disks/arast/assembly
 source env/client-env-for-rast.sh
 DEPLOY_RUNTIME=$KB_RUNTIME TARGET=/disks/arast/deployment make -f Makefile.standalone
-export PATH=/disks/arast/deployment/bin:$PATH
 ```
 
 ### Start/stop assembly servers
@@ -64,15 +63,12 @@ git clone git@github.com:${USER_GITHUB_ID}/assembly.git
 source /vol/kbase/deployment/user-env.sh
 cd /disks/arast/${USER}/assembly
 DEPLOY_RUNTIME=$KB_RUNTIME make -f Makefile.standalone
-export PATH=/disks/arast/${USER}/assembly/deployment/bin:$PATH
 ```
 
 ### Start service from test server codes
 ```bash
 # source runtime for python libraries
 source /vol/kbase/deployment/user-env.sh
-# add gcc-4.7 to library path
-export LD_LIBRARY_PATH=/disks/gcc/gcc-4.7.4/lib64:$LD_LIBRARY_PATH
 
 # customize server options
 export ARAST_URL=localhost
