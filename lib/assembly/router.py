@@ -367,6 +367,8 @@ class JobResource:
             return self.get_report_handle(userid, job_id)
         elif resource == 'log':
             return self.get_report_log(userid, job_id)
+        elif resource == 'analysis':
+            return self.get_analysis_handle(userid, job_id)
         elif resource == 'status':
             return self.status(userid, job_id=job_id, **kwargs)
         elif resource == 'kill':
@@ -499,6 +501,15 @@ class JobResource:
             raise cherrypy.HTTPError(403, "No results found for job {}".format(job_id))
         return json.dumps(filesets)
 
+    def get_analysis_handle(self, userid=None, job_id=None):
+        """Get quast tarball handle"""
+        results = self.get_results(userid, job_id, type='tar')
+        try:
+            handle = json.loads(results)[0]['file_infos'][0]
+        except Exception as e:
+            raise cherrypy.HTTPError(403, 'No analysis tarball found for job {}'.format(job_id))
+        return json.dumps(handle)
+
     def get_report_handle(self, userid=None, job_id=None):
         """ Get job report file handles """
         doc = self.get_validated_job(userid, job_id)
@@ -506,7 +517,7 @@ class JobResource:
         try: 
             handle = doc['report'][0]['file_infos'][0]
         except:
-            logging.warning("Report not found for job ", job_id)
+            raise cherrypy.HTTPError(403, "Report not found for job {}".format(job_id))
         return json.dumps(handle)
 
     def get_report(self, userid=None, job_id=None):
@@ -532,9 +543,9 @@ class JobResource:
         report = self.get_report(userid, job_id)
         if not report: return
         pat = self.get_quast_pattern()
-        m = pat.search(report)
-        if m:
-            stats = "QUAST: " + m.group()
+        match = pat.search(report)
+        if match:
+            stats = "QUAST: " + match.group()
             return stats
 
     def get_quast_pattern(self):

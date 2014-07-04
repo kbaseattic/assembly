@@ -78,7 +78,7 @@ p_upload.add_argument("--single_url", action="append", dest="single_url", nargs=
 p_upload.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify a reference contig file")
 p_upload.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
 p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
-p_upload.add_argument("--json", action="store_true", help="Print data info json object to STDOUT")
+p_upload.add_argument("--json", action="store_true", help="Print data info json object")
 
 # kill
 p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
@@ -88,16 +88,16 @@ p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs
 # get
 p_get = subparsers.add_parser('get', description='Get result data', help='Get data')
 p_get.add_argument("-j", "--job", action="store", required=True, help="Specify which job data to get")
-p_get.add_argument("-p", "--pick", action="store", nargs='?', default=None, const=True, help="Print assembled contigs in FASTA to screen")
-p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=None, const=True, help="Get assemblies only")
-p_get.add_argument("-r", "--report", action="store_true", help="Print assembly report to stdout")
-p_get.add_argument("--stdout", action="store_true", help="Print assembly to stdout")
+p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=None, const=True, help="Download an assembly or assemblies")
+p_get.add_argument("-p", "--pick", action="store", nargs='?', default=None, const=True, help="Print an assembly")
+p_get.add_argument("-r", "--report", action="store_true", help="Print assembly stats report")
+p_get.add_argument("-l", "--log", action="store_true", help="Print assembly job log")
 p_get.add_argument("-o", "--outdir", action="store", help="Download to specified dir")
 p_get.add_argument("-w", "--wait", action="store_true", help="Wait until job is done")
 
 p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 p_login = subparsers.add_parser('login', description='Force log in', help='log in')
-p_login.add_argument("--rast", action="store_true", help="Print assembly to stdout")
+p_login.add_argument("--rast", action="store_true", help="Log in using RAST account")
 
 def main():
     global aclient
@@ -361,35 +361,48 @@ def main():
             if 'FAIL' in stat:
                 print 'Job failed: ', stat
                 sys.exit()
+        else:
+            aclient.check_job(args.job)
+
 
         if args.report:
             try:
                 report = aclient.get_job_report(args.job)
             except Exception as e:
                 sys.exit("Error retrieving job report: {}".format(e))
-            if report:
-                print report
+            if report: print report
+
+        elif args.log:
+            try:
+                joblog = aclient.get_job_log(args.job)
+            except Exception as e:
+                sys.exit("Error retrieving job log: {}".format(e))
+            if joblog: print joblog
 
         elif args.pick:
             try:
-                asm = args.pick if type(args.pick) is str else 'auto'
-                aclient.pick_assembly(args.job, asm)
+                # the assembly ID can be supplied by either argument
+                asm1 = args.pick if type(args.pick) is str else None
+                asm2 = args.assembly if type(args.assembly) is str else None
+                # pick the best assembly by default
+                asm = asm1 or asm2 or 'auto'
+                aclient.get_assemblies(args.job, asm, stdout=True)
             except Exception as e:
                 sys.exit("Error getting assembly: {}".format(e))
 
-
         elif args.assembly:
             try:
-                assembly_id = args.assembly if type(args.assembly) is str else None
-                aclient.get_assemblies(job_id=args.job, asm_id=assembly_id, stdout=args.stdout, outdir=args.outdir)
-            except:
-                print traceback.format_tb(sys.exc_info()[2])
-                print sys.exc_info()
+                # download all assemblies by default
+                asm = args.assembly if type(args.assembly) is str else None
+                aclient.get_assemblies(args.job, asm, outdir=args.outdir)
+            except Exception as e:
+                sys.exit("Error downloading assembly: {}".format(e))
+
         else:
             try:
                 aclient.get_job_data(job_id=args.job, outdir=args.outdir)
-            except:
-                print 'Error retrieving job data: {}'.format(args.job)
+            except Exception as e:
+                sys.exit("Error downloading job results: {}".format(e))
 
     elif args.command == 'avail':
         try:
