@@ -15,7 +15,7 @@ import subprocess
 import time
 import traceback
 from ConfigParser import SafeConfigParser
-from pkg_resources import resource_filename
+# from pkg_resources import resource_filename
 
 # arast libs
 from assembly import asmtypes

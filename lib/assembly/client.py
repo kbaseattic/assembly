@@ -260,6 +260,7 @@ class AssemblyData(dict):
 
 
 ##### Helper methods #####
+
 def assembly_data_to_rows(data):
     rows = []
     data_key  = "assembly_data"
