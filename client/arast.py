@@ -13,15 +13,15 @@ import requests
 import uuid
 import subprocess
 import time
+import traceback
 from ConfigParser import SafeConfigParser
 from pkg_resources import resource_filename
 
-#arast libs
-import assembly.asmtypes as asmtypes
-import assembly.client as client
-import assembly.config as conf
-import assembly.auth_token as auth
-import traceback
+# arast libs
+from assembly import asmtypes
+from assembly import client
+from assembly import config as conf
+from assembly import auth_token as auth
 
 
 my_version = '0.4.0.1'

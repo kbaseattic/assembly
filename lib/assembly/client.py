@@ -7,16 +7,17 @@ import os
 import re
 import requests
 import subprocess
+import sys
 import tarfile
 import time
-from kbase import typespec_to_assembly_data as kb_to_asm
+import traceback
 from prettytable import PrettyTable
+
+import asmtypes
+from kbase import typespec_to_assembly_data as kb_to_asm
 from shock import Shock
 from shock import get as shock_get
-import asmtypes
-#Debug
-import sys
-import traceback
+
 """ Assembly Service client library. """
 
 
