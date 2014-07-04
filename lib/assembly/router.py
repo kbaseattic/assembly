@@ -476,7 +476,7 @@ class JobResource:
         elif asm == 'auto': tag = 'rank-1'
         else:               tag = asm
 
-        results = self.get_results(userid, job_id, tags=tag, type='contigs')
+        results = self.get_results(userid, job_id, tags=tag, type='contigs,scaffolds')
         handles = self.filesets_to_first_handles(json.loads(results))
 
         return json.dumps(handles)
@@ -486,13 +486,13 @@ class JobResource:
         doc = self.get_validated_job(userid, job_id)
         filesets = []
         try:
-            keep = kwargs.get('type', None)
-            tags = None
-            if 'tags' in kwargs and kwargs['tags']:
-                tags = set(kwargs['tags'].split(','))
+            keep = kwargs.get('types') or kwargs.get('type')
+            tags = kwargs.get('tags')  or kwargs.get('tag')
+            if keep: keep = set(keep.split(','))
+            if tags: tags = set(tags.split(','))
             for fileset in doc['result_data']:
-                pass_tags = not tags or tags & set(fileset['tags'])
-                pass_type = not keep or keep == fileset['type']
+                pass_tags = not tags or set(fileset['tags']) & tags
+                pass_type = not keep or fileset['type'] in keep
                 if pass_tags and pass_type:
                     filesets.append(fileset)
         except Exception as e:
