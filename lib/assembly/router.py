@@ -413,13 +413,13 @@ class JobResource:
             except:
                 records = 100
 
-            verbose = kwargs.get('verbose')
+            detail = kwargs.get('detail')
 
             docs = [sanitize_doc(d) for d in metadata.list_jobs(userid)]
             columns = ["Job ID", "Data ID", "Status", "Run time", "Description"]
-            if verbose: columns.append("Parameters")
+            if detail: columns.append("Parameters")
             pt = PrettyTable(columns)
-            if verbose: pt.align["Parameters"] = "l"
+            if detail: pt.align["Parameters"] = "l"
             if docs:
                 try:
                     if kwargs['format'] == 'json':
@@ -441,7 +441,7 @@ class JobResource:
                         row.append(str(doc['message']))
                     except:
                         row += ['']
-                    if verbose:
+                    if detail:
                         try:
                             param = self.parse_job_doc_to_parameter(doc)
                             row.append(param)
@@ -730,7 +730,11 @@ class ModuleResource:
     @cherrypy.expose
     def default(self, module_name="avail", *args, **kwargs):
         if module_name == 'avail' or module_name == 'all':
-            with open(parser.get('web', 'ar_modules')) as outfile:
+            path = parser.get('web', 'ar_modules')
+            if not os.path.isabs(path):
+                libpath = os.path.abspath(os.path.dirname( __file__ ))
+                path = os.path.join(libpath, path)
+            with open(path) as outfile:
                 return outfile.read()
         else: raise cherrypy.HTTPError(403)
 

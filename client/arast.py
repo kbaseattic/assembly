@@ -61,13 +61,13 @@ p_stat = subparsers.add_parser('stat', description='Query status of running jobs
 p_stat.add_argument("-j", "--job", action="store", help="get status of specific job")
 p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
 p_stat.add_argument("-n", dest="stat_n", action="store", default=10, type=int, help="specify number of records to show")
-p_stat.add_argument("-d", "--detail", action="store_true", help="include pipeline/recipe information in status table")
+p_stat.add_argument("-d", "--detail", action="store_true", help="show pipeline/recipe/wasp details in status table")
 p_stat.add_argument("-l", "--list-data", action="store_true", dest="list_data", help="list data objects")
 p_stat.add_argument("--data-json", action="store", dest="data_id", help="print json string for data object")
 
 # avail
 p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
-p_avail.add_argument("-v", "--verbose", action="store_true", help="show module details")
+p_avail.add_argument("-d", "--detail", action="store_true", help="show module details")
 
 # upload
 p_upload = subparsers.add_parser('upload', description='Upload a read set', help='Upload a read library or set of libraries, returns a data ID for future use')
@@ -328,7 +328,7 @@ def main():
         # default: print job information
         while True:
             try:
-                response = aclient.get_job_status(args.stat_n, args.job, verbose=args.detail)
+                response = aclient.get_job_status(args.stat_n, args.job, detail=args.detail)
                 if args.watch:
                         os.system('clear')
                 print response
@@ -410,9 +410,9 @@ def main():
             mods = json.loads(aclient.get_available_modules())
             mods = sorted(mods, key=lambda mod: mod['module'])
             
-            if args.verbose:
+            if args.detail:
                 for mod in mods:
-                    keys = ('description', 'version', 'stages', 'modules', 'limitations', 'references')
+                    keys = ('description', 'version', 'base version', 'stages', 'modules', 'limitations', 'references')
                     if mod['version'] >= '1.0':
                         print '[Module] ' + mod['module']
                         for key in keys:

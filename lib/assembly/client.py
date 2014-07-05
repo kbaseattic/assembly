@@ -64,12 +64,12 @@ class Client:
         r = requests.post(url, data=data, headers=self.headers)
         return r.content
 
-    def get_job_status(self, stat_n, job_id=None, verbose=False):
+    def get_job_status(self, stat_n, job_id=None, detail=False):
         if job_id:
             url = 'http://{}/user/{}/job/{}/status'.format(self.url, self.user, job_id)
         else:
-            if verbose:
-                url = 'http://{}/user/{}/job/status?records={}&verbose=True'.format(
+            if detail:
+                url = 'http://{}/user/{}/job/status?records={}&detail=True'.format(
                     self.url, self.user, stat_n)
             else:
                 url = 'http://{}/user/{}/job/status?records={}'.format(

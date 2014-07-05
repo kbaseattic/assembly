@@ -12,7 +12,8 @@ Usage: ar-avail [-h]
 List available AssemblyRAST modules
 
 Optional arguments:
-  -h, --help  show this help message and exit
+  -h, --help     show this help message and exit
+  -d, --detail   show module details
 
 End_of_Usage
 
