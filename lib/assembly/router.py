@@ -2,6 +2,7 @@
 Job router.  Recieves job requests.  Manages data transfer, job queuing.
 """
 # Import python libs
+import ast
 import cherrypy
 import datetime
 import errno
@@ -416,8 +417,9 @@ class JobResource:
 
             docs = [sanitize_doc(d) for d in metadata.list_jobs(userid)]
             columns = ["Job ID", "Data ID", "Status", "Run time", "Description"]
-            if verbose: columns.append("Pipeline or Recipe")
+            if verbose: columns.append("Parameters")
             pt = PrettyTable(columns)
+            if verbose: pt.align["Parameters"] = "l"
             if docs:
                 try:
                     if kwargs['format'] == 'json':
@@ -441,11 +443,8 @@ class JobResource:
                         row += ['']
                     if verbose:
                         try:
-                            pipeline = doc.get('pipeline')
-                            recipe = doc.get('recipe')
-                            pipeline = "P: "+str(pipeline) if pipeline else None
-                            recipe = "R: "+str(recipe) if recipe else None
-                            row.append(pipeline or recipe)
+                            param = self.parse_job_doc_to_parameter(doc)
+                            row.append(param)
                         except:
                             row += ['']
                     pt.add_row(row)
@@ -569,6 +568,52 @@ class JobResource:
         try: handles = [fs['file_infos'][0] for fs in filesets]
         except: raise cherrypy.HTTPError(403, "Handles not found in filesets")
         return handles
+
+    def parse_job_doc_to_parameter(self, doc):
+        pipeline = doc.get('pipeline')
+        recipe = doc.get('recipe')
+        wasp = doc.get('wasp')
+        if pipeline == 'auto': pipeline = None
+        if pipeline:
+            pipeline = ast.literal_eval(str(pipeline))
+            pipeline = self.parse_pipeline_to_str(pipeline)
+        if recipe:
+            recipe = ast.literal_eval(str(recipe))
+            recipe = ' '.join(["-r "+r for r in recipe])
+        if wasp:
+            wasp = ast.literal_eval(str(wasp))
+            wasp = ' '.join(["-w "+w for w in wasp])
+        param = pipeline or recipe or wasp or '-p auto'
+        return param
+
+    def parse_pipeline_to_str(self, pipeline):
+        """Convert pipeline structure back to a command line parameter string
+        Input examples:
+            [u'velvet kiki']
+            [[u'none tagdust', u'kiki velvet']]
+            [[u'none tagdust', u'kiki velvet'], [u'spades']]
+            [[u'none tagdust', u'velvet', u'?hash_length=29-77:4'], [u'kiki']]
+        Output:
+            -p 'velvet kiki'
+            -p 'none tagdust' 'kiki velvet'
+            -p 'none tagdust' 'kiki velvet' -p spades
+            -p 'none tagdust' velvet ?hash_length=29-77:4 -p kiki
+        Converts legacy run parameters:
+            command line:   ... -a velvet kiki
+            internal structure: [u'velvet kiki']
+            output:            -p 'velvet kiki'
+
+        """
+        pipes = []
+        if type(pipeline[0]) is not list:
+            pipeline = [pipeline]
+        for pipe in pipeline:
+            params = ['-p']
+            for stage in pipe:
+                if ' ' in stage: stage = "'{}'".format(stage)
+                params.append(stage)
+            pipes.append(' '.join(params))
+        return ' '.join(pipes)
 
 class StaticResource:
 

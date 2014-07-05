@@ -328,7 +328,6 @@ def main():
         # default: print job information
         while True:
             try:
-                print args.detail
                 response = aclient.get_job_status(args.stat_n, args.job, verbose=args.detail)
                 if args.watch:
                         os.system('clear')
