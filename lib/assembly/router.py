@@ -412,8 +412,12 @@ class JobResource:
             except:
                 records = 100
 
+            verbose = kwargs.get('verbose')
+
             docs = [sanitize_doc(d) for d in metadata.list_jobs(userid)]
-            pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
+            columns = ["Job ID", "Data ID", "Status", "Run time", "Description"]
+            if verbose: columns.append("Pipeline or Recipe")
+            pt = PrettyTable(columns)
             if docs:
                 try:
                     if kwargs['format'] == 'json':
@@ -435,6 +439,15 @@ class JobResource:
                         row.append(str(doc['message']))
                     except:
                         row += ['']
+                    if verbose:
+                        try:
+                            pipeline = doc.get('pipeline')
+                            recipe = doc.get('recipe')
+                            pipeline = "P: "+str(pipeline) if pipeline else None
+                            recipe = "R: "+str(recipe) if recipe else None
+                            row.append(pipeline or recipe)
+                        except:
+                            row += ['']
                     pt.add_row(row)
                 return pt.get_string() + "\n"
 

@@ -61,6 +61,7 @@ p_stat = subparsers.add_parser('stat', description='Query status of running jobs
 p_stat.add_argument("-j", "--job", action="store", help="get status of specific job")
 p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
 p_stat.add_argument("-n", dest="stat_n", action="store", default=10, type=int, help="specify number of records to show")
+p_stat.add_argument("-d", "--detail", action="store_true", help="include pipeline/recipe information in status table")
 p_stat.add_argument("-l", "--list-data", action="store_true", dest="list_data", help="list data objects")
 p_stat.add_argument("--data-json", action="store", dest="data_id", help="print json string for data object")
 
@@ -327,7 +328,8 @@ def main():
         # default: print job information
         while True:
             try:
-                response = aclient.get_job_status(args.stat_n, args.job)
+                print args.detail
+                response = aclient.get_job_status(args.stat_n, args.job, verbose=args.detail)
                 if args.watch:
                         os.system('clear')
                 print response

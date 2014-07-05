@@ -64,14 +64,18 @@ class Client:
         r = requests.post(url, data=data, headers=self.headers)
         return r.content
 
-    def get_job_status(self, stat_n, job_id=None):
+    def get_job_status(self, stat_n, job_id=None, verbose=False):
         if job_id:
             url = 'http://{}/user/{}/job/{}/status'.format(self.url, self.user, job_id)
         else:
-            url = 'http://{}/user/{}/job/status?records={}'.format(
-                self.url, self.user, stat_n)
-        r = requests.get(url, headers=self.headers)
-        return r.content
+            if verbose:
+                url = 'http://{}/user/{}/job/status?records={}&verbose=True'.format(
+                    self.url, self.user, stat_n)
+            else:
+                url = 'http://{}/user/{}/job/status?records={}'.format(
+                    self.url, self.user, stat_n)
+        status = self.req_get(url)
+        return status
 
     def get_data_list(self):
         url = 'http://{}/user/{}/data'.format(self.url, self.user)
@@ -162,7 +166,7 @@ class Client:
         tar = tarfile.open(filename)
         tar.extractall(path=destpath)
         tar.close()
-        sys.stderr.write("Tar extracted:   {}\n".format(destpath))
+        sys.stderr.write("HTML extracted:  {}/report.html\n".format(destpath))
         if remove: os.remove(filename)
 
     def get_job_data(self, job_id, outdir=None):
