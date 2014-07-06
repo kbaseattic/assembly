@@ -67,6 +67,7 @@ p_stat.add_argument("--data-json", action="store", dest="data_id", help="print j
 
 # avail
 p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
+p_avail.add_argument("-r", "--recipe", action="store_true", help="list recipes")
 p_avail.add_argument("-d", "--detail", action="store_true", help="show module details")
 
 # upload
@@ -406,6 +407,21 @@ def main():
                 sys.exit("Error downloading job results: {}".format(e))
 
     elif args.command == 'avail':
+        if args.recipe:
+            try:
+                recipes = json.loads(aclient.get_available_recipes())
+                for r in recipes:
+                    if len(recipes[r]['description']) == 0: continue
+                    print '[Recipe]', r
+                    print ''.join(["  "+l for l in recipes[r]['description'].splitlines(True)]),
+                    if args.detail:
+                        print "  Wasp expression = "
+                        print recipes[r]['recipe'],
+                    print
+            except Exception as e:
+                sys.exit('Error getting available recipes: {}'.format(e))
+            sys.exit()
+
         try:
             mods = json.loads(aclient.get_available_modules())
             mods = sorted(mods, key=lambda mod: mod['module'])
@@ -433,8 +449,8 @@ def main():
                     if mod['version'] >= '1.0':
                         print '{module:16} {stages:35} {description}'.format(**mod)
 
-        except:
-            print 'Error getting available modules'
+        except Exception as e:
+            sys.exit('Error getting available modules: {}'.format(e))
 
     elif args.command == 'kill':
         print aclient.kill_jobs(args.job)

@@ -175,9 +175,12 @@ class Client:
         self.get_job_analysis_tarball(job_id, outdir=outdir)
 
     def get_available_modules(self):
-        url = 'http://{}/module/all/avail/'.format(self.url, self.user)
-        r = requests.get(url, headers=self.headers)
-        return r.content
+        url = 'http://{}/module/all/avail/'.format(self.url)
+        return self.req_get(url)
+
+    def get_available_recipes(self):
+        url = 'http://{}/recipe/all/avail/'.format(self.url)
+        return self.req_get(url)
 
     def kill_jobs(self, job_id=None):
         if job_id:
