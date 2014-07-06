@@ -17,24 +17,26 @@ import asmtypes
 from kbase import typespec_to_assembly_data as kb_to_asm
 from shock import Shock
 from shock import get as shock_get
+    
 
 """ Assembly Service client library. """
 
 
 class Client:
     def __init__(self, url, user, token):
-        self.port = 8000 ## change
-        if url.find(':') == -1: # Port not included
-            self.url = url + ':{}'.format(self.port)
-        else:
-            self.url = url
+        # self.port = 8000 ## change
+        # if url.find(':') == -1: # Port not included
+        #     self.url = url + ':{}'.format(self.port)
+        # else:
+        #     self.url = url
+        self.url = verify_url(url)
         self.user = user
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),
                         'Content-type': 'application/json', 
                         'Accept': 'text/plain'}
-        shockres = requests.get('http://{}/shock'.format(self.url), headers=self.headers).text
-        self.shockurl = 'http://{}/'.format(json.loads(shockres)['shockurl'])
+        shockres = requests.get('{}/shock'.format(self.url), headers=self.headers).text
+        self.shockurl = json.loads(shockres)['shockurl']
         self.shock = Shock(self.shockurl, self.user, self.token)
 
     def upload_data_shock(self, filename, curl=False):
@@ -51,34 +53,31 @@ class Client:
         res = self.shock.upload_reads(filename, curl=curl)
         return asmtypes.FileInfo(filename, shock_url=self.shockurl, shock_id=res['data']['id'],
                                  create_time=str(datetime.datetime.utcnow()))
-        # return FileInfo(self.shockurl, res['data']['id'], os.path.getsize(filename),
-        #                     os.path.basename(filename), str(datetime.datetime.utcnow()))
 
     def submit_job(self, data):
-        url = 'http://{}/user/{}/job/new'.format(self.url, self.user)
+        url = '{}/user/{}/job/new'.format(self.url, self.user)
         r = requests.post(url, data=data, headers=self.headers)
         return r.content
 
     def submit_data(self, data):
-        url = 'http://{}/user/{}/data/new'.format(self.url, self.user)
+        url = '{}/user/{}/data/new'.format(self.url, self.user)
         r = requests.post(url, data=data, headers=self.headers)
         return r.content
 
     def get_job_status(self, stat_n, job_id=None, detail=False):
         if job_id:
-            url = 'http://{}/user/{}/job/{}/status'.format(self.url, self.user, job_id)
+            url = '{}/user/{}/job/{}/status'.format(self.url, self.user, job_id)
         else:
             if detail:
-                url = 'http://{}/user/{}/job/status?records={}&detail=True'.format(
+                url = '{}/user/{}/job/status?records={}&detail=True'.format(
                     self.url, self.user, stat_n)
             else:
-                url = 'http://{}/user/{}/job/status?records={}'.format(
+                url = '{}/user/{}/job/status?records={}'.format(
                     self.url, self.user, stat_n)
-        status = self.req_get(url)
-        return status
+        return self.req_get(url)
 
     def get_data_list(self):
-        url = 'http://{}/user/{}/data'.format(self.url, self.user)
+        url = '{}/user/{}/data'.format(self.url, self.user)
         r = requests.get(url, headers=self.headers)
         li = json.loads(r.content)
         li.sort(key=lambda e: e["data_id"])
@@ -100,7 +99,7 @@ class Client:
         return pt.get_string()
 
     def get_data_json(self, data_id):
-        url = 'http://{}/user/{}/data/{}'.format(self.url, self.user, data_id)
+        url = '{}/user/{}/data/{}'.format(self.url, self.user, data_id)
         r = requests.get(url, headers=self.headers)
         return r.content
 
@@ -131,23 +130,23 @@ class Client:
 
     def get_job_report(self, job_id):
         """Get the stats section of job report"""
-        url = 'http://{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
+        url = '{}/user/{}/job/{}/report'.format(self.url, self.user, job_id)
         return self.req_get(url)
 
     def get_job_log(self, job_id):
         """Get the log section of job report"""
-        url = 'http://{}/user/{}/job/{}/log'.format(self.url, self.user, job_id)
+        url = '{}/user/{}/job/{}/log'.format(self.url, self.user, job_id)
         return self.req_get(url)
 
     def get_job_report_full(self, job_id, stdout=False, outdir=None):
-        url = 'http://{}/user/{}/job/{}/report_handle'.format(self.url, self.user, job_id)
+        url = '{}/user/{}/job/{}/report_handle'.format(self.url, self.user, job_id)
         handle = json.loads(self.req_get(url))
         self.download_shock_handle(handle, stdout=stdout, outdir=outdir)
 
     def get_assemblies(self, job_id, asm=None, stdout=False, outdir=None):
         """ Assembly ID cases: None => all, 'auto' => best, numerical/string => label"""
         if not asm: asm = ''
-        url = 'http://{}/user/{}/job/{}/assemblies/{}'.format(self.url, self.user, job_id, asm)
+        url = '{}/user/{}/job/{}/assemblies/{}'.format(self.url, self.user, job_id, asm)
         handles = json.loads(self.req_get(url))
         if len(asm) and not handles:
             # result-not-found exception handled by router
@@ -158,7 +157,7 @@ class Client:
 
     def get_job_analysis_tarball(self, job_id, outdir=None, remove=True):
         """Download and extract quast tarball"""
-        url = 'http://{}/user/{}/job/{}/analysis'.format(self.url, self.user, job_id)
+        url = '{}/user/{}/job/{}/analysis'.format(self.url, self.user, job_id)
         handle = json.loads(self.req_get(url))
         filename = self.download_shock_handle(handle, outdir=outdir)
         dirname = filename.split('/')[-1].split('.')[0]
@@ -175,24 +174,24 @@ class Client:
         self.get_job_analysis_tarball(job_id, outdir=outdir)
 
     def get_available_modules(self):
-        url = 'http://{}/module/all/avail/'.format(self.url)
+        url = '{}/module/all/avail/'.format(self.url)
         return self.req_get(url)
 
     def get_available_recipes(self):
-        url = 'http://{}/recipe/all/avail/'.format(self.url)
+        url = '{}/recipe/all/avail/'.format(self.url)
         return self.req_get(url)
 
     def kill_jobs(self, job_id=None):
         if job_id:
-            url = 'http://{}/user/{}/job/{}/kill'.format(self.url, self.user, job_id)
+            url = '{}/user/{}/job/{}/kill'.format(self.url, self.user, job_id)
         else:
-            url = 'http://{}/user/{}/job/all/kill'.format(
+            url = '{}/user/{}/job/all/kill'.format(
                 self.url, self.user)
         r = requests.get(url, headers=self.headers)
         return r.content
 
     def get_config(self):
-        return requests.get('http://{}/admin/system/config'.format(self.url)).content
+        return requests.get('{}/admin/system/config'.format(self.url)).content
 
     def req_get(self, url, ret=None):
         r = requests.get(url, headers=self.headers)
@@ -203,9 +202,14 @@ class Client:
             msg = match.group(1) if match else r.reason
             raise requests.exceptions.HTTPError("HTTPError {}: {}".format(r.status_code, msg))
 
-        if   ret == 'text': return r.text
-        elif ret == 'json': return r.json
-        else:               return r.content
+        # return {'text': r.text, 'json': r.json}.get(ret, r.content)
+
+        if ret == 'text':
+            return r.text
+        elif ret == 'json':
+            return r.json
+        else:
+            return r.content
     
     @contextlib.contextmanager
     def smart_open(self, filename=None):
@@ -255,9 +259,8 @@ class Client:
         return path
 
 
-##### ARAST JSON SPEC CLASSES #####
-
 class AssemblyData(dict):
+    """Class for handling ARAST json specs"""
     def __init__(self, *args):
         dict.__init__(self, *args)
         self['file_sets'] = []
@@ -266,16 +269,61 @@ class AssemblyData(dict):
         self['file_sets'].append(file_set)
 
 
-##### Helper methods #####
+class Error(Exception):
+    """Base class for exceptions in this module"""
+    pass
+
+class URLError(Error, ValueError):
+    pass
+
+
+def verify_url(url, port=8000):
+    """Returns complete URL with http prefix and port number
+    """
+    pattern = re.compile(  
+        r'^(https?://)?'   # capture 1: http prefix
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain
+        r'localhost|'      # localhost
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # IP
+        r'(?::\d+)?'       # optional port
+        r'(/?|[/?]\S+)$',  # capture 2: trailing args
+        re.IGNORECASE)
+    match = pattern.search(url)
+    if not match:
+        raise URLError(url)
+    if not match.group(1):
+        url = 'http://' + url
+    if not match.group(2) and url.count(':') < 2:
+        url += ":{}".format(port)
+    return url
+
+def test_verify_url():
+    assert verify_url('localhost') == 'http://localhost:8000'
+    assert verify_url('140.221.84.203') == 'http://140.221.84.203:8000'
+    assert verify_url('kbase.us/services/assembly') == 'http://kbase.us/services/assembly'
+    assert verify_url('http://kbase.us/services/assembly') == 'http://kbase.us/services/assembly'
+    assert verify_url('https://kbase.us/services/assembly') == 'https://kbase.us/services/assembly'
+    try:
+        import pytest
+        with pytest.raises(URLError):
+            verify_url('badURL')
+            verify_url('badURL/with/path:8000')
+            verify_url('http://very bad url.com')
+            verify_url('')
+    except ImportError:
+        pass
+
 
 def assembly_data_to_rows(data):
+    """Converts assembly data dictionary to text rows"""
     rows = []
     data_key  = "assembly_data"
     kbase_key = "kbase_assembly_input"
     lib_key   = "file_sets"
     info_key  = "file_infos"
     
-    if data_key in data: data = data[data_key]
+    if data_key in data:
+        data = data[data_key]
     else:
         if kbase_key in data: data = kb_to_asm(data[kbase_key])
 
@@ -294,12 +342,15 @@ def assembly_data_to_rows(data):
     
     return rows
 
+
 def sizeof_fmt(num):
+    """Human-readable file size"""
     for x in ['bytes','KB','MB','GB']:
         if num < 1024.0 and num > -1024.0:
             return "%3.1f%s" % (num, x)
         num /= 1024.0
     return "%3.1f%s" % (num, 'TB')    
+
 
 def dump(var):
     from pprint import pprint

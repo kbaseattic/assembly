@@ -243,7 +243,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
     conf = {
         'global': {
             'server.socket_host': '0.0.0.0',
-            'server.socket_port': 8000,
+            'server.socket_port': int(parser.get('assembly', 'cherrypy_port')),
             'log.screen': True,
             'ar_shock_url': parser.get('shock', 'host'),
             },

@@ -113,7 +113,6 @@ def main():
     clientlog.addHandler(sh)
 
     args = parser.parse_args()
-    opt = parser.parse_args()
     options = vars(args)
     
     options['version'] = my_version
@@ -123,7 +122,8 @@ def main():
         clientlog.debug("Logger Debugging mode")
 
     #### Get configuration #####
-    ARAST_URL = '{}:{}'.format(conf.URL, conf.PORT)
+    # ARAST_URL = '{}:{}'.format(conf.URL, conf.PORT)
+    ARAST_URL = conf.URL #'{}:{}'.format(conf.URL, conf.PORT)
     user_dir = user_data_dir(conf.APPNAME, conf.APPAUTHOR)
 
     oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
@@ -411,11 +411,11 @@ def main():
             try:
                 recipes = json.loads(aclient.get_available_recipes())
                 for r in recipes:
-                    if len(recipes[r]['description']) == 0: continue
+                    if not recipes[r]['description']: continue
                     print '[Recipe]', r
                     print ''.join(["  "+l for l in recipes[r]['description'].splitlines(True)]),
                     if args.detail:
-                        print "  Wasp expression = "
+                        print "\n  Wasp expression = "
                         print recipes[r]['recipe'],
                     print
             except Exception as e:
