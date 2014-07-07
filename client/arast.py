@@ -29,7 +29,7 @@ my_version = '0.4.0.1'
 # Config precedence: command-line args > environment variables > config file
 
 ARAST_URL = os.getenv('ARAST_URL') or conf.URL
-ARAST_QUEUE = os.getenv('ARAST_URL')
+ARAST_QUEUE = os.getenv('ARAST_QUEUE')
 ARAST_AUTH_USER = os.getenv('ARAST_AUTH_USER') or os.getenv('KB_AUTH_USER_ID')
 ARAST_AUTH_TOKEN = os.getenv('ARAST_AUTH_TOKEN') or os.getenv('KB_AUTH_TOKEN')
 
@@ -424,11 +424,13 @@ def cmd_logout(args):
 
 
 def cmd_upload(args, aclient, data, log=None):
-    options = vars(args)
-    options['version'] = my_version
-    options['client'] = 'CLI'
+    # options = vars(args)
+    # options['version'] = my_version
+    # options['client'] = 'CLI'
 
-    arast_msg = {'assembly_data': data}
+    arast_msg = {'assembly_data': data,
+                 'version': my_version,
+                 'client': 'CLI'}
 
     payload = json.dumps(arast_msg, sort_keys=True)
     if log:
@@ -455,7 +457,7 @@ def cmd_run(args, aclient, data=None, log=None):
     if queue: options['queue'] = queue
 
     # arast_msg = dict((k, options[k]) for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp'] if k in options)
-    keys = ['pipeline', 'recipe', 'wasp', 'queue', 'message', 'data_id']
+    keys = ['pipeline', 'recipe', 'wasp', 'queue', 'message', 'data_id', 'version', 'client']
     arast_msg = dict((k, options[k]) for k in keys if k in options)
 
     if data:

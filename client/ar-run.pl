@@ -76,7 +76,7 @@ my $have_data;
 my $argv;
 for (@ARGV) {
     if (/ /) { $argv .= "\"$_\" " } else { $argv .= "$_ " }
-    $have_data = 1 if /(-f|--single|--pair|--data|-r|--recipe|-w|--wasp)\b/;
+    $have_data = 1 if /(-f|--single|--single_url|--pair|--pair_url|--data)\b/;
 }
 
 if (!$have_data) {

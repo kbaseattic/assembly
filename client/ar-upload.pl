@@ -78,7 +78,7 @@ if ($help) { print $usage; exit 0;}
 @se_args || @pe_args or die "No input library specified.\n";
 
 my $config = get_arast_config();
-$config->{URL} = $server if $server;
+$config->{URL} = $server || $ENV{ARAST_URL} || $config->{URL};
 
 my ($user, $token) = authenticate($config); verify_auth($user, $token);
 my $shock = get_shock($config, $user, $token);

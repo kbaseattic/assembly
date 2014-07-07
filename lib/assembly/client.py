@@ -83,7 +83,7 @@ class Client:
         rows = []
         for data in li:
             data_id = data.get("data_id", "")
-            message = data.get("message", "")
+            message = data.get("message", "None")
             data_rows = assembly_data_to_rows(data)
             data_rows = [ [''] * 2 + r for r in data_rows]
             rows += [[data_id, message] + [''] * 2]
