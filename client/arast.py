@@ -21,17 +21,27 @@ from ConfigParser import SafeConfigParser
 from assembly import asmtypes
 from assembly import client
 from assembly import config as conf
-from assembly import auth_token as auth
+from assembly import auth
 
 
 my_version = '0.4.0.1'
 
+# Config precedence: command-line args > environment variables > config file
+
+ARAST_URL = os.getenv('ARAST_URL') or conf.URL
+ARAST_QUEUE = os.getenv('ARAST_URL')
+ARAST_AUTH_USER = os.getenv('ARAST_AUTH_USER') or os.getenv('KB_AUTH_USER_ID')
+ARAST_AUTH_TOKEN = os.getenv('ARAST_AUTH_TOKEN') or os.getenv('KB_AUTH_TOKEN')
+
+ARAST_ENVIRON = None
+if os.getenv('KB_RUNNING_IN_IRIS'):
+    ARAST_ENVIRON = 'IRIS'
 
 
 def get_parser():
     parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 
-    parser.add_argument('-s', dest='ARAST_URL', help='arast server url')
+    parser.add_argument('-s', dest='arast_url', help='arast server url')
     parser.add_argument('-c', '--config', action="store", help='Specify config file')
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose")
     parser.add_argument('--version', action='version', version='AssemblyRAST Client ' + my_version)
@@ -114,6 +124,8 @@ def main():
     
     parser = get_parser()
     args = parser.parse_args()
+
+    # TODO:only used by run
     options = vars(args)
     options['version'] = my_version
 
@@ -129,110 +141,34 @@ def main():
         clientlog.setLevel(logging.DEBUG)
         clientlog.debug("Logger Debugging mode")
 
-
-    ARAST_URL = conf.URL
-    user_dir = user_data_dir(conf.APPNAME, conf.APPAUTHOR)
-
-    oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
-    expiration = conf.OAUTH_EXP_DAYS
-
-    oauth_parser = SafeConfigParser()
-    oauth_parser.read(oauth_file)
-    reauthorize = True
-
-    if "KB_RUNNING_IN_IRIS" in os.environ:
-        if args.command == 'logout' or args.command == 'login':
-            print "Please use the IRIS controls to log in/out"
-            sys.exit()
-        if "KB_AUTH_TOKEN" in os.environ and "KB_AUTH_USER_ID" in os.environ and \
-                len(os.environ["KB_AUTH_USER_ID"]) > 0 and \
-                len(os.environ["KB_AUTH_TOKEN"]) > 0 :
-            a_user = os.environ["KB_AUTH_USER_ID"]
-            a_token = os.environ["KB_AUTH_TOKEN"]
-        else:
-            print "Please authenticate with KBase credentials"
-            sys.exit()
-
-    else:
-        if args.command == 'logout' or args.command == 'login':
-            try: os.remove(oauth_file)
-            except: pass
-            if args.command == 'logout':
-                print >> sys.stderr, '[.] Logged out'
-                sys.exit()
-    
-        # Check if user file exists
-        if os.path.exists(oauth_file):
-            token_date_str = oauth_parser.get('auth', 'token_date')
-            tdate = datetime.datetime.strptime(token_date_str, '%Y-%m-%d').date()
-            cdate = datetime.date.today()
-            if (cdate - tdate).days > expiration: reauthorize = True
-            else: reauthorize = False
-
-        if not reauthorize:
-            a_user = oauth_parser.get('auth', 'user')
-            a_token = oauth_parser.get('auth', 'token')
-            # print >> sys.stderr, "Logged in as: {}".format(a_user)
-        else:
-            service_name = 'KBase'
-            service_url = auth.NEXUS_URL
-            try:
-                if args.rast:
-                    service_name = 'RAST'
-                    service_url = auth.RAST_URL
-            except AttributeError: pass
-
-            print("Please authenticate with {} credentials".format(service_name))
-            try:
-                a_user = raw_input("{} Login: ".format(service_name))
-                a_pass = getpass.getpass(prompt="{} Password: ".format(service_name))
-            except KeyboardInterrupt: 
-                print ''
-                sys.exit()
-            login_success = False
-            for attempt in range(2):
-                try: 
-                    globus_map = auth.get_token(a_user, a_pass, auth_svc=service_url)
-                    login_success = True
-                    break
-                except: 
-                    try: a_pass = getpass.getpass(prompt="{} Password: ".format(service_name))
-                    except KeyboardInterrupt: 
-                        print ''
-                        sys.exit()
-            if not login_success:
-                print 'Invalid login/password combination.'
-                sys.exit()
-
-            a_token = globus_map['access_token']
-            if service_name == 'RAST':
-                a_user = '{}_rast'.format(a_user)
-            try: os.makedirs(user_dir)
-            except OSError: pass
-
-            uparse = SafeConfigParser()
-            uparse.add_section('auth')
-            uparse.set('auth', 'user', a_user)
-            uparse.set('auth', 'token', a_token)
-            uparse.set('auth', 'token_date', str(datetime.date.today()))
-            uparse.write(open(oauth_file, 'wb'))
-
     if args.command == 'login':
+        cmd_login(args)
+        sys.exit()
+
+    if args.command == 'logout':
+        cmd_login(args)
         sys.exit()
     
-    if args.ARAST_URL:
-        ARAST_URL = args.ARAST_URL
+    a_user, a_token = auth.verify_token(ARAST_AUTH_USER,ARAST_AUTH_TOKEN)
+    if not a_user or not a_token:
+        if ARAST_ENVIRON:
+            sys.exit('Please use the {} controls to authenticate'.format(ARAST_ENVIRON))
+        else:
+            sys.stderr.write('You can use the login/logout commands to authenticate\n')
+            a_user, a_token = auth.authenticate()
 
-    logging.info('ARAST_URL: {}'.format(ARAST_URL))
+    # main command options
+    a_url = args.arast_url or ARAST_URL
+    a_url = client.verify_url(a_url)
+    logging.info('ARAST_URL: {}'.format(a_url))
     try:
-        aclient = client.Client(ARAST_URL, a_user, a_token)
+        aclient = client.Client(a_url, a_user, a_token)
     except Exception as e:
-        sys.exit("Error: {}".format(e))
+        sys.exit("Error creating client: {}".format(e))
         
     res_ids = []
     file_sizes = []
     file_list = []
-
 
     curl = False
     try:
@@ -461,6 +397,18 @@ def main():
 
     elif args.command == 'kill':
         print aclient.kill_jobs(args.job)
+
+
+
+def cmd_login(args):
+    auth_service = 'RAST' if args.rast else 'KBase'
+    auth.authenticate(service=auth_service, save=True)
+    sys.stderr.write('[.] Logged in\n')
+
+
+def cmd_logout(args):
+    auth.remove_stored_token()
+    sys.stderr.write('[.] Logged out\n')
 
 
 def is_valid_url(url):

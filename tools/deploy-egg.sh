@@ -3,7 +3,7 @@
 mkdir egg
 mkdir egg/assembly
 cp setup.py egg
-cp ../lib/assembly/auth_token.py egg/assembly/
+cp ../lib/assembly/auth.py egg/assembly/
 cp ../lib/assembly/asmtypes.py egg/assembly/
 cp ../lib/assembly/client.py egg/assembly/
 cp ../lib/assembly/config.py egg/assembly/
