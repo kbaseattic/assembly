@@ -57,6 +57,18 @@ def get_parser():
     p_login = subparsers.add_parser('login', description='Force log in', help='log in')
     p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 
+    # upload options
+    p_upload.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
+    p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
+    p_upload.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
+    p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
+    p_upload.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
+    p_upload.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify a reference contig file")
+    p_upload.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
+    p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
+    p_upload.add_argument("--curl", action="store_true", help="Use curl for http requests")
+    p_upload.add_argument("--json", action="store_true", help="Print data info json object")
+
     # run options
     p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
     p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
@@ -89,17 +101,6 @@ def get_parser():
     # avail options
     p_avail.add_argument("-r", "--recipe", action="store_true", help="list recipes")
     p_avail.add_argument("-d", "--detail", action="store_true", help="show module details")
-
-    # upload options
-    p_upload.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
-    p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
-    p_upload.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
-    p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
-    p_upload.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
-    p_upload.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify a reference contig file")
-    p_upload.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
-    p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
-    p_upload.add_argument("--json", action="store_true", help="Print data info json object")
 
     # kill options
     p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
@@ -166,19 +167,21 @@ def main():
     except Exception as e:
         sys.exit("Error creating client: {}".format(e))
         
-    res_ids = []
-    file_sizes = []
-    file_list = []
-
-    curl = False
-    try:
-        curl = args.curl
-    except:
-        pass
-
 
     # Format into separate pipelines
     if args.command == "run" or args.command == "upload":
+
+        res_ids = []
+        file_sizes = []
+        file_list = []
+
+        curl = False
+        try:
+            curl = args.curl
+        except:
+            pass
+
+
         if args.command == "run":
             if args.assemblers:
                 args.pipeline = [(" ".join(args.assemblers))]

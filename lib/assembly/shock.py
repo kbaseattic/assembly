@@ -227,7 +227,7 @@ class Shock:
                '-X', 'POST', 
                '-F', 'attributes=@{}'.format(attr_file),
                '-F', 'upload=@{}'.format(filename),
-               '{}node/'.format(self.shockurl)]
+               '{}/node/'.format(self.shockurl)]
         ret = subprocess.check_output(cmd)
         res = json.loads(ret)
         return res

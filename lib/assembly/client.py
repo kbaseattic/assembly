@@ -31,7 +31,7 @@ class Client:
                         'Content-type': 'application/json', 
                         'Accept': 'text/plain'}
         shockres = self.req_get('{}/shock'.format(self.url))
-        self.shockurl = json.loads(shockres)['shockurl']
+        self.shockurl = verify_url(json.loads(shockres)['shockurl'])
         self.shock = Shock(self.shockurl, self.user, self.token)
 
     def upload_data_shock(self, filename, curl=False):
