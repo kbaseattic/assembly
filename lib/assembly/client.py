@@ -24,18 +24,13 @@ from shock import get as shock_get
 
 class Client:
     def __init__(self, url, user, token):
-        # self.port = 8000 ## change
-        # if url.find(':') == -1: # Port not included
-        #     self.url = url + ':{}'.format(self.port)
-        # else:
-        #     self.url = url
         self.url = verify_url(url)
         self.user = user
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),
                         'Content-type': 'application/json', 
                         'Accept': 'text/plain'}
-        shockres = requests.get('{}/shock'.format(self.url), headers=self.headers).text
+        shockres = self.req_get('{}/shock'.format(self.url))
         self.shockurl = json.loads(shockres)['shockurl']
         self.shock = Shock(self.shockurl, self.user, self.token)
 
@@ -78,8 +73,7 @@ class Client:
 
     def get_data_list(self):
         url = '{}/user/{}/data'.format(self.url, self.user)
-        r = requests.get(url, headers=self.headers)
-        li = json.loads(r.content)
+        li = json.loads(self.req_get(url))
         li.sort(key=lambda e: e["data_id"])
         return li
 
@@ -100,8 +94,7 @@ class Client:
 
     def get_data_json(self, data_id):
         url = '{}/user/{}/data/{}'.format(self.url, self.user, data_id)
-        r = requests.get(url, headers=self.headers)
-        return r.content
+        return self.req_get(url)
 
     def is_job_valid(self, job_id):
         stat = self.get_job_status(1, job_id)
@@ -148,9 +141,9 @@ class Client:
         if not asm: asm = ''
         url = '{}/user/{}/job/{}/assemblies/{}'.format(self.url, self.user, job_id, asm)
         handles = json.loads(self.req_get(url))
-        if len(asm) and not handles:
+        if asm and not handles:
             # result-not-found exception handled by router
-            raise ValueError('Invalid assembly ID: ' + asm)
+            raise Error('Invalid assembly ID: ' + asm)
         for h in handles:
             self.download_shock_handle(h, stdout, outdir, prefix=job_id+'_')
         return
@@ -185,31 +178,21 @@ class Client:
         if job_id:
             url = '{}/user/{}/job/{}/kill'.format(self.url, self.user, job_id)
         else:
-            url = '{}/user/{}/job/all/kill'.format(
-                self.url, self.user)
-        r = requests.get(url, headers=self.headers)
-        return r.content
+            url = '{}/user/{}/job/all/kill'.format(self.url, self.user)
+        return self.req_get(url)
 
     def get_config(self):
-        return requests.get('{}/admin/system/config'.format(self.url)).content
+        return self.req_get('{}/admin/system/config'.format(self.url))
 
     def req_get(self, url, ret=None):
+        """Authenticated get. Parses CherryPy message and raises HTTPError"""
         r = requests.get(url, headers=self.headers)
-
         if r.status_code != requests.codes.ok:
             cherry = re.compile("^HTTPError: \(\d+, '(.*?)'", re.MULTILINE)
             match = cherry.search(r.content)
             msg = match.group(1) if match else r.reason
-            raise requests.exceptions.HTTPError("HTTPError {}: {}".format(r.status_code, msg))
-
-        # return {'text': r.text, 'json': r.json}.get(ret, r.content)
-
-        if ret == 'text':
-            return r.text
-        elif ret == 'json':
-            return r.json
-        else:
-            return r.content
+            raise HTTPError("HTTPError {}: {}".format(r.status_code, msg))
+        return {'text': r.text, 'json': r.json}.get(ret, r.content)
     
     @contextlib.contextmanager
     def smart_open(self, filename=None):
@@ -227,7 +210,7 @@ class Client:
         shock_url = handle.get('shock_url') or handle.get('url')
         shock_id  = handle.get('shock_id')  or handle.get('id')
         if not shock_url or not shock_id:
-            raise Exception("Invalid shock handle: {}".format(handle))        
+            raise Error("Invalid shock handle: {}".format(handle))        
         url = "{}/node/{}?download".format(shock_url, shock_id)
         if stdout:
             filename = None
@@ -236,7 +219,6 @@ class Client:
             filename = handle.get('filename') or handle.get('local_file') or shock_id
             filename = prefix + filename.split('/')[-1]
             filename = os.path.join(outdir, filename) if outdir else filename
-
         r = requests.get(url, stream=True)
         with self.smart_open(filename) as f:
             for chunk in r.iter_content(chunk_size=1024): 
@@ -245,7 +227,7 @@ class Client:
                     f.flush()
         if filename:
             if not os.path.exists(filename):
-                raise Exception('Data exists but file not properly saved')
+                raise Error('Data exists but file not properly saved')
             else:
                 sys.stderr.write("File downloaded: {}\n".format(filename))
                 return filename
@@ -253,8 +235,8 @@ class Client:
     def verify_dir(self, path):
         try:
             os.makedirs(path)
-        except OSError as exception:
-            if exception.errno != errno.EEXIST:
+        except OSError as e:
+            if e.errno != errno.EEXIST:
                 raise
         return path
 
@@ -273,7 +255,12 @@ class Error(Exception):
     """Base class for exceptions in this module"""
     pass
 
-class URLError(Error, ValueError):
+
+class InvalidURL(Error, ValueError):
+    pass
+
+
+class HTTPError(Error):
     pass
 
 
@@ -290,7 +277,7 @@ def verify_url(url, port=8000):
         re.IGNORECASE)
     match = pattern.search(url)
     if not match:
-        raise URLError(url)
+        raise InvalidURL(url)
     if not match.group(1):
         url = 'http://' + url
     if not match.group(2) and url.count(':') < 2:
@@ -298,6 +285,7 @@ def verify_url(url, port=8000):
     return url
 
 def test_verify_url():
+    """unittest: py.test client.py -v"""
     assert verify_url('localhost') == 'http://localhost:8000'
     assert verify_url('140.221.84.203') == 'http://140.221.84.203:8000'
     assert verify_url('kbase.us/services/assembly') == 'http://kbase.us/services/assembly'
@@ -305,7 +293,7 @@ def test_verify_url():
     assert verify_url('https://kbase.us/services/assembly') == 'https://kbase.us/services/assembly'
     try:
         import pytest
-        with pytest.raises(URLError):
+        with pytest.raises(InvalidURL):
             verify_url('badURL')
             verify_url('badURL/with/path:8000')
             verify_url('http://very bad url.com')

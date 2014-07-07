@@ -26,83 +26,90 @@ from assembly import auth_token as auth
 
 my_version = '0.4.0.1'
 
-# setup option/arg parser
-parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
-parser.add_argument('-s', dest='ARAST_URL', help='arast server url')
-parser.add_argument('-c', '--config', action="store", help='Specify config file')
-parser.add_argument("-v", "--verbose", action="store_true", help="Verbose")
-parser.add_argument('--version', action='version', version='AssemblyRAST Client ' + my_version)
+def get_parser():
+    parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 
-subparsers = parser.add_subparsers(dest='command', title='The commands are')
+    parser.add_argument('-s', dest='ARAST_URL', help='arast server url')
+    parser.add_argument('-c', '--config', action="store", help='Specify config file')
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose")
+    parser.add_argument('--version', action='version', version='AssemblyRAST Client ' + my_version)
 
-# run -h
-p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
-data_group = p_run.add_mutually_exclusive_group()
-p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
+    subparsers = parser.add_subparsers(dest='command', title='The commands are')
 
-cmd_group = p_run.add_mutually_exclusive_group()
-cmd_group.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
-cmd_group.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline. None will invoke automatic mode")
-cmd_group.add_argument("-r", "--recipe", action="store", dest="recipe", nargs='*', help="invoke a recipe")
-cmd_group.add_argument("-w", "--wasp", action="store", dest="wasp", nargs='*', help="invoke a wasp expression")
-p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
-p_run.add_argument("-q", "--queue", action="store", dest="queue", help=argparse.SUPPRESS)
-data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
-p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
-p_run.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
-p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
-p_run.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
-p_run.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
-p_run.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
-p_run.add_argument("--curl", action="store_true", help="Use curl for http requests")
+    p_upload = subparsers.add_parser('upload', description='Upload a read set', help='Upload a read library or set of libraries, returns a data ID for future use')
+    p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
+    p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
+    p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
+    p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
+    p_get = subparsers.add_parser('get', description='Get result data', help='Get data')
+    p_login = subparsers.add_parser('login', description='Force log in', help='log in')
+    p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
 
-# stat -h
-p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
-p_stat.add_argument("-j", "--job", action="store", help="get status of specific job")
-p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
-p_stat.add_argument("-n", dest="stat_n", action="store", default=10, type=int, help="specify number of records to show")
-p_stat.add_argument("-d", "--detail", action="store_true", help="show pipeline/recipe/wasp details in status table")
-p_stat.add_argument("-l", "--list-data", action="store_true", dest="list_data", help="list data objects")
-p_stat.add_argument("--data-json", action="store", dest="data_id", help="print json string for data object")
+    # run options
+    p_run.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
+    p_run.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
+    p_run.add_argument("-q", "--queue", action="store", dest="queue", help=argparse.SUPPRESS)
+    p_run.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
+    p_run.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
+    p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
+    p_run.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
+    p_run.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
+    p_run.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
+    p_run.add_argument("--curl", action="store_true", help="Use curl for http requests")
 
-# avail
-p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
-p_avail.add_argument("-r", "--recipe", action="store_true", help="list recipes")
-p_avail.add_argument("-d", "--detail", action="store_true", help="show module details")
+    data_group = p_run.add_mutually_exclusive_group()
+    data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
 
-# upload
-p_upload = subparsers.add_parser('upload', description='Upload a read set', help='Upload a read library or set of libraries, returns a data ID for future use')
-p_upload.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
-p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
-p_upload.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
-p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
-p_upload.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
-p_upload.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify a reference contig file")
-p_upload.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
-p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
-p_upload.add_argument("--json", action="store_true", help="Print data info json object")
+    cmd_group = p_run.add_mutually_exclusive_group()
+    cmd_group.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
+    cmd_group.add_argument("-p", "--pipeline", action="append", dest="pipeline", nargs='*', help="invoke a pipeline. None will invoke automatic mode")
+    cmd_group.add_argument("-r", "--recipe", action="store", dest="recipe", nargs='*', help="invoke a recipe")
+    cmd_group.add_argument("-w", "--wasp", action="store", dest="wasp", nargs='*', help="invoke a wasp expression")
 
-# kill
-p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
-p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
-p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs")
+    # stat options
+    p_stat.add_argument("-j", "--job", action="store", help="get status of specific job")
+    p_stat.add_argument("-w", "--watch", action="store_true", help="monitor in realtime")
+    p_stat.add_argument("-n", dest="stat_n", action="store", default=10, type=int, help="specify number of records to show")
+    p_stat.add_argument("-d", "--detail", action="store_true", help="show pipeline/recipe/wasp details in status table")
+    p_stat.add_argument("-l", "--list-data", action="store_true", dest="list_data", help="list data objects")
+    p_stat.add_argument("--data-json", action="store", dest="data_id", help="print json string for data object")
 
-# get
-p_get = subparsers.add_parser('get', description='Get result data', help='Get data')
-p_get.add_argument("-j", "--job", action="store", required=True, help="Specify which job data to get")
-p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=None, const=True, help="Download an assembly or assemblies")
-p_get.add_argument("-p", "--pick", action="store", nargs='?', default=None, const=True, help="Print an assembly")
-p_get.add_argument("-r", "--report", action="store_true", help="Print assembly stats report")
-p_get.add_argument("-l", "--log", action="store_true", help="Print assembly job log")
-p_get.add_argument("-o", "--outdir", action="store", help="Download to specified dir")
-p_get.add_argument("-w", "--wait", action="store_true", help="Wait until job is done")
+    # avail options
+    p_avail.add_argument("-r", "--recipe", action="store_true", help="list recipes")
+    p_avail.add_argument("-d", "--detail", action="store_true", help="show module details")
 
-p_logout = subparsers.add_parser('logout', description='Log out', help='log out')
-p_login = subparsers.add_parser('login', description='Force log in', help='log in')
-p_login.add_argument("--rast", action="store_true", help="Log in using RAST account")
+    # upload options
+    p_upload.add_argument("-f", action="append", dest="single", nargs='*', help="specify sequence file(s)")
+    p_upload.add_argument("--pair", action="append", dest="pair", nargs='*', help="Specify a paired-end library and parameters")
+    p_upload.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
+    p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
+    p_upload.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
+    p_upload.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify a reference contig file")
+    p_upload.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
+    p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
+    p_upload.add_argument("--json", action="store_true", help="Print data info json object")
+
+    # kill options
+    p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
+    p_kill.add_argument("-a", "--all", action="store_true", help="kill all user jobs")
+
+    # get options
+    p_get.add_argument("-j", "--job", action="store", required=True, help="Specify which job data to get")
+    p_get.add_argument("-a", "--assembly", action="store", nargs='?', default=None, const=True, help="Download an assembly or assemblies")
+    p_get.add_argument("-p", "--pick", action="store", nargs='?', default=None, const=True, help="Print an assembly")
+    p_get.add_argument("-r", "--report", action="store_true", help="Print assembly stats report")
+    p_get.add_argument("-l", "--log", action="store_true", help="Print assembly job log")
+    p_get.add_argument("-o", "--outdir", action="store", help="Download to specified dir")
+    p_get.add_argument("-w", "--wait", action="store_true", help="Wait until job is done")
+
+    # login options
+    p_login.add_argument("--rast", action="store_true", help="Log in using RAST account")
+
+    return parser
+
 
 def main():
-    global aclient
+    # global aclient
     
     clientlog = logging.getLogger('client')
     clientlog.setLevel(logging.INFO)
@@ -112,6 +119,7 @@ def main():
     sh.setFormatter(frmt)
     clientlog.addHandler(sh)
 
+    parser = get_parser()
     args = parser.parse_args()
     options = vars(args)
     
@@ -467,8 +475,10 @@ def is_valid_url(url):
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     return url is not None and regex.search(url)
 
+
 def user_data_dir(appname, appauthor):
      return os.path.expanduser('/'.join(['~', '.config', appname]))
+
 
 if __name__ == '__main__':
     main()

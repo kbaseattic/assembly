@@ -32,5 +32,5 @@ if ($help) {
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-!system "$arast avail @ARGV" or die $!;
+!system "$arast avail @ARGV" or die $!."\n";
                     
