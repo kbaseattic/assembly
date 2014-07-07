@@ -22,9 +22,11 @@ from assembly import asmtypes
 from assembly import client
 from assembly import config as conf
 from assembly import auth
+from assembly import __version__
 
 
-my_version = '0.4.0.1'
+CLIENT_VERSION = __version__
+CLIENT_NAME = 'CLI'
 
 # Config precedence: command-line args > environment variables > config file
 
@@ -44,7 +46,7 @@ def get_parser():
     parser.add_argument('-s', dest='arast_url', help='arast server url')
     parser.add_argument('-c', '--config', action="store", help='Specify config file')
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose")
-    parser.add_argument('--version', action='version', version='AssemblyRAST Client ' + my_version)
+    parser.add_argument('--version', action='version', version='AssemblyRAST Client ' + CLIENT_VERSION)
 
     subparsers = parser.add_subparsers(dest='command', title='The commands are')
 
@@ -126,10 +128,6 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
     usage = parser.format_usage()
-
-    # TODO:only used by run
-    # options = vars(args)
-    # options['version'] = my_version
 
     frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     sh = logging.StreamHandler()
@@ -424,13 +422,9 @@ def cmd_logout(args):
 
 
 def cmd_upload(args, aclient, data, log=None):
-    # options = vars(args)
-    # options['version'] = my_version
-    # options['client'] = 'CLI'
-
     arast_msg = {'assembly_data': data,
-                 'version': my_version,
-                 'client': 'CLI'}
+                 'client': CLIENT_NAME,
+                 'version': CLIENT_VERSION}
 
     payload = json.dumps(arast_msg, sort_keys=True)
     if log:
@@ -446,22 +440,22 @@ def cmd_upload(args, aclient, data, log=None):
 def cmd_run(args, aclient, data=None, log=None):
     if args.assemblers:
         args.pipeline = [(" ".join(args.assemblers))]
-    if not (args.pipeline or args.recipe or args.wasp):
+    elif not args.pipeline:     # even if args.recipe or args.wasp is defined
         args.pipeline = 'auto'
 
     options = vars(args)
-    options['version'] = my_version
-    options['client'] = 'CLI'
+    options['client'] = CLIENT_NAME
+    options['version'] = CLIENT_VERSION
 
     queue = args.queue or ARAST_QUEUE
     if queue: options['queue'] = queue
 
-    # arast_msg = dict((k, options[k]) for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp'] if k in options)
-    keys = ['pipeline', 'recipe', 'wasp', 'queue', 'message', 'data_id', 'version', 'client']
+    keys = ['pipeline', 'recipe', 'wasp', 'message',
+            'data_id', 'queue', 'version', 'client']
     arast_msg = dict((k, options[k]) for k in keys if k in options)
 
-    if data:
-        arast_msg['assembly_data'] = data
+    # set field regardless to indicate new format for consume.py
+    arast_msg['assembly_data'] = data  
 
     payload = json.dumps(arast_msg, sort_keys=True)
     if log:
