@@ -280,7 +280,7 @@ def verify_url(url, port=8000):
         raise InvalidURL(url)
     if not match.group(1):
         url = 'http://' + url
-    if not match.group(2) and url.count(':') < 2:
+    if not match.group(2) and url.count(':') < 2 and port:
         url += ":{}".format(port)
     return url
 

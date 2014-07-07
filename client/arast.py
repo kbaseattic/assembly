@@ -125,10 +125,11 @@ def main():
     
     parser = get_parser()
     args = parser.parse_args()
+    usage = parser.format_usage()
 
     # TODO:only used by run
-    options = vars(args)
-    options['version'] = my_version
+    # options = vars(args)
+    # options['version'] = my_version
 
     frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     sh = logging.StreamHandler()
@@ -162,104 +163,112 @@ def main():
     a_url = args.arast_url or ARAST_URL
     a_url = client.verify_url(a_url)
     logging.info('ARAST_URL: {}'.format(a_url))
-    try:
-        aclient = client.Client(a_url, a_user, a_token)
-    except Exception as e:
-        sys.exit("Error creating client: {}".format(e))
+    # try:
+    aclient = client.Client(a_url, a_user, a_token)
+    # except Exception as e:
+        # sys.exit("Error creating client: {}".format(e))
         
 
     # Format into separate pipelines
-    if args.command == "run" or args.command == "upload":
 
-        res_ids = []
-        file_sizes = []
-        file_list = []
+    if args.command == 'upload' or args.command == 'run' and not args.data_id:
+        adata = prepare_assembly_data(args, aclient, usage)
+    else:
+        adata = None
 
-        curl = False
-        try:
-            curl = args.curl
-        except:
-            pass
+    if args.command == 'upload':
+        cmd_upload(args, aclient, adata, clientlog)
+    elif args.command == 'run':
+        cmd_run(args, aclient, adata, clientlog)
+
+        # res_ids = []
+        # file_sizes = []
+        # file_list = []
+
+        # curl = False
+        # try:
+        #     curl = args.curl
+        # except:
+        #     pass
 
 
-        if args.command == "run":
-            if args.assemblers:
-                args.pipeline = [(" ".join(args.assemblers))]
+        # if args.command == "run":
+            # if args.assemblers:
+            #     args.pipeline = [(" ".join(args.assemblers))]
 
-            if not args.pipeline: # auto
-                args.pipeline = 'auto'
+            # if not args.pipeline: # auto
+            #     args.pipeline = 'auto'
 
-            if not args.pipeline:
-                parser.print_usage()
-                sys.exit()
+            # if not args.pipeline:
+            #     parser.print_usage()
+            #     sys.exit()
 
-            if not (args.data_id or 
-                    args.pair or args.pair_url or
-                    args.single or args.single_url):
-                parser.print_usage()
-                sys.exit()
+            # if not (args.data_id or 
+            #         args.pair or args.pair_url or
+            #         args.single or args.single_url):
+            #     parser.print_usage()
+            #     sys.exit()
 
-        if args.command == "upload" and not (args.pair or args.single):
-            parser.print_usage()
-            sys.exit()
+        # if args.command == "upload" and not (args.pair or args.single):
+        #     parser.print_usage()
+        #     sys.exit()
 
-        files = []
-        adata = client.AssemblyData()
+        # files = []
+        # adata = client.AssemblyData()
         
         ##### Parse args and create AssemblyData dict #####
-        try:
-            has_data_id = args.data_id
-        except:
-            has_data_id = False
-        if not has_data_id:
-            all_lists = [args.pair, args.pair_url, args.single, args.single_url, args.reference, args.reference_url]
-            file_lists = []
-            for l in all_lists:
-                if l is None:
-                    file_lists.append([])
-                else:
-                    file_lists.append(l)
+        # try:
+        #     has_data_id = args.data_id
+        # except:
+        #     has_data_id = False
+        # if not has_data_id:
+        #     all_lists = [args.pair, args.pair_url, args.single, args.single_url, args.reference, args.reference_url]
+        #     file_lists = []
+        #     for l in all_lists:
+        #         if l is None:
+        #             file_lists.append([])
+        #         else:
+        #             file_lists.append(l)
                    
-            all_types = ['paired', 'paired_url', 'single', 'single_url', 'reference', 'reference_url']
-            for f_list, f_type in zip(file_lists, all_types):
-                for ls in f_list:
-                    f_infos = []
-                    f_set_args = {}
-                    for word in ls:
-                        if not (os.path.isfile(word) or '=' in word or is_valid_url(word)):
-                            raise Exception('{} is not valid input!'.format(word))
-                    for word in ls:
-                        if os.path.isfile(word):
-                            f_info = aclient.upload_data_file_info(word, curl=curl)
-                            f_infos.append(f_info)
-                        elif '=' in word:
-                            kv = word.split('=')
-                            f_set_args[kv[0]] = kv[1]
-                        elif is_valid_url(word):
-                            f_info = asmtypes.FileInfo(direct_url=word)
-                            f_infos.append(f_info)
-                    f_set = asmtypes.FileSet(f_type, f_infos, **f_set_args)
-                    adata.add_set(f_set)
+        #     all_types = ['paired', 'paired_url', 'single', 'single_url', 'reference', 'reference_url']
+        #     for f_list, f_type in zip(file_lists, all_types):
+        #         for ls in f_list:
+        #             f_infos = []
+        #             f_set_args = {}
+        #             for word in ls:
+        #                 if not (os.path.isfile(word) or '=' in word or is_valid_url(word)):
+        #                     raise Exception('{} is not valid input!'.format(word))
+        #             for word in ls:
+        #                 if os.path.isfile(word):
+        #                     f_info = aclient.upload_data_file_info(word, curl=curl)
+        #                     f_infos.append(f_info)
+        #                 elif '=' in word:
+        #                     kv = word.split('=')
+        #                     f_set_args[kv[0]] = kv[1]
+        #                 elif is_valid_url(word):
+        #                     f_info = asmtypes.FileInfo(direct_url=word)
+        #                     f_infos.append(f_info)
+        #             f_set = asmtypes.FileSet(f_type, f_infos, **f_set_args)
+        #             adata.add_set(f_set)
 
-        arast_msg = dict((k, options[k]) for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp'] if k in options)
+        # arast_msg = dict((k, options[k]) for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp'] if k in options)
 
-        arast_msg['assembly_data'] = adata
-        arast_msg['client'] = 'CLI'
+        # arast_msg['assembly_data'] = adata
+        # arast_msg['client'] = 'CLI'
 
         ##### Send message to Arast Server #####
-        payload = json.dumps(arast_msg, sort_keys=True)
-        clientlog.debug(" [.] Sending message: %r" % (payload))
+        # payload = json.dumps(arast_msg, sort_keys=True)
+        # clientlog.debug(" [.] Sending message: %r" % (payload))
 
-        if args.command == "run":
-            response = aclient.submit_job(payload)
-            print 'Job ID: {}'.format(response)
-        if args.command == "upload":
-            response = aclient.submit_data(payload)
-            arast_msg.update(json.loads(response))
-            if args.json:
-                # print arast_msg
-                print payload
-            print 'Data ID: {}'.format(arast_msg['data_id'])
+        # if args.command == "run":
+        #     response = aclient.submit_job(payload)
+        #     print 'Job ID: {}'.format(response)
+        # if args.command == "upload":
+        #     response = aclient.submit_data(payload)
+        #     arast_msg.update(json.loads(response))
+        #     if args.json:
+        #         print payload
+        #     print 'Data ID: {}'.format(arast_msg['data_id'])
 
     elif args.command == 'stat':
         if args.list_data:
@@ -414,20 +423,103 @@ def cmd_logout(args):
     sys.stderr.write('[.] Logged out\n')
 
 
-def is_valid_url(url):
-    import re
-    regex = re.compile(
-        r'^https?://'  # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
-        r'localhost|'  # localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-        r'(?::\d+)?'  # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    return url is not None and regex.search(url)
+def cmd_upload(args, aclient, data, log=None):
+    options = vars(args)
+    options['version'] = my_version
+    options['client'] = 'CLI'
+
+    arast_msg = {'assembly_data': data}
+
+    payload = json.dumps(arast_msg, sort_keys=True)
+    if log:
+        log.debug(" [.] Sending upload message: %r" % (payload))
+
+    response = aclient.submit_data(payload)
+    arast_msg.update(json.loads(response))
+    if args.json:
+        print payload
+    print 'Data ID: {}'.format(arast_msg['data_id'])
 
 
-def user_data_dir(appname, appauthor):
-     return os.path.expanduser('/'.join(['~', '.config', appname]))
+def cmd_run(args, aclient, data=None, log=None):
+    if args.assemblers:
+        args.pipeline = [(" ".join(args.assemblers))]
+    if not (args.pipeline or args.recipe or args.wasp):
+        args.pipeline = 'auto'
+
+    options = vars(args)
+    options['version'] = my_version
+    options['client'] = 'CLI'
+
+    queue = args.queue or ARAST_QUEUE
+    if queue: options['queue'] = queue
+
+    # arast_msg = dict((k, options[k]) for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp'] if k in options)
+    keys = ['pipeline', 'recipe', 'wasp', 'queue', 'message', 'data_id']
+    arast_msg = dict((k, options[k]) for k in keys if k in options)
+
+    if data:
+        arast_msg['assembly_data'] = data
+
+    payload = json.dumps(arast_msg, sort_keys=True)
+    if log:
+        log.debug(" [.] Sending run message: %r" % (payload))
+
+    response = aclient.submit_job(payload)
+    print 'Job ID: {}'.format(response)
+
+
+def prepare_assembly_data(args, aclient, usage):
+    """Parses args and uploads files
+    returns data spec for submission in run/upload commands"""
+
+    if (args.command == 'upload' and not (args.pair or args.single) or
+        args.command == 'run' and
+        not (args.pair or args.pair_url or args.single or args.single_url)):
+        sys.exit(usage)
+
+    adata = client.AssemblyData()
+    curl = args.curl
+
+    res_ids = []
+    files = []
+    file_sizes = []
+    file_list = []
+    file_lists = []
+    
+    all_lists = [args.pair, args.pair_url, args.single, args.single_url, 
+                 args.reference, args.reference_url]
+    all_types = ['paired', 'paired_url', 'single', 'single_url',
+                 'reference', 'reference_url']
+
+    for li in all_lists:
+        if li is None:
+            file_lists.append([])
+        else:
+            file_lists.append(li)
+
+    for f_list, f_type in zip(file_lists, all_types):
+        for ls in f_list:
+            f_infos = []
+            f_set_args = {}
+            for word in ls:
+                if '=' in word:
+                    key, val = word.split('=')
+                    f_set_args[key] = val
+                elif os.path.isfile(word):
+                    f_info = aclient.upload_data_file_info(word, curl=curl)
+                    f_infos.append(f_info)
+                elif f_type.endswith('_url'):
+                    file_url = client.verify_url(word)
+                    f_info = asmtypes.FileInfo(direct_url=file_url)
+                    f_infos.append(f_info)
+                else:
+                    sys.exit('Invalid input: {}: {}'.format(f_type, word))
+            f_set = asmtypes.FileSet(f_type, f_infos, **f_set_args)
+            adata.add_set(f_set)
+    
+    return adata
+                
 
 
 if __name__ == '__main__':
