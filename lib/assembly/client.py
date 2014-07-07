@@ -215,7 +215,7 @@ class Client:
         if stdout:
             filename = None
         else:
-            outdir = self.verify_dir(outdir) if outdir else None 
+            outdir = verify_dir(outdir) if outdir else None 
             filename = handle.get('filename') or handle.get('local_file') or shock_id
             filename = prefix + filename.split('/')[-1]
             filename = os.path.join(outdir, filename) if outdir else filename
@@ -231,14 +231,6 @@ class Client:
             else:
                 sys.stderr.write("File downloaded: {}\n".format(filename))
                 return filename
-
-    def verify_dir(self, path):
-        try:
-            os.makedirs(path)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-        return path
 
 
 class AssemblyData(dict):
@@ -284,6 +276,7 @@ def verify_url(url, port=8000):
         url += ":{}".format(port)
     return url
 
+
 def test_verify_url():
     """unittest: py.test client.py -v"""
     assert verify_url('localhost') == 'http://localhost:8000'
@@ -300,6 +293,15 @@ def test_verify_url():
             verify_url('')
     except ImportError:
         pass
+
+
+def verify_dir(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+    return path
 
 
 def assembly_data_to_rows(data):
@@ -329,6 +331,46 @@ def assembly_data_to_rows(data):
         rows.append([libtype, " ".join(files)])
     
     return rows
+
+
+def print_recipes(recipes, detail=False):
+    for name, rec in recipes.items():
+        desc = rec['description']
+        if not desc: continue
+        print '[Recipe]', name
+        print ''.join(["  "+line for line in desc.splitlines(True)]),
+        if detail:
+            print "\n  Wasp expression = "
+            print rec['recipe'],
+        print
+
+    
+def print_modules(modules, detail=False):    
+    if detail:
+        for mod in modules:
+            keys = ('description', 'version', 'base version', 'stages',
+                    'modules', 'limitations', 'references')
+            version = mod.get('version', 0)
+            if version >= '1.0':
+                print '[Module] ' + mod['module']
+                for key in keys:
+                    if key in mod.keys():
+                        print '  '+key.title()+': '+mod[key]
+
+                if 'parameters' in mod.keys() :
+                    parms = mod['parameters']
+                    if len(parms) > 0:
+                        print '  Customizable parameters: default (available values)'
+                        for parm in sorted(parms, key=lambda p: p[0]):
+                            print '%25s  =  %s' % (parm[0], parm[1])
+                print
+    else:
+        print '{0:16} {1:35} {2:10}'.format('Module', 'Stages', 'Description')
+        print '----------------------------------------------------------------'
+        for mod in modules:
+            version = mod.get('version', 0)
+            if version >= '1.0':
+                print '{module:16} {stages:35} {description}'.format(**mod)
 
 
 def sizeof_fmt(num):

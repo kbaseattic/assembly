@@ -123,66 +123,6 @@ def get_parser():
     return parser
 
 
-def main():
-    parser = get_parser()
-    args = parser.parse_args()
-    usage = parser.format_usage()
-
-    frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
-    sh.setFormatter(frmt)
-
-    clientlog = logging.getLogger('client')
-    clientlog.setLevel(logging.INFO)
-    clientlog.addHandler(sh)
-    if args.verbose:
-        clientlog.setLevel(logging.DEBUG)
-        clientlog.debug("Logger Debugging mode")
-
-    if args.command == 'login':
-        cmd_login(args)
-        sys.exit()
-
-    if args.command == 'logout':
-        cmd_login(args)
-        sys.exit()
-    
-    a_user, a_token = auth.verify_token(ARAST_AUTH_USER,ARAST_AUTH_TOKEN)
-    if not a_user or not a_token:
-        if ARAST_ENVIRON:
-            sys.exit('Please use the {} controls to authenticate'.format(ARAST_ENVIRON))
-        else:
-            sys.stderr.write('You can use the login/logout commands to authenticate\n')
-            a_user, a_token = auth.authenticate()
-
-    # main command options
-    a_url = args.arast_url or ARAST_URL
-    a_url = client.verify_url(a_url)
-    logging.info('ARAST_URL: {}'.format(a_url))
-    try:
-        aclient = client.Client(a_url, a_user, a_token)
-    except Exception as e:
-        sys.exit("Error creating client: {}".format(e))
-
-    adata = None
-    if args.command == 'upload' or args.command == 'run' and not args.data_id:
-        adata = prepare_assembly_data(args, aclient, usage)
-        
-    if args.command == 'upload':
-        cmd_upload(args, aclient, adata, clientlog)
-    elif args.command == 'run':
-        cmd_run(args, aclient, adata, clientlog)
-    elif args.command == 'stat':
-        cmd_stat(args, aclient)
-    elif args.command == 'get':
-        cmd_get(args, aclient)
-    elif args.command == 'avail':
-        cmd_avail(args, aclient)
-    elif args.command == 'kill':
-        print aclient.kill_jobs(args.job)
-
-
 def cmd_login(args):
     auth_service = 'RAST' if args.rast else 'KBase'
     auth.authenticate(service=auth_service, save=True)
@@ -205,8 +145,7 @@ def cmd_upload(args, aclient, data, log=None):
 
     response = aclient.submit_data(payload)
     arast_msg.update(json.loads(response))
-    if args.json:
-        print payload
+    if args.json: print payload
     print 'Data ID: {}'.format(arast_msg['data_id'])
 
 
@@ -227,7 +166,7 @@ def cmd_run(args, aclient, data=None, log=None):
             'data_id', 'queue', 'version', 'client']
     arast_msg = dict((k, options[k]) for k in keys if k in options)
 
-    # set field regardless to indicate new format for consume.py
+    # set attribute regardless to indicate a non-legacy input for consume.py 
     arast_msg['assembly_data'] = data  
 
     payload = json.dumps(arast_msg, sort_keys=True)
@@ -331,51 +270,12 @@ def cmd_get(args, aclient):
 
 def cmd_avail(args, aclient):
     if args.recipe:
-        try:
-            recipes = json.loads(aclient.get_available_recipes())
-            for r in recipes:
-                if not recipes[r]['description']: continue
-                print '[Recipe]', r
-                print ''.join(["  "+l for l in recipes[r]['description'].splitlines(True)]),
-                if args.detail:
-                    print "\n  Wasp expression = "
-                    print recipes[r]['recipe'],
-                print
-        except Exception as e:
-            sys.exit('Error getting available recipes: {}'.format(e))
-        sys.exit()
-
-    try:
+        recipes = json.loads(aclient.get_available_recipes())
+        client.print_recipes(recipes, args.detail)
+    else:
         mods = json.loads(aclient.get_available_modules())
         mods = sorted(mods, key=lambda mod: mod['module'])
-
-        if args.detail:
-            for mod in mods:
-                keys = ('description', 'version', 'base version', 'stages', 'modules', 'limitations', 'references')
-                if mod['version'] >= '1.0':
-                    print '[Module] ' + mod['module']
-                    for key in keys:
-                        if key in mod.keys():
-                            print '  '+key.title()+': '+mod[key]
-
-                    if 'parameters' in mod.keys() :
-                        parms = mod['parameters']
-                        if len(parms) > 0:
-                            print '  Customizable parameters: default (available values)'
-                            for parm in sorted(parms, key=lambda p: p[0]):
-                                print '%25s  =  %s' % (parm[0], parm[1])
-                    print
-        else:
-            print '{0:16} {1:35} {2:10}'.format('Module', 'Stages', 'Description')
-            print '----------------------------------------------------------------'
-            for mod in mods:
-                if mod['version'] >= '1.0':
-                    print '{module:16} {stages:35} {description}'.format(**mod)
-
-    except Exception as e:
-        sys.exit('Error getting available modules: {}'.format(e))
-
-
+        client.print_modules(mods, args.detail)
 
 
 def prepare_assembly_data(args, aclient, usage):
@@ -429,6 +329,70 @@ def prepare_assembly_data(args, aclient, usage):
     
     return adata
                 
+
+def run_command():
+    parser = get_parser()
+    args = parser.parse_args()
+    usage = parser.format_usage()
+
+    frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG)
+    sh.setFormatter(frmt)
+
+    clientlog = logging.getLogger('client')
+    clientlog.setLevel(logging.INFO)
+    clientlog.addHandler(sh)
+    if args.verbose:
+        clientlog.setLevel(logging.DEBUG)
+        clientlog.debug("Logger Debugging mode")
+
+    if args.command == 'login':
+        cmd_login(args)
+        sys.exit()
+
+    if args.command == 'logout':
+        cmd_login(args)
+        sys.exit()
+    
+    a_user, a_token = auth.verify_token(ARAST_AUTH_USER,ARAST_AUTH_TOKEN)
+    if not a_user or not a_token:
+        if ARAST_ENVIRON:
+            sys.exit('Please use the {} controls to authenticate'.format(ARAST_ENVIRON))
+        else:
+            sys.stderr.write('You can use the login/logout commands to authenticate\n')
+            a_user, a_token = auth.authenticate()
+
+    # main command options
+    a_url = args.arast_url or ARAST_URL
+    a_url = client.verify_url(a_url)
+    logging.info('ARAST_URL: {}'.format(a_url))
+
+    aclient = client.Client(a_url, a_user, a_token)
+
+    adata = None
+    if args.command == 'upload' or args.command == 'run' and not args.data_id:
+        adata = prepare_assembly_data(args, aclient, usage)
+        
+    if args.command == 'upload':
+        cmd_upload(args, aclient, adata, clientlog)
+    elif args.command == 'run':
+        cmd_run(args, aclient, adata, clientlog)
+    elif args.command == 'stat':
+        cmd_stat(args, aclient)
+    elif args.command == 'get':
+        cmd_get(args, aclient)
+    elif args.command == 'avail':
+        cmd_avail(args, aclient)
+    elif args.command == 'kill':
+        print aclient.kill_jobs(args.job)
+
+
+def main():
+    try:
+        run_command()
+    except KeyboardInterrupt:
+        sys.exit()
 
 
 if __name__ == '__main__':

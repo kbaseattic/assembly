@@ -20,6 +20,7 @@ USER_DIR = os.path.expanduser('/'.join(['~', '.config', conf.APPNAME]))
 OAUTH_FILE = os.path.join(USER_DIR, conf.OAUTH_FILENAME)
 OAUTH_EXP_DAYS = conf.OAUTH_EXP_DAYS or 10
 
+
 class Error(Exception):
     """Base class for exceptions in this module"""
     pass
