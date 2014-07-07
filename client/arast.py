@@ -124,7 +124,6 @@ def get_parser():
 
 
 def main():
-    
     parser = get_parser()
     args = parser.parse_args()
     usage = parser.format_usage()
@@ -161,253 +160,27 @@ def main():
     a_url = args.arast_url or ARAST_URL
     a_url = client.verify_url(a_url)
     logging.info('ARAST_URL: {}'.format(a_url))
-    # try:
-    aclient = client.Client(a_url, a_user, a_token)
-    # except Exception as e:
-        # sys.exit("Error creating client: {}".format(e))
-        
+    try:
+        aclient = client.Client(a_url, a_user, a_token)
+    except Exception as e:
+        sys.exit("Error creating client: {}".format(e))
 
-    # Format into separate pipelines
-
+    adata = None
     if args.command == 'upload' or args.command == 'run' and not args.data_id:
         adata = prepare_assembly_data(args, aclient, usage)
-    else:
-        adata = None
-
+        
     if args.command == 'upload':
         cmd_upload(args, aclient, adata, clientlog)
     elif args.command == 'run':
         cmd_run(args, aclient, adata, clientlog)
-
-        # res_ids = []
-        # file_sizes = []
-        # file_list = []
-
-        # curl = False
-        # try:
-        #     curl = args.curl
-        # except:
-        #     pass
-
-
-        # if args.command == "run":
-            # if args.assemblers:
-            #     args.pipeline = [(" ".join(args.assemblers))]
-
-            # if not args.pipeline: # auto
-            #     args.pipeline = 'auto'
-
-            # if not args.pipeline:
-            #     parser.print_usage()
-            #     sys.exit()
-
-            # if not (args.data_id or 
-            #         args.pair or args.pair_url or
-            #         args.single or args.single_url):
-            #     parser.print_usage()
-            #     sys.exit()
-
-        # if args.command == "upload" and not (args.pair or args.single):
-        #     parser.print_usage()
-        #     sys.exit()
-
-        # files = []
-        # adata = client.AssemblyData()
-        
-        ##### Parse args and create AssemblyData dict #####
-        # try:
-        #     has_data_id = args.data_id
-        # except:
-        #     has_data_id = False
-        # if not has_data_id:
-        #     all_lists = [args.pair, args.pair_url, args.single, args.single_url, args.reference, args.reference_url]
-        #     file_lists = []
-        #     for l in all_lists:
-        #         if l is None:
-        #             file_lists.append([])
-        #         else:
-        #             file_lists.append(l)
-                   
-        #     all_types = ['paired', 'paired_url', 'single', 'single_url', 'reference', 'reference_url']
-        #     for f_list, f_type in zip(file_lists, all_types):
-        #         for ls in f_list:
-        #             f_infos = []
-        #             f_set_args = {}
-        #             for word in ls:
-        #                 if not (os.path.isfile(word) or '=' in word or is_valid_url(word)):
-        #                     raise Exception('{} is not valid input!'.format(word))
-        #             for word in ls:
-        #                 if os.path.isfile(word):
-        #                     f_info = aclient.upload_data_file_info(word, curl=curl)
-        #                     f_infos.append(f_info)
-        #                 elif '=' in word:
-        #                     kv = word.split('=')
-        #                     f_set_args[kv[0]] = kv[1]
-        #                 elif is_valid_url(word):
-        #                     f_info = asmtypes.FileInfo(direct_url=word)
-        #                     f_infos.append(f_info)
-        #             f_set = asmtypes.FileSet(f_type, f_infos, **f_set_args)
-        #             adata.add_set(f_set)
-
-        # arast_msg = dict((k, options[k]) for k in ['pipeline', 'data_id', 'message', 'queue', 'version', 'recipe', 'wasp'] if k in options)
-
-        # arast_msg['assembly_data'] = adata
-        # arast_msg['client'] = 'CLI'
-
-        ##### Send message to Arast Server #####
-        # payload = json.dumps(arast_msg, sort_keys=True)
-        # clientlog.debug(" [.] Sending message: %r" % (payload))
-
-        # if args.command == "run":
-        #     response = aclient.submit_job(payload)
-        #     print 'Job ID: {}'.format(response)
-        # if args.command == "upload":
-        #     response = aclient.submit_data(payload)
-        #     arast_msg.update(json.loads(response))
-        #     if args.json:
-        #         print payload
-        #     print 'Data ID: {}'.format(arast_msg['data_id'])
-
     elif args.command == 'stat':
-        if args.list_data:
-            table = aclient.get_data_list_table(args.stat_n)
-            print table
-            sys.exit()
-
-        if args.data_id:
-            data_json = aclient.get_data_json(args.data_id)
-            print data_json
-            sys.exit()
-        
-        # default: print job information
-        while True:
-            try:
-                response = aclient.get_job_status(args.stat_n, args.job, detail=args.detail)
-                if args.watch:
-                        os.system('clear')
-                print response
-                if not args.watch:
-                        break
-                else:
-                    print 'Press CTRL-C to quit.'
-                ### Spinner loop
-                spinners = ['-', '\\', '|', '/'] 
-                sleep_seconds = 25
-                spins_per_sec = 4
-                for i in range(sleep_seconds * spins_per_sec):
-                    os.system('clear')
-                    print('[{}] Assembly Service Status').format(spinners[i%4])
-                    print response
-                    print 'Press CTRL-C to quit.'
-                    time.sleep(1.0/spins_per_sec)			
-            except KeyboardInterrupt:
-                break
-                
-
+        cmd_stat(args, aclient)
     elif args.command == 'get':
-        aclient.validate_job(args.job)
-
-        if args.wait:
-            try:
-                stat = aclient.wait_for_job(args.job)
-            except KeyboardInterrupt:
-                print
-                sys.exit()
-            if 'FAIL' in stat:
-                print 'Job failed: ', stat
-                sys.exit()
-        else:
-            aclient.check_job(args.job)
-
-
-        if args.report:
-            try:
-                report = aclient.get_job_report(args.job)
-            except Exception as e:
-                sys.exit("Error retrieving job report: {}".format(e))
-            if report: print report
-
-        elif args.log:
-            try:
-                joblog = aclient.get_job_log(args.job)
-            except Exception as e:
-                sys.exit("Error retrieving job log: {}".format(e))
-            if joblog: print joblog
-
-        elif args.pick:
-            try:
-                # the assembly ID can be supplied by either argument
-                asm1 = args.pick if type(args.pick) is str else None
-                asm2 = args.assembly if type(args.assembly) is str else None
-                # pick the best assembly by default
-                asm = asm1 or asm2 or 'auto'
-                aclient.get_assemblies(args.job, asm, stdout=True)
-            except Exception as e:
-                sys.exit("Error getting assembly: {}".format(e))
-
-        elif args.assembly:
-            try:
-                # download all assemblies by default
-                asm = args.assembly if type(args.assembly) is str else None
-                aclient.get_assemblies(args.job, asm, outdir=args.outdir)
-            except Exception as e:
-                sys.exit("Error downloading assembly: {}".format(e))
-
-        else:
-            try:
-                aclient.get_job_data(job_id=args.job, outdir=args.outdir)
-            except Exception as e:
-                sys.exit("Error downloading job results: {}".format(e))
-
+        cmd_get(args, aclient)
     elif args.command == 'avail':
-        if args.recipe:
-            try:
-                recipes = json.loads(aclient.get_available_recipes())
-                for r in recipes:
-                    if not recipes[r]['description']: continue
-                    print '[Recipe]', r
-                    print ''.join(["  "+l for l in recipes[r]['description'].splitlines(True)]),
-                    if args.detail:
-                        print "\n  Wasp expression = "
-                        print recipes[r]['recipe'],
-                    print
-            except Exception as e:
-                sys.exit('Error getting available recipes: {}'.format(e))
-            sys.exit()
-
-        try:
-            mods = json.loads(aclient.get_available_modules())
-            mods = sorted(mods, key=lambda mod: mod['module'])
-            
-            if args.detail:
-                for mod in mods:
-                    keys = ('description', 'version', 'base version', 'stages', 'modules', 'limitations', 'references')
-                    if mod['version'] >= '1.0':
-                        print '[Module] ' + mod['module']
-                        for key in keys:
-                            if key in mod.keys():
-                                print '  '+key.title()+': '+mod[key]
-
-                        if 'parameters' in mod.keys() :
-                            parms = mod['parameters']
-                            if len(parms) > 0:
-                                print '  Customizable parameters: default (available values)'
-                                for parm in sorted(parms, key=lambda p: p[0]):
-                                    print '%25s  =  %s' % (parm[0], parm[1])
-                        print
-            else:
-                print '{0:16} {1:35} {2:10}'.format('Module', 'Stages', 'Description')
-                print '----------------------------------------------------------------'
-                for mod in mods:
-                    if mod['version'] >= '1.0':
-                        print '{module:16} {stages:35} {description}'.format(**mod)
-
-        except Exception as e:
-            sys.exit('Error getting available modules: {}'.format(e))
-
+        cmd_avail(args, aclient)
     elif args.command == 'kill':
         print aclient.kill_jobs(args.job)
-
 
 
 def cmd_login(args):
@@ -440,7 +213,7 @@ def cmd_upload(args, aclient, data, log=None):
 def cmd_run(args, aclient, data=None, log=None):
     if args.assemblers:
         args.pipeline = [(" ".join(args.assemblers))]
-    elif not args.pipeline:     # even if args.recipe or args.wasp is defined
+    elif not args.pipeline:  # even if args.recipe or args.wasp is defined
         args.pipeline = 'auto'
 
     options = vars(args)
@@ -463,6 +236,146 @@ def cmd_run(args, aclient, data=None, log=None):
 
     response = aclient.submit_job(payload)
     print 'Job ID: {}'.format(response)
+
+
+def cmd_stat(args, aclient):
+    if args.list_data:
+        table = aclient.get_data_list_table(args.stat_n)
+        print table
+        sys.exit()
+
+    if args.data_id:
+        data_json = aclient.get_data_json(args.data_id)
+        print data_json
+        sys.exit()
+
+    while True:
+        try:
+            response = aclient.get_job_status(args.stat_n, args.job, detail=args.detail)
+            if args.watch:
+                    os.system('clear')
+            print response
+            if not args.watch:
+                    break
+            else:
+                print 'Press CTRL-C to quit.'
+            ### Spinner loop
+            spinners = ['-', '\\', '|', '/'] 
+            sleep_seconds = 25
+            spins_per_sec = 4
+            for i in range(sleep_seconds * spins_per_sec):
+                os.system('clear')
+                print('[{}] Assembly Service Status').format(spinners[i%4])
+                print response
+                print 'Press CTRL-C to quit.'
+                time.sleep(1.0/spins_per_sec)			
+        except KeyboardInterrupt:
+            print
+            break
+
+
+def cmd_get(args, aclient):
+    aclient.validate_job(args.job)
+
+    if args.wait:
+        try:
+            stat = aclient.wait_for_job(args.job)
+        except KeyboardInterrupt:
+            print
+            sys.exit()
+        if 'FAIL' in stat:
+            print 'Job failed: ', stat
+            sys.exit()
+    else:
+        aclient.check_job(args.job)
+
+    if args.report:
+        try:
+            report = aclient.get_job_report(args.job)
+        except Exception as e:
+            sys.exit("Error retrieving job report: {}".format(e))
+        if report: print report
+
+    elif args.log:
+        try:
+            joblog = aclient.get_job_log(args.job)
+        except Exception as e:
+            sys.exit("Error retrieving job log: {}".format(e))
+        if joblog: print joblog
+
+    elif args.pick:
+        try:
+            # the assembly ID can be supplied by either argument
+            asm1 = args.pick if type(args.pick) is str else None
+            asm2 = args.assembly if type(args.assembly) is str else None
+            # pick the best assembly by default
+            asm = asm1 or asm2 or 'auto'
+            aclient.get_assemblies(args.job, asm, stdout=True)
+        except Exception as e:
+            sys.exit("Error getting assembly: {}".format(e))
+
+    elif args.assembly:
+        try:
+            # download all assemblies by default
+            asm = args.assembly if type(args.assembly) is str else None
+            aclient.get_assemblies(args.job, asm, outdir=args.outdir)
+        except Exception as e:
+            sys.exit("Error downloading assembly: {}".format(e))
+
+    else:
+        try:
+            aclient.get_job_data(job_id=args.job, outdir=args.outdir)
+        except Exception as e:
+            sys.exit("Error downloading job results: {}".format(e))
+
+
+def cmd_avail(args, aclient):
+    if args.recipe:
+        try:
+            recipes = json.loads(aclient.get_available_recipes())
+            for r in recipes:
+                if not recipes[r]['description']: continue
+                print '[Recipe]', r
+                print ''.join(["  "+l for l in recipes[r]['description'].splitlines(True)]),
+                if args.detail:
+                    print "\n  Wasp expression = "
+                    print recipes[r]['recipe'],
+                print
+        except Exception as e:
+            sys.exit('Error getting available recipes: {}'.format(e))
+        sys.exit()
+
+    try:
+        mods = json.loads(aclient.get_available_modules())
+        mods = sorted(mods, key=lambda mod: mod['module'])
+
+        if args.detail:
+            for mod in mods:
+                keys = ('description', 'version', 'base version', 'stages', 'modules', 'limitations', 'references')
+                if mod['version'] >= '1.0':
+                    print '[Module] ' + mod['module']
+                    for key in keys:
+                        if key in mod.keys():
+                            print '  '+key.title()+': '+mod[key]
+
+                    if 'parameters' in mod.keys() :
+                        parms = mod['parameters']
+                        if len(parms) > 0:
+                            print '  Customizable parameters: default (available values)'
+                            for parm in sorted(parms, key=lambda p: p[0]):
+                                print '%25s  =  %s' % (parm[0], parm[1])
+                    print
+        else:
+            print '{0:16} {1:35} {2:10}'.format('Module', 'Stages', 'Description')
+            print '----------------------------------------------------------------'
+            for mod in mods:
+                if mod['version'] >= '1.0':
+                    print '{module:16} {stages:35} {description}'.format(**mod)
+
+    except Exception as e:
+        sys.exit('Error getting available modules: {}'.format(e))
+
+
 
 
 def prepare_assembly_data(args, aclient, usage):
