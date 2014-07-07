@@ -26,6 +26,8 @@ from assembly import auth_token as auth
 
 my_version = '0.4.0.1'
 
+
+
 def get_parser():
     parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 
@@ -109,29 +111,26 @@ def get_parser():
 
 
 def main():
-    # global aclient
     
-    clientlog = logging.getLogger('client')
-    clientlog.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
-    frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    sh.setFormatter(frmt)
-    clientlog.addHandler(sh)
-
     parser = get_parser()
     args = parser.parse_args()
     options = vars(args)
-    
     options['version'] = my_version
 
+    frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG)
+    sh.setFormatter(frmt)
+
+    clientlog = logging.getLogger('client')
+    clientlog.setLevel(logging.INFO)
+    clientlog.addHandler(sh)
     if args.verbose:
         clientlog.setLevel(logging.DEBUG)
         clientlog.debug("Logger Debugging mode")
 
-    #### Get configuration #####
-    # ARAST_URL = '{}:{}'.format(conf.URL, conf.PORT)
-    ARAST_URL = conf.URL #'{}:{}'.format(conf.URL, conf.PORT)
+
+    ARAST_URL = conf.URL
     user_dir = user_data_dir(conf.APPNAME, conf.APPAUTHOR)
 
     oauth_file = os.path.join(user_dir, conf.OAUTH_FILENAME)
