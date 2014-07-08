@@ -5,7 +5,7 @@ from Bio import SeqIO
 
 ####### Decorators
 def wasp_contigs_wrapped(func):
-    """Take a wasp link, run functions on contigs """
+    """Take a wasp link, run functions on contigs, return a new wasp link """
     def func_on_contigs(*wasplinks):
         contigs = []
         for w in wasplinks:
@@ -63,6 +63,9 @@ def n50(contigs):
             break
     print 'N50 of {}: {}'.format(os.path.basename(contig), N50)
     return N50
+
+def arast_score(*wasplinks):
+    return n50(*wasplinks)
 
 ####### Wasp expressions
 @wasp_filesets

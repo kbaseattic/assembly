@@ -11,7 +11,7 @@ import traceback, sys
 #### Arast Libraries
 import assembly as utils
 import asmtypes
-import wasp_functions
+import wasp_functions as wf
 
 Symbol = str
 
@@ -382,8 +382,9 @@ class WaspEngine():
         init_link['default_output'] = list(job_data['initial_data'].readsets)
         
         self.assembly_env.update({self.constants_reads: init_link})
-        self.assembly_env.update({'has_paired': wasp_functions.has_paired,
-                                  'n50': wasp_functions.n50})
+        self.assembly_env.update({'arast_score': wf.arast_score,
+                                  'has_paired': wf.has_paired,
+                                  'n50': wf.n50})
 
     def run_expression(self, exp, job_data=None):
         if not job_data:
@@ -441,8 +442,10 @@ def pipelines_to_exp(pipes, job_id):
             exp = '(begin {} {})'.format(setparams, exp)
             params = []
 
-        exp = '(upload {})'.format(exp)
+        #exp = '(upload {})'.format(exp)
+        #all_pipes.append(exp)
         all_pipes.append(exp)
+
         
     #### Check for duplicates and redefine
     val_num = 0
@@ -469,7 +472,8 @@ def pipelines_to_exp(pipes, job_id):
             all_pipes[i] = pipe.replace(*replacement)
     
     #### Form final expression
-    final_exp = '(begin {} (tar (all_files (quast {})) :name analysis))'.format(' '.join(defs), ' '.join(all_pipes))
+    ranked_upload = '(upload (sort (list {}) > :key (lambda (c) (arast_score c))))'.format(' '.join(all_pipes))
+    final_exp = '(begin {} (tar (all_files (quast {})) :name analysis))'.format(' '.join(defs), ranked_upload)
     return final_exp
 
 
