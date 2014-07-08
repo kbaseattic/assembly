@@ -15,9 +15,7 @@ import subprocess
 import time
 import traceback
 from ConfigParser import SafeConfigParser
-# from pkg_resources import resource_filename
 
-# arast libs
 from assembly import asmtypes
 from assembly import client
 from assembly import config as conf
@@ -255,9 +253,7 @@ def prepare_assembly_data(args, aclient, usage):
     """Parses args and uploads files
     returns data spec for submission in run/upload commands"""
 
-    if (args.command == 'upload' and not (args.pair or args.single) or
-        args.command == 'run' and
-        not (args.pair or args.pair_url or args.single or args.single_url)):
+    if not (args.pair or args.single or args.pair_url or args.single_url):
         sys.exit(usage)
 
     adata = client.AssemblyData()

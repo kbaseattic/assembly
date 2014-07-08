@@ -56,6 +56,8 @@ Examples:
 
 End_of_Usage
 
+check_argv_for_url_options();
+
 my ($help, $server, %params, $ws_url, $ws_json,
     @se_args, @pe_args, @ref_args, @ws_args);
 
@@ -388,3 +390,20 @@ sub check_numerical {
 }
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
+
+sub check_argv_for_url_options {
+    my $use_arast;
+    my $arast = 'arast';
+    for my $i (0..$#ARGV) {
+        my $arg = $ARGV[$i];
+        $use_arast = 1 if $arg =~ /--(single|pair|reference)_url/;
+        if ($arg =~ /^-s$/ && $i < $#ARGV) {
+            $server = $ARGV[$i+1];
+            $arast .= " -s $server";
+        }
+    }
+    if ($use_arast) {
+        !system "$arast upload @ARGV" or die $!."\n";
+        exit;
+    }
+}
