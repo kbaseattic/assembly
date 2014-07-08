@@ -66,7 +66,7 @@ recipes = {
       (define id (idba pp))
       (define ma (masurca pp))
       (define di (discovar pp))
-      (define gam (gam_ngs (sort (list sp id vt ma di) > :key (lambda (c) (n50 c)))))
+      (define gam (gam_ngs (sort (list sp id vt ma di) > :key (lambda (c) (arast_score c)))))
       (tar (all_files (quast (upload gam) (upload sp) (upload id) (upload vt) (upload ma) (upload di))) :name analysis)
     )
 
@@ -91,7 +91,7 @@ recipes = {
 
     'test' : """
     (begin
-      (define newsort (sort (list (kiki READS) (velvet READS)) > :key (lambda (c) (n50 c))))
+      (define newsort (sort (list (kiki READS) (velvet READS)) > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """,
@@ -105,7 +105,7 @@ recipes = {
       (define kval (get best_k (kmergenie pp)))
       (define vt (begin (setparam hash_length kval) (velvet pp)))
       (define sp (spades pp))
-      (define newsort (sort (list sp vt) > :key (lambda (c) (n50 c))))
+      (define newsort (sort (list sp vt) > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """,
@@ -125,7 +125,7 @@ recipes = {
           (define id (idba pp))
           (define assemblies (list id sp vt)))
         (define assemblies (list sp vt)))
-      (define toptwo (slice (sort assemblies > :key (lambda (c) (n50 c))) 0 2))
+      (define toptwo (slice (sort assemblies > :key (lambda (c) (arast_score c))) 0 2))
       (define gam (gam_ngs toptwo))
       (define newsort (sort (cons gam assemblies) > :key (lambda (c) (get ale_score (ale c)))))
       (tar (all_files (quast (upload newsort))) :name analysis)
