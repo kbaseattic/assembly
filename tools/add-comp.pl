@@ -17,6 +17,7 @@ Options:
       -d dest_dir  - destination directory (D = assembly/third_party/)
       -f           - force reinstall even if component exists
       -t tmp_dir   - temporary directory (D = /mnt/tmp)
+      --dry        - dry run: check if modules exist
 
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
