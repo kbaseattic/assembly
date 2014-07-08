@@ -221,3 +221,9 @@ def filepaths(filesets):
         filepaths += fs.files
     return filepaths
 
+
+
+######## ARAST EXCEPTIONS #########
+
+class ArastUserInterrupt(BaseException):
+    pass
