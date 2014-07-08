@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 from ConfigParser import SafeConfigParser
 import os
 import json
@@ -21,4 +23,4 @@ for plugin_config in plugin_configs:
     plugins_data.append(pd)
 
 with open(OUT_JSON, 'w') as outfile:
-    json.dump(plugins_data, outfile)
+    json.dump(plugins_data, outfile, indent = 4, separators=(',', ': '))

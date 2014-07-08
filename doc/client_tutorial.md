@@ -33,7 +33,7 @@ single-end reads specified by the URL and assemble them using the
 velvet assembler. This should take just a couple minutes. 
 
 ```inv
-ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait > ex1.contigs.fasta
+ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait -p > ex1.contigs.fasta
 ```
 
 This command will block until the asesmbly is done. The resulting
@@ -125,7 +125,7 @@ As we have shown in our very first example, you can also bypass the
 `ar-upload` step and launch a job directly. Here is an example.
 
 ```inv
-ar-run --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test"
+ar-run --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test job"
 ```
 
 This command should return as soon as the data is uploaded. Note that we
@@ -145,6 +145,22 @@ To monitor the job and data status, you can use variations of the
 
 ```inv
 ar-stat
+```
+```out
++--------+---------+----------------------+----------+------------------+
+| Job ID | Data ID |        Status        | Run time |   Description    |
++--------+---------+----------------------+----------+------------------+
+|  133   |    58   |  [FAIL] Data Error   | 0:09:12  |       None       |
+|  134   |    60   |       Complete       | 0:01:57  |   my test job    |
+|  135   |    62   |       Complete       | 0:00:21  |       None       |
+|  136   |    63   |       Complete       | 0:03:53  |       None       |
+|  137   |    64   |       Complete       | 0:02:26  |       None       |
+|  138   |    65   | Stage 2/9: kmergenie | 0:00:59  | default pipeline |
+|  139   |    66   |  Stage 3/5: velvet   | 0:00:59  | parameter sweep  |
+|  140   |    68   |   Stage 2/3: idba    | 0:00:59  |       None       |
+|  141   |    70   |       Complete       | 0:00:21  |   RAST recipe    |
+|  142   |    71   | Stage 2/5: kmergenie | 0:00:30  |   kmer tuning    |
++--------+---------+----------------------+----------+------------------+
 ```
 
 When a job is in progress, its stage information is updated in the
@@ -195,7 +211,7 @@ cat ex3.job_id | ar-get --wait > ex4.contigs.fasta
 To download the whole assembly directory on the server, type:
 
 ```inv
-cat ex3.job_id | ar-get --download ex5.dir
+cat ex3.job_id | ar-get -o ex5.dir
 ```
 
 Here's an example of an HTML file in the downloaded diretory for

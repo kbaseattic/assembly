@@ -9,9 +9,13 @@ my $usage = <<End_of_Usage;
 
 Usage: ar-run  [-h] 
                [-f [SINGLE [SINGLE ...]]]
-               [--pair [PAIR [PAIR ...]]] [--single [SINGLE [SINGLE ...]]]
-               [--data DATA_ID]
+               [--pair [PAIR [PAIR ...]]]
+               [--pair_url [PAIR_URL [PAIR_URL ...]]]
+               [--single [SINGLE [SINGLE ...]]]
+               [--single_url [SINGLE_URL [SINGLE_URL ...]]]
                [--reference [REFERENCE [REFERENCE ...]]]
+               [--reference_url [REFERENCE_URL [REFERENCE_URL ...]]]
+               [--data DATA_ID]
                [-a [ASSEMBLERS [ASSEMBLERS ...]] |
                 -p [PIPELINE [PIPELINE ...]] |
                 -r [RECIPE [RECIPE ...]] |
@@ -24,10 +28,6 @@ Run an Assembly RAST job
 Optional arguments:
   -h, --help            show this help message and exit
   -s server_addr        Specify ARAST server address
-  -f [SINGLE [SINGLE ...]]
-                        specify sequence file(s)
-  --reference [REFERENCE [REFERENCE ...]]
-                        specify sequence file(s)
   -a [ASSEMBLERS [ASSEMBLERS ...]], --assemblers [ASSEMBLERS [ASSEMBLERS ...]]
                         specify assemblers to use. None will invoke automatic
                         mode
@@ -40,10 +40,19 @@ Optional arguments:
   -m MESSAGE, --message MESSAGE
                         Attach a description to job
   --data DATA_ID        Reuse uploaded data
+  --reference [REFERENCE [REFERENCE ...]]
+                        specify sequence file(s)
+  --reference_url [REFERENCE_URL [REFERENCE_URL ...]]
+                        Specify a URL for a reference contig file and parameters
   --pair [PAIR [PAIR ...]]
                         Specify a paired-end library and parameters
+  --pair_url [PAIR_URL [PAIR_URL ...]]
+                        Specify URLs for a paired-end library and parameters
+  -f [SINGLE [SINGLE ...]]
   --single [SINGLE [SINGLE ...]]
                         Specify a single end file and parameters
+  --single_url [SINGLE_URL [SINGLE_URL ...]]
+                        Specify a URL for a single end file and parameters
   --curl                Use curl for http requests
 
 End_of_Usage
@@ -67,7 +76,7 @@ my $have_data;
 my $argv;
 for (@ARGV) {
     if (/ /) { $argv .= "\"$_\" " } else { $argv .= "$_ " }
-    $have_data = 1 if /(-f|--single|--pair|--data)/;
+    $have_data = 1 if /(-f|--single|--single_url|--pair|--pair_url|--data)\b/;
 }
 
 if (!$have_data) {
@@ -77,5 +86,5 @@ if (!$have_data) {
     $argv .= "--data $data_id";
 }
 
-!system "$arast run $argv" or die $!;
+!system "$arast run $argv" or die $!."\n";
 

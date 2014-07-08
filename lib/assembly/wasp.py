@@ -469,7 +469,7 @@ def pipelines_to_exp(pipes, job_id):
             all_pipes[i] = pipe.replace(*replacement)
     
     #### Form final expression
-    final_exp = '(begin {} (tar (all_files (quast {})) :name {}_analysis))'.format(' '.join(defs), ' '.join(all_pipes), job_id)
+    final_exp = '(begin {} (tar (all_files (quast {})) :name analysis))'.format(' '.join(defs), ' '.join(all_pipes))
     return final_exp
 
 

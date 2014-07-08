@@ -9,10 +9,12 @@ my $usage = <<End_of_Usage;
 
 Usage: ar-avail [-h]
 
-List available AssemblyRAST modules
+List available AssemblyRAST modules or recipes
 
 Optional arguments:
-  -h, --help  show this help message and exit
+  -h, --help     show this help message and exit
+  -r, --recipe   list recipes
+  -d, --detail   show module or recipe details
 
 End_of_Usage
 
@@ -31,5 +33,5 @@ if ($help) {
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-!system "$arast avail @ARGV" or die $!;
+!system "$arast avail @ARGV" or die $!."\n";
                     

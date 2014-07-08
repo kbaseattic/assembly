@@ -24,7 +24,7 @@ Compute server components:
       special      - special components (large modules: pacbio, allpaths-lg, etc)
       all          - all components
 
-      a5           - A5 pipeline (v.20120518)
+      a5           - A5 pipeline (v.20140604)
       a6           - Modified A5 pipeline (git)
       ale          - ALE reference-free assembler evaluator (git)
       bowtie       - Bowtie aligner (v2.1)
