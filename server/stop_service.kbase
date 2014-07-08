@@ -1,4 +1,4 @@
-#!/usr/sh
+#!/bin/bash
 
 export KB_TOP=${KB_TOP:-/kb/deployment}
 export KB_SERVICE_NAME=${KB_SERVICE_NAME:-assembly}
