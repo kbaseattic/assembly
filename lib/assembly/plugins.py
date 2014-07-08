@@ -121,7 +121,7 @@ class BasePlugin(object):
             while p.poll() is None:
                 if self.killed():
                     os.killpg(p.pid, signal.SIGTERM)
-                    raise Exception('Terminated by user')
+                    raise asmtypes.ArastUserInterrupt('Terminated by user')
                 
                 ## Flush STDOUT to logs
                 while True:
