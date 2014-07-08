@@ -30,10 +30,12 @@ Python packages (with pip):
 - setuptools
 - ssl (built in)
 
-Perl modules (with CPAN):
+Perl modules (with CPAN http://perl.about.com/od/packagesmodules/qt/perlcpan.htm):
 - Config/Simple.pm
 - DateTime.pm
 - JSON.pm
+- HTTP/Request.pm
+- LWP/UserAgent.pm
 - Term/ReadKey.pm
 - Text/Table.pm
 
