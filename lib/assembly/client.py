@@ -191,7 +191,7 @@ class Client:
             cherry = re.compile("^HTTPError: \(\d+, '(.*?)'", re.MULTILINE)
             match = cherry.search(r.content)
             msg = match.group(1) if match else r.reason
-            raise HTTPError("HTTPError {}: {}".format(r.status_code, msg))
+            raise HTTPError("{} (HTTP status code {})".format(msg, r.status_code))
         return {'text': r.text, 'json': r.json}.get(ret, r.content)
     
     @contextlib.contextmanager
@@ -248,7 +248,7 @@ class Error(Exception):
     pass
 
 
-class InvalidURL(Error, ValueError):
+class URLError(Error, ValueError):
     pass
 
 
@@ -269,7 +269,7 @@ def verify_url(url, port=8000):
         re.IGNORECASE)
     match = pattern.search(url)
     if not match:
-        raise InvalidURL(url)
+        raise URLError(url)
     if not match.group(1):
         url = 'http://' + url
     if not match.group(2) and url.count(':') < 2 and port:
@@ -286,7 +286,7 @@ def test_verify_url():
     assert verify_url('https://kbase.us/services/assembly') == 'https://kbase.us/services/assembly'
     try:
         import pytest
-        with pytest.raises(InvalidURL):
+        with pytest.raises(URLError):
             verify_url('badURL')
             verify_url('badURL/with/path:8000')
             verify_url('http://very bad url.com')

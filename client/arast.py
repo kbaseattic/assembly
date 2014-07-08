@@ -189,39 +189,31 @@ def cmd_stat(args, aclient):
         sys.exit()
 
     while True:
-        try:
-            response = aclient.get_job_status(args.stat_n, args.job, detail=args.detail)
-            if args.watch:
-                    os.system('clear')
-            print response
-            if not args.watch:
-                    break
-            else:
-                print 'Press CTRL-C to quit.'
-            ### Spinner loop
-            spinners = ['-', '\\', '|', '/'] 
-            sleep_seconds = 25
-            spins_per_sec = 4
-            for i in range(sleep_seconds * spins_per_sec):
+        response = aclient.get_job_status(args.stat_n, args.job, detail=args.detail)
+        if args.watch:
                 os.system('clear')
-                print('[{}] Assembly Service Status').format(spinners[i%4])
-                print response
-                print 'Press CTRL-C to quit.'
-                time.sleep(1.0/spins_per_sec)			
-        except KeyboardInterrupt:
-            print
-            break
+        print response
+        if not args.watch:
+                break
+        else:
+            print 'Press CTRL-C to quit.'
+        ### Spinner loop
+        spinners = ['-', '\\', '|', '/'] 
+        sleep_seconds = 25
+        spins_per_sec = 4
+        for i in range(sleep_seconds * spins_per_sec):
+            os.system('clear')
+            print('[{}] Assembly Service Status').format(spinners[i%4])
+            print response
+            print 'Press CTRL-C to quit.'
+            time.sleep(1.0/spins_per_sec)			
 
 
 def cmd_get(args, aclient):
     aclient.validate_job(args.job)
 
     if args.wait:
-        try:
-            stat = aclient.wait_for_job(args.job)
-        except KeyboardInterrupt:
-            print
-            sys.exit()
+        stat = aclient.wait_for_job(args.job)
         if 'FAIL' in stat:
             print 'Job failed: ', stat
             sys.exit()
@@ -229,43 +221,24 @@ def cmd_get(args, aclient):
         aclient.check_job(args.job)
 
     if args.report:
-        try:
-            report = aclient.get_job_report(args.job)
-        except Exception as e:
-            sys.exit("Error retrieving job report: {}".format(e))
+        report = aclient.get_job_report(args.job)
         if report: print report
-
     elif args.log:
-        try:
-            joblog = aclient.get_job_log(args.job)
-        except Exception as e:
-            sys.exit("Error retrieving job log: {}".format(e))
+        joblog = aclient.get_job_log(args.job)
         if joblog: print joblog
-
     elif args.pick:
-        try:
-            # the assembly ID can be supplied by either argument
-            asm1 = args.pick if type(args.pick) is str else None
-            asm2 = args.assembly if type(args.assembly) is str else None
-            # pick the best assembly by default
-            asm = asm1 or asm2 or 'auto'
-            aclient.get_assemblies(args.job, asm, stdout=True)
-        except Exception as e:
-            sys.exit("Error getting assembly: {}".format(e))
-
+        # the assembly ID can be supplied by either argument
+        asm1 = args.pick if type(args.pick) is str else None
+        asm2 = args.assembly if type(args.assembly) is str else None
+        # pick the best assembly by default
+        asm = asm1 or asm2 or 'auto'
+        aclient.get_assemblies(args.job, asm, stdout=True)
     elif args.assembly:
-        try:
-            # download all assemblies by default
-            asm = args.assembly if type(args.assembly) is str else None
-            aclient.get_assemblies(args.job, asm, outdir=args.outdir)
-        except Exception as e:
-            sys.exit("Error downloading assembly: {}".format(e))
-
+        # download all assemblies by default
+        asm = args.assembly if type(args.assembly) is str else None
+        aclient.get_assemblies(args.job, asm, outdir=args.outdir)
     else:
-        try:
-            aclient.get_job_data(job_id=args.job, outdir=args.outdir)
-        except Exception as e:
-            sys.exit("Error downloading job results: {}".format(e))
+        aclient.get_job_data(job_id=args.job, outdir=args.outdir)
 
 
 def cmd_avail(args, aclient):
@@ -393,6 +366,15 @@ def main():
         run_command()
     except KeyboardInterrupt:
         sys.exit()
+    except auth.Error as e:
+        sys.exit('Authentication error: {}'.format(e))
+    except client.URLError as e:
+        sys.exit('Invalid URL: {}'.format(e))
+    except client.HTTPError as e:
+        sys.exit('HTTPError: {}'.format(e))
+    except client.Error as e:
+        sys.exit('Error: {}'.format(e))
+    # print stack for unexpected errors
 
 
 if __name__ == '__main__':
