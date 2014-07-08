@@ -250,72 +250,77 @@ class ArastConsumer:
             logging.info('Wasp Expression: {}'.format(wasp_exp))
         print('Wasp Expression: {}'.format(wasp_exp))
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
-        w_engine.run_expression(wasp_exp, job_data)
-
-        ###### Upload all result files and place them into appropriate tags
-        uploaded_fsets = job_data.upload_results(url, token)
-        
-        for i, job in enumerate(self.job_list):
-            if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
-                self.job_list.pop(i)
 
 
-        # Format report
-        new_report = open('{}.tmp'.format(self.out_report_name), 'w')
+        ###### Run Job
+        try: 
+            w_engine.run_expression(wasp_exp, job_data)
+            ###### Upload all result files and place them into appropriate tags
+            uploaded_fsets = job_data.upload_results(url, token)
 
-        ### Log errors
-        if len(job_data['errors']) > 0:
-            new_report.write('PIPELINE ERRORS\n')
-            for i,e in enumerate(job_data['errors']):
-                new_report.write('{}: {}\n'.format(i, e))
-        try: ## Get Quast output
-            quast_report = job_data['wasp_chain'].find_module('quast')['data'].find_type('report')[0].files[0]
-            with open(quast_report) as q:
-                new_report.write(q.read())
-        except:
-            new_report.write('No Summary File Generated!\n\n\n')
-        self.out_report.close()
-        with open(self.out_report_name) as old:
-            new_report.write(old.read())
+            for i, job in enumerate(self.job_list):
+                if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
+                    self.job_list.pop(i)
 
-        for log in job_data['logfiles']:
-            new_report.write('\n{1} {0} {1}\n'.format(os.path.basename(log), '='*20))
-            with open(log) as l:
-                new_report.write(l.read())
+            # Format report
+            new_report = open('{}.tmp'.format(self.out_report_name), 'w')
 
-        ### Log tracebacks
-        if len(job_data['tracebacks']) > 0:
-            new_report.write('EXCEPTION TRACEBACKS\n')
-            for i,e in enumerate(job_data['tracebacks']):
-                new_report.write('{}: {}\n'.format(i, e))
+            ### Log errors
+            if len(job_data['errors']) > 0:
+                new_report.write('PIPELINE ERRORS\n')
+                for i,e in enumerate(job_data['errors']):
+                    new_report.write('{}: {}\n'.format(i, e))
+            try: ## Get Quast output
+                quast_report = job_data['wasp_chain'].find_module('quast')['data'].find_type('report')[0].files[0]
+                with open(quast_report) as q:
+                    new_report.write(q.read())
+            except:
+                new_report.write('No Summary File Generated!\n\n\n')
+            self.out_report.close()
+            with open(self.out_report_name) as old:
+                new_report.write(old.read())
 
-        new_report.close()
-        os.remove(self.out_report_name)
-        shutil.move(new_report.name, self.out_report_name)
-        res = self.upload(url, user, token, self.out_report_name)
-        report_info = asmtypes.FileInfo(self.out_report_name, shock_url=url, shock_id=res['data']['id'])
+            for log in job_data['logfiles']:
+                new_report.write('\n{1} {0} {1}\n'.format(os.path.basename(log), '='*20))
+                with open(log) as l:
+                    new_report.write(l.read())
 
-        self.metadata.update_job(uid, 'report', [asmtypes.set_factory('report', [report_info])])
-        status = 'Complete with errors' if job_data['exceptions'] else 'Complete'
+            ### Log tracebacks
+            if len(job_data['tracebacks']) > 0:
+                new_report.write('EXCEPTION TRACEBACKS\n')
+                for i,e in enumerate(job_data['tracebacks']):
+                    new_report.write('{}: {}\n'.format(i, e))
 
-        ## Make compatible with JSON dumps()
-        del job_data['out_report']
-        del job_data['initial_reads']
-        del job_data['raw_reads']
-        self.metadata.update_job(uid, 'data', job_data)
-        self.metadata.update_job(uid, 'result_data', uploaded_fsets)
+            new_report.close()
+            os.remove(self.out_report_name)
+            shutil.move(new_report.name, self.out_report_name)
+            res = self.upload(url, user, token, self.out_report_name)
+            report_info = asmtypes.FileInfo(self.out_report_name, shock_url=url, shock_id=res['data']['id'])
+
+            self.metadata.update_job(uid, 'report', [asmtypes.set_factory('report', [report_info])])
+            status = 'Complete with errors' if job_data['exceptions'] else 'Complete'
+
+            ## Make compatible with JSON dumps()
+            del job_data['out_report']
+            del job_data['initial_reads']
+            del job_data['raw_reads']
+            self.metadata.update_job(uid, 'data', job_data)
+            self.metadata.update_job(uid, 'result_data', uploaded_fsets)
+
+            ###### Legacy Support #######
+            filesets = uploaded_fsets.append(asmtypes.set_factory('report', [report_info]))
+            contigsets = [fset for fset in uploaded_fsets if fset.type == 'contigs' or fset.type == 'scaffolds']
+            download_ids = {fi['filename']: fi['shock_id'] for fset in uploaded_fsets for fi in fset['file_infos']}
+            contig_ids = {fi['filename']: fi['shock_id'] for fset in contigsets for fi in fset['file_infos']}
+            self.metadata.update_job(uid, 'result_data_legacy', [download_ids])
+            self.metadata.update_job(uid, 'contig_ids', [contig_ids])
+            ###################
+
+            print '============== JOB COMPLETE ==============='
+        except asmtypes.ArastUserInterrupt:
+            status = 'Terminated by user'
+            print '============== JOB KILLED ==============='
         self.metadata.update_job(uid, 'status', status)
-
-        ###### Legacy Support #######
-        filesets = uploaded_fsets.append(asmtypes.set_factory('report', [report_info]))
-        contigsets = [fset for fset in uploaded_fsets if fset.type == 'contigs' or fset.type == 'scaffolds']
-        download_ids = {fi['filename']: fi['shock_id'] for fset in uploaded_fsets for fi in fset['file_infos']}
-        contig_ids = {fi['filename']: fi['shock_id'] for fset in contigsets for fi in fset['file_infos']}
-        self.metadata.update_job(uid, 'result_data_legacy', [download_ids])
-        self.metadata.update_job(uid, 'contig_ids', [contig_ids])
-        ###################
-
-        print '============== JOB COMPLETE ==============='
 
     def upload(self, url, user, token, file, filetype='default'):
         files = {}
