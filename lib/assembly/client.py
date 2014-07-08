@@ -189,7 +189,10 @@ class Client:
 
     def req_get(self, url, ret=None):
         """Authenticated get. Parses CherryPy message and raises HTTPError"""
-        r = requests.get(url, headers=self.headers)
+        try:
+            r = requests.get(url, headers=self.headers)
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(e)
         if r.status_code != requests.codes.ok:
             cherry = re.compile("^HTTPError: \(\d+, '(.*?)'", re.MULTILINE)
             match = cherry.search(r.content)
@@ -256,6 +259,10 @@ class URLError(Error, ValueError):
 
 
 class HTTPError(Error):
+    pass
+
+
+class ConnectionError(Error):
     pass
 
 

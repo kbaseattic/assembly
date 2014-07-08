@@ -366,8 +366,10 @@ def main():
         sys.exit('Authentication error: {}'.format(e))
     except client.URLError as e:
         sys.exit('Invalid URL: {}'.format(e))
+    except client.ConnectionError as e:
+        sys.exit('Connection error: {}'.format(e))
     except client.HTTPError as e:
-        sys.exit('HTTPError: {}'.format(e))
+        sys.exit('HTTP error: {}'.format(e))
     except client.Error as e:
         sys.exit('Error: {}'.format(e))
     # print stack for unexpected errors
