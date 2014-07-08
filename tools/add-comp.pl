@@ -54,9 +54,10 @@ Examples:
 
 End_of_Usage
 
-my ($help, $dest_dir, $tmp_dir, $force_reinstall);
+my ($help, $dest_dir, $dry_run, $tmp_dir, $force_reinstall);
 
 GetOptions( 'd|dest=s' => \$dest_dir,
+            'dry'      => \$dry_run,
             'f|force'  => \$force_reinstall,
             't|tmp=s'  => \$tmp_dir,
             'h|help'   => \$help);
@@ -85,8 +86,8 @@ for (@ARGV) {
 
 my $curr_dir = cwd();
 my $base_dir = dirname(Cwd::abs_path($0));
-$dest_dir  ||= "$base_dir/../third_party"; run("mkdir -p $dest_dir");
-$tmp_dir     = make_tmp_dir($tmp_dir);
+$dest_dir  ||= "$base_dir/../third_party"; run("mkdir -p $dest_dir") if !$dry_run;
+$tmp_dir     = make_tmp_dir($tmp_dir) if !$dry_run;
 
 for my $c (@comps) {
     if (!$supported{$c}) { print "Warning: $c not supported.\n"; next; }
@@ -94,6 +95,8 @@ for my $c (@comps) {
     if ($found) { print "Found component $c, skipping...\n"; next; }
 
     print "Installing $c...\n";
+    next if $dry_run;
+
     my $func = "install_$c";    
     
     chdir($tmp_dir);
@@ -410,12 +413,16 @@ sub check_if_installed {
     
     return 0 unless -s $yapsy;
     my $found = 1;
+
+    my $in_exec;
     open(F, "<$yapsy") or die "Could not open plugin file $yapsy";
     while (<F>) {
-        if (/^(executable|bin_\S+|\S+_bin) = (\S+)/) {
-            my $exe = "$base_dir/../lib/assembly/$2";
+        last if $in_exec && /^\[/;
+        if ($in_exec && /\S+\s*=\s*(\S+)/) {
+            my $exe = "$dest_dir/$1";
             if (! -e $exe) { $found = 0; last; }
         }
+        $in_exec = 1 if /^\[Executables\]/;
     }
     close(F);
     return $found;
