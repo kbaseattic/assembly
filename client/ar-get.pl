@@ -49,7 +49,7 @@ $jobid or die $usage;
 my $arast = 'arast';
 $arast .= " -s $server" if $server;
 
-!system "$arast get -j $jobid @ARGV" or die $!;
+!system "$arast get -j $jobid @ARGV" or die $!."\n";
                     
 if ($ENV{KB_RUNNING_IN_IRIS}) {
     my $dir = "AR$jobid";

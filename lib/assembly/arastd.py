@@ -51,11 +51,9 @@ def start(config_file, mongo_host=None, mongo_port=None,
     except:
         logging.error("MongoDB connection error!")
         sys.exit()
-    print " [x] MongoDB connection successful."
+    print " [.] MongoDB connection successful."
 
 
-
-    
     router_kwargs = {'mongo_host': mongo_host, 'mongo_port': mongo_port,
                      'rabbit_host' :rabbit_host, 'rabbit_port' : rabbit_port}
     router_process = multiprocessing.Process(name='router', target=start_router,

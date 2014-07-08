@@ -3,6 +3,7 @@ Consumes a job from the queue
 """
 
 import copy
+import errno
 import logging
 import pika
 import sys
@@ -33,18 +34,20 @@ from kbase import typespec_to_assembly_data as kb_to_asm
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, arasturl, config, threads, queue, kill_queue, job_list, ctrl_conf):
+    def __init__(self, shockurl, rmq_host, rmq_port, arasturl, config, threads, queue, 
+                 kill_queue, job_list, ctrl_conf, datapath, binpath):
         self.parser = SafeConfigParser()
         self.parser.read(config)
         self.job_list = job_list
         # Load plugins
-        binpath = self.parser.get('compute','binpath')
         self.pmanager = ModuleManager(threads, kill_queue, job_list, binpath)
 
     # Set up environment
         self.shockurl = shockurl
         self.arasturl = arasturl
-        self.datapath = self.parser.get('compute','datapath')
+        self.datapath = datapath
+        self.rmq_host = rmq_host
+        self.rmq_port = rmq_port
         if queue:
             self.queue = queue
             logging.info('Using queue:{}'.format(self.queue))
@@ -180,9 +183,12 @@ class ArastConsumer:
         jobpath = os.path.join(datapath, str(job_id))
         try:
             os.makedirs(jobpath)
-        except Exception as e:
-            print e
-            raise Exception ('Data Error')
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        # except Exception as e:
+        #     print e
+        #     raise Exception ('Data Error')
 
         ### Create job log
         self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
@@ -227,13 +233,14 @@ class ArastConsumer:
 
         #### Parse pipeline to wasp exp
         wasp_exp = pipelines[0][0]
+        reload(recipes)
         if recipe:
-            try: wasp_exp = getattr(recipes, recipe[0])
+            try: wasp_exp = recipes.get(recipe[0])
             except AttributeError: raise Exception('"{}" recipe not found.'.format(recipe[0]))
         elif wasp_in:
             wasp_exp = wasp_in[0]
         elif pipelines[0] == 'auto':
-            wasp_exp = recipes.auto
+            wasp_exp = recipes.get('auto')
         else:
             all_pipes = []
             for p in pipelines:
@@ -256,10 +263,10 @@ class ArastConsumer:
         # Format report
         new_report = open('{}.tmp'.format(self.out_report_name), 'w')
 
-        ### Log exceptions
-        if len(job_data['exceptions']) > 0:
+        ### Log errors
+        if len(job_data['errors']) > 0:
             new_report.write('PIPELINE ERRORS\n')
-            for i,e in enumerate(job_data['exceptions']):
+            for i,e in enumerate(job_data['errors']):
                 new_report.write('{}: {}\n'.format(i, e))
         try: ## Get Quast output
             quast_report = job_data['wasp_chain'].find_module('quast')['data'].find_type('report')[0].files[0]
@@ -275,6 +282,13 @@ class ArastConsumer:
             new_report.write('\n{1} {0} {1}\n'.format(os.path.basename(log), '='*20))
             with open(log) as l:
                 new_report.write(l.read())
+
+        ### Log tracebacks
+        if len(job_data['tracebacks']) > 0:
+            new_report.write('EXCEPTION TRACEBACKS\n')
+            for i,e in enumerate(job_data['tracebacks']):
+                new_report.write('{}: {}\n'.format(i, e))
+
         new_report.close()
         os.remove(self.out_report_name)
         shutil.move(new_report.name, self.out_report_name)
@@ -325,7 +339,7 @@ class ArastConsumer:
 
     def fetch_job(self):
         connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host = self.arasturl))
+                host=self.rmq_host, port=self.rmq_port))
         channel = connection.channel()
         channel.basic_qos(prefetch_count=1)
         result = channel.queue_declare(queue=self.queue,

@@ -17,6 +17,7 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
         
         cmd_args = [self.executable]
         reads = self.data.readsets
+        single_count = 0
         for lib in reads:
             if lib.type == 'paired':
                 if len(lib.files) == 1: # Interleaved
@@ -28,6 +29,7 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
                     raise Exception('Spades module file error')
             elif lib.type == 'single':
                 cmd_args += ['-s', lib.files[0]]
+                single_count += 1
         cmd_args += ['--only-error-correction', '--disable-gzip-output',
                      '-o', self.outpath]
 
@@ -42,17 +44,18 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
         
         if os.path.exists(os.path.join(cpath, 'dataset.info')):
             raise Exception('Outdated Spades installation')
+
+        #### Plugin should return multiple libraries in same order as consumed
         elif os.path.exists(os.path.join(cpath, 'corrected.yaml')):
             info_file = open(os.path.join(cpath, 'corrected.yaml'))
             cor = yaml.load(info_file)[0]
-            if 'left reads' in cor and 'right reads' in cor:
-                for i,left in enumerate(cor['left reads']):
-                    # pair_info = {'files': [left, cor['right reads'][i]],
-                    #              'type': 'paired'}
-                    processed_reads += [left, cor['right reads'][i]]
-            if 'single reads' in cor:
-                for single in cor['single reads']:
-                    extra_reads.append(single)
+            for read in reads:
+                if read.type == 'paired':
+                    processed_reads.append([cor['left reads'].pop(0), cor['right reads'].pop(0)])
+                    if len(cor['single reads']) > single_count: # Check if extra
+                        extra_reads.append([cor['single reads'].pop(0)])
+                elif read.type == 'single':
+                    processed_reads.append([cor['single reads'].pop(0)])
 
         return {'reads': processed_reads,
                 'extra': extra_reads}

@@ -32,6 +32,24 @@ The KBase Assembly Service REST interface returns JSON messages.
 
 example: http://140.221.84.124:8000/module/avail
 
+## Recipes available for pipeline
+/recipe/avail
+/recipe/all
+
+### Recipe Info
+
+#### All Info
+
+/recipe/velvet
+
+#### Raw Lisp Expression
+
+/recipe/velvet/raw
+
+#### Description
+
+/recipe/velvet/description
+
 # Blob storage
 
 ## Get Shock host URL

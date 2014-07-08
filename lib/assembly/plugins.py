@@ -480,11 +480,13 @@ class BasePreprocessor(BasePlugin):
             else:
                 orig_sets[0].update_files(output['reads'])
                 orig_sets[0]['name'] = '{}_reads'.format(self.name)
+        else: return
         readsets = orig_sets
         try:
-            readsets.append(asmtypes.set_factory('single', output['extra'], 
-                                                 name='{}_single'.format(self.name)))
-        except:pass
+            for extra in output['extra']:
+                readsets.append(asmtypes.set_factory('single', extra, 
+                                                     name='{}_single'.format(self.name)))
+        except Exception as e: print e
         return {'reads': readsets}
 
     # Must implement run() method
@@ -609,20 +611,16 @@ class ModuleManager():
         self.threads = threads
         self.kill_list = kill_list
         self.job_list = job_list # Running jobs
+        self.binpath = binpath
 
         self.root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
         self.module_bin_path = os.path.join(self.root_path, "module_bin")
-        self.binpath = binpath if os.path.isabs(binpath) else os.path.join(self.root_path, binpath)
-
-        if os.path.isdir(self.binpath) and os.path.exists(self.binpath):
-            print " [.] Binary path -- %s : OKAY" % self.binpath
-        else:
-            raise Exception("Binary directory does not exist: %s" % self.binpath)
+        self.plugin_path = os.path.join(self.root_path, "lib", "assembly", "plugins")
 
         self.pmanager = PluginManager()
         locator = self.pmanager.getPluginLocator()
         locator.setPluginInfoExtension('asm-plugin')
-        self.pmanager.setPluginPlaces(["plugins"])
+        self.pmanager.setPluginPlaces([ self.plugin_path ])
         self.pmanager.collectPlugins()
         self.pmanager.locatePlugins()
         self.plugins = ['none']

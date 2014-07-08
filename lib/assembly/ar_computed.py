@@ -29,7 +29,7 @@ mgr = multiprocessing.Manager()
 job_list = mgr.list()
 kill_list = mgr.list()
 
-def start(arast_server, config, num_threads, queue):
+def start(arast_server, config, num_threads, queue, datapath, binpath):
 
     #### Get default configuration from ar_compute.conf
     print " [.] Starting Assembly Service Compute Node"    
@@ -42,7 +42,7 @@ def start(arast_server, config, num_threads, queue):
 
     arasturl =  cparser.get('assembly','arast_url')
     arastport = cparser.get('assembly','arast_port')
-    if arast_server != '':
+    if arast_server and arast_server != '':
         arasturl = arast_server
     if not num_threads:
         num_threads =  cparser.get('compute','threads')
@@ -68,7 +68,6 @@ def start(arast_server, config, num_threads, queue):
     print " [.] AssemblyRAST host: %s" % arasturl
     print " [.] MongoDB port: %s" % mongo_port
     print " [.] RabbitMQ port: %s" % rmq_port
-    
     # Check MongoDB status
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
@@ -92,35 +91,40 @@ def start(arast_server, config, num_threads, queue):
 
     #### Check data write permissions
     rootpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
-    datapath = cparser.get('compute', 'datapath')
+    datapath = datapath or cparser.get('compute', 'datapath')
+    binpath = binpath or cparser.get('compute','binpath')
     if not os.path.isabs(datapath): datapath = os.path.join(rootpath, datapath)
+    if not os.path.isabs(binpath): binpath = os.path.join(rootpath, binpath)
 
-    if os.access(datapath, os.W_OK):
+    if os.path.isdir(datapath) and os.access(datapath, os.W_OK):
         print ' [.] Storage path -- {} : OKAY'.format(datapath)
     else:
         raise Exception(' [.] Storage path -- {} : ERROR'.format(datapath))
 
+    if os.path.isdir(binpath) and os.access(datapath, os.R_OK):
+        print " [.] Binary path -- {} : OKAY".format(binpath)
+    else:
+        raise Exception(' [.] Binary directory does not exist -- {} : ERROR'.format(binpath))
+
     ## Start Monitor Thread
     kill_process = multiprocessing.Process(name='killd', target=start_kill_monitor,
-                                           args=(arasturl,))
+                                           args=(rmq_host, rmq_port))
     kill_process.start()
 
     workers = []
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
-        compute = consume.ArastConsumer(shockurl, arasturl, config, num_threads, 
-                                        queue, kill_list, job_list, ctrl_conf)
+        compute = consume.ArastConsumer(shockurl, rmq_host, rmq_port, arasturl, config, num_threads, 
+                                        queue, kill_list, job_list, ctrl_conf, datapath, binpath)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
-
         workers.append(p)
         p.start()
-
     workers[0].join()
 
-def start_kill_monitor(arasturl):
+def start_kill_monitor(rmq_host, rmq_port):
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host = arasturl))
+            host=rmq_host, port=rmq_port))
     channel = connection.channel()
     channel.exchange_declare(exchange='kill',
                              type='fanout')
@@ -128,11 +132,10 @@ def start_kill_monitor(arasturl):
     queue_name = result.method.queue
     channel.queue_bind(exchange='kill',
                        queue=queue_name)
-    print ' [*] Waiting for kill commands'
     channel.basic_consume(kill_callback,
                           queue=queue_name,
                           no_ack=True)
-
+    print ' [*] Waiting for kill commands'
     channel.start_consuming()
 
 def kill_callback(ch, method, properties, body):
@@ -159,19 +162,19 @@ parser.add_argument("-t", "--threads", help="specify number of worker threads",
                     action="store", required=False)
 parser.add_argument("-q", "--queue", help="specify a queue to pull from",
                     action="store", required=False)
+parser.add_argument("-d", "--compute-data", dest='datapath', help="specify a directory for computation data",
+                    action="store", required=False)
+parser.add_argument("-b", "--compute-bin", dest='binpath', help="specify a directory for computation binaries",
+                    action="store", required=False)
 
 args = parser.parse_args()
 if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
-arasturl = ''
-if args.server:
-    arasturl = args.server
-if args.queue:
-    queue = args.queue
-else:
-    queue = None
-if args.threads:
-    num_threads = args.threads
-else:
-    num_threads = None
-start(arasturl, args.config, num_threads, queue)
+
+arasturl = args.server or None
+queue = args.queue or None
+num_threads = args.threads or None
+datapath = args.datapath or None
+binpath = args.binpath or None
+
+start(arasturl, args.config, num_threads, queue, datapath, binpath)

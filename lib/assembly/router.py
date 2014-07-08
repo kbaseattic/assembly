@@ -2,6 +2,7 @@
 Job router.  Recieves job requests.  Manages data transfer, job queuing.
 """
 # Import python libs
+import ast
 import cherrypy
 import datetime
 import errno
@@ -23,6 +24,7 @@ from traceback import format_exc
 
 # Import A-RAST libs
 import asmtypes
+import recipes
 import metadata as meta
 import shock
 from nexus import client as nexusclient
@@ -36,7 +38,7 @@ def send_message(body, routingKey):
             host=rmq_host))
     channel = connection.channel()
     channel.queue_declare(queue=routingKey, durable=True)
-    #channel.basic_qos(prefetch_count=1)
+    channel.basic_qos(prefetch_count=1)
     channel.basic_publish(exchange = '',
                           routing_key=routingKey,
                           body=body,
@@ -69,33 +71,19 @@ def send_kill_message(user, job_id):
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
-    #if params['version'].find('beta'):
-     #   print 'Sent to testing queue'
-      #  return 'jobs.test'
-    try:
-        routing_key = params['queue']
-    except:
-        routing_key = None
-    if routing_key:
-        return routing_key
-    return parser.get('rabbitmq','default_routing_key')
-
+    try: routing_key = params['queue']
+    except: routing_key = None
+    return routing_key or parser.get('rabbitmq','default_routing_key')
 
 def get_upload_url():
     global parser
     return parser.get('shock', 'host')
 
-
 def check_valid_client(body):
     client_params = json.loads(body) #dict of params
     min_version = parser.get('assembly', 'min_cli_version')
-    try:
-        if StrictVersion(client_params['version']) >= StrictVersion(min_version):
-            return True
-        else:
-            return False
-    except:
-        return True
+    try: return StrictVersion(client_params['version']) >= StrictVersion(min_version)
+    except: return True
 
 def route_job(body):
     if not check_valid_client(body):
@@ -195,6 +183,11 @@ def authenticate_request():
         print "Auth error"
         raise cherrypy.HTTPError(403, 'Bad Token')
     auth_info = metadata.get_auth_info(user)
+
+    self_path = os.path.join(os.path.dirname( __file__ ))
+    nexus_config_file = os.path.join(self_path, "nexus", "nexus.yml")
+
+    #### Previous Authorization found
     if auth_info:
         # Check exp date
         auth_time_str = auth_info['token_time']
@@ -203,12 +196,13 @@ def authenticate_request():
         globus_user = user
         if (ctime - atime).seconds > 15*60: # 15 min auth token
             print 'Token expired, reauthenticating with Globus'
-            nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
+            nexus = nexusclient.NexusClient(config_file = nexus_config_file)
             globus_user = nexus.authenticate_user(token)
             metadata.update_auth_info(globus_user, token, str(ctime))
-            
+
+    #### Validate Token
     else:
-        nexus = nexusclient.NexusClient(config_file = 'nexus/nexus.yml')
+        nexus = nexusclient.NexusClient(config_file = nexus_config_file)
         globus_user = nexus.authenticate_user(token)
         if globus_user:
             metadata.insert_auth_info(globus_user, token,
@@ -249,7 +243,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
     conf = {
         'global': {
             'server.socket_host': '0.0.0.0',
-            'server.socket_port': 8000,
+            'server.socket_port': int(parser.get('assembly', 'cherrypy_port')),
             'log.screen': True,
             'ar_shock_url': parser.get('shock', 'host'),
             },
@@ -260,6 +254,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
     root = Root()
     root.user = UserResource()
     root.module = ModuleResource()
+    root.recipe = RecipeResource()
     root.shock = ShockResource({"shockurl": get_upload_url()})
     root.static = StaticResource(static_root)
 
@@ -317,7 +312,7 @@ class JobResource:
         token_user = authenticate_request()
         if token_user == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
-        if not userid == token_user:
+        if not (userid == token_user or userid.split('_rast')[0] == token_user):
             raise cherrypy.HTTPError(403)
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
@@ -335,6 +330,7 @@ class JobResource:
 
     @cherrypy.expose
     def default(self, job_id=None, *args, **kwargs):
+        resource = None
         if len(args) == 0: # /user/USER/job/JOBID/
             pass
         else:
@@ -367,14 +363,20 @@ class JobResource:
         elif resource == 'data':
             return self.get_job_data(userid, job_id)
         elif resource == 'report':
-            return self.get_report(userid, job_id)
+            return self.get_report_stats(userid, job_id)
+        elif resource == 'report_handle':
+            return self.get_report_handle(userid, job_id)
+        elif resource == 'log':
+            return self.get_report_log(userid, job_id)
+        elif resource == 'analysis':
+            return self.get_analysis_handle(userid, job_id)
         elif resource == 'status':
-            return self.status(job_id=job_id, **kwargs)
+            return self.status(userid, job_id=job_id, **kwargs)
         elif resource == 'kill':
             user = authenticate_request()
             return self.kill(job_id=job_id, userid=user)
         else:
-            raise cherrypy.HTTPError(403, 'Resource {} not found.'.format(resource))
+            raise cherrypy.HTTPError(403, 'Resource not found: {}'.format(resource))
 
     def get_job_data(self, userid, job_id=None):
         if userid == 'OPTIONS':
@@ -387,13 +389,13 @@ class JobResource:
             raise cherrypy.HTTPError(403, 'Could not get data')
 
     @cherrypy.expose
-    def status(self, **kwargs):
+    def status(self, userid, **kwargs):
         try:
             job_id = kwargs['job_id']
         except:
             job_id = None
         if job_id: # Single job record
-            doc = metadata.get_job(kwargs['userid'], job_id)
+            doc = metadata.get_job(userid, job_id)
             if doc:
                 try:
                     if kwargs['format'] == 'json':
@@ -411,8 +413,13 @@ class JobResource:
             except:
                 records = 100
 
-            docs = [sanitize_doc(d) for d in metadata.list_jobs(kwargs['userid'])]
-            pt = PrettyTable(["Job ID", "Data ID", "Status", "Run time", "Description"])
+            detail = kwargs.get('detail')
+
+            docs = [sanitize_doc(d) for d in metadata.list_jobs(userid)]
+            columns = ["Job ID", "Data ID", "Status", "Run time", "Description"]
+            if detail: columns.append("Parameters")
+            pt = PrettyTable(columns)
+            if detail: pt.align["Parameters"] = "l"
             if docs:
                 try:
                     if kwargs['format'] == 'json':
@@ -434,15 +441,26 @@ class JobResource:
                         row.append(str(doc['message']))
                     except:
                         row += ['']
+                    if detail:
+                        try:
+                            param = self.parse_job_doc_to_parameter(doc)
+                            row.append(param)
+                        except:
+                            row += ['']
                     pt.add_row(row)
                 return pt.get_string() + "\n"
 
+    
+    def get_validated_job(self, user=None, job=None):
+        if not job:  raise cherrypy.HTTPError(403, 'Undefined Job ID')
+        if not user: raise cherrypy.HTTPError(403, 'Undefined user ID')
+        doc = metadata.get_job(user, job)
+        if not doc:  raise cherrypy.HTTPError(403, 'Invalid user or job ID')
+        return doc
 
     def get_shock_node(self, userid=None, job_id=None):
         """ GET /user/USER/job/JOB/node """
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
+        doc = self.get_validated_job(userid, job_id)
         try:
             result_data = doc['result_data_legacy'][0]
         except Exception as e:
@@ -450,9 +468,7 @@ class JobResource:
         return json.dumps(result_data)
 
     def get_assembly_nodes(self, userid=None, job_id=None, asm=None):
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
+        doc = self.get_validated_job(userid, job_id)
         try:
             if asm:
                 if asm.isdigit() and asm != '0':
@@ -467,54 +483,137 @@ class JobResource:
         return json.dumps(result_data)
 
     def get_assembly_handles(self, userid=None, job_id=None, asm=None):
-        """ Converts old style nodes to File Handles with Shock information """
+        """ Get assembly file handles"""
 
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
+        if not asm:         tag = None
+        elif asm.isdigit(): tag = 'quast-{}'.format(asm)
+        elif asm == 'auto': tag = 'rank-1'
+        else:               tag = asm
 
-        #### Convert (hack) into FileInfo
-        file_handles = []
-        try:
-            if asm:
-                if asm.isdigit() and asm != '0':
-                    result_data = [doc['contig_ids'].items()[int(asm)-1]]
-                elif asm == 'auto':
-                    result_data = [doc['contig_ids'].items()[0]]
-            else:
-                result_data = doc['contig_ids'].items()
-        except Exception as e:
-            print e
-            raise cherrypy.HTTPError(500)
+        results = self.get_results(userid, job_id, tags=tag, type='contigs,scaffolds')
+        handles = self.filesets_to_first_handles(json.loads(results))
 
-        return json.dumps([asmtypes.FileInfo(filename=f[0], 
-                                          shock_url=cherrypy.config['ar_shock_url'],
-                                          shock_id=f[1]) for f in result_data])
+        return json.dumps(handles)
 
     def get_results(self, userid=None, job_id=None, *args, **kwargs):
-        """ Converts old style nodes to File Handles with Shock information """
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
-        filesets = doc['result_data']
-        if 'tags' in kwargs:
-            tags = kwargs['tags'].split(',')
-            filesets = []
-            for tag in tags:
-                for fileset in doc['result_data']:
-                    if tag.strip() in fileset['tags']:
-                        filesets.append(fileset)
+        """ Get results file handles with filtering based on type and tags """
+        doc = self.get_validated_job(userid, job_id)
+        filesets = []
+        try:
+            keep = kwargs.get('types') or kwargs.get('type')
+            tags = kwargs.get('tags')  or kwargs.get('tag')
+            if keep: keep = set(keep.split(','))
+            if tags: tags = set(tags.split(','))
+            for fileset in doc['result_data']:
+                pass_tags = not tags or set(fileset['tags']) & tags
+                pass_type = not keep or fileset['type'] in keep
+                if pass_tags and pass_type:
+                    filesets.append(fileset)
+        except Exception as e:
+            raise cherrypy.HTTPError(403, "No results found for job {}".format(job_id))
         return json.dumps(filesets)
 
-    def get_report(self, userid=None, job_id=None):
-        """ Converts old style nodes to File Handles with Shock information """
-        if not job_id:
-            raise cherrypy.HTTPError(403)
-        doc = metadata.get_job(userid, job_id)
-        if not 'report' in doc:
-            return
-        return json.dumps(doc['report'])
+    def get_analysis_handle(self, userid=None, job_id=None):
+        """Get quast tarball handle"""
+        results = self.get_results(userid, job_id, type='tar')
+        try:
+            handle = json.loads(results)[0]['file_infos'][0]
+        except Exception as e:
+            raise cherrypy.HTTPError(403, 'No analysis tarball found for job {}'.format(job_id))
+        return json.dumps(handle)
 
+    def get_report_handle(self, userid=None, job_id=None):
+        """ Get job report file handles """
+        doc = self.get_validated_job(userid, job_id)
+        handle = None
+        try: 
+            handle = doc['report'][0]['file_infos'][0]
+        except:
+            raise cherrypy.HTTPError(403, "Report not found for job {}".format(job_id))
+        return json.dumps(handle)
+
+    def get_report(self, userid=None, job_id=None):
+        """ Get job report in text """
+        handle = json.loads(self.get_report_handle(userid, job_id))
+        if not handle:
+            raise cherrypy.HTTPError(403, 'Report not found for job {}'.format(job_id))
+        try: 
+            url = '{}/node/{}?download'.format(handle['shock_url'], handle['shock_id'])
+            report = shock.get(url).content
+        except:
+            raise cherrypy.HTTPError(403, 'Could not get report using shock')
+        return report
+
+    def get_report_log(self, userid=None, job_id=None):
+        log = self.get_report(userid, job_id)
+        if not log: return
+        pat = self.get_quast_pattern()
+        log = pat.sub('', log)
+        return log
+
+    def get_report_stats(self, userid=None, job_id=None):
+        report = self.get_report(userid, job_id)
+        if not report: return
+        pat = self.get_quast_pattern()
+        match = pat.search(report)
+        if match:
+            stats = "QUAST: " + match.group()
+            return stats
+
+    def get_quast_pattern(self):
+        return re.compile(r"(^All statistics are based on contigs(.|\n)*)(?=^Arast Pipeline: Job)",
+                          re.MULTILINE)
+
+    def filesets_to_first_handles(self, filesets):
+        try: handles = [fs['file_infos'][0] for fs in filesets]
+        except: raise cherrypy.HTTPError(403, "Handles not found in filesets")
+        return handles
+
+    def parse_job_doc_to_parameter(self, doc):
+        pipeline = doc.get('pipeline')
+        recipe = doc.get('recipe')
+        wasp = doc.get('wasp')
+        if pipeline == 'auto': pipeline = None
+        if pipeline:
+            pipeline = ast.literal_eval(str(pipeline))
+            pipeline = self.parse_pipeline_to_str(pipeline)
+        if recipe:
+            recipe = ast.literal_eval(str(recipe))
+            recipe = ' '.join(["-r "+r for r in recipe])
+        if wasp:
+            wasp = ast.literal_eval(str(wasp))
+            wasp = ' '.join(["-w "+w for w in wasp])
+        param = pipeline or recipe or wasp or '-p auto'
+        return param
+
+    def parse_pipeline_to_str(self, pipeline):
+        """Convert pipeline structure back to a command line parameter string
+        Input examples:
+            [u'velvet kiki']
+            [[u'none tagdust', u'kiki velvet']]
+            [[u'none tagdust', u'kiki velvet'], [u'spades']]
+            [[u'none tagdust', u'velvet', u'?hash_length=29-77:4'], [u'kiki']]
+        Output:
+            -p 'velvet kiki'
+            -p 'none tagdust' 'kiki velvet'
+            -p 'none tagdust' 'kiki velvet' -p spades
+            -p 'none tagdust' velvet ?hash_length=29-77:4 -p kiki
+        Converts legacy run parameters:
+            command line:   ... -a velvet kiki
+            internal structure: [u'velvet kiki']
+            output:            -p 'velvet kiki'
+
+        """
+        pipes = []
+        if type(pipeline[0]) is not list:
+            pipeline = [pipeline]
+        for pipe in pipeline:
+            params = ['-p']
+            for stage in pipe:
+                if ' ' in stage: stage = "'{}'".format(stage)
+                params.append(stage)
+            pipes.append(' '.join(params))
+        return ' '.join(pipes)
 
 class StaticResource:
 
@@ -630,11 +729,31 @@ class StatusResource:
 class ModuleResource:
     @cherrypy.expose
     def default(self, module_name="avail", *args, **kwargs):
-        print module_name
         if module_name == 'avail' or module_name == 'all':
-            with open(parser.get('web', 'ar_modules')) as outfile:
+            path = parser.get('web', 'ar_modules')
+            if not os.path.isabs(path):
+                libpath = os.path.abspath(os.path.dirname( __file__ ))
+                path = os.path.join(libpath, path)
+            with open(path) as outfile:
                 return outfile.read()
-        return module_name
+        else: raise cherrypy.HTTPError(403)
+
+class RecipeResource:
+    @cherrypy.expose
+    def default(self, module_name="avail", *args, **kwargs):
+        reload(recipes)
+        all = recipes.get_all()
+        if module_name == 'avail' or module_name == 'all':
+            return json.dumps(all)
+        else:
+            try: 
+                if args[0] == 'raw':
+                    return json.dumps(all[module_name]['recipe'])
+                elif args[0] == 'description':
+                    return json.dumps(all[module_name]['description'])
+            except IndexError: return json.dumps(all[module_name])
+            except: raise cherrypy.HTTPError(403)
+
 
 class SystemResource:
 
@@ -659,7 +778,6 @@ class SystemResource:
 
     def get_connections(self):
         """Returns a list of deduped connection IPs"""
-
         conns = json.loads(requests.get('http://{}:{}/api/connections'.format(
                     self.rmq_host, self.rmq_admin_port), 
                                         auth=(self.rmq_admin_user, self.rmq_admin_pass)).text)

@@ -24,9 +24,5 @@ if ($help) {
     exit 0;
 }
 
-# my $target = $ENV{HOME}. "/kb/assembly";
-# my $arast  = "ar_client/ar_client/ar_client.py";
-# system "$target/$arast run @ARGV";
-
-!system "arast login @ARGV" or die $!;
+!system "arast login @ARGV" or die $!."\n";
 

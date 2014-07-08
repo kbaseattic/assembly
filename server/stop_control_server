@@ -1,0 +1,29 @@
+#!/bin/bash
+
+TOP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+
+VAR_DIR=$ARAST_VAR_DIR
+
+VAR_DIR=${VAR_DIR:-$TOP_DIR/deployment/var}
+
+pid_file=$VAR_DIR/ar_server.pid
+echo "Shutting down ARAST control server..."
+
+if [ ! -f $pid_file ] ; then
+        echo "No pid file $pid_file found: arastd.py" 1>&2
+        exit 1
+fi
+
+pid=`cat $pid_file`
+
+killtree() {
+    local _pid=$1
+    local _sig=${2:-TERM}
+    kill -stop ${_pid} 2>/dev/null
+    for _child in $(pgrep -P ${_pid}); do
+        killtree ${_child} ${_sig}
+    done
+    kill -${_sig} ${_pid} 2>/dev/null
+}
+
+killtree $pid KILL

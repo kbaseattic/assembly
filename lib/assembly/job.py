@@ -119,7 +119,11 @@ class ArastJob(dict):
     def upload_results(self, url, token):
         """ Renames and uploads all filesets and updates shock info """
         new_sets = []
+        rank = 1
         for i,fset in enumerate(self.results):
+            if fset.type == 'contigs' or fset.type == 'scaffolds':
+                fset.add_tag('rank-' + str(rank))
+                rank += 1
             new_files = []
             for j, f in enumerate(fset['file_infos']):
                 if len(fset['file_infos']) > 1:

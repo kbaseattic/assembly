@@ -19,7 +19,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         pe_num = 1
         for readset in self.data.readsets:
             if readset.type == 'paired':
-                if pe_num == 6:
+                if pe_num > 5:
                     print '> 5 pairs not supported!'
                     break
                 if len(readset.files) == 1: # Interleaved

@@ -13,7 +13,10 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         Return list of contig file(s)
         """
         # Only supports one set of reads
-        assert len(self.data.readsets_paired) == 1
+        
+        if not len(self.data.readsets_paired) == 1:
+            raise Exception('IDBA assembler requires one paired-end library')
+
         readset = self.data.readsets[0]
         if self.data.readsets_single:
             self.out_module.write('Warning, discarding single end files\n')
