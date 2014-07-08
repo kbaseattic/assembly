@@ -83,7 +83,10 @@ class Client:
         rows = []
         for data in li:
             data_id = data.get("data_id", "")
-            message = data.get("message", "None")
+            message = data.get("message")
+            if 'kbase_assembly_input' in data:
+                message = data['kbase_assembly_input'].get(
+                    'dataset_description')
             data_rows = assembly_data_to_rows(data)
             data_rows = [ [''] * 2 + r for r in data_rows]
             rows += [[data_id, message] + [''] * 2]

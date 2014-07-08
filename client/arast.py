@@ -51,7 +51,7 @@ def get_parser():
     p_upload = subparsers.add_parser('upload', description='Upload a read set', help='Upload a read library or set of libraries, returns a data ID for future use')
     p_run = subparsers.add_parser('run', description='Run an Assembly RAST job', help='run job')
     p_stat = subparsers.add_parser('stat', description='Query status of running jobs', help='list jobs status')
-    p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules')
+    p_avail = subparsers.add_parser('avail', description='List available AssemblyRAST modules', help='list available modules or recipes')
     p_kill = subparsers.add_parser('kill', description='Send a kill signal to jobs', help='kill jobs')
     p_get = subparsers.add_parser('get', description='Get result data', help='Get data')
     p_login = subparsers.add_parser('login', description='Force log in', help='log in')
@@ -100,7 +100,7 @@ def get_parser():
 
     # avail options
     p_avail.add_argument("-r", "--recipe", action="store_true", help="list recipes")
-    p_avail.add_argument("-d", "--detail", action="store_true", help="show module details")
+    p_avail.add_argument("-d", "--detail", action="store_true", help="show module or recipe details")
 
     # kill options
     p_kill.add_argument("-j", "--job", action="store", help="kill specific job")
@@ -321,7 +321,7 @@ def run_command():
         sys.exit()
 
     if args.command == 'logout':
-        cmd_login(args)
+        cmd_logout(args)
         sys.exit()
     
     a_user, a_token = auth.verify_token(ARAST_AUTH_USER,ARAST_AUTH_TOKEN)

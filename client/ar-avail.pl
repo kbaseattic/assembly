@@ -9,11 +9,12 @@ my $usage = <<End_of_Usage;
 
 Usage: ar-avail [-h]
 
-List available AssemblyRAST modules
+List available AssemblyRAST modules or recipes
 
 Optional arguments:
   -h, --help     show this help message and exit
-  -d, --detail   show module details
+  -r, --recipe   list recipes
+  -d, --detail   show module or recipe details
 
 End_of_Usage
 

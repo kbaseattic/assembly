@@ -1,14 +1,15 @@
 
 """ Module for shock """
-import logging
-import requests
+import errno
 import json
+import logging
 import os
-import subprocess
 import StringIO
+import requests
+import subprocess
+import sys
 import time
 import tempfile
-import sys
 
 
 class Error(Exception):
