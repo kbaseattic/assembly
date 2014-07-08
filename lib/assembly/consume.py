@@ -3,6 +3,7 @@ Consumes a job from the queue
 """
 
 import copy
+import errno
 import logging
 import pika
 import sys
@@ -182,9 +183,12 @@ class ArastConsumer:
         jobpath = os.path.join(datapath, str(job_id))
         try:
             os.makedirs(jobpath)
-        except Exception as e:
-            print e
-            raise Exception ('Data Error')
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        # except Exception as e:
+        #     print e
+        #     raise Exception ('Data Error')
 
         ### Create job log
         self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))

@@ -12,6 +12,8 @@ SRC_PYTHON = $(wildcard client/*.py)
 ABS_PATH_TOOL = abs_path
 ABS_PATH_SCRIPT = bash $(TOOLS_DIR)/$(ABS_PATH_TOOL).sh
 
+default: deploy
+
 deploy: deploy-client
 
 deploy-client: deploy-libs deploy-scripts
@@ -45,4 +47,8 @@ deploy-scripts:
 	scripts=`$(ABS_PATH_SCRIPT) $(TARGET)/bin`; \
 	echo "Assembly scripts deployed in $$scripts"
 
+test: test-client
+
+test-client:
+	cd test && ./arast.t -d tmp
 

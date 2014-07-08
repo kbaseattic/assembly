@@ -1,14 +1,21 @@
 
 """ Module for shock """
-import logging
-import requests
+import errno
 import json
+import logging
 import os
-import subprocess
 import StringIO
+import requests
+import subprocess
+import sys
 import time
 import tempfile
-import sys
+
+
+class Error(Exception):
+    """Base class for exceptions in this module"""
+    pass
+
 
 def download(url, node_id, outdir):
     logging.info("Downloading id: %s" % node_id)
@@ -21,10 +28,7 @@ def download(url, node_id, outdir):
     res = json.loads(r.text)
     filename = res['data']['file']['name']
     durl = url + "/node/%s?download" % node_id
-    try:
-        os.makedirs(outdir)
-    except:
-        pass
+    verify_dir(outdir)
     dfile = outdir + filename
     print dfile
     r = get(durl)
@@ -60,12 +64,7 @@ def curl_download_file(url, node_id, token, outdir=None):
     r = subprocess.check_output(cmd)
     filename = json.loads(r)['data']['file']['name']
     if outdir:
-        try:
-            os.makedirs(outdir)
-        except:
-            pass
-            #raise Exception('Unable to create download directory:\n{}'.format(outdir))
-        
+        verify_dir(outdir)
     else:
         outdir = os.getcwd()
     d_url = '{}/node/{}?download'.format(url, node_id)
@@ -85,9 +84,19 @@ def parse_handle(sn_handle):
             shock_id = shockinfo['id']
             shock_url = shockinfo['url']
             return shock_url, shock_id
-        except:
+        except AttributeError:
             return False
     return False
+
+
+def verify_dir(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+    return path
+
 
 class Shock:
     def __init__(self, shockurl, user, token):
@@ -124,14 +133,9 @@ class Shock:
         try:
             filename = json.loads(r)['data']['file']['name']
         except:
-            raise Exception('Data transfer error: {}'.format(r))
+            raise Error('Data transfer error: {}'.format(r))
         if outdir:
-            try:
-                os.makedirs(outdir)
-            except:
-                pass
-                #raise Exception('Unable to create download directory:\n{}'.format(outdir))
-
+            verify_dir(outdir)
         else:
             outdir = os.getcwd()
         d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
@@ -146,16 +150,13 @@ class Shock:
             print "File downloaded: {}".format(downloaded)
             return downloaded
         else:
-            raise Exception ('Data does not exist')
+            raise Error('Data does not exist')
 
     def download_file(self, node_id, outdir=None):
         r = requests.get('{}/node/{}'.format(self.shockurl, node_id))
         filename = json.loads(r.content)['data']['file']['name'].split('/')[-1]
         if outdir:
-            try:
-                os.makedirs(outdir)
-            except:
-                pass
+            verify_dir(outdir)
         else:
             outdir = os.getcwd()
 
@@ -172,7 +173,7 @@ class Shock:
             print "File downloaded: {}".format(downloaded)
             return downloaded
         else:
-            raise Exception ('Data does not exist')
+            raise Error('Data does not exist')
 
 
     def create_attr_file(self, attrs, outname):
@@ -203,7 +204,7 @@ class Shock:
                          'attributes': attr_fd}
                 r = requests.post('{}/node/'.format(self.shockurl), files=files)
 
-        except:
+        except requests.exceptions.RequestException as e:
             print "ERROR: python-requests error, try with --curl flag"
             return
 
@@ -215,7 +216,7 @@ class Shock:
                 print >> sys.stderr, "Upload complete: {}".format(filename)
             else:
                 print >> sys.stderr, "Upload error: {}".format(res['status'])
-        except: 
+        except AttributeError: 
             print >> sys.stderr, "Upload error"
 	return res
 
@@ -227,7 +228,7 @@ class Shock:
                '-X', 'POST', 
                '-F', 'attributes=@{}'.format(attr_file),
                '-F', 'upload=@{}'.format(filename),
-               '{}node/'.format(self.shockurl)]
+               '{}/node/'.format(self.shockurl)]
         ret = subprocess.check_output(cmd)
         res = json.loads(ret)
         return res
