@@ -57,10 +57,10 @@ sub test_simple_cases {
 
     sysrun("ar-login");
 
-    sysrun("curl $ref > ref.fa");
-    sysrun("curl $pe1 > p1.fq");
-    sysrun("curl $pe2 > p2.fq");
-    sysrun("curl $se > se.fq");
+    sysrun("curl -s $ref > ref.fa");
+    sysrun("curl -s $pe1 > p1.fq");
+    sysrun("curl -s $pe2 > p2.fq");
+    sysrun("curl -s $se > se.fq");
 
     sysrun("ar-stat > stat.0");
 
