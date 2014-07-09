@@ -30,7 +30,8 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
             elif lib.type == 'single':
                 cmd_args += ['-s', lib.files[0]]
                 single_count += 1
-        cmd_args += ['--only-error-correction', '--disable-gzip-output',
+        cmd_args += ['-t', self.process_threads_allowed,
+                     '--only-error-correction', '--disable-gzip-output',
                      '-o', self.outpath]
 
         self.arast_popen(cmd_args)
