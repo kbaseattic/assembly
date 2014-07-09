@@ -16,7 +16,6 @@ use Data::Dumper;
 use English;
 use Getopt::Long;
 
-
 my $usage = "$0 [options] [test1 test2 ...]\n";
 
 my ($help, $dir, $dry);
@@ -43,6 +42,7 @@ foreach my $testname (@tests) {
         next;
     }
     &$test();
+
 }
 done_testing($testCount);
 
@@ -55,7 +55,9 @@ sub test_simple_cases {
     my $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
     my $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
 
+    print("MARKER:BEFORE\n");
     sysrun("ar-login");
+    print("MARKER:AFTER\n");
 
     sysrun("curl $ref > ref.fa");
     sysrun("curl $pe1 > p1.fq");
