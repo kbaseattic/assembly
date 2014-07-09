@@ -82,10 +82,8 @@ class BasePlugin(object):
                     cmd_args.append(flag)
                 if kv[1] != 'True':
                     cmd_args.append(kv[1])
-        try:
-            shell = kwargs['shell']
-        except:
-            shell = False
+
+        shell = kwargs.get('shell', False)
         if not shell:
             cmd_human = []
             for w in cmd_args:
@@ -108,8 +106,12 @@ class BasePlugin(object):
         print "Command args: {}".format(cmd_args)
         print "Command line: {}\n".format(cmd_string if shell else " ".join(cmd_args))
         try:
-            p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, 
-                                     stderr=subprocess.STDOUT, preexec_fn=os.setsid, **kwargs)
+            env_copy = os.environ.copy()
+            env_copy['OMP_THREAD_LIMIT'] = self.process_threads_allowed
+            p = subprocess.Popen(cmd_args, env=env_copy,
+                                 stdout=subprocess.PIPE, 
+                                 stderr=subprocess.STDOUT,
+                                 preexec_fn=os.setsid, **kwargs)
 
             ## Module Logging Thread
             q = Queue()

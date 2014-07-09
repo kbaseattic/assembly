@@ -298,7 +298,7 @@ class ArastConsumer:
             report_info = asmtypes.FileInfo(self.out_report_name, shock_url=url, shock_id=res['data']['id'])
 
             self.metadata.update_job(uid, 'report', [asmtypes.set_factory('report', [report_info])])
-            status = 'Complete with errors' if job_data['exceptions'] else 'Complete'
+            status = 'Complete with errors' if job_data.get('errors') else 'Complete'
 
             ## Make compatible with JSON dumps()
             del job_data['out_report']

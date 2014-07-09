@@ -72,9 +72,9 @@ def start(arast_server, config, num_threads, queue, datapath, binpath):
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
         logging.info("MongoDB Info: %s" % connection.server_info())
-    except:
-        logging.error("MongoDB connection error: %s" % sys.exc_info()[0])
-        sys.exit()
+    except pymongo.errors.PyMongoError as e:
+        logging.error("MongoDB connection error: {}".format(e))
+        sys.exit(1)
     print " [.] MongoDB connection successful."
 
     # Check RabbitMQ status

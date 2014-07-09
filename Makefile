@@ -118,20 +118,20 @@ redeploy-service: clean install-dep create-scripts deploy-mongo
 deploy-compute: install-dep
 
 deploy-testworker:
-	./scripts/install-basic-dependencies.sh
-	./scripts/add-comp.pl kiki velvet
+	./tools/install-basic-dependencies.sh
+	./tools/add-comp.pl kiki velvet
 
 deploy-dir:
 	if [ ! -d $(LIB_PYTHON) ] ; then mkdir -p $(LIB_PYTHON) ; fi
 
 install-dep:
-	sh ./scripts/install-server-dependencies.sh
+	sh ./tools/install-server-dependencies.sh
 
 install-client-dep:
-	sh ./scripts/install-client-dependencies.sh
+	sh ./tools/install-client-dependencies.sh
 
 install-service-scripts:
-	cp ./scripts/start_service $(SERVICE_DIR)
+	cp ./tools/start_service $(SERVICE_DIR)
 
 deploy-mongo:
 	mkdir -p /data/db

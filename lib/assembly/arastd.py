@@ -48,8 +48,8 @@ def start(config_file, mongo_host=None, mongo_port=None,
     try:
         connection = pymongo.Connection(mongo_host)
         logging.info("MongoDB Info: %s" % connection.server_info())
-    except:
-        logging.error("MongoDB connection error!")
+    except pymongo.errors.PyMongoError as e:
+        logging.error("MongoDB connection error: {}".format(e))
         sys.exit()
     print " [.] MongoDB connection successful."
 

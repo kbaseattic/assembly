@@ -14,9 +14,10 @@ my $usage =<<"End_of_Usage";
 Usage: sudo add-comp.pl [ options ] components
 
 Options:
-      -d dest_dir  - destination directory (D = assembly/third_party/)
+      -d dest_dir  - absolute destination directory (D = /repo/third_party)
       -f           - force reinstall even if component exists
       -t tmp_dir   - temporary directory (D = /mnt/tmp)
+      --dry        - dry run: check if modules exist
 
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
@@ -27,7 +28,7 @@ Compute server components:
       a5           - A5 pipeline (v.20140604)
       a6           - Modified A5 pipeline (git)
       ale          - ALE reference-free assembler evaluator (git)
-      bowtie       - Bowtie aligner (v2.1)
+      bowtie2      - Bowtie aligner (v2.1)
       bwa          - BWA aligner (git)
       discovar     - Discovar assembler (FTP latest)
       fastqc       - FastQC quality control (v0.10.1)
@@ -54,20 +55,22 @@ Examples:
 
 End_of_Usage
 
-my ($help, $dest_dir, $tmp_dir, $force_reinstall);
+my ($help, $dest_dir, $dry_run, $tmp_dir, $force_reinstall);
 
 GetOptions( 'd|dest=s' => \$dest_dir,
+            'dry'      => \$dry_run,
             'f|force'  => \$force_reinstall,
             't|tmp=s'  => \$tmp_dir,
             'h|help'   => \$help);
 
-if ($help) { print $usage; exit 0 }
+if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet); 
 my @special_comps = qw (discovar pacbio jgi_rqc);
+my @extra_depends = qw (cmake3);
 
 my @all_comps = (@regular_comps, @special_comps);
-my %supported = map { $_ => 1 } @all_comps;
+my %supported = map { $_ => 1 } (@all_comps, @extra_depends);
 
 my @comps;
 for (@ARGV) {
@@ -85,8 +88,8 @@ for (@ARGV) {
 
 my $curr_dir = cwd();
 my $base_dir = dirname(Cwd::abs_path($0));
-$dest_dir  ||= "$base_dir/../third_party"; run("mkdir -p $dest_dir");
-$tmp_dir     = make_tmp_dir($tmp_dir);
+$dest_dir  ||= "$base_dir/../third_party"; run("mkdir -p $dest_dir") if !$dry_run;
+$tmp_dir     = make_tmp_dir($tmp_dir) if !$dry_run;
 
 for my $c (@comps) {
     if (!$supported{$c}) { print "Warning: $c not supported.\n"; next; }
@@ -94,6 +97,8 @@ for my $c (@comps) {
     if ($found) { print "Found component $c, skipping...\n"; next; }
 
     print "Installing $c...\n";
+    next if $dry_run;
+
     my $func = "install_$c";    
     
     chdir($tmp_dir);
@@ -121,6 +126,19 @@ sub install_basic {
     # run("apt-get -q -y update");
     run("apt-get -y install " . join(" ", @apt));
     run("pip install "        . join(" ", @pip));
+
+    install_cmake3();
+}
+
+sub install_cmake3 {
+    # spades requires v2.8.8+
+    my ($ver) = `cmake --version` =~ /version (\d[0-9.]+)/;
+    return if $ver >= 3.0;
+    my $dir = 'cmake-3.0.0';
+    my $file = "$dir.tar.gz";
+    download($dir, $file, 'http://www.cmake.org/files/v3.0');
+    chdir($dir);
+    run('./bootstrap; make -j && make install');
 }
 
 sub install_a5 {
@@ -144,7 +162,7 @@ sub install_ale {
     run("cd ALE/src; make ALE; cp -r ALE samtools-0.1.19 *.sh *.py *.pl $dest_dir/$dir/");
 }
 
-sub install_bowtie {
+sub install_bowtie2 {
     my $file = "bowtie2-2.1.0-linux-x86_64.zip";
     my $dir = "bowtie2-2.1.0";
     download($dir, $file, "http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.1.0");
@@ -153,7 +171,7 @@ sub install_bowtie {
 
 sub install_bwa {
     git("git://github.com/lh3/bwa.git");
-    run("cd bwa; make; cp bwa $dest_dir/");
+    run("cd bwa; make -j; cp bwa $dest_dir/");
 }
 
 sub install_discovar {
@@ -162,7 +180,7 @@ sub install_discovar {
     my $dir = "discovar";
     download($dir, $file, 'ftp://ftp.broadinstitute.org/pub/crd/Discovar/latest_source_code');
     run("mv discovar-* $dir");
-    run("cd $dir; ./configure; make; cp src/Discovar $dest_dir/discovar");
+    run("cd $dir; ./configure; make -j; cp src/Discovar $dest_dir/discovar");
 }
 
 sub install_fastqc {
@@ -190,7 +208,7 @@ sub install_fastx {
 sub install_gam_ngs {
     my $dir = 'gam-ngs';
     git('git://github.com/vice87/gam-ngs.git');
-    run("cd $dir; mkdir -p build; cd build; cmake ..; make");
+    run("cd $dir; mkdir -p build; cd build; cmake ..; make -j");
     run("cp -r $dir $dest_dir/");
 }
 
@@ -198,14 +216,14 @@ sub install_idba {
     my $dir = 'idba-1.1.1';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://hku-idba.googlecode.com/files');
-    run("cd $dir; ./configure; make");
+    run("cd $dir; ./configure; make -j");
     run("cp -r -T $dir/bin $dest_dir/idba");
 }
 
 sub install_kiki {
     git('git://github.com/GeneAssembly/kiki.git');
     chdir("kiki");
-    run("mkdir -p bin; cd bin; cmake ..; make ki");
+    run("mkdir -p bin; cd bin; cmake ..; make -j ki");
     run("cp bin/ki $dest_dir/");
 }
 
@@ -213,7 +231,7 @@ sub install_kmergenie {
     my $dir = 'kmergenie-1.6663';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://kmergenie.bx.psu.edu');
-    run("cd $dir; make");
+    run("cd $dir; make -j");
     run("cp -r -T $dir $dest_dir/kmergenie");
 }
 
@@ -262,7 +280,7 @@ sub install_prodigal {
     my $dir = 'Prodigal-2.60';
     my $file = "$dir.tar.gz";
     download($dir, $file, "https://prodigal.googlecode.com/files");
-    run("cd $dir; make");
+    run("cd $dir; make -j");
     run("cp -r -T $dir $dest_dir/prodigal");
 }
 
@@ -344,7 +362,7 @@ sub install_seqtk {
         return;
     }
     git('git://github.com/levinas/seqtk.git');
-    run("cd seqtk; make");
+    run("cd seqtk; make -j");
     run("cp -r seqtk/seqtk $dest_dir/");
 }
 
@@ -369,6 +387,7 @@ sub install_solexa {
 }
 
 sub install_spades {
+    check_gcc();
     my $dir = 'SPAdes-3.1.0';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.1.0');
@@ -382,7 +401,7 @@ sub install_velvet {
     git("git://github.com/dzerbino/velvet.git");
     chdir("velvet");
     run("rm -f obj/*.o");
-    run("make 'CATEGORIES=9' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1' zlib velveth velvetg");
+    run("make -j 'CATEGORIES=9' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1' -j zlib velveth velvetg");
     run("cp velveth $dest_dir/");
     run("cp velvetg $dest_dir/");
 }
@@ -407,15 +426,19 @@ sub check_if_installed {
     my ($c) = @_;
     my $dir = "$base_dir/../lib/assembly/plugins";
     my $yapsy = "$dir/$c.asm-plugin";
-    
+
     return 0 unless -s $yapsy;
     my $found = 1;
+
+    my $in_exec;
     open(F, "<$yapsy") or die "Could not open plugin file $yapsy";
     while (<F>) {
-        if (/^(executable|bin_\S+|\S+_bin) = (\S+)/) {
-            my $exe = "$base_dir/../lib/assembly/$2";
+        last if $in_exec && /^\[/;
+        if ($in_exec && /\S+\s*=\s*(\S+)/) {
+            my $exe = "$dest_dir/$1";
             if (! -e $exe) { $found = 0; last; }
         }
+        $in_exec = 1 if /^\[Executables\]/;
     }
     close(F);
     return $found;

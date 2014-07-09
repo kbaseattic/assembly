@@ -55,14 +55,12 @@ sub test_simple_cases {
     my $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
     my $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
 
-    print("MARKER:BEFORE\n");
     sysrun("ar-login");
-    print("MARKER:AFTER\n");
 
-    sysrun("curl $ref > ref.fa");
-    sysrun("curl $pe1 > p1.fq");
-    sysrun("curl $pe2 > p2.fq");
-    sysrun("curl $se > se.fq");
+    sysrun("curl -s $ref > ref.fa");
+    sysrun("curl -s $pe1 > p1.fq");
+    sysrun("curl -s $pe2 > p2.fq");
+    sysrun("curl -s $se > se.fq");
 
     sysrun("ar-stat > stat.0");
 

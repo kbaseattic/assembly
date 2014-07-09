@@ -105,7 +105,7 @@ class Client:
 
     def is_job_done(self, job_id):
         stat = self.get_job_status(1, job_id)
-        match = re.search('(complete|fail)', stat, re.IGNORECASE)
+        match = re.search('(complete|fail|terminated)', stat, re.IGNORECASE)
         return True if match else False
 
     def validate_job(self, job_id):
@@ -189,7 +189,10 @@ class Client:
 
     def req_get(self, url, ret=None):
         """Authenticated get. Parses CherryPy message and raises HTTPError"""
-        r = requests.get(url, headers=self.headers)
+        try:
+            r = requests.get(url, headers=self.headers)
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(e)
         if r.status_code != requests.codes.ok:
             cherry = re.compile("^HTTPError: \(\d+, '(.*?)'", re.MULTILINE)
             match = cherry.search(r.content)
@@ -256,6 +259,10 @@ class URLError(Error, ValueError):
 
 
 class HTTPError(Error):
+    pass
+
+
+class ConnectionError(Error):
     pass
 
 

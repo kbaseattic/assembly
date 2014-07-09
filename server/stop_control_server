@@ -27,3 +27,9 @@ killtree() {
 }
 
 killtree $pid KILL
+sleep 1
+
+others=`ps aux |grep arastd.py |grep python`
+if [ -n "$others" ]; then
+    echo 'Warning: there may be another control server running.'
+fi
