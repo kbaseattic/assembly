@@ -14,6 +14,13 @@ LOG_DIR=$VAR_DIR/log
 CONTROL_CONFIG=$LIB_DIR/arast.conf
 
 
+procs=`ps aux |grep arastd.py |grep python`
+if [ -n "$procs" ]; then
+    echo 'Error: another control server may be running.'
+    exit 1
+fi
+
+
 mkdir -p $LOG_DIR
 
 args=( --config $CONTROL_CONFIG

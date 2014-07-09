@@ -10,8 +10,8 @@ pid_file=$VAR_DIR/ar_compute.pid
 echo "Shutting down ARAST compute server..."
 
 if [ ! -f $pid_file ] ; then
-        echo "No pid file $pid_file found: ar_computed.py" 1>&2
-        exit 1
+    echo "No pid file $pid_file found: ar_computed.py" 1>&2
+    exit 1
 fi
 
 pid=`cat $pid_file`
@@ -27,4 +27,9 @@ killtree() {
 }
 
 killtree $pid KILL
+sleep 1
 
+others=`ps aux |grep ar_computed.py |grep python`
+if [ -n "$others" ]; then
+    echo 'Warning: there may be another compute server running.'
+fi

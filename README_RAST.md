@@ -78,6 +78,7 @@ export LD_LIBRARY_PATH=/disks/gcc/gcc-4.7.4/lib64:$LD_LIBRARY_PATH
 export ARAST_URL=localhost
 export ARAST_DATA_DIR=/disks/arast/fangfang/ar-test-data
 export ARAST_BIN_DIR=/disks/arast/fangfang/assembly/third_party
+export ARAST_WORKER_THREADS=2
 
 # start service from any path
 /disks/arast/fangfang/assembly/server/start_service

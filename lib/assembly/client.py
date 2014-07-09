@@ -105,7 +105,7 @@ class Client:
 
     def is_job_done(self, job_id):
         stat = self.get_job_status(1, job_id)
-        match = re.search('(complete|fail)', stat, re.IGNORECASE)
+        match = re.search('(complete|fail|terminated)', stat, re.IGNORECASE)
         return True if match else False
 
     def validate_job(self, job_id):

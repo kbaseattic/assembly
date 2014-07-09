@@ -19,6 +19,13 @@ LOG_DIR=$VAR_DIR/log
 COMPUTE_CONFIG=$LIB_DIR/ar_compute.conf
 
 
+procs=`ps aux |grep ar_computed.py |grep python`
+if [ -n "$procs" ]; then
+    echo 'Error: another compute server may be running.'
+    exit 1
+fi
+
+
 mkdir -p $LOG_DIR
 
 ARG_URL=$(     [[ -z "$SERVER_URL"   ]] && echo "" || echo "--server $SERVER_URL")
