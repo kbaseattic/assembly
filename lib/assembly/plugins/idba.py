@@ -21,7 +21,8 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         if self.data.readsets_single:
             self.out_module.write('Warning, discarding single end files\n')
 
-        cmd_args = [self.bin_idba_ud]
+        cmd_args = [self.bin_idba_ud,
+                    '--num_threads', self.process_threads_allowed]
         read_file = readset.files[0]
 
         #Merge file if pairs are separate
