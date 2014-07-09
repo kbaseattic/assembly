@@ -63,7 +63,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
             't|tmp=s'  => \$tmp_dir,
             'h|help'   => \$help);
 
-if ($help) { print $usage; exit 0 }
+if ($help || @ARGV == 0) { print $usage; exit 0 }
 
 my @regular_comps = qw (basic a5 a6 ale bowtie bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet); 
 my @special_comps = qw (discovar pacbio jgi_rqc);
