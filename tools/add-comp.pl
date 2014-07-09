@@ -387,6 +387,7 @@ sub install_solexa {
 }
 
 sub install_spades {
+    check_gcc();
     my $dir = 'SPAdes-3.1.0';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.1.0');
