@@ -28,7 +28,7 @@ Compute server components:
       a5           - A5 pipeline (v.20140604)
       a6           - Modified A5 pipeline (git)
       ale          - ALE reference-free assembler evaluator (git)
-      bowtie       - Bowtie aligner (v2.1)
+      bowtie2      - Bowtie aligner (v2.1)
       bwa          - BWA aligner (git)
       discovar     - Discovar assembler (FTP latest)
       fastqc       - FastQC quality control (v0.10.1)
@@ -65,7 +65,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet); 
 my @special_comps = qw (discovar pacbio jgi_rqc);
 my @extra_depends = qw (cmake3);
 
@@ -162,7 +162,7 @@ sub install_ale {
     run("cd ALE/src; make ALE; cp -r ALE samtools-0.1.19 *.sh *.py *.pl $dest_dir/$dir/");
 }
 
-sub install_bowtie {
+sub install_bowtie2 {
     my $file = "bowtie2-2.1.0-linux-x86_64.zip";
     my $dir = "bowtie2-2.1.0";
     download($dir, $file, "http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.1.0");
@@ -426,7 +426,7 @@ sub check_if_installed {
     my ($c) = @_;
     my $dir = "$base_dir/../lib/assembly/plugins";
     my $yapsy = "$dir/$c.asm-plugin";
-    
+
     return 0 unless -s $yapsy;
     my $found = 1;
 
