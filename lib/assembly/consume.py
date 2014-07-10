@@ -24,6 +24,7 @@ from multiprocessing import current_process as proc
 from traceback import format_tb, format_exc
 
 import assembly as asm
+from assembly import ignored
 import metadata as meta
 import asmtypes
 import shock 
@@ -123,9 +124,9 @@ class ArastConsumer:
 
         ##### Get data from assembly_data #####
         self.metadata.update_job(uid, 'status', 'Data transfer')
-        try:os.makedirs(filepath)
-        except:pass
-            
+        with ignored(OSError):
+            os.makedirs(filepath)
+
           ### TODO Garbage collect ###
         download_url = 'http://{}'.format(self.shockurl)
         file_sets = params['assembly_data']['file_sets']
@@ -165,12 +166,8 @@ class ArastConsumer:
         user = params['ARASTUSER']
         token = params['oauth_token']
         pipelines = params['pipeline']
-        recipe = None
-        wasp_in = None
-        try: ## In case legacy
-            recipe = params['recipe']
-            wasp_in = params['wasp']
-        except:pass
+        recipe = params.get('recipe')
+        wasp_in = params.get('wasp')
 
         #support legacy arast client
         if len(pipelines) > 0:
@@ -181,14 +178,12 @@ class ArastConsumer:
         datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
         jobpath = os.path.join(datapath, str(job_id))
+        
         try:
             os.makedirs(jobpath)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-        # except Exception as e:
-        #     print e
-        #     raise Exception ('Data Error')
 
         ### Create job log
         self.out_report_name = '{}/{}_report.txt'.format(jobpath, str(job_id))
