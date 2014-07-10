@@ -183,19 +183,27 @@ def eval(x, env):
                                                        keep_name=True)
         return chain
     elif x[0] == 'tar': ## Tar outputs from WaspLink(s)
-        try: split = x.index(':name')
-        except: split = None
-        wlinks = [eval(exp, env) for exp in x[1:split]]
-        if split:
-            tar_name = '{}.tar.gz'.format(x[split+1])
+        bare_exp, kwargs = extract_kwargs(x)
+        wlinks = [eval(exp, env) for exp in bare_exp[1:]]
+
+        ### Format tarball name
+        if 'name' in kwargs:
+            tar_name = '{}.tar.gz'.format(kwargs['name'])
         else: # Generate Tar Name
             tar_name = '{}.tar.gz'.format('_'.join([w['module'] for w in wlinks]))
+            
+        ### Tag the tarball fileset
+        tag = kwargs.get('tag')
+        tags = [tag] if tag else []
+
+        ### Create new link
         chain = WaspLink('tar', wlinks)
         filelist = []
         for w in wlinks:
             filelist += w.files
         chain['default_output'] = asmtypes.set_factory(
-            'tar', utils.tar_list(env.outpath, filelist, tar_name), name=tar_name, keep_name=True)
+            'tar', utils.tar_list(env.outpath, filelist, tar_name), 
+            name=tar_name, keep_name=True, tags=tags)
         return chain
         
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate
@@ -237,6 +245,22 @@ def eval(x, env):
             logging.info(traceback.format_exc())
             return proc(*exps)
 ################ parse, read, and user interaction
+
+def extract_kwargs(exp):
+    "Find :keys in top level exp"
+    kwargs = {}
+    stripped = []
+    skip = False
+    for i,x in enumerate(exp):
+        if skip:
+            skip = False
+            continue
+        if x[0] == ':':
+            kwargs[x[1:]] = exp[i+1]
+            skip = True
+        else:
+            stripped.append(x)
+    return stripped, kwargs        
 
 def read(s):
     "Read a Scheme expression from a string."
@@ -422,6 +446,12 @@ class WaspEngine():
 ###### Utility
 
 def pipelines_to_exp(pipes, job_id):
+    """
+    Convert pipeline mode into Wasp expression
+    """
+    # Assume that these modules will use initial reads
+    add_reads = ['sspace', 'reapr', 'bwa', 'bowtie2']
+
     all_pipes = []
     for pipe in pipes:        
         exp = 'READS'
@@ -434,7 +464,10 @@ def pipelines_to_exp(pipes, job_id):
                     setparams = ' '.join(['(setparam {} {})'.format(p[0], p[1]) for p in params])
                     exp = '(begin {} {})'.format(setparams, exp)
                     params = []
-                exp = '({} {})'.format(m, exp)
+                if m in add_reads:
+                    exp = '({} {} READS)'.format(m, exp)
+                else:
+                    exp = '({} {})'.format(m, exp)
 
         #### Flush params
         if params:
@@ -473,7 +506,7 @@ def pipelines_to_exp(pipes, job_id):
     
     #### Form final expression
     ranked_upload = '(upload (sort (list {}) > :key (lambda (c) (arast_score c))))'.format(' '.join(all_pipes))
-    final_exp = '(begin {} (tar (all_files (quast {})) :name analysis))'.format(' '.join(defs), ranked_upload)
+    final_exp = '(begin {} (tar (all_files (quast {})) :name {}_analysis :tag quast))'.format(' '.join(defs), ranked_upload, job_id)
     return final_exp
 
 

@@ -163,6 +163,7 @@ class Client:
         tar.close()
         sys.stderr.write("HTML extracted:  {}/report.html\n".format(destpath))
         if remove: os.remove(filename)
+        return '{}/report.html\n'.format(destpath)
 
     def get_job_data(self, job_id, outdir=None):
         self.get_assemblies(job_id, outdir=outdir)

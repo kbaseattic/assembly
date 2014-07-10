@@ -10,9 +10,13 @@ def parse(recipe):
             rec += line + '\n'
     return desc, rec
 
-def get(rname):
+def get(rname, job_id=None):
     """ returns the recipe called RNAME """
-    return parse(getattr(sys.modules[__name__], 'recipes')[rname])[1]
+    recipe = parse(getattr(sys.modules[__name__], 'recipes')[rname])[1]
+    if job_id:
+        return prefix_value(recipe, 'name', str(job_id))
+    else:
+        return recipe
 
 def get_description(rname):
     """ returns the recipe description of RNAME """
@@ -28,6 +32,17 @@ def get_all():
 def set_alias(target_recipe, alias):
     all = getattr(sys.modules[__name__], 'recipes')
     all.update({alias: all[target_recipe]})
+
+def prefix_value(recipe, key, prefix):
+    """
+    Finds the value of the keyword and prefixes
+    e.g. prefix_value('auto', 'name', job_id)
+    (... :name analysis) ->  (... :name 42_analysis)
+    """
+    words = recipe.split()
+    for i, word in enumerate(words):
+        if word.find(':{}'.format(key)) != -1:
+            return recipe.replace(words[i+1], '{}_{}'.format(prefix, words[i+1]))
 
 recipes = {
     'scaffolds' : """
@@ -92,7 +107,7 @@ recipes = {
     'test' : """
     (begin
       (define newsort (sort (list (kiki READS) (velvet READS)) > :key (lambda (c) (arast_score c))))
-      (tar (all_files (quast (upload newsort))) :name analysis)
+      (tar (all_files (quast (upload newsort))) :name analysis :tag quast)
     )
     """,
 

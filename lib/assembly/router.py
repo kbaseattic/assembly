@@ -29,7 +29,7 @@ import metadata as meta
 import shock
 from nexus import client as nexusclient
 import client as ar_client 
-
+from assembly import ignored
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
 
@@ -38,7 +38,7 @@ def send_message(body, routingKey):
             host=rmq_host))
     channel = connection.channel()
     channel.queue_declare(queue=routingKey, durable=True)
-    channel.basic_qos(prefetch_count=1)
+    #channel.basic_qos(prefetch_count=1)
     channel.basic_publish(exchange = '',
                           routing_key=routingKey,
                           body=body,
@@ -71,8 +71,7 @@ def send_kill_message(user, job_id):
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
-    try: routing_key = params['queue']
-    except: routing_key = None
+    routing_key = params.get('queue')
     return routing_key or parser.get('rabbitmq','default_routing_key')
 
 def get_upload_url():
@@ -119,10 +118,7 @@ def register_data(body):
         return "Client too old, please upgrade"
     client_params = json.loads(body) #dict of params
     keep = ['assembly_data', 'client', 'ARASTUSER', 'message', 'version', 'kbase_assembly_input']
-    data_info = {}
-    for key in keep:
-        try: data_info[key] = client_params[key]
-        except: pass
+    data_info = {k:client_params.get(k) for k in keep if client_params.get(k)}
     logging.info('Register Data: {}'.format(data_info))
     return metadata.insert_data(data_info['ARASTUSER'], data_info)
 
@@ -168,9 +164,8 @@ def analyze_data(body): #run fastqc
 def authenticate_request():
     if cherrypy.request.method == 'OPTIONS':
         return 'OPTIONS'
-    try:
-        token = cherrypy.request.headers['Authorization']
-    except:
+    token = cherrypy.request.headers.get('Authorization')
+    if not token:
         print "Auth error"
         raise cherrypy.HTTPError(403)
     
@@ -390,62 +385,39 @@ class JobResource:
 
     @cherrypy.expose
     def status(self, userid, **kwargs):
-        try:
-            job_id = kwargs['job_id']
-        except:
-            job_id = None
-        if job_id: # Single job record
+        ### Single Job ID
+        job_id = kwargs.get('job_id')
+        if job_id:
             doc = metadata.get_job(userid, job_id)
             if doc:
-                try:
-                    if kwargs['format'] == 'json':
-                        return json.dumps(doc)
-                except:
-                    print '[.] CLI request status'
-
+                if kwargs.get('format') == 'json':
+                    return json.dumps(doc)
                 return doc['status']
             else:
                 return "Could not get job status"
-            
+
+        ### List of Recent Jobs
         else:
-            try: 
-                records = int(kwargs['records'])
-            except:
-                records = 100
-
+            records = int(kwargs.get('records', 100))
             detail = kwargs.get('detail')
-
             docs = [sanitize_doc(d) for d in metadata.list_jobs(userid)]
             columns = ["Job ID", "Data ID", "Status", "Run time", "Description"]
-            if detail: columns.append("Parameters")
+            if detail: 
+                columns.append("Parameters")
             pt = PrettyTable(columns)
-            if detail: pt.align["Parameters"] = "l"
+            if detail: 
+                pt.align["Parameters"] = "l"
             if docs:
-                try:
-                    if kwargs['format'] == 'json':
-                        return json.dumps(list(reversed(docs[-records:]))); 
-                except:
-                    print '[.] CLI request status'
-
+                if kwargs.get('format') == 'json':
+                    return json.dumps(list(reversed(docs[-records:]))); 
                 for doc in docs[-records:]:
-                    try:
-                        row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
-                    except:
-                        #row = ['err','err','err']
-                        continue
-                    try:
-                        row.append(str(doc['computation_time']))
-                    except:
-                        row += ['']
-                    try:
-                        row.append(str(doc['message']))
-                    except:
-                        row += ['']
+                    row = [doc.get('job_id'), str(doc.get('data_id')), doc.get('status')[:40]]
+                    row.append(str(doc.get('computation_time', '')))
+                    row.append(str(doc.get('message', '')))
                     if detail:
-                        try:
-                            param = self.parse_job_doc_to_parameter(doc)
-                            row.append(param)
-                        except:
+                        try: 
+                            row.append(self.parse_job_doc_to_parameter(doc))
+                        except: 
                             row += ['']
                     pt.add_row(row)
                 return pt.get_string() + "\n"
@@ -623,22 +595,16 @@ class StaticResource:
                            'tools.staticdir.dir': self.static_root}
 
     def _makedirs(self, dir):
-        try:
+        with ignored(OSError):
             os.makedirs(dir)
-        except OSError, e:
-            # be happy if someone already created the path
-            if e.errno != errno.EEXIST:
-                raise
+
+    def format_static_url(self, datadir=None, userid=None, job_id=None):
+        common = os.path.commonprefix([self.static_root, datadir])
+        return '/static/{}'.format(datadir.replace(common, ''))
 
     @cherrypy.expose
-    def serve(self, userid=None, resource=None, resource_id=None, **kwargs):
-        # if userid == 'OPTIONS':
-        #     return ('New Job Request') # To handle initial html OPTIONS request
-        #Return data id
-        try:
-            token = cherrypy.request.headers['Authorization']
-        except:
-            token = None
+    def serve(self, userid=None, resource=None, resource_id=None, type='analysis', **kwargs):
+        token = cherrypy.request.headers.get('Authorization')
         aclient = ar_client.Client('localhost', userid, token)
         outdir = os.path.join(self.static_root, userid, resource, resource_id)
         self._makedirs(outdir)
@@ -647,33 +613,15 @@ class StaticResource:
         if resource == 'job':
             job_id = resource_id
             doc = metadata.get_job(userid, job_id)
-
             # Download data
-            aclient.get_job_data(job_id=job_id, outdir=outdir)
+            if type == 'analysis':
+                adir = os.path.join(outdir, 'analysis')
+                self._makedirs(adir)
+                report = aclient.get_job_analysis_tarball(job_id=job_id, outdir=adir)
+                return self.format_static_url(report, userid, job_id)
 
-
-            # Extract / stage files
-            if 'fastqc' in kwargs.keys():
-                pass
-            ## Extract Quast data
-            if 'quast' in kwargs.keys():
-                quastdir = os.path.join(outdir, 'quast')
-                self._makedirs(quastdir)
-                qtars = [m for m in os.listdir(outdir) if 'qst' in m]
-                for t in qtars:
-                    if 'ctg' in t: # Contig Quast
-                        ctgdir = os.path.join(quastdir, 'contig')
-                        self._makedirs(ctgdir)
-                        qtar = tarfile.open(os.path.join(outdir,t))
-                        qtar.extractall(path=ctgdir)
-                    elif 'scf' in t: # Scaffold Quast
-                        scfdir = os.path.join(quastdir, 'scaffold')
-                        self._makedirs(scfdir)
-                        qtar = tarfile.open(os.path.join(outdir,t))
-                        qtar.extractall(path=scfdir)
-
-            return 'done'
     serve._cp_config = {'tools.staticdir.on' : False}
+
 
 class FilesResource:
     def default(self, userid=None):
