@@ -14,6 +14,7 @@ import re
 import subprocess
 import shutil
 import glob
+from contextlib import contextmanager
 
 # import metadata as meta
 
@@ -192,8 +193,18 @@ def curl_download_url(url, outdir=None):
         print('File Downloaded:', downloaded)
         return downloaded
 
+
+
 parser = SafeConfigParser()
 #parser.read('arast.conf')
 #basepath = get_default('basepath')
 #metadata = meta.MetadataConnection(parser.get('meta','mongo.remote.host'))
 
+###### Context Managers
+
+@contextmanager
+def ignored(*exceptions):
+    try:
+        yield
+    except exceptions:
+        pass
