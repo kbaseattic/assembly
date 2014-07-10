@@ -446,6 +446,12 @@ class WaspEngine():
 ###### Utility
 
 def pipelines_to_exp(pipes, job_id):
+    """
+    Convert pipeline mode into Wasp expression
+    """
+    # Assume that these modules will use initial reads
+    add_reads = ['sspace', 'reapr', 'bwa', 'bowtie2']
+
     all_pipes = []
     for pipe in pipes:        
         exp = 'READS'
@@ -458,7 +464,10 @@ def pipelines_to_exp(pipes, job_id):
                     setparams = ' '.join(['(setparam {} {})'.format(p[0], p[1]) for p in params])
                     exp = '(begin {} {})'.format(setparams, exp)
                     params = []
-                exp = '({} {})'.format(m, exp)
+                if m in add_reads:
+                    exp = '({} {} READS)'.format(m, exp)
+                else:
+                    exp = '({} {})'.format(m, exp)
 
         #### Flush params
         if params:
