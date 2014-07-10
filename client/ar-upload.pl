@@ -87,9 +87,14 @@ my $shock = get_shock($config, $user, $token);
 
 my $input_data = process_input_args(\@se_args, \@pe_args, \@ref_args, \%params);
 $input_data = upload_files_in_input_data($input_data, $shock);
-print encode_json($input_data)."\n" if $ws_json;
 
-submit_data($input_data, $config, $user, $token);
+my $data_id = submit_data($input_data, $config, $user, $token);
+
+if ($ws_json) {
+    print encode_json($input_data);
+} else {
+    print "Data ID: $data_id\n";
+}
 
 if (@ws_args) {
     die "Dependency error: Bio::KBase modules not found.\n" if !$have_kbase;
@@ -142,7 +147,6 @@ sub submit_data {
 
     $res->is_success or die "Error submitting data: ".$res->message."\n";
     my $data_id = decode_json($res->decoded_content)->{data_id} or die "Error get data ID\n";
-    print "Data ID: $data_id\n";
 }
 
 sub current_workspace {
@@ -406,4 +410,11 @@ sub check_argv_for_url_options {
         !system "$arast upload @ARGV" or die $!."\n";
         exit;
     }
+}
+
+sub write_text_to_file {
+    my ($text, $file) = @_;
+    open(F, ">$file") or die "Could not open $file";
+    print F $text;
+    close(F);
 }

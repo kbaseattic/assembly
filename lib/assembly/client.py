@@ -242,12 +242,12 @@ class Client:
 class AssemblyData(dict):
     """Class for handling ARAST json specs"""
     def __init__(self, *args):
-        dict.__init__(self, *args)
         self['file_sets'] = []
-
+        dict.__init__(self, *args)
+        
     def add_set(self, file_set):
         self['file_sets'].append(file_set)
-
+        
 
 class Error(Exception):
     """Base class for exceptions in this module"""

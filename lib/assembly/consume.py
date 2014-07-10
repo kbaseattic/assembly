@@ -88,17 +88,11 @@ class ArastConsumer:
             logging.debug("Free space in bytes: %s" % free_space)
         self.gc_lock.release()
 
-
     def get_data(self, body):
         """Get data from cache or Shock server."""
         params = json.loads(body)
-        if ('assembly_data' in params or
-            params['version'] == 'widget'):
-            logging.info('New Data Format')
-            return self._get_data(body)
-
-        else:
-            return self._get_data_old(body)
+        logging.info('New Data Format')
+        return self._get_data(body)
 
     def _get_data(self, body):
         params = json.loads(body)

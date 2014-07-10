@@ -83,6 +83,7 @@ def get_parser():
 
     data_group = p_run.add_mutually_exclusive_group()
     data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
+    data_group.add_argument("--data-json", action="store", dest="data_json", help="Reuse uploaded data from a json object")
 
     cmd_group = p_run.add_mutually_exclusive_group()
     cmd_group.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
@@ -143,8 +144,10 @@ def cmd_upload(args, aclient, data, log=None):
 
     response = aclient.submit_data(payload)
     arast_msg.update(json.loads(response))
-    if args.json: print payload
-    print 'Data ID: {}'.format(arast_msg['data_id'])
+    if args.json:
+        print payload
+    else:
+        print 'Data ID: {}'.format(arast_msg['data_id'])
 
 
 def cmd_run(args, aclient, data=None, log=None):
@@ -164,8 +167,11 @@ def cmd_run(args, aclient, data=None, log=None):
             'data_id', 'queue', 'version', 'client']
     arast_msg = dict((k, options[k]) for k in keys if k in options)
 
-    # set attribute regardless to indicate a non-legacy input for consume.py 
-    arast_msg['assembly_data'] = data  
+    if data:
+        if 'assembly_data' in data:
+            arast_msg['assembly_data'] = data['assembly_data']
+        else:
+            arast_msg['kbase_assembly_input'] = data
 
     payload = json.dumps(arast_msg, sort_keys=True)
     if log:
@@ -252,6 +258,15 @@ def cmd_avail(args, aclient):
 def prepare_assembly_data(args, aclient, usage):
     """Parses args and uploads files
     returns data spec for submission in run/upload commands"""
+
+    if args.command == 'run' and args.data_json:
+        try:
+            with open(args.data_json) as f:
+                json_data = f.read()
+            adata = json.loads(json_data)
+        except (IOError, ValueError) as e:
+            raise client.Error(e)
+        return adata
 
     if not (args.pair or args.single or args.pair_url or args.single_url):
         sys.exit(usage)

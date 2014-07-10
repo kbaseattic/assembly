@@ -33,7 +33,10 @@ if ($dir) {
     chdir($dir);
 }
 
+my ($ref, $pe1, $pe2, $se);
+
 my $testCount = 0;
+setup();
 foreach my $testname (@tests) {
     my $test = "test_" . $testname;
     print "\n> Testing $testname...\n";
@@ -42,26 +45,26 @@ foreach my $testname (@tests) {
         next;
     }
     &$test();
-
 }
 done_testing($testCount);
 
-
-sub test_simple_cases {
-    # This test takes 19 minutes to run on a server with 2+ queues
-
+sub setup {
     my $ref = 'http://www.mcs.anl.gov/~fangfang/arast/b99.ref.fa';
     my $pe1 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq';
     my $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
-    my $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
-
-    sysrun("ar-login");
-
+    my $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';    
     sysrun("curl -s $ref > ref.fa");
     sysrun("curl -s $pe1 > p1.fq");
     sysrun("curl -s $pe2 > p2.fq");
     sysrun("curl -s $se > se.fq");
+}
 
+sub test_login {
+    sysrun("ar-login");
+}
+
+sub test_simple_cases {
+    # This test takes 19 minutes to run on a server with 2+ queues
     sysrun("ar-stat > stat.0");
 
     sysrun("ar-upload --pair p1.fq p2.fq --reference ref.fa > data.1");
@@ -105,22 +108,34 @@ sub test_simple_cases {
 
     sysrun('ar-stat -j $(cat job.7|sed "s/[^0-9]*//g") > stat.term.7');
 
-    sysrun("ar-login --rast");
-    sysrun("ar-run -a kiki -f se.fq -m 'last: rast account' > job.8");
-    sysrun("ar-stat -j 1 > stat.8");
-
-    sysrun('ar-get -j $(cat job.8|sed "s/[^0-9]*//g") -w');
-    sysrun('cp $(cat job.8|sed "s/[^0-9]*//g")_1.kiki_contigs.fa contigs.8');
-
     sysrun("ar-avail > modules");
     sysrun("ar-avail -d > modules.detail");
     sysrun("ar-avail --recipe > recipes");
     sysrun("ar-avail --r --detail > recipes.detail");
-
-    sysrun("ar-logout");
-
 }
 
+sub test_json_input {
+    sysrun('ar-upload --pair p1.fq p2.fq --ws-json > data.11.ws.json');
+    sysrun('ar-run --data-json data.11.ws.json -a kiki > job.11');
+
+    sysrun('arast upload --pair p1.fq p2.fq --json > data.12.json');
+    sysrun('ar-run --data-json data.12.json -a kiki > job.12');
+
+    sysrun('cat job.11 | ar-get -w -p > contigs.11');
+    sysrun('cat job.12 | ar-get -w -p > contigs.12');
+}
+
+sub test_rast_account {
+    sysrun("ar-login --rast");
+    sysrun("ar-run -a kiki -f se.fq -m 'rast account' > rast.job");
+    sysrun("ar-stat -j 1 > rast.stat");
+    sysrun('ar-get -j $(cat rast.job|sed "s/[^0-9]*//g") -w');
+    sysrun('cp $(cat rast.job|sed "s/[^0-9]*//g")_1.kiki_contigs.fa rast.contigs');
+}
+
+sub test_log_out {
+    sysrun("ar-logout");
+}
 
 sub discover_own_tests {
     my $self = $0;
