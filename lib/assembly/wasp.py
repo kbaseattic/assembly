@@ -497,7 +497,7 @@ def pipelines_to_exp(pipes, job_id):
     
     #### Form final expression
     ranked_upload = '(upload (sort (list {}) > :key (lambda (c) (arast_score c))))'.format(' '.join(all_pipes))
-    final_exp = '(begin {} (tar (all_files (quast {})) :name analysis :tag quast))'.format(' '.join(defs), ranked_upload)
+    final_exp = '(begin {} (tar (all_files (quast {})) :name {}_analysis :tag quast))'.format(' '.join(defs), ranked_upload, job_id)
     return final_exp
 
 
