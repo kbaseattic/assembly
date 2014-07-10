@@ -598,15 +598,13 @@ class StaticResource:
         with ignored(OSError):
             os.makedirs(dir)
 
+    def format_static_url(self, datadir=None, userid=None, job_id=None):
+        common = os.path.commonprefix([self.static_root, datadir])
+        return '/static/{}'.format(datadir.replace(common, ''))
+
     @cherrypy.expose
-    def serve(self, userid=None, resource=None, resource_id=None, **kwargs):
-        # if userid == 'OPTIONS':
-        #     return ('New Job Request') # To handle initial html OPTIONS request
-        #Return data id
-        try:
-            token = cherrypy.request.headers['Authorization']
-        except:
-            token = None
+    def serve(self, userid=None, resource=None, resource_id=None, type='analysis', **kwargs):
+        token = cherrypy.request.headers.get('Authorization')
         aclient = ar_client.Client('localhost', userid, token)
         outdir = os.path.join(self.static_root, userid, resource, resource_id)
         self._makedirs(outdir)
@@ -615,33 +613,15 @@ class StaticResource:
         if resource == 'job':
             job_id = resource_id
             doc = metadata.get_job(userid, job_id)
-
             # Download data
-            aclient.get_job_data(job_id=job_id, outdir=outdir)
+            if type == 'analysis':
+                adir = os.path.join(outdir, 'analysis')
+                self._makedirs(adir)
+                report = aclient.get_job_analysis_tarball(job_id=job_id, outdir=adir)
+                return self.format_static_url(report, userid, job_id)
 
-
-            # Extract / stage files
-            if 'fastqc' in kwargs.keys():
-                pass
-            ## Extract Quast data
-            if 'quast' in kwargs.keys():
-                quastdir = os.path.join(outdir, 'quast')
-                self._makedirs(quastdir)
-                qtars = [m for m in os.listdir(outdir) if 'qst' in m]
-                for t in qtars:
-                    if 'ctg' in t: # Contig Quast
-                        ctgdir = os.path.join(quastdir, 'contig')
-                        self._makedirs(ctgdir)
-                        qtar = tarfile.open(os.path.join(outdir,t))
-                        qtar.extractall(path=ctgdir)
-                    elif 'scf' in t: # Scaffold Quast
-                        scfdir = os.path.join(quastdir, 'scaffold')
-                        self._makedirs(scfdir)
-                        qtar = tarfile.open(os.path.join(outdir,t))
-                        qtar.extractall(path=scfdir)
-
-            return 'done'
     serve._cp_config = {'tools.staticdir.on' : False}
+
 
 class FilesResource:
     def default(self, userid=None):
