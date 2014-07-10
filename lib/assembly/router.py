@@ -29,7 +29,7 @@ import metadata as meta
 import shock
 from nexus import client as nexusclient
 import client as ar_client 
-
+from assembly import ignored
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
 
@@ -597,12 +597,8 @@ class StaticResource:
                            'tools.staticdir.dir': self.static_root}
 
     def _makedirs(self, dir):
-        try:
+        with ignored(OSError):
             os.makedirs(dir)
-        except OSError, e:
-            # be happy if someone already created the path
-            if e.errno != errno.EEXIST:
-                raise
 
     @cherrypy.expose
     def serve(self, userid=None, resource=None, resource_id=None, **kwargs):
