@@ -38,7 +38,7 @@ def send_message(body, routingKey):
             host=rmq_host))
     channel = connection.channel()
     channel.queue_declare(queue=routingKey, durable=True)
-    channel.basic_qos(prefetch_count=1)
+    #channel.basic_qos(prefetch_count=1)
     channel.basic_publish(exchange = '',
                           routing_key=routingKey,
                           body=body,
@@ -118,9 +118,7 @@ def register_data(body):
         return "Client too old, please upgrade"
     client_params = json.loads(body) #dict of params
     keep = ['assembly_data', 'client', 'ARASTUSER', 'message', 'version', 'kbase_assembly_input']
-    data_info = {}
-    for key in keep:
-        data_info[key] = client_params.get(key)
+    data_info = {k:client_params.get(k) for k in keep if client_params.get(k)}
     logging.info('Register Data: {}'.format(data_info))
     return metadata.insert_data(data_info['ARASTUSER'], data_info)
 
