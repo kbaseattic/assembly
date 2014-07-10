@@ -155,7 +155,7 @@ class Client:
         """Download and extract quast tarball"""
         url = '{}/user/{}/job/{}/analysis'.format(self.url, self.user, job_id)
         handle = json.loads(self.req_get(url))
-        filename = self.download_shock_handle(handle, outdir=outdir, prefix=job_id+'_')
+        filename = self.download_shock_handle(handle, outdir=outdir)
         dirname = filename.split('/')[-1].split('.')[0]
         destpath = os.path.join(outdir, dirname) if outdir else dirname
         tar = tarfile.open(filename)

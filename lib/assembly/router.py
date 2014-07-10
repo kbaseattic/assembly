@@ -30,6 +30,8 @@ import shock
 from nexus import client as nexusclient
 import client as ar_client 
 from assembly import ignored
+
+
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
 
@@ -47,14 +49,20 @@ def send_message(body, routingKey):
     logging.debug(" [x] Sent to queue: %r: %r" % (routingKey, body))
     connection.close()
 
+
 def send_kill_message(user, job_id):
     """ Place the kill request on the correct job queue """
     ## Set status to killed if not running yet. Otherwise, send.
     job_doc = metadata.get_job(user, job_id)
-    uid = job_doc['_id']
-    if job_doc['status'] == 'queued':
+    try:
+        uid = job_doc['_id']
+        status = job_doc['status']
+    except TypeError:
+        return 'Invalid job ID'
+
+    if status == 'queued':
         metadata.update_job(uid, 'status', 'Terminated')
-    elif re.search("Running", job_doc['status']) or re.search("Stage", job_doc['status']):
+    elif re.search(r"(Running|Stage)", status):
         msg = json.dumps({'user':user, 'job_id':job_id})
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host='localhost'))
@@ -66,23 +74,29 @@ def send_kill_message(user, job_id):
                               body=msg,)
         logging.debug(" [x] Sent to kill exchange: %r" % (job_id))
         connection.close()
+    elif re.search(r"(Complete|Terminate)", status):
+        return "Job is no longer running"
     else:
-        return "Invalid Job ID"
+        return 'Unexpected error in killing job'
+
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
     routing_key = params.get('queue')
     return routing_key or parser.get('rabbitmq','default_routing_key')
 
+
 def get_upload_url():
     global parser
     return parser.get('shock', 'host')
+
 
 def check_valid_client(body):
     client_params = json.loads(body) #dict of params
     min_version = parser.get('assembly', 'min_cli_version')
     try: return StrictVersion(client_params['version']) >= StrictVersion(min_version)
     except: return True
+
 
 def route_job(body):
     if not check_valid_client(body):
@@ -108,9 +122,11 @@ def route_job(body):
     response = str(job_id)
     return response
 
+
 def route_data(body):
     data_id, _ = register_data(body)
     return json.dumps({"data_id": data_id})
+
 
 def register_data(body):
     """ User is only submitting libraries, return data ID """
@@ -121,6 +137,7 @@ def register_data(body):
     data_info = {k:client_params.get(k) for k in keep if client_params.get(k)}
     logging.info('Register Data: {}'.format(data_info))
     return metadata.insert_data(data_info['ARASTUSER'], data_info)
+
 
 def analyze_data(body): #run fastqc
     """Send data to compute node for analysis, wait for result"""
@@ -159,6 +176,14 @@ def analyze_data(body): #run fastqc
     response = str(job_id)
     return response
 
+
+def sanitize_doc(doc):
+    """ Removes unwanted information in response data """
+    to_remove = ['oauth_token', '_id', 'data']
+    for k in to_remove:
+        try: del doc[k]
+        except KeyError: pass
+    return doc
 
 
 def authenticate_request():
@@ -273,6 +298,7 @@ def parser_as_dict(parser):
         d[k].pop('__name__', None)
     return d
 
+
 def start_qc_monitor(arasturl):
     """
     Listens on QC queue for finished QC jobs
@@ -292,6 +318,8 @@ def start_qc_monitor(arasturl):
                           no_ack=True)
 
     channel.start_consuming()
+
+
 def qc_callback():
     pass
 
@@ -587,6 +615,7 @@ class JobResource:
             pipes.append(' '.join(params))
         return ' '.join(pipes)
 
+
 class StaticResource:
 
     def __init__(self, static_root):
@@ -627,6 +656,7 @@ class FilesResource:
     def default(self, userid=None):
         testResponse = {}
         return '{}s files!'.format(userid)
+
 
 class DataResource:
     @cherrypy.expose
@@ -674,6 +704,7 @@ class StatusResource:
         json_request = cherrypy.request.body.read()
         return route_job(json_request)
 
+
 class ModuleResource:
     @cherrypy.expose
     def default(self, module_name="avail", *args, **kwargs):
@@ -685,6 +716,7 @@ class ModuleResource:
             with open(path) as outfile:
                 return outfile.read()
         else: raise cherrypy.HTTPError(403)
+
 
 class RecipeResource:
     @cherrypy.expose
@@ -754,6 +786,7 @@ class SystemResource:
         else:
             return 'Could not shutdown node: {}'.format(host)
 
+
 class ShockResource(object):
 
     def __init__(self, content):
@@ -769,10 +802,4 @@ class Root(object):
     def default(self):
         print 'root'
 
-def sanitize_doc(doc):
-    """ Removes unwanted information in response data """
-    to_remove = ['oauth_token', '_id', 'data']
-    for k in to_remove:
-        try: del doc[k]
-        except KeyError: pass
-    return doc
+

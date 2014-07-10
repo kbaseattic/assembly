@@ -49,10 +49,11 @@ foreach my $testname (@tests) {
 done_testing($testCount);
 
 sub setup {
-    my $ref = 'http://www.mcs.anl.gov/~fangfang/arast/b99.ref.fa';
-    my $pe1 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq';
-    my $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
-    my $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';    
+    $ref = 'http://www.mcs.anl.gov/~fangfang/arast/b99.ref.fa';
+    $pe1 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq';
+    $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
+    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';    
+
     sysrun("curl -s $ref > ref.fa");
     sysrun("curl -s $pe1 > p1.fq");
     sysrun("curl -s $pe2 > p2.fq");

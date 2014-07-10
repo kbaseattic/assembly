@@ -168,8 +168,8 @@ def cmd_run(args, aclient, data=None, log=None):
     arast_msg = dict((k, options[k]) for k in keys if k in options)
 
     if data:
-        if 'assembly_data' in data:
-            arast_msg['assembly_data'] = data['assembly_data']
+        if 'file_sets' in data:
+            arast_msg['assembly_data'] = data
         else:
             arast_msg['kbase_assembly_input'] = data
 
@@ -310,7 +310,7 @@ def prepare_assembly_data(args, aclient, usage):
                     sys.exit('Invalid input: {}: {}'.format(f_type, word))
             f_set = asmtypes.FileSet(f_type, f_infos, **f_set_args)
             adata.add_set(f_set)
-    
+
     return adata
                 
 
