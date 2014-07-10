@@ -71,8 +71,7 @@ def send_kill_message(user, job_id):
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
-    try: routing_key = params['queue']
-    except: routing_key = None
+    routing_key = params.get('queue')
     return routing_key or parser.get('rabbitmq','default_routing_key')
 
 def get_upload_url():
@@ -121,8 +120,7 @@ def register_data(body):
     keep = ['assembly_data', 'client', 'ARASTUSER', 'message', 'version', 'kbase_assembly_input']
     data_info = {}
     for key in keep:
-        try: data_info[key] = client_params[key]
-        except: pass
+        data_info[key] = client_params.get(key)
     logging.info('Register Data: {}'.format(data_info))
     return metadata.insert_data(data_info['ARASTUSER'], data_info)
 
@@ -168,9 +166,8 @@ def analyze_data(body): #run fastqc
 def authenticate_request():
     if cherrypy.request.method == 'OPTIONS':
         return 'OPTIONS'
-    try:
-        token = cherrypy.request.headers['Authorization']
-    except:
+    token = cherrypy.request.headers.get('Authorization')
+    if not token:
         print "Auth error"
         raise cherrypy.HTTPError(403)
     
@@ -390,62 +387,39 @@ class JobResource:
 
     @cherrypy.expose
     def status(self, userid, **kwargs):
-        try:
-            job_id = kwargs['job_id']
-        except:
-            job_id = None
-        if job_id: # Single job record
+        ### Single Job ID
+        job_id = kwargs.get('job_id')
+        if job_id:
             doc = metadata.get_job(userid, job_id)
             if doc:
-                try:
-                    if kwargs['format'] == 'json':
-                        return json.dumps(doc)
-                except:
-                    print '[.] CLI request status'
-
+                if kwargs.get('format') == 'json':
+                    return json.dumps(doc)
                 return doc['status']
             else:
                 return "Could not get job status"
-            
+
+        ### List of Recent Jobs
         else:
-            try: 
-                records = int(kwargs['records'])
-            except:
-                records = 100
-
+            records = int(kwargs.get('records', 100))
             detail = kwargs.get('detail')
-
             docs = [sanitize_doc(d) for d in metadata.list_jobs(userid)]
             columns = ["Job ID", "Data ID", "Status", "Run time", "Description"]
-            if detail: columns.append("Parameters")
+            if detail: 
+                columns.append("Parameters")
             pt = PrettyTable(columns)
-            if detail: pt.align["Parameters"] = "l"
+            if detail: 
+                pt.align["Parameters"] = "l"
             if docs:
-                try:
-                    if kwargs['format'] == 'json':
-                        return json.dumps(list(reversed(docs[-records:]))); 
-                except:
-                    print '[.] CLI request status'
-
+                if kwargs.get('format') == 'json':
+                    return json.dumps(list(reversed(docs[-records:]))); 
                 for doc in docs[-records:]:
-                    try:
-                        row = [doc['job_id'], str(doc['data_id']), doc['status'][:40],]
-                    except:
-                        #row = ['err','err','err']
-                        continue
-                    try:
-                        row.append(str(doc['computation_time']))
-                    except:
-                        row += ['']
-                    try:
-                        row.append(str(doc['message']))
-                    except:
-                        row += ['']
+                    row = [doc.get('job_id'), str(doc.get('data_id')), doc.get('status')[:40]]
+                    row.append(str(doc.get('computation_time', '')))
+                    row.append(str(doc.get('message', '')))
                     if detail:
-                        try:
-                            param = self.parse_job_doc_to_parameter(doc)
-                            row.append(param)
-                        except:
+                        try: 
+                            row.append(self.parse_job_doc_to_parameter(doc))
+                        except: 
                             row += ['']
                     pt.add_row(row)
                 return pt.get_string() + "\n"
