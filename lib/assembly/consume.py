@@ -230,12 +230,12 @@ class ArastConsumer:
         wasp_exp = pipelines[0][0]
         reload(recipes)
         if recipe:
-            try: wasp_exp = recipes.get(recipe[0])
+            try: wasp_exp = recipes.get(recipe[0], job_id)
             except AttributeError: raise Exception('"{}" recipe not found.'.format(recipe[0]))
         elif wasp_in:
             wasp_exp = wasp_in[0]
         elif pipelines[0] == 'auto':
-            wasp_exp = recipes.get('auto')
+            wasp_exp = recipes.get('auto', job_id)
         else:
             all_pipes = []
             for p in pipelines:
