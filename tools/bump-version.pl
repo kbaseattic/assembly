@@ -49,6 +49,9 @@ if (!$message) {
     $message = <STDIN>;
     chomp($message);
     $message ||= $default;
+} else {
+    print "Press ENTER to proceed";
+    my $ignore = <STDIN>;
 }
 
 run("perl -pi -e 's/__version__\\s+=\\s+\\S+/__version__ = \"$ver_new\"/' $ver_file");
