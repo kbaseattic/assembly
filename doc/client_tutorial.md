@@ -171,9 +171,9 @@ be used to score the assemblies in the evaluation step.
 There are three main options for defining an assembly job on your
 dataset:
 
-1. `-a assembler`: invokes an individual assembler on raw reads.
-2. `-p module1 module2 ... assembler`: runs a pipeline of preprocessing and assembler modules
-3. `-r recipe`: uses a predefined pipeline which we call a "recipe"
+1. `-a assembler`:  invokes an individual assembler on raw reads.
+2. `-p module1 module2 ... assembler`:  runs a pipeline of preprocessing and assembler modules
+3. `-r recipe`:  uses a predefined pipeline which we call a "recipe"
 
 You can combine `-a` and `-p` options but not the `-r` option. Here
 are some valid option examples for `ar-run`:
