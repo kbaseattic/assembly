@@ -133,7 +133,9 @@ def cmd_logout(args):
     sys.stderr.write('[.] Logged out\n')
 
 
-def cmd_upload(args, aclient, data, log=None):
+def cmd_upload(args, aclient, usage, log=None):
+    data = prepare_assembly_data(args, aclient, usage)
+
     arast_msg = {'assembly_data': data,
                  'client': CLIENT_NAME,
                  'version': CLIENT_VERSION}
@@ -150,7 +152,14 @@ def cmd_upload(args, aclient, data, log=None):
         print 'Data ID: {}'.format(arast_msg['data_id'])
 
 
-def cmd_run(args, aclient, data=None, log=None):
+def cmd_run(args, aclient, usage, log=None):
+    if args.data_id:
+        data = None
+    elif args.data_json:
+        data = client.load_json_from_file(args.data_json)
+    else:
+        data = prepare_assembly_data(args, aclient, usage)
+
     if args.assemblers:
         args.pipeline = [(" ".join(args.assemblers))]
     elif not args.pipeline:  # even if args.recipe or args.wasp is defined
@@ -168,8 +177,10 @@ def cmd_run(args, aclient, data=None, log=None):
     arast_msg = dict((k, options[k]) for k in keys if k in options)
 
     if data:
-        if 'file_sets' in data:
+        if 'file_sets' in data:        # 
             arast_msg['assembly_data'] = data
+        elif 'assembly_data' in data:  # from: --json data.json
+            arast_msg['assembly_data'] = data['assembly_data']
         else:
             arast_msg['kbase_assembly_input'] = data
 
@@ -258,16 +269,6 @@ def cmd_avail(args, aclient):
 def prepare_assembly_data(args, aclient, usage):
     """Parses args and uploads files
     returns data spec for submission in run/upload commands"""
-
-    if args.command == 'run' and args.data_json:
-        try:
-            with open(args.data_json) as f:
-                json_data = f.read()
-            adata = json.loads(json_data)
-        except (IOError, ValueError) as e:
-            raise client.Error(e)
-        return adata
-
     if not (args.pair or args.single or args.pair_url or args.single_url):
         sys.exit(usage)
 
@@ -354,14 +355,10 @@ def run_command():
 
     aclient = client.Client(a_url, a_user, a_token)
 
-    adata = None
-    if args.command == 'upload' or args.command == 'run' and not args.data_id:
-        adata = prepare_assembly_data(args, aclient, usage)
-        
     if args.command == 'upload':
-        cmd_upload(args, aclient, adata, clientlog)
+        cmd_upload(args, aclient, usage, clientlog)
     elif args.command == 'run':
-        cmd_run(args, aclient, adata, clientlog)
+        cmd_run(args, aclient, usage, clientlog)
     elif args.command == 'stat':
         cmd_stat(args, aclient)
     elif args.command == 'get':

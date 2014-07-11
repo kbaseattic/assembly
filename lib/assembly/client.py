@@ -315,6 +315,15 @@ def verify_dir(path):
     return path
 
 
+def load_json_from_file(json_file):
+    try:
+        with open(json_file) as f: js = f.read()
+        doc = json.loads(js)
+    except (IOError, ValueError) as e:
+        raise Error(e)
+    return doc
+
+
 def assembly_data_to_rows(data):
     """Converts assembly data dictionary to text rows"""
     rows = []

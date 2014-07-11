@@ -14,7 +14,7 @@ filetypes = fasta,fa
 
 [Documentation]
 Author = Chris Bun
-Version = 1.0
-Description = Prodigal
+Version = 0.5
+Description = Prodigal microbial gene predictor
 Stages = post-process
-References = 
+References = doi:10.1186/1471-2105-11-119

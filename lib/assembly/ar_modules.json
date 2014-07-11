@@ -275,11 +275,11 @@
         "author": "Chris Bun",
         "short_name": "pd",
         "module": "prodigal",
-        "version": "1.0",
-        "references": "",
+        "version": "0.5",
+        "references": "doi:10.1186/1471-2105-11-119",
         "stages": "post-process",
         "filetypes": "fasta,fa",
-        "description": "Prodigal"
+        "description": "Prodigal microbial gene predictor"
     },
     {
         "name": "fastqc",
