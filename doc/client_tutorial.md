@@ -364,7 +364,7 @@ assemblies.
 ar-run --pair pe1.fq pe2.fq -p 'none tagdust' 'velvet kiki'
 ```
 
-The cartesian expansion of the pipelines are:
+The cartesian expansion of the pipeline expression generates 4 pipelines:
 ```
 velvet
 kiki
@@ -374,20 +374,27 @@ tagdust kiki
 
 ### Parameters
 
-You can use 
+Some of the modules support customizable parameters. You can use them
+to launch powerful pipelines such as parameter sweep. For example, you
+can use the `-p velvet ?hash_length=29-37:4` option in the `ar-run`
+command to launch 3 velvet jobs with different hash lengths (29, 33,
+37). Here, for numerical parameters, the general syntax is:
+```
+module ?parameter=beg-end:step_size
+```
 
 ```inv
 ar-stat --detail
 ```
 ```out
-+--------+---------+----------------------+----------+------------------+-------------------------------------------------------+
-| Job ID | Data ID |        Status        | Run time |   Description    | Parameters                                            |
-+--------+---------+----------------------+----------+------------------+-------------------------------------------------------+
-|  218   |   143   |       Complete       | 0:02:26  |    kmer sweep    | -p kiki -p 'none tagdust' velvet ?hash_length=29-37:4 |
-|  224   |   152   |       Complete       | 0:18:24  |   first: auto    | -p auto                                               |
-|  225   |   153   |       Complete       | 0:11:37  |   RAST recipe    | -r rast                                               |
-|  227   |   157   |       Complete       | 0:00:21  |       None       | -p velvet                                             |
-+--------+---------+----------------------+----------+------------------+-------------------------------------------------------+
++--------+---------+----------------------+----------+------------------+-----------------------------------------------+
+| Job ID | Data ID |        Status        | Run time |   Description    | Parameters                                    |
++--------+---------+----------------------+----------+------------------+-----------------------------------------------+
+|  218   |   143   |       Complete       | 0:02:26  |    kmer sweep    | -p 'none tagdust' velvet ?hash_length=29-37:4 |
+|  224   |   152   |       Complete       | 0:18:24  |   first: auto    | -p auto                                       |
+|  225   |   153   |       Complete       | 0:11:37  |   RAST recipe    | -r rast                                       |
+|  227   |   157   |       Complete       | 0:00:21  |       None       | -p velvet                                     |
++--------+---------+----------------------+----------+------------------+-----------------------------------------------+
 ```
 
 
