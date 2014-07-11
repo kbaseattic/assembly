@@ -36,23 +36,45 @@ velvet assembler. This should take just a couple minutes.
 ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait -p > ex1.contigs.fasta
 ```
 
-This command will block until the asesmbly is done. The resulting
-set of contigs will be saved to a FASTA file local to the client.
+This command will block until the assembly is done. The resulting set
+of contigs will be saved to a FASTA file local to the client. The
+choice of output name is arbitrary; we use `ex1.contigs.fasta` to
+denote it's the contigs from our first exercise. You can use the Unix
+`cat` command to inspect the content of the contig file.
 
 ```inv
-ls -l ex1.contigs.fasta
+cat ex1.contigs.fasta
 ```
+```out
+>NODE_1_length_56_cov_204.767853
+TACTAAAATTATAATTTTCCTGATTTTTGTAGAGGAGTATGGGAAAGTTCTGTGTATTTT
+ATGCTTTTATCCGTATTTAGGAGT
+>NODE_2_length_81_cov_258.320984
+TTTTATGCTTTTATCCGTATTTAGGAGTTAGAGGCTAGAGATGATGGAGTAAATTGTAAA
+ATCAGGCTAGTGAAGGATCTGAATATCCATTTCTATTTACCTGAAATAT
+>NODE_3_length_1762_cov_171.553909
+AATCAACGAAGCAGGAGCATACTGGTAAGCGACAGTTAAAAGGAAGTATGCAATATTTAT
+TATTACTCCTAACAGCGCTATCAAGCTAAAGTCCTTCAAGTTAGGAAAAGATCCTTCCCA
+...
+```
+
+This command uses two operators on Unix-like systems: the pipe
+operator `|` for chaining commands, and the redirection operator `>`
+to save output normally directed to the screen to a designated
+file. They are used here for convenience and are not necessary in the
+step-by-step way of using the assembly service. 
+
 
 ## Getting Started
 
 The commands and options we describe in this tutorial are supported on
-the clients of version 0.3.9.7 or newer. To check your client version, type:
+the clients of version 0.5.1 or newer. To check your client version, type:
 
 ```inv
 ar-stat --version
 ```
 ```out
-AssemblyRAST Client 0.3.9.7
+AssemblyRAST Client 0.5.3
 ```
 
 Here is the list of client commands. You can use the "-h" option to
@@ -92,18 +114,22 @@ curl http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq > p2.fq
 ```
 
 You can of course skip the above step and submit your own
-files. Here's an example of the upload command:
+files. Here's an example of the upload command, assuming you already
+have two local sequence files named `p1.fq` and `p2.fq`:
 
 ```inv
 ar-upload --pair p1.fq p2.fq > ex2.data_id
 ```
-
 The upload will return a data ID from the server. The data ID allows
 you to invoke different assemblers or pipelines on the same data
 without resubmitting it. In the example above, we have used the
-`> ex2.data_id` pipe function to save the data ID to a file. If you omit
+`> ex2.data_id` redirection to save the data ID to a file. If you omit
 that part, an integer ID will be printed to the screen upon successful
-submission.
+submission:
+```
+Data ID: 155
+```
+
 
 ### Launching an assembly job
 
@@ -115,17 +141,17 @@ cat ex2.data_id | ar-run > ex3.job_id
 ```
 
 If you don't have the data ID saved in a file, you can instead type
-something such as `ar-run --data 23`.
+something such as `ar-run --data 115`.
 
 Note that the assembly job is asynchrnous. The `ar-run` command should
-return immediately with a job ID with which you can query the job
-status.
+return immediately with a job ID (e.g., `Job ID: 223`) with which you
+can query the job status.
 
-As we have shown in our very first example, you can also bypass the
+As we have shown in our first exercise, you can also bypass the
 `ar-upload` step and launch a job directly. Here is an example.
 
 ```inv
-ar-run --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test job"
+ar-upload --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test job"
 ```
 
 This command should return as soon as the data is uploaded. Note that we
@@ -157,7 +183,7 @@ ar-stat
 |  137   |    64   |       Complete       | 0:02:26  |       None       |
 |  138   |    65   | Stage 2/9: kmergenie | 0:00:59  | default pipeline |
 |  139   |    66   |  Stage 3/5: velvet   | 0:00:59  | parameter sweep  |
-|  140   |    68   |   Stage 2/3: idba    | 0:00:59  |       None       |
+|  140   |    68   |   Stage 2/3: idba    | 0:00:59  |   my test job    |
 |  141   |    70   |       Complete       | 0:00:21  |   RAST recipe    |
 |  142   |    71   | Stage 2/5: kmergenie | 0:00:30  |   kmer tuning    |
 +--------+---------+----------------------+----------+------------------+
@@ -165,7 +191,7 @@ ar-stat
 
 When a job is in progress, its stage information is updated in the
 Status field; otherwise, it can end in one of the following states:
-"Complete", "Complete with error", "Terminated", and "FAIL[description]".
+"Complete", "Complete with error", "Terminated", and "FAIL [description]".
 You can use the `ar-stat -j job_id` command to inspect the error
 message for a failed job.
 
@@ -181,6 +207,26 @@ necessarily have computed on. For that, you can type:
 ```inv
 ar-stat -l
 ```
+```out
++---------+--------------+---------------+-------------------------------+
+| Data ID | Description  |      Type     |             Files             |
++---------+--------------+---------------+-------------------------------+
+|   151   |     None     |               |                               |
+|         |              |     paired    | p1.fq (39.8MB) p2.fq (39.8MB) |
+|   152   |     None     |               |                               |
+|         |              |   reference   |             ref.fa            |
+|         |              |     paired    |          p2.fq p1.fq          |
+|   153   |     None     |               |                               |
+|         |              |   paired_url  |       b99_1.fq b99_2.fq       |
+|   154   |     None     |               |                               |
+|         |              |     paired    | p1.fq (39.8MB) p2.fq (39.8MB) |
+|         |              | reference_url |           b99.ref.fa          |
+|   155   | my test data |               |                               |
+|         |              |     single    |             se.fq             |
+|   156   |     None     |               |                               |
+|         |              |   single_url  |            se.fastq           |
++---------+--------------+---------------+-------------------------------+
+```
 
 ### Getting assembly results
 
@@ -192,17 +238,34 @@ and a visual comparison of all the assemblies.
 Use `ar-get -j job_id --report` to show the text assembly report. You
 can add the `--wait` option to make sure the command waits for the job
 to complete. In the following example, we specify the job ID from a
-file we have saved.
+file we have previously saved.
 
 ```inv
 cat ex3.job_id | ar-get --report --wait
 ```
+```out
+QUAST: All statistics are based on contigs of size >= 500 bp, unless otherwise noted (e.g., "# contigs (>= 0 bp)" and "Total length (>= 0 bp)" include all contigs).
 
-You can pick an assembly using numeric or string IDs (e.g.,
-`ar-get --pick 2`, `ar-get --pick spades_contigs`). By default,
-we will get you the best assembly based on a set of common metrics.
-We are still working on the scoring functions for reference-based
-and reference-free assemblies.
+Assembly                        spades_contigs  gam_ngs_contigs  idba_contigs  velvet_contigs
+# contigs (>= 0 bp)             3629            3543             3562          32840
+# contigs (>= 1000 bp)          977             967              735           397
+Total length (>= 0 bp)          3085770         3086007          2549247       3234730
+Total length (>= 1000 bp)       1889425         1938839          1206779       665559
+# contigs                       1947            1879             1780          902
+Largest contig                  11126           11126            7592          8135
+Total length                    2571219         2578689          1929576       1025928
+Reference length                3084257         3084257          3084257       3084257
+GC (%)                          56.51           56.51            55.99         55.20
+Reference GC (%)                56.89           56.89            56.89         56.89
+N50                             1585            1664             1212          1265
+NG50                            1314            1397             723           -
+```
+
+You can pick an assembly using numeric or string IDs (e.g., `ar-get
+--pick 1` is equivalent to `ar-get --pick spades_contigs` in the
+example above). By default, we will get you the best assembly based on
+a set of common metrics.  We are actively working on improving the
+scoring functions for reference-based and reference-free assemblies.
 
 ```inv
 cat ex3.job_id | ar-get --wait > ex4.contigs.fasta

@@ -155,7 +155,7 @@ class Client:
         """Download and extract quast tarball"""
         url = '{}/user/{}/job/{}/analysis'.format(self.url, self.user, job_id)
         handle = json.loads(self.req_get(url))
-        filename = self.download_shock_handle(handle, outdir=outdir, prefix=job_id+'_')
+        filename = self.download_shock_handle(handle, outdir=outdir)
         dirname = filename.split('/')[-1].split('.')[0]
         destpath = os.path.join(outdir, dirname) if outdir else dirname
         tar = tarfile.open(filename)
@@ -163,6 +163,7 @@ class Client:
         tar.close()
         sys.stderr.write("HTML extracted:  {}/report.html\n".format(destpath))
         if remove: os.remove(filename)
+        return '{}/report.html\n'.format(destpath)
 
     def get_job_data(self, job_id, outdir=None):
         self.get_assemblies(job_id, outdir=outdir)
@@ -242,12 +243,12 @@ class Client:
 class AssemblyData(dict):
     """Class for handling ARAST json specs"""
     def __init__(self, *args):
-        dict.__init__(self, *args)
         self['file_sets'] = []
-
+        dict.__init__(self, *args)
+        
     def add_set(self, file_set):
         self['file_sets'].append(file_set)
-
+        
 
 class Error(Exception):
     """Base class for exceptions in this module"""
@@ -312,6 +313,15 @@ def verify_dir(path):
         if e.errno != errno.EEXIST:
             raise
     return path
+
+
+def load_json_from_file(json_file):
+    try:
+        with open(json_file) as f: js = f.read()
+        doc = json.loads(js)
+    except (IOError, ValueError) as e:
+        raise Error(e)
+    return doc
 
 
 def assembly_data_to_rows(data):

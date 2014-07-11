@@ -83,6 +83,7 @@ def get_parser():
 
     data_group = p_run.add_mutually_exclusive_group()
     data_group.add_argument("--data", action="store", dest="data_id", help="Reuse uploaded data")
+    data_group.add_argument("--data-json", action="store", dest="data_json", help="Reuse uploaded data from a json object")
 
     cmd_group = p_run.add_mutually_exclusive_group()
     cmd_group.add_argument("-a", "--assemblers", action="store", dest="assemblers", nargs='*', help="specify assemblers to use. None will invoke automatic mode")
@@ -132,7 +133,9 @@ def cmd_logout(args):
     sys.stderr.write('[.] Logged out\n')
 
 
-def cmd_upload(args, aclient, data, log=None):
+def cmd_upload(args, aclient, usage, log=None):
+    data = prepare_assembly_data(args, aclient, usage)
+
     arast_msg = {'assembly_data': data,
                  'client': CLIENT_NAME,
                  'version': CLIENT_VERSION}
@@ -143,11 +146,20 @@ def cmd_upload(args, aclient, data, log=None):
 
     response = aclient.submit_data(payload)
     arast_msg.update(json.loads(response))
-    if args.json: print payload
-    print 'Data ID: {}'.format(arast_msg['data_id'])
+    if args.json:
+        print payload
+    else:
+        print 'Data ID: {}'.format(arast_msg['data_id'])
 
 
-def cmd_run(args, aclient, data=None, log=None):
+def cmd_run(args, aclient, usage, log=None):
+    if args.data_id:
+        data = None
+    elif args.data_json:
+        data = client.load_json_from_file(args.data_json)
+    else:
+        data = prepare_assembly_data(args, aclient, usage)
+
     if args.assemblers:
         args.pipeline = [(" ".join(args.assemblers))]
     elif not args.pipeline:  # even if args.recipe or args.wasp is defined
@@ -164,8 +176,13 @@ def cmd_run(args, aclient, data=None, log=None):
             'data_id', 'queue', 'version', 'client']
     arast_msg = dict((k, options[k]) for k in keys if k in options)
 
-    # set attribute regardless to indicate a non-legacy input for consume.py 
-    arast_msg['assembly_data'] = data  
+    if data:
+        if 'file_sets' in data:        # 
+            arast_msg['assembly_data'] = data
+        elif 'assembly_data' in data:  # from: --json data.json
+            arast_msg['assembly_data'] = data['assembly_data']
+        else:
+            arast_msg['kbase_assembly_input'] = data
 
     payload = json.dumps(arast_msg, sort_keys=True)
     if log:
@@ -252,7 +269,6 @@ def cmd_avail(args, aclient):
 def prepare_assembly_data(args, aclient, usage):
     """Parses args and uploads files
     returns data spec for submission in run/upload commands"""
-
     if not (args.pair or args.single or args.pair_url or args.single_url):
         sys.exit(usage)
 
@@ -295,7 +311,7 @@ def prepare_assembly_data(args, aclient, usage):
                     sys.exit('Invalid input: {}: {}'.format(f_type, word))
             f_set = asmtypes.FileSet(f_type, f_infos, **f_set_args)
             adata.add_set(f_set)
-    
+
     return adata
                 
 
@@ -339,14 +355,10 @@ def run_command():
 
     aclient = client.Client(a_url, a_user, a_token)
 
-    adata = None
-    if args.command == 'upload' or args.command == 'run' and not args.data_id:
-        adata = prepare_assembly_data(args, aclient, usage)
-        
     if args.command == 'upload':
-        cmd_upload(args, aclient, adata, clientlog)
+        cmd_upload(args, aclient, usage, clientlog)
     elif args.command == 'run':
-        cmd_run(args, aclient, adata, clientlog)
+        cmd_run(args, aclient, usage, clientlog)
     elif args.command == 'stat':
         cmd_stat(args, aclient)
     elif args.command == 'get':

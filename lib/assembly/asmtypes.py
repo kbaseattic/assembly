@@ -40,10 +40,11 @@ class FileInfo(dict):
 class FileSet(dict):
     def __init__(self, set_type, file_infos, 
                  **kwargs):
-        dict.__init__(self, **kwargs)
+        dict.__init__(self)
         self.update({'type': set_type,
                      'file_infos': [],
                      'tags': []})
+        self.update(kwargs)
         self.id = uuid.uuid4()
         if type(file_infos) is list:
             for f in file_infos:
