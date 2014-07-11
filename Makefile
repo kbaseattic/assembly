@@ -6,7 +6,7 @@ SERVICE_NAME = assembly
 SERVICE_DIR = $(TARGET)/services/$(SERVICE)
 VAR_DIR = $(SERVICE_DIR)/var
 
-include $(TOP_DIR)/tools/Makefile.common
+# include $(TOP_DIR)/tools/Makefile.common
 
 # to wrap scripts and deploy them to $(TARGET)/bin using tools in
 # the dev_container. right now, these vars are defined in
@@ -22,7 +22,6 @@ SRC_PYTHON = $(wildcard client/*.py)
 
 SERVER_TESTS = $(wildcard server-tests/*.t)
 CLIENT_TESTS = $(wildcard client-tests/*.t)
-# SCRIPTS_TESTS = $(wildcard script-tests/*.t)
 SCRIPT_TESTS = $(wildcard test/*.t)
 
 
@@ -36,10 +35,15 @@ default:
 
 # Test
 
-test: test-sh test-scripts
+test: test-core
+
+# test: test-scripts
 
 # test: test-client test-scripts test-service
 # 	@echo "running client and script tests"
+
+test-core:
+	test/arast.t -d temp
 
 test-sh:
 	cd test && ./test_arast_client.sh
@@ -143,4 +147,4 @@ clean:
 	rm -f start_service stop_service
 	echo "OK ... Removed all deployed files."
 
-include $(TOP_DIR)/tools/Makefile.common.rules
+# include $(TOP_DIR)/tools/Makefile.common.rules

@@ -63,80 +63,13 @@ sub test_setup {
     sysrun("curl -s $se > se.fq");
 }
 
-sub test_simple_cases {
-    # This test takes 19 minutes to run on a server with 2+ queues
-    sysrun("ar-stat > stat.0");
-
-    sysrun("ar-upload --pair p1.fq p2.fq --reference ref.fa > data.1");
-    sysrun("cat data.1 | ar-run -m 'first: auto' > job.1");
-    sysrun('ar-stat --job $(cat job.1|sed "s/[^0-9]*//g") > stat.1');
-
-    sysrun("ar-upload --pair_url $pe1 $pe2 > data.2");
-    sysrun("cat data.2 | ar-run -r rast -m 'RAST recipe' > job.2");
-
-    sysrun("arast upload --pair p1.fq p2.fq --reference_url $ref > data.3");
-    sysrun("ar-run --pipeline tagdust idba --pair p1.fq p2.fq -m 'my test job' > job.3");
-    sysrun("ar-stat -n 50 --detail > stat.3");
-    sysrun("ar-stat --list-data > stat.data.3");
-    
-    sysrun("ar-upload -f se.fq -m 'my test data' > data.4");
-    sysrun("ar-run -a velvet --single_url $se | ar-get --wait --pick > contigs.4");
-    validate_contigs('contigs.4');
-
-    sysrun("ar-upload --single se.fq --cov 10 --gs 1000000 > data.5");
-    sysrun("cat data.5 | ar-run -r fast -m fast | ar-get -w -p 1 > contigs.5");
-    sysrun("ar-stat -l > stat.data.5");
-    sysrun("ar-filter -c 2.5 -l 500 < contigs.5 > filter.5"); validate_contigs('filter.5');
-
-    sysrun("ar-upload --pair p1.fq p2.fq insert=300 stdev=60 > data.6");
-    sysrun("cat data.6 | ar-run -p kiki -m 'k sweep' -p 'none tagdust' velvet ?hash_length=29-37:4 > job.6");
-    sysrun("ar-stat -d > stat.detail.6");
-    sysrun('ar-stat --job $(cat data.6|sed "s/[^0-9]*//g") > stat.data.json.6');
-
-    sysrun("cat job.3 | ar-get -w -a -o out.3");
-
-    sysrun("cat job.2 | ar-get -w -o out.2");
-    sysrun('cp out.2/$(cat job.2|sed "s/[^0-9]*//g")_analysis/report.html html.2');
-
-    sysrun('ar-run -a spades --data $(cat data.2|sed "s/[^0-9]*//g") -m "to be terminated" >job.7');
-    sysrun('ar-kill -j $(cat job.7|sed "s/[^0-9]*//g")');
-
-    sysrun("cat job.2 | ar-get -w -a 1");
-    sysrun("cat job.2 | ar-get -p > contigs.2"); validate_contigs('contigs.2');
-    sysrun("cat job.2 | ar-get -r > report.2"); validate_report('report.2'); 
-    sysrun("cat job.2 | ar-get -l > log.2"); validate_log('log.2', 1);
-
-    sysrun("cat job.1 | ar-get -w");
-    sysrun("cat job.1 | ar-get -p > contigs.1"); validate_contigs('contigs.1');
-    sysrun("cat job.1 | ar-get -r > report.1"); validate_report('report.1');
-    sysrun("cat job.1 | ar-get -l > log.1"); validate_log('log.1', 1);
-
-    sysrun("cat job.6 | ar-get -w -log > log.6"); validate_log('log.6');
-    sysrun("cat job.6 | ar-get -w -report > report.6"); validate_report('report.6');
-
-    sysrun('ar-stat -j $(cat job.7|sed "s/[^0-9]*//g") > stat.term.7');
-    like(`cat stat.term.7`, qr/Terminated/, 'job properly terminated'); $testCount++;
-
-    sysrun("ar-avail > modules");
-    sysrun("ar-avail -d > modules.detail");
-    sysrun("ar-avail --recipe > recipes");
-    sysrun("ar-avail --r --detail > recipes.detail");
-
-    validate_modules('modules');
-    validate_modules_detail('modules.detail');
-    validate_recipes('recipes');
-    validate_recipes_detail('recipes.detail');
-}
-
-sub test_json_input {
-    sysrun('ar-upload --pair p1.fq p2.fq --ws-json > data.11.ws.json');
-    sysrun('ar-run --data-json data.11.ws.json -a kiki > job.11');
-
-    sysrun('arast upload --pair p1.fq p2.fq --json > data.12.json');
-    sysrun('ar-run --data-json data.12.json -a kiki > job.12');
-
-    sysrun('cat job.11 | ar-get -w -p > contigs.11');
-    sysrun('cat job.12 | ar-get -w -p > contigs.12');
+sub test_rast_account {
+    sysrun("ar-login --rast");
+    sysrun("ar-run -p kiki -f se.fq -m 'rast account' > rast.job");
+    sysrun("ar-stat -j 1 > rast.stat");
+    sysrun('ar-get -j $(cat rast.job|sed "s/[^0-9]*//g") -w');
+    sysrun('cp $(cat rast.job|sed "s/[^0-9]*//g")_1.kiki_contigs.fa rast.contigs');
+    validate_contigs('rast.contigs');
 }
 
 sub test_log_out {
