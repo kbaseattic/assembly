@@ -325,11 +325,23 @@ trim_sort        preprocess                          DynamicTrim and LengthSort 
 velvet           assembler                           Velvet de-bruijn graph based assembler
 ```
 
-To see the details for each module, you can use the `--detail` option:
+To see the details for each module including customizable parameters,
+version and reference information, you can use the `--detail` option:
+
 ```inv
 ar-avail --detail
 ```
 ```out
+...
+[Module] trim_sort
+  Description: DynamicTrim and LengthSort from SolexaQA
+  Version: 1.0
+  Stages: preprocess
+  References: doi:10.1186/1471-2105-11-485
+  Customizable parameters: default (available values)
+                   length  =  25
+               probcutoff  =  0.05
+											
 [Module] velvet
   Description: Velvet de-bruijn graph based assembler
   Version: 1.0
