@@ -403,6 +403,27 @@ ar-stat --detail
 
 ### Recipes
 
+We have curated a set of pipelines that tend to work well for certain
+datasets. We can them 'recipes' which you can discover using the
+`--recipe` option in the ar-avail command:
+
+```inv
+ar-avail --recipe
+```
+```out
+[Recipe] auto
+  1. Runs BayesHammer on reads, Kmergenie to choose hash-length for Velvet
+  2. Assembles with Velvet, IDBA and SPAdes
+  3. Sorts assemblies by ALE score
+  4. Merges the two best assemblies with GAM-NGS
+
+[Recipe] fast
+  Runs Tagdust on reads, Kmergenie to choose hash-length for Velvet,
+  and assembles with both Velvet and SPAdes.
+  Results are sorted by N50 Score.
+
+...
+```
 
 ### PacBio support
 
@@ -417,18 +438,16 @@ This command will assemble the lambda phage genome in a few minutes
 from reads in the raw PacBio `h5` format.
 
 
-
 ## Real data examples
 
-Here's an example of an HTML file in the downloaded diretory for
-visually comparing multiple assemblies (currently supported by
-the `quast` module).
+Here we use the default recipe to assemble the Rhodobacter
+sphaeroides genome from Illumina HiSeq reads (SRA accession: SRR522244).
 
-![quast assembly comparison](http://www.mcs.anl.gov/~fangfang/arast/quast.png)
+As you can see from the visual evaluation below, our merged assembly
+has a significantly higher NGA50 value (aligned N50) than any
+individual assembly.
 
-
-### Buchnera
-
-### Ecoli or MTB
+![quast assembly comparison table](http://www.mcs.anl.gov/~fangfang/arast/quast1.png)
+![quast assembly comparison plot](http://www.mcs.anl.gov/~fangfang/arast/quast2.png)
 
 
