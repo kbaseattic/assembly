@@ -67,7 +67,7 @@ step-by-step way of using the assembly service.
 
 ## Getting Started
 
-The commands and options we describe in this tutorial are supported on
+The commands and options we describe in this Narrative are supported on
 the clients of version 0.5.1 or newer. To check your client version, type:
 
 ```inv
@@ -122,7 +122,7 @@ ar-upload --pair p1.fq p2.fq > ex2.data_id
 ```
 The upload will return a data ID from the server. The data ID allows
 you to invoke different assemblers or pipelines on the same data
-without resubmitting it. In the example above, we have used the
+without resubmitting it. In the example above, we used the
 `> ex2.data_id` redirection to save the data ID to a file. If you omit
 that part, an integer ID will be printed to the screen upon successful
 submission:
@@ -196,7 +196,7 @@ You can use the `ar-stat -j job_id` command to inspect the error
 message for a failed job.
 
 You may notice that of the two jobs we just launched, the second one
-may be the first to finish. That's because our default pipeline
+may finish first. That's because our default pipeline
 invokes multiple assemblers on your dataset with parameter tuning. It
 may even try to reconcile and merge the best individual assemblies.
 
@@ -294,7 +294,7 @@ ex5.dir/214_analysis/report.pdf
 
 ### Modules
 
-You can find out the list of assemblers and supporting modules
+You can find the list of assemblers and supporting modules
 available in the assembly service by typing:
 
 ```inv
@@ -357,14 +357,14 @@ ar-avail --detail
 
 You can mix and match different preprocessing modules and assemblers
 to form multiple pipelines in one submission. For example, the
-following command will launch 4 pipelines and compare the resulting
+following command will launch four pipelines and compare the resulting
 assemblies.
 
 ```inv
 ar-run --pair pe1.fq pe2.fq -p 'none tagdust' 'velvet kiki'
 ```
 
-The cartesian expansion of the pipeline expression generates 4 pipelines:
+The cartesian expansion of the pipeline expression generates four pipelines:
 ```
 velvet
 kiki
@@ -377,13 +377,13 @@ tagdust kiki
 Some of the modules support customizable parameters. You can use them
 to launch powerful pipelines such as parameter sweep. For example, you
 can use the `-p velvet ?hash_length=29-37:4` option in the `ar-run`
-command to launch 3 velvet jobs with different hash lengths (29, 33,
+command to launch three velvet jobs with different hash lengths (29, 33,
 37). Here, for numerical parameters, the general syntax is:
 ```
 module ?parameter=beg-end:step_size
 ```
 
-To list the pipeline and parameter detail for the jobs you have
+To list the pipeline and parameter details for the jobs you have
 launched, type:
 
 ```inv
@@ -404,7 +404,7 @@ ar-stat --detail
 ### Recipes
 
 We have curated a set of pipelines that tend to work well for certain
-datasets. We can them 'recipes' which you can discover using the
+datasets. We call them 'recipes' which you can discover using the
 `--recipe` option in the ar-avail command:
 
 ```inv
