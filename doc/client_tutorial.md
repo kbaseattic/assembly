@@ -41,7 +41,7 @@ This command will block until the assembly is done. The resulting set
 of contigs will be saved to a FASTA file local to the client. The
 choice of output name is arbitrary; we use `ex1.contigs.fasta` to
 denote it's the contigs from our first exercise. You can use the Unix
-`cat` command to inspect the content of the contig file.
+`cat` utility to inspect the content of the contig file.
 
 ```inv
 cat ex1.contigs.fasta
@@ -59,7 +59,7 @@ TATTACTCCTAACAGCGCTATCAAGCTAAAGTCCTTCAAGTTAGGAAAAGATCCTTCCCA
 ...
 ```
 
-The one-liner command uses two operators on Unix-like systems: the
+The one-liner command above uses two operators on Unix-like systems: the
 pipe operator `|` for chaining commands, and the redirection operator
 `>` to save output normally directed to the screen to a designated
 file. They are used here for convenience and are not necessary in the
