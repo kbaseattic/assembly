@@ -40,6 +40,7 @@ Optional arguments:
   -m MESSAGE, --message MESSAGE
                         Attach a description to job
   --data DATA_ID        Reuse uploaded data
+  --data-json JSON      Reuse uploaded data from a json file
   --reference [REFERENCE [REFERENCE ...]]
                         specify sequence file(s)
   --reference_url [REFERENCE_URL [REFERENCE_URL ...]]
