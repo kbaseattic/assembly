@@ -383,6 +383,9 @@ command to launch 3 velvet jobs with different hash lengths (29, 33,
 module ?parameter=beg-end:step_size
 ```
 
+To list the pipeline and parameter detail for the jobs you have
+launched, type:
+
 ```inv
 ar-stat --detail
 ```
