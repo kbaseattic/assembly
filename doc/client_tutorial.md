@@ -115,18 +115,21 @@ curl http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq > p2.fq
 
 You can of course skip the above step and submit your own
 files. Here's an example of the upload command, assuming you already
-have to local sequence files named `p1.fq` and `p2.fq`:
+have two local sequence files named `p1.fq` and `p2.fq`:
 
 ```inv
 ar-upload --pair p1.fq p2.fq > ex2.data_id
 ```
-
 The upload will return a data ID from the server. The data ID allows
 you to invoke different assemblers or pipelines on the same data
 without resubmitting it. In the example above, we have used the
 `> ex2.data_id` pipe function to save the data ID to a file. If you omit
 that part, an integer ID will be printed to the screen upon successful
-submission.
+submission:
+```
+Data ID: 155
+```
+
 
 ### Launching an assembly job
 
