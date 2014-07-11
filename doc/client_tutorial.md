@@ -3,20 +3,21 @@
 ## Introduction 
 
 The Assembly Service is a web-based environment that allows users to
-submit sequence datasets to be processed, assembled, and analyzed. 
-This tutorial will introduce you to the current capabilities of the
-service as well as give some command-line recipes. You will learn how
-to upload a set of read files, assemble them, inspect the results, and
-get the best assembly for your downstream analysis. 
+submit datasets of sequence reads to be processed, assembled, and
+analyzed.  This tutorial will introduce you to the current
+capabilities of the service as well as giving some command-line
+recipes. You will learn how to upload a set of read files, assemble
+them, inspect the results, and select the best assembly for your
+downstream analysis.
 
 We believe the default pipeline performs well. However, we encourage
 you to experiment with alternative assemblers, preprocessing tools,
 and parameter settings. Our service currently supports over 20
 assemblers and tools, and its modular design allows for
 straightforward extension as sequencing technologies and analysis
-tools evolve. We have also built a powerful pipeline engine that
-allows you to mix and match approaches and evaluate a variety of
-customized pipelines on your datasets.
+tools evolve. We have also built a pipeline engine that allows you to
+mix and match approaches and evaluate a variety of customized
+pipelines on your datasets.
 
 We will start with a very simple example. Then, we will step through
 the commands and options. Since a thorough assembly on a microbial
@@ -28,9 +29,9 @@ supports assembly of low-complexity metagenomes.
 
 ## A Simple Example
 
-The following command will instruct the server to download a file of
-single-end reads specified by the URL and assemble them using the
-velvet assembler. This should take just a couple minutes. 
+The following command will instruct the server to assemble a file of
+single-end reads specified by the URL using the velvet assembler. This
+should take just a couple minutes.
 
 ```inv
 ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait --pick > ex1.contigs.fasta
@@ -58,11 +59,11 @@ TATTACTCCTAACAGCGCTATCAAGCTAAAGTCCTTCAAGTTAGGAAAAGATCCTTCCCA
 ...
 ```
 
-This command uses two operators on Unix-like systems: the pipe
-operator `|` for chaining commands, and the redirection operator `>`
-to save output normally directed to the screen to a designated
+The one-liner command uses two operators on Unix-like systems: the
+pipe operator `|` for chaining commands, and the redirection operator
+`>` to save output normally directed to the screen to a designated
 file. They are used here for convenience and are not necessary in the
-step-by-step way of using the assembly service. 
+step-by-step way of using the assembly service.
 
 
 ## Getting Started
@@ -151,7 +152,7 @@ As we have shown in our first exercise, you can also bypass the
 `ar-upload` step and launch a job directly. Here is an example.
 
 ```inv
-ar-upload --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test job"
+ar-run --pair p1.fq p2.fq -p tagdust idba -m "my test job"
 ```
 
 This command should return as soon as the data is uploaded. Note that we
@@ -161,8 +162,49 @@ the `idba` assembler using the `-p` pipeline option. You can use the
 those and the pipeline support in the Advanced Features section.
 
 Both the `ar-run` and `ar-upload` commands allow you to specify a
-reference genome with the `--reference genome.fasta` option. It will
+reference genome with the `--reference genome.fasta` option. It can
 be used to score the assemblies in the evaluation step. 
+
+
+### Assemblers, Pipelines, and Recipes
+
+There are three main options for defining an assembly job on your
+dataset:
+
+1. `-a assembler`: invokes an individual assembler on raw reads.
+2. `-p module1 module2 ... assembler`: runs a pipeline of preprocessing and assembler modules
+3. `-r recipe`: uses a predefined pipeline which we call "recipe"
+
+You can combine `-a` and `-p` options but not the `-r` option. Here
+are some examples:
+```
+-a velvet -a a6
+-p bhammer spades -a ray -p kiki sspace
+-r fast
+```
+
+We have curated a set of recipes that tend to work well for certain
+datasets. You can list them using the `--recipe` option in the
+ar-avail command:
+
+```inv
+ar-avail --recipe
+```
+```out
+[Recipe] auto
+  1. Runs BayesHammer on reads, Kmergenie to choose hash-length for Velvet
+  2. Assembles with Velvet, IDBA and SPAdes
+  3. Sorts assemblies by ALE score
+  4. Merges the two best assemblies with GAM-NGS
+
+[Recipe] fast
+  Runs Tagdust on reads, Kmergenie to choose hash-length for Velvet,
+  and assembles with both Velvet and SPAdes.
+  Results are sorted by N50 Score.
+
+...
+```
+
 
 ### Job management
 
@@ -263,11 +305,11 @@ NG50                            1314            1397             723           -
 ```
 
 You can pick an assembly using numeric or string IDs (e.g., `ar-get
---pick 1` is equivalent to `ar-get --pick spades_contigs` in the
-example above). By default, the `--pick` option will get you the best
-assembly based on a set of common metrics.  We are actively working on
-improving the scoring functions for reference-based and reference-free
-assemblies.
+--pick 1`, where 1 stands for the first assembly column, is equivalent
+to `ar-get --pick spades_contigs` in the example above). By default,
+the `--pick` option will select the best assembly based on a set of
+common metrics.  We are actively working on improving the scoring
+functions for reference-based and reference-free assemblies.
 
 ```inv
 cat ex3.job_id | ar-get --wait --pick > ex4.contigs.fasta
@@ -384,7 +426,7 @@ tagdust kiki
 ### Parameters
 
 Some of the modules support customizable parameters. You can use them
-to launch powerful pipelines such as parameter sweep. For example, you
+to launch parameter sweep pipelines. For example, you
 can use the `-p velvet ?hash_length=29-37:4` option in the `ar-run`
 command to launch three velvet jobs with different hash lengths (29, 33,
 37). Here, for numerical parameters, the general syntax is:
@@ -410,30 +452,6 @@ ar-stat --detail
 ```
 
 
-### Recipes
-
-We have curated a set of pipelines that tend to work well for certain
-datasets. We call them 'recipes' which you can discover using the
-`--recipe` option in the ar-avail command:
-
-```inv
-ar-avail --recipe
-```
-```out
-[Recipe] auto
-  1. Runs BayesHammer on reads, Kmergenie to choose hash-length for Velvet
-  2. Assembles with Velvet, IDBA and SPAdes
-  3. Sorts assemblies by ALE score
-  4. Merges the two best assemblies with GAM-NGS
-
-[Recipe] fast
-  Runs Tagdust on reads, Kmergenie to choose hash-length for Velvet,
-  and assembles with both Velvet and SPAdes.
-  Results are sorted by N50 Score.
-
-...
-```
-
 ### PacBio support
 
 The assembly service supports an experimental version of the HGAP
@@ -444,7 +462,7 @@ ar-run --single_url http://www.mcs.anl.gov/~fangfang/arast/m120404.bas.h5 -a pac
 ```
 
 This command will assemble the lambda phage genome in a few minutes
-from reads in the raw PacBio `h5` format.
+from reads in the raw PacBio H5 format.
 
 
 ## Real data examples
@@ -452,12 +470,20 @@ from reads in the raw PacBio `h5` format.
 Here we use the default recipe to assemble the Rhodobacter
 sphaeroides genome from Illumina HiSeq reads (SRA accession: SRR522244).
 
-As you can see from the visual evaluation below, our merged assembly
-has a significantly higher NGA50 value (aligned N50) than any
-individual assembly.
+As you can see from the visual evaluation below (generated using the
+QUAST quality assessment tool), our merged assembly has a
+significantly higher NGA50 value than any individual assembly. The
+NGA50 value is the aligned N50 size when the reference genome (ground
+truth) is provided. 
 
 ![quast assembly comparison table](http://www.mcs.anl.gov/~fangfang/arast/quast1.png)
 
+When you open the report HTML file included the analysis directory,
+you can inspect the rankings of assembly pipelines in terms of
+cumulative contig lengths by hovering the mouse over your selected set
+of the top contigs.
+
 ![quast assembly comparison plot](http://www.mcs.anl.gov/~fangfang/arast/quast2.png)
+
 
 
