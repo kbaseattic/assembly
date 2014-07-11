@@ -123,7 +123,7 @@ ar-upload --pair p1.fq p2.fq > ex2.data_id
 The upload will return a data ID from the server. The data ID allows
 you to invoke different assemblers or pipelines on the same data
 without resubmitting it. In the example above, we have used the
-`> ex2.data_id` pipe function to save the data ID to a file. If you omit
+`> ex2.data_id` redirection to save the data ID to a file. If you omit
 that part, an integer ID will be printed to the screen upon successful
 submission:
 ```
@@ -141,17 +141,17 @@ cat ex2.data_id | ar-run > ex3.job_id
 ```
 
 If you don't have the data ID saved in a file, you can instead type
-something such as `ar-run --data 23`.
+something such as `ar-run --data 115`.
 
 Note that the assembly job is asynchrnous. The `ar-run` command should
-return immediately with a job ID with which you can query the job
-status.
+return immediately with a job ID (e.g., `Job ID: 223`) with which you
+can query the job status.
 
-As we have shown in our very first example, you can also bypass the
+As we have shown in our first exercise, you can also bypass the
 `ar-upload` step and launch a job directly. Here is an example.
 
 ```inv
-ar-run --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test job"
+ar-upload --pair p1.fq p2.fq | ar-run -p tagdust idba -m "my test job"
 ```
 
 This command should return as soon as the data is uploaded. Note that we
@@ -183,7 +183,7 @@ ar-stat
 |  137   |    64   |       Complete       | 0:02:26  |       None       |
 |  138   |    65   | Stage 2/9: kmergenie | 0:00:59  | default pipeline |
 |  139   |    66   |  Stage 3/5: velvet   | 0:00:59  | parameter sweep  |
-|  140   |    68   |   Stage 2/3: idba    | 0:00:59  |       None       |
+|  140   |    68   |   Stage 2/3: idba    | 0:00:59  |   my test job    |
 |  141   |    70   |       Complete       | 0:00:21  |   RAST recipe    |
 |  142   |    71   | Stage 2/5: kmergenie | 0:00:30  |   kmer tuning    |
 +--------+---------+----------------------+----------+------------------+
@@ -191,7 +191,7 @@ ar-stat
 
 When a job is in progress, its stage information is updated in the
 Status field; otherwise, it can end in one of the following states:
-"Complete", "Complete with error", "Terminated", and "FAIL[description]".
+"Complete", "Complete with error", "Terminated", and "FAIL [description]".
 You can use the `ar-stat -j job_id` command to inspect the error
 message for a failed job.
 
@@ -206,6 +206,26 @@ necessarily have computed on. For that, you can type:
 
 ```inv
 ar-stat -l
+```
+```out
++---------+--------------+---------------+-------------------------------+
+| Data ID | Description  |      Type     |             Files             |
++---------+--------------+---------------+-------------------------------+
+|   151   |     None     |               |                               |
+|         |              |     paired    | p1.fq (39.8MB) p2.fq (39.8MB) |
+|   152   |     None     |               |                               |
+|         |              |   reference   |             ref.fa            |
+|         |              |     paired    |          p2.fq p1.fq          |
+|   153   |     None     |               |                               |
+|         |              |   paired_url  |       b99_1.fq b99_2.fq       |
+|   154   |     None     |               |                               |
+|         |              |     paired    | p1.fq (39.8MB) p2.fq (39.8MB) |
+|         |              | reference_url |           b99.ref.fa          |
+|   155   | my test data |               |                               |
+|         |              |     single    |             se.fq             |
+|   156   |     None     |               |                               |
+|         |              |   single_url  |            se.fastq           |
++---------+--------------+---------------+-------------------------------+
 ```
 
 ### Getting assembly results
