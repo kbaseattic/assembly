@@ -238,17 +238,34 @@ and a visual comparison of all the assemblies.
 Use `ar-get -j job_id --report` to show the text assembly report. You
 can add the `--wait` option to make sure the command waits for the job
 to complete. In the following example, we specify the job ID from a
-file we have saved.
+file we have previously saved.
 
 ```inv
 cat ex3.job_id | ar-get --report --wait
 ```
+```out
+QUAST: All statistics are based on contigs of size >= 500 bp, unless otherwise noted (e.g., "# contigs (>= 0 bp)" and "Total length (>= 0 bp)" include all contigs).
 
-You can pick an assembly using numeric or string IDs (e.g.,
-`ar-get --pick 2`, `ar-get --pick spades_contigs`). By default,
-we will get you the best assembly based on a set of common metrics.
-We are still working on the scoring functions for reference-based
-and reference-free assemblies.
+Assembly                        spades_contigs  gam_ngs_contigs  idba_contigs  velvet_contigs
+# contigs (>= 0 bp)             3629            3543             3562          32840
+# contigs (>= 1000 bp)          977             967              735           397
+Total length (>= 0 bp)          3085770         3086007          2549247       3234730
+Total length (>= 1000 bp)       1889425         1938839          1206779       665559
+# contigs                       1947            1879             1780          902
+Largest contig                  11126           11126            7592          8135
+Total length                    2571219         2578689          1929576       1025928
+Reference length                3084257         3084257          3084257       3084257
+GC (%)                          56.51           56.51            55.99         55.20
+Reference GC (%)                56.89           56.89            56.89         56.89
+N50                             1585            1664             1212          1265
+NG50                            1314            1397             723           -
+```
+
+You can pick an assembly using numeric or string IDs (e.g., `ar-get
+--pick 1` is equivalent to `ar-get --pick spades_contigs` in the
+example above). By default, we will get you the best assembly based on
+a set of common metrics.  We are actively working on improving the
+scoring functions for reference-based and reference-free assemblies.
 
 ```inv
 cat ex3.job_id | ar-get --wait > ex4.contigs.fasta
