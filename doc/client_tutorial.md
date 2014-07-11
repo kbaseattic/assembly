@@ -33,7 +33,7 @@ single-end reads specified by the URL and assemble them using the
 velvet assembler. This should take just a couple minutes. 
 
 ```inv
-ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait -p > ex1.contigs.fasta
+ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait --pick > ex1.contigs.fasta
 ```
 
 This command will block until the assembly is done. The resulting set
@@ -259,16 +259,18 @@ GC (%)                          56.51           56.51            55.99         5
 Reference GC (%)                56.89           56.89            56.89         56.89
 N50                             1585            1664             1212          1265
 NG50                            1314            1397             723           -
+...
 ```
 
 You can pick an assembly using numeric or string IDs (e.g., `ar-get
 --pick 1` is equivalent to `ar-get --pick spades_contigs` in the
-example above). By default, we will get you the best assembly based on
-a set of common metrics.  We are actively working on improving the
-scoring functions for reference-based and reference-free assemblies.
+example above). By default, the `--pick` option will get you the best
+assembly based on a set of common metrics.  We are actively working on
+improving the scoring functions for reference-based and reference-free
+assemblies.
 
 ```inv
-cat ex3.job_id | ar-get --wait > ex4.contigs.fasta
+cat ex3.job_id | ar-get --wait --pick > ex4.contigs.fasta
 ```
 
 To download the whole assembly directory on the server, type:
@@ -277,24 +279,80 @@ To download the whole assembly directory on the server, type:
 cat ex3.job_id | ar-get -o ex5.dir
 ```
 
-Here's an example of an HTML file in the downloaded diretory for
-visually comparing multiple assemblies (currently supported by
-the `quast` module).
-
-![quast assembly comparison](http://www.mcs.anl.gov/~fangfang/arast/quast.png)
-
+The directory `ex5.dir` will contain the report file, contig files,
+and visualized analysis output:
+```
+ex5.dir/214_report.txt
+ex5.dir/214_1.spades_contigs.fasta
+ex5.dir/214_2.velvet_contigs.fa
+ex5.dir/214_analysis/report.html
+ex5.dir/214_analysis/report.pdf
+...
+```
 
 ## Advanced Features
 
-### More options
-
-PacBio assembly
-URL support
-
 ### Modules
 
-multiple preprocessing modules
-usually one assembler
+You can find out the list of assemblers and supporting modules
+available in the assembly service by typing:
+
+```inv
+ar-avail
+```
+```out
+Module           Stages                              Description
+----------------------------------------------------------------
+a5               preprocess,assembler,post-process   A5 microbial assembly pipeline
+a6               preprocess,assembler,post-process   Modified A5 microbial assembly pipeline
+bhammer          preprocess                          SPAdes component for quality control of sequence data
+bowtie2          post-process                        Bowtie2 aligner that maps reads to contigs
+bwa              post-process                        BWA aligner that maps reads to contigs
+fastqc           preprocess                          FastQC quality control tool for sequence data
+filter_by_length preprocess                          Length-based sequencing reads filter and trimmer based on seqtk
+idba             assembler                           IDBA iterative graph-based assembler for single-cell and standard data
+kiki             assembler                           Kiki overlap-based parallel microbial and metagenomic assembler
+quast            post-process                        QUAST assembly quality assessment tool (run by default)
+ray              assembler                           Ray graph-based parallel microbial and metagenomic assembler
+reapr            post-process                        REAPR assembly error recognizer using paired-end reads
+sga_ec           preprocess                          SGA component for error correction (runs subcommands: 'index' & 'correct')
+sga_preprocess   preprocess                          SGA component for preprocessing reads (runs subcommand 'preprocess')
+spades           preprocess,assembler                SPAdes single-cell and standard assembler based on paired de Bruijn graphs
+sspace           post-process                        SSPACE pre-assembled contig scaffolder
+swap             assembler                           SWAP Assembler
+tagdust          preprocess                          TagDust sequencing artifacts remover
+trim_sort        preprocess                          DynamicTrim and LengthSort from SolexaQA
+velvet           assembler                           Velvet de-bruijn graph based assembler
+```
+
+To see the details for each module, you can use the `--detail` option:
+```inv
+ar-avail --detail
+```
+```out
+[Module] velvet
+  Description: Velvet de-bruijn graph based assembler
+  Version: 1.0
+  Base Version: 1.2.10
+  Stages: assembler
+  References: doi:10.1101/gr.074492.107
+  Customizable parameters: default (available values)
+              auto_insert  =  False
+              hash_length  =  29
+```
+
+### PacBio support
+
+The assembly service supports an experimental version of the HGAP
+pipeline for assembling PacBio reads. Here's an example:
+
+```inv
+ar-run --single_url http://www.mcs.anl.gov/~fangfang/arast/m120404.bas.h5 -a pacbio ?min_long_read_length=3500 ?genome_size=40000
+```
+
+This command will assemble the lambda phage genome in a few minutes
+from reads in the raw PacBio `h5` format.
+
 
 ### Parameters
 
@@ -303,6 +361,13 @@ usually one assembler
 ### Recipes
 
 ## Real data examples
+
+Here's an example of an HTML file in the downloaded diretory for
+visually comparing multiple assemblies (currently supported by
+the `quast` module).
+
+![quast assembly comparison](http://www.mcs.anl.gov/~fangfang/arast/quast.png)
+
 
 ### Buchnera
 
