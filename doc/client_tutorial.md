@@ -176,7 +176,7 @@ dataset:
 3. `-r recipe`: uses a predefined pipeline which we call a "recipe"
 
 You can combine `-a` and `-p` options but not the `-r` option. Here
-are some examples:
+are some valid option examples:
 ```
 -a velvet -a a6
 -p bhammer spades -a ray -p kiki sspace
