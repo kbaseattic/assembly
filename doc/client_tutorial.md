@@ -353,6 +353,43 @@ ar-avail --detail
               hash_length  =  29
 ```
 
+### Pipelines
+
+You can mix and match different preprocessing modules and assemblers
+to form multiple pipelines in one submission. For example, the
+following command will launch 4 pipelines and compare the resulting
+assemblies.
+
+```inv
+ar-run --pair pe1.fq pe2.fq -p 'none tagdust' 'velvet kiki'
+```
+
+The cartesian expansion of the pipelines are:
+```
+velvet
+kiki
+tagdust velvet
+tagdust kiki
+```
+
+### Parameters
+
+You can use 
+
++--------+---------+----------------------+----------+------------------+-------------------------------------------------------+
+| Job ID | Data ID |        Status        | Run time |   Description    | Parameters                                            |
++--------+---------+----------------------+----------+------------------+-------------------------------------------------------+
+|  218   |   143   |       Complete       | 0:02:26  |    kmer sweep    | -p kiki -p 'none tagdust' velvet ?hash_length=29-37:4 |
+|  224   |   152   |       Complete       | 0:18:24  |   first: auto    | -p auto                                               |
+|  225   |   153   |       Complete       | 0:11:37  |   RAST recipe    | -r rast                                               |
+|  227   |   157   |       Complete       | 0:00:21  |       None       | -p velvet                                             |
++--------+---------+----------------------+----------+------------------+-------------------------------------------------------+
+
+
+
+### Recipes
+
+
 ### PacBio support
 
 The assembly service supports an experimental version of the HGAP
@@ -366,11 +403,6 @@ This command will assemble the lambda phage genome in a few minutes
 from reads in the raw PacBio `h5` format.
 
 
-### Parameters
-
-### Pipelines
-
-### Recipes
 
 ## Real data examples
 
