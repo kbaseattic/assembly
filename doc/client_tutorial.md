@@ -448,6 +448,7 @@ has a significantly higher NGA50 value (aligned N50) than any
 individual assembly.
 
 ![quast assembly comparison table](http://www.mcs.anl.gov/~fangfang/arast/quast1.png)
+
 ![quast assembly comparison plot](http://www.mcs.anl.gov/~fangfang/arast/quast2.png)
 
 
