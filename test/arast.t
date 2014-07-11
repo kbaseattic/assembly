@@ -112,7 +112,7 @@ sub test_simple_cases {
     sysrun("cat job.1 | ar-get -l > log.1"); validate_log('log.1', 1);
 
     sysrun("cat job.6 | ar-get -w -log > log.6"); validate_log('log.6');
-    sysrun("cat job.6 | ar-get -w -report > report.6"); validate_report('report.6');
+    sysrun("cat job.6 | ar-get -w --report > report.6"); validate_report('report.6');
 
     sysrun('ar-stat -j $(cat job.7|sed "s/[^0-9]*//g") > stat.term.7');
     like(`cat stat.term.7`, qr/Terminated/, 'job properly terminated'); $testCount++;
@@ -151,7 +151,7 @@ sub validate_contigs {
 
 sub validate_report {
     my ($file) = @_;
-    my $out = sysout("head -n 12 $file");
+    my $out = sysout("head -n 20 $file");
     ok($out =~ /QUAST.*statistics.*N50/sg, "$file is valid assembly report"); $testCount++;
 }
 
