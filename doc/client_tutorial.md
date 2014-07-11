@@ -4,7 +4,7 @@
 
 The Assembly Service is a web-based environment that allows users to
 submit sequence datasets to be processed, assembled, and analyzed. 
-This tutorial will introduce you to the current capabilities of the
+This Narrative will introduce you to the current capabilities of the
 service as well as give some command-line recipes. You will learn how
 to upload a set of read files, assemble them, inspect the results, and
 get the best assembly for your downstream analysis. 
@@ -20,7 +20,7 @@ customized pipelines on your datasets.
 
 We will start with a very simple example. Then, we will step through
 the commands and options. Since a thorough assembly on a microbial
-genome can take hours, we will be using a partial dataset in the early
+genome can take hours, we will use a partial dataset in the early
 examples for quick turnaround. In the final set of examples, we will
 work with some real data. This tutorial will focus on microbial
 assembly, although some of the modules included in the service
