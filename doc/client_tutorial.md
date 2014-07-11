@@ -273,6 +273,15 @@ assemblies.
 cat ex3.job_id | ar-get --wait --pick > ex4.contigs.fasta
 ```
 
+You can also use the `ar-filter` command to keep only the contigs
+satisfying certain length and coverage requirements. For example, if
+you are only interested in using contigs longer than 500 bp and with
+read coverage above 2.0 for your downstream analysis, you can type:
+
+```inv
+cat ex3.job_id | ar-get --wait --pick | ar-filter -l 500 -c 2.0 > ex4.filtered.contigs.fa
+```
+
 To download the whole assembly directory on the server, type:
 
 ```inv
