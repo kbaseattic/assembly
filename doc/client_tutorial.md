@@ -166,7 +166,7 @@ reference genome with the `--reference genome.fasta` option. It can
 be used to score the assemblies in the evaluation step. 
 
 
-### Assemblers, Pipelines, and Recipes
+### Assemblers, pipelines, and recipes
 
 There are three main options for defining an assembly job on your
 dataset:
