@@ -4,7 +4,7 @@
 
 The Assembly Service is a web-based environment that allows users to
 submit sequence datasets to be processed, assembled, and analyzed. 
-This Narrative will introduce you to the current capabilities of the
+This tutorial will introduce you to the current capabilities of the
 service as well as give some command-line recipes. You will learn how
 to upload a set of read files, assemble them, inspect the results, and
 get the best assembly for your downstream analysis. 
@@ -67,7 +67,7 @@ step-by-step way of using the assembly service.
 
 ## Getting Started
 
-The commands and options we describe in this Narrative are supported on
+The commands and options we describe in this tutorial are supported on
 the clients of version 0.5.1 or newer. To check your client version, type:
 
 ```inv

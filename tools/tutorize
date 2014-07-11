@@ -31,6 +31,7 @@ print encode_json($obj);
 sub markdown_to_narrative_cells {
     my ($markdown) = @_;
     my @lines = map { chomp; $_ } `cat $markdown`;
+    @lines = map { s/\btutorial\b/Narrative/gi; $_ } @lines;
     my @cells;
 
     my $prompt = 2;
@@ -75,9 +76,19 @@ sub markdown_block {
       source    => $source };
 }    
 
+sub raw_text_block {
+    my ($block) = @_;
+    my $source = join("\n", @$block);
+    { cell_type => 'raw',
+      metadata  => {},
+      source    => $source };
+}    
+
 sub code_block {
     my ($block1, $block2, $lang, $prompt) = @_;
     
+    return raw_text_block($block1) if !$lang;
+
     my $input;
     my @outputs;
 
@@ -85,7 +96,7 @@ sub code_block {
     $input = join(" ", '%inv_run', $input) if $lang eq 'inv';
     $input = join("\n", '%%bash',  $input) if $lang eq 'bash';
 
-    my $out_text = join('\n', @$block2);
+    my $out_text = join("\n", @$block2);
     my $output = { output_type => 'stream',
                    stream      => 'stdout',
                    text        => $out_text } if $out_text;
