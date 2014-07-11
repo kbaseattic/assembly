@@ -36,23 +36,44 @@ velvet assembler. This should take just a couple minutes.
 ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait -p > ex1.contigs.fasta
 ```
 
-This command will block until the asesmbly is done. The resulting
-set of contigs will be saved to a FASTA file local to the client.
+This command will block until the assembly is done. The resulting set
+of contigs will be saved to a FASTA file local to the client. The
+choice of output name is arbitrary; we use `ex1.contigs.fasta` to
+denote it's the contigs from our first exercise.
 
 ```inv
 ls -l ex1.contigs.fasta
 ```
+```out
+>NODE_1_length_56_cov_204.767853
+TACTAAAATTATAATTTTCCTGATTTTTGTAGAGGAGTATGGGAAAGTTCTGTGTATTTT
+ATGCTTTTATCCGTATTTAGGAGT
+>NODE_2_length_81_cov_258.320984
+TTTTATGCTTTTATCCGTATTTAGGAGTTAGAGGCTAGAGATGATGGAGTAAATTGTAAA
+ATCAGGCTAGTGAAGGATCTGAATATCCATTTCTATTTACCTGAAATAT
+>NODE_3_length_1762_cov_171.553909
+AATCAACGAAGCAGGAGCATACTGGTAAGCGACAGTTAAAAGGAAGTATGCAATATTTAT
+TATTACTCCTAACAGCGCTATCAAGCTAAAGTCCTTCAAGTTAGGAAAAGATCCTTCCCA
+...
+```
+
+This command uses two operators on Unix-like systems: the pipe
+operator `|` for chaining commands, and the redirection operator `>`
+to save output normally directed to the screen to a designated
+file. They are used here for convenience and are not necessary in the
+step-by-step way of using the assembly service. 
+
 
 ## Getting Started
 
 The commands and options we describe in this tutorial are supported on
-the clients of version 0.3.9.7 or newer. To check your client version, type:
+the clients of version 0.5.1 or newer. To check your client version, type:
 
 ```inv
 ar-stat --version
 ```
 ```out
-AssemblyRAST Client 0.3.9.7
+AssemblyRAST Client 0.5.3
 ```
 
 Here is the list of client commands. You can use the "-h" option to
