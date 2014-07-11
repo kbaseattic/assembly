@@ -173,7 +173,7 @@ dataset:
 
 1. `-a assembler`: invokes an individual assembler on raw reads.
 2. `-p module1 module2 ... assembler`: runs a pipeline of preprocessing and assembler modules
-3. `-r recipe`: uses a predefined pipeline which we call "recipe"
+3. `-r recipe`: uses a predefined pipeline which we call a "recipe"
 
 You can combine `-a` and `-p` options but not the `-r` option. Here
 are some examples:
