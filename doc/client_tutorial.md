@@ -39,10 +39,11 @@ ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | 
 This command will block until the assembly is done. The resulting set
 of contigs will be saved to a FASTA file local to the client. The
 choice of output name is arbitrary; we use `ex1.contigs.fasta` to
-denote it's the contigs from our first exercise.
+denote it's the contigs from our first exercise. You can use the Unix
+`cat` command to inspect the content of the contig file.
 
 ```inv
-ls -l ex1.contigs.fasta
+cat ex1.contigs.fasta
 ```
 ```out
 >NODE_1_length_56_cov_204.767853
