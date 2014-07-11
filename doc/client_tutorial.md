@@ -114,7 +114,8 @@ curl http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq > p2.fq
 ```
 
 You can of course skip the above step and submit your own
-files. Here's an example of the upload command:
+files. Here's an example of the upload command, assuming you already
+have to local sequence files named `p1.fq` and `p2.fq`:
 
 ```inv
 ar-upload --pair p1.fq p2.fq > ex2.data_id
