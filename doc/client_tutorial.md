@@ -306,7 +306,7 @@ NG50                            1314            1397             723           -
 
 You can pick an assembly using numeric or string IDs (e.g., `ar-get
 --pick 1`, where 1 stands for the first assembly column, is equivalent
-to `ar-get --pick spades_contigs` in the example above). By default,
+to `ar-get --pick spades` in the example above). By default,
 the `--pick` option will select the best assembly based on a set of
 common metrics.  We are actively working on improving the scoring
 functions for reference-based and reference-free assemblies.
