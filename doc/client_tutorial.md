@@ -341,6 +341,14 @@ ex5.dir/214_analysis/report.pdf
 ...
 ```
 
+Assembly pipelines can fail for a variety reasons. Some modules do not
+support long reads or multiple libraries; others are simply not
+robust. When an assembly job includes multiple pipelines, it will try
+to skip the failed ones and only include the successful assemblies in
+the final report. You can inspect the full pipeline logs with the
+`ar-get --log` option.
+
+
 ## Advanced Features
 
 ### Modules
