@@ -127,6 +127,8 @@ sub install_basic {
     run("apt-get -y install " . join(" ", @apt));
     run("pip install "        . join(" ", @pip));
 
+    run("cpan File::Spec::Link");
+
     install_cmake3();
 }
 
