@@ -463,7 +463,7 @@ sub download {
     if ($file =~ /\.zip$/) {
         run("unzip -o $file");
     } elsif ($file =~ /(\.tar\.gz|\.tgz|\.tar\.bz2)$/) {
-        run("tar -no-same-owner -x -f $file");
+        run("tar --no-same-owner -x -f $file");
     } elsif ($file =~ /\.gz$/) {
         run("gunzip $file");
     }
