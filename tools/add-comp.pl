@@ -230,7 +230,7 @@ sub install_kmergenie {
     my $dir = 'kmergenie-1.6663';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://kmergenie.bx.psu.edu');
-    run("cd $dir; make -j");
+    run("cd $dir; make");
     run("cp -r -T $dir $dest_dir/kmergenie");
 }
 
