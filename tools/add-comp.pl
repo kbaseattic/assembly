@@ -187,7 +187,6 @@ sub install_fastqc {
     my $dir = 'FastQC';
     my $file = 'fastqc_v0.10.1.zip';
     download($dir, $file, 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc');
-    run("unzip -o $file");
     run("chmod a+x $dir/fastqc");
     run("cp -r $dir $dest_dir/");
 }
@@ -462,9 +461,9 @@ sub download {
     print("wget $url/$file\n");
     run("wget $url/$file");
     if ($file =~ /\.zip$/) {
-        run("unzip $file");
+        run("unzip -o $file");
     } elsif ($file =~ /(\.tar\.gz|\.tgz|\.tar\.bz2)$/) {
-        run("tar xf $file");
+        run("tar -no-same-owner -x -f $file");
     } elsif ($file =~ /\.gz$/) {
         run("gunzip $file");
     }
