@@ -434,13 +434,13 @@ tagdust kiki
 ### Parameters
 
 Some of the modules support customizable parameters. You can use them
-to launch parameter sweep pipelines. For example, you
-can use the `-p velvet ?hash_length=29-37:4` option in the `ar-run`
-command to launch three velvet jobs with different hash lengths (29, 33,
-37). Here, for numerical parameters, the general syntax is:
-```
-module ?parameter=beg-end:step_size
-```
+to launch parameter sweep pipelines. In a parameter sweep, the value
+of a parameter is adjusted by sweeping the parameter values through a
+user defined range. For example, you can use the `-p velvet
+?hash_length=29-37:4` option in the `ar-run` command to launch three
+velvet jobs with different hash lengths (29, 33, 37). Here, for
+numerical parameters, the general syntax is: ``` module
+?parameter=beg-end:step_size ```
 
 To list the pipeline and parameter details for the jobs you have
 launched, type:
