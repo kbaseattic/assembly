@@ -107,7 +107,7 @@ class BasePlugin(object):
         print "Command line: {}\n".format(cmd_string if shell else " ".join(cmd_args))
         try:
             env_copy = os.environ.copy()
-            env_copy['OMP_THREAD_LIMIT'] = self.process_threads_allowed
+            env_copy['OMP_NUM_THREADS'] = self.process_threads_allowed
             p = subprocess.Popen(cmd_args, env=env_copy,
                                  stdout=subprocess.PIPE, 
                                  stderr=subprocess.STDOUT,
