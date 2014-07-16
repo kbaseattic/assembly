@@ -2,9 +2,11 @@
 Name = discovar
 Module = discovar
 
+[Executables]
+executable = discovar
+
 [Settings]
 short_name = ds
-executable = ../../bin/discovar
 filetypes = fastq,fq
 dashes = 1
 contig_threshold = 300

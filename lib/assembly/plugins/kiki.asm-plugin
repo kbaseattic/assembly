@@ -7,7 +7,6 @@ executable = ki
 
 [Settings]
 short_name = ki
-executable = ../../bin/ki
 filetypes = fasta,fa,fastq,fq
 dashes = 1
 k = 27
