@@ -47,10 +47,6 @@ foreach my $testname (@tests) {
 }
 done_testing($testCount);
 
-sub test_login {
-    sysrun("ar-login");
-}
-
 sub test_setup {
     $ref = 'http://www.mcs.anl.gov/~fangfang/arast/b99.ref.fa';
     $pe1 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq';
@@ -137,10 +133,6 @@ sub test_json_input {
 
     sysrun('cat job.11 | ar-get -w -p > contigs.11');
     sysrun('cat job.12 | ar-get -w -p > contigs.12');
-}
-
-sub test_log_out {
-    sysrun("ar-logout");
 }
 
 sub validate_contigs {
