@@ -16,25 +16,29 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         """
         
         cmd_args = [self.executable]
-        pe_num = 1
-        for readset in self.data.readsets:
-            if readset.type == 'paired':
-                if pe_num > 5:
-                    print '> 5 pairs not supported!'
-                    break
-                if len(readset.files) == 1: # Interleaved
-                    cmd_args += ['--pe{}-12'.format(pe_num), readset.files[0]]
-                elif len(readset.files) >= 2: # 2 Files
-                    cmd_args += ['--pe{}-1'.format(pe_num), readset.files[0],
-                                 '--pe{}-2'.format(pe_num), readset.files[1]]
-                    for extra in readset.files[2:]:
-                        self.out_module.write('WARNING: Not using {}'.format(extra))
-                        print('WARNING: Not using {}'.format(extra))
-                else:
-                    raise Exception('Spades module file error')
-                pe_num += 1
-            elif readset.type == 'single':
-                cmd_args += ['-s', readset.files[0]]
+        lib_num = 1
+        for readset in self.data.readsets_paired:
+            if lib_num > 5:
+                print '> 5 pairs not supported!'
+                self.out_module.write('> 5 pairs not supported!')
+                break
+            if len(readset.files) == 1: # Interleaved
+                cmd_args += ['--pe{}-12'.format(lib_num), readset.files[0]]
+            elif len(readset.files) >= 2: # 2 Files
+                cmd_args += ['--pe{}-1'.format(lib_num), readset.files[0],
+                             '--pe{}-2'.format(lib_num), readset.files[1]]
+                for extra in readset.files[2:]:
+                    self.out_module.write('WARNING: Not using {}'.format(extra))
+                    print('WARNING: Not using {}'.format(extra))
+            else:
+                raise Exception('Spades module file error')
+            lib_num += 1
+
+        for readset in self.data.readsets_single:
+            single_num = lib_num if lib_num < 5 else 5
+            cmd_args += ['--pe{}-s'.format(single_num), readset.files[0]]
+            lib_num += 1
+
         if self.only_assembler == 'True':
             cmd_args.append('--only-assembler')
 
