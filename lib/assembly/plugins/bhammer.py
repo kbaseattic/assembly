@@ -33,7 +33,7 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
                         self.out_module.write('WARNING: Not using {}'.format(extra))
                         print('WARNING: Not using {}'.format(extra))
                 else:
-                    raise Exception('Spades module file error')
+                    raise Exception('Bhammer module file error')
             elif readset.type == 'single':
                 cmd_args += ['--pe{}-s'.format(lib_num), readset.files[0]]
                 single_count += 1
