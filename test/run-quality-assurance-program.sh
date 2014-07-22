@@ -2,8 +2,16 @@
 
 function print_environment()
 {
+    echo "Date: $(date)"
+    echo "Directory: $(pwd)"
+    echo "Kernel: $(uname -a)"
+    echo "Memory: $(head -n1 /proc/meminfo)"
+    echo "Processor: $(grep 'model name' /proc/cpuinfo | head -n1)"
+
     echo "Git Commit: $(git log | head -n1|awk '{print $2}')"
 
+    echo "Service endpoint: $ARAST_URL"
+    echo ""
 }
 
 function run_test_suite()
@@ -14,6 +22,8 @@ function run_test_suite()
     local log_file
     local path
     local bucket
+    local result
+    local elapsed_time
 
     directory=$1
     entry_point=$2
@@ -21,21 +31,24 @@ function run_test_suite()
 
     bucket="s3://$bucket_name"
 
-    log_file=$directory/$entry_point.log
+    log_file=$directory/$entry_point.txt
 
-    echo "This is a test" > $log_file
-    #./$entry_point &> $log_file 
+    #time (echo "This is a test" &> $log_file) &> $log_file.time
+    time (./$entry_point &> $log_file) &> $log_file.time
+
+    elapsed_time=$(grep real $log_file.time|awk '{print $2}')
+    result=$(tail -n1 $log_file)
 
     path=$log_file
 
-    aws s3 cp $log_file $bucket/$path
+    aws s3 cp $log_file $bucket/$path &> $log_file.s3
 
     address="https://$bucket_name.s3.amazonaws.com/$path"
 
-    echo "Test= $entry_point, Log= $address"
+    echo "TestSuite: $entry_point Result: $result Time: $elapsed_time Log: $address"
 }
 
-function main()
+function test_endpoint()
 {
     local topic
     local bucket
@@ -46,14 +59,20 @@ function main()
     local log_file
     local address
     local prefix
+    local endpoint
+    local subject
+    local message
 
+    endpoint=$1
+
+    export ARAST_URL=$endpoint
     prefix="tests"
     test_name=$(date +%Y-%m-%d-%H:%M:%S)
     bucket_name="kbase-assembly-service"
     bucket="s3://$bucket_name"
 
     mkdir -p $prefix/$test_name
-    log_file="main.log"
+    log_file=$prefix/$test_name/"main.txt"
 
     (
     print_environment
@@ -63,15 +82,27 @@ function main()
     ) | tee $log_file
 
 
-    path=$prefix/$test_name/$log_file
+    path=$log_file
     aws s3 cp $log_file $bucket/$path
 
     address="https://$bucket_name.s3.amazonaws.com/$path"
 
     topic="arn:aws:sns:us-east-1:584851907886:kbase-assembly-service"
+    subject="[KBase] Assembly Service quality assurance results ($endpoint)"
 
-    aws sns publish --topic-arn $topic --subject "[SNS] KBase Assembly Service quality assurance results" \
-    --message "Quality assurance result is available at $address"
+    message="$(cat $log_file)
+
+Quality assurance result is available at $address."
+
+    aws sns publish --topic-arn $topic --subject "$subject" \
+    --message "$message"
+}
+
+function main()
+{
+    test_endpoint "http://kbase.us/services/assembly"
+
+    test_endpoint "140.221.84.203"
 }
 
 main
