@@ -17,19 +17,28 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
         
         cmd_args = [self.executable]
         reads = self.data.readsets
+        lib_num = 1
         single_count = 0
-        for lib in reads:
-            if lib.type == 'paired':
-                if len(lib.files) == 1: # Interleaved
-                    cmd_args += ['--12', lib.files[0]]
-                elif len(lib.files) == 2: # 2 Files
-                    cmd_args += ['-1', lib.files[0],
-                                 '-2', lib.files[1]]
+        for readset in self.data.readsets:
+            if readset.type == 'paired':
+                if lib_num > 5:
+                    print '> 5 pairs not supported!'
+                    break
+                if len(readset.files) == 1: # Interleaved
+                    cmd_args += ['--pe{}-12'.format(lib_num), readset.files[0]]
+                elif len(readset.files) >= 2: # 2 Files
+                    cmd_args += ['--pe{}-1'.format(lib_num), readset.files[0],
+                                 '--pe{}-2'.format(lib_num), readset.files[1]]
+                    for extra in readset.files[2:]:
+                        self.out_module.write('WARNING: Not using {}'.format(extra))
+                        print('WARNING: Not using {}'.format(extra))
                 else:
                     raise Exception('Spades module file error')
-            elif lib.type == 'single':
-                cmd_args += ['-s', lib.files[0]]
+            elif readset.type == 'single':
+                cmd_args += ['--pe{}-s'.format(lib_num), readset.files[0]]
                 single_count += 1
+            lib_num += 1
+
         cmd_args += ['-t', self.process_threads_allowed,
                      '--only-error-correction', '--disable-gzip-output',
                      '-o', self.outpath]
@@ -49,14 +58,22 @@ class BhammerPreprocessor(BasePreprocessor, IPlugin):
         #### Plugin should return multiple libraries in same order as consumed
         elif os.path.exists(os.path.join(cpath, 'corrected.yaml')):
             info_file = open(os.path.join(cpath, 'corrected.yaml'))
-            cor = yaml.load(info_file)[0]
+            corrected = yaml.load(info_file)
+            cor_pair = [c for c in corrected if c['type'] == 'paired-end']
+            cor_single = [c for c in corrected if c['type'] == 'single']
             for read in reads:
                 if read.type == 'paired':
+                    cor = cor_pair.pop(0)
                     processed_reads.append([cor['left reads'].pop(0), cor['right reads'].pop(0)])
-                    if len(cor['single reads']) > single_count: # Check if extra
+                    if cor['single reads']: # Check if extra
                         extra_reads.append([cor['single reads'].pop(0)])
                 elif read.type == 'single':
+                    cor = cor_single.pop(0)
                     processed_reads.append([cor['single reads'].pop(0)])
+
+        print {'reads': processed_reads,
+               'extra': extra_reads}
+
 
         return {'reads': processed_reads,
                 'extra': extra_reads}
