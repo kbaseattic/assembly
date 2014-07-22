@@ -6,7 +6,7 @@ SERVICE_NAME = assembly
 SERVICE_DIR = $(TARGET)/services/$(SERVICE)
 VAR_DIR = $(SERVICE_DIR)/var
 
-# include $(TOP_DIR)/tools/Makefile.common
+include $(TOP_DIR)/tools/Makefile.common
 
 # to wrap scripts and deploy them to $(TARGET)/bin using tools in
 # the dev_container. right now, these vars are defined in
@@ -147,4 +147,4 @@ clean:
 	rm -f start_service stop_service
 	echo "OK ... Removed all deployed files."
 
-# include $(TOP_DIR)/tools/Makefile.common.rules
+include $(TOP_DIR)/tools/Makefile.common.rules
