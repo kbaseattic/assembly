@@ -26,7 +26,7 @@ class KikiAssembler(BaseAssembler, IPlugin):
         """ Converter for Kiki format """
         tabbed = open(tabbed_file, 'r')
         fasta = open(outfile, 'w')
-        prefixes = ['>_', ' len_', ' cov_', ' stdev_', ' GC_', ' seed_', '\n']
+        prefixes = ['>', ' len_', ' cov_', ' stdev_', ' GC_', ' seed_', '\n']
         for line in tabbed:
             l = line.split('\t')
             if int(l[1]) >= int(threshold):

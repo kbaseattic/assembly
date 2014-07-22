@@ -2,10 +2,12 @@
 Name = swap
 Module = swap
 
+[Executables]
+executable = swap/swap
+fastq_to_fasta = fastx_toolkit/bin/fastq_to_fasta
+
 [Settings]
 short_name = swp
-executable = ../../bin/swap/swap
-fastq_to_fasta = ../../bin/fastx_toolkit/bin/fastq_to_fasta
 filetypes = fasta,fa,fastq,fq
 k = 31
 

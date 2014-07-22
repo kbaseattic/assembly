@@ -4,16 +4,13 @@ arast-client -- commandline client for Assembly RAST
 
 """
 
-import os, sys, json, shutil
 import argparse
-import datetime
-import getpass
+import errno
+import json
 import logging
-import requests
-import uuid
-import subprocess
+import os
+import sys
 import time
-import traceback
 from ConfigParser import SafeConfigParser
 
 from assembly import asmtypes
@@ -374,6 +371,9 @@ def main():
         run_command()
     except KeyboardInterrupt:
         sys.exit()
+    except IOError as e:
+        if e.errno != errno.EPIPE:
+            raise
     except auth.Error as e:
         sys.exit('Authentication error: {}'.format(e))
     except client.URLError as e:

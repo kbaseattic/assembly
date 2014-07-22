@@ -1,8 +1,18 @@
 OVERVIEW
 --------------------------------------
 This service allows users to assemble genomes and metagenomes with
-their choice of assembly algorithm.  Currently supports single
-microbial genome assembly using velvet, kiki, and/or A5.
+their choice of assembly algorithm.  Currently supports over 20 modules
+including preprocessing tools and assemblers. 
+
+
+VERSION: 0.5.3 (Released 07/15/2014)
+--------------------------------------
+NEW FEATURES:
+- Support for assembly recipes
+- Support for auto selection of assembly 
+- Blocking option for retrieving assembly results 
+- New options for retrieving assembly statistics or logs separately
+- Support for chaining assembly commands using pipes
 
 
 VERSION: 0.2.0 (Released 01/07/2014)
@@ -66,7 +76,3 @@ ANTICIPATED FUTURE DEVELOPMENTS:
 - More assemblers: Mira, AllPaths-LG, ...
 - Preprocessing and postprocessing steps
 - Assembly quality score
-<<<<<<< HEAD
-=======
-
->>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e

@@ -127,6 +127,9 @@ sub install_basic {
     run("apt-get -y install " . join(" ", @apt));
     run("pip install "        . join(" ", @pip));
 
+    run('curl -L http://cpanmin.us | perl - App::cpanminus');
+    run('cpanm File::Spec::Link');
+
     install_cmake3();
 }
 
@@ -187,7 +190,6 @@ sub install_fastqc {
     my $dir = 'FastQC';
     my $file = 'fastqc_v0.10.1.zip';
     download($dir, $file, 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc');
-    run("unzip $file");
     run("chmod a+x $dir/fastqc");
     run("cp -r $dir $dest_dir/");
 }
@@ -231,7 +233,7 @@ sub install_kmergenie {
     my $dir = 'kmergenie-1.6663';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://kmergenie.bx.psu.edu');
-    run("cd $dir; make -j");
+    run("cd $dir; make");
     run("cp -r -T $dir $dest_dir/kmergenie");
 }
 
@@ -462,9 +464,9 @@ sub download {
     print("wget $url/$file\n");
     run("wget $url/$file");
     if ($file =~ /\.zip$/) {
-        run("unzip $file");
+        run("unzip -o $file");
     } elsif ($file =~ /(\.tar\.gz|\.tgz|\.tar\.bz2)$/) {
-        run("tar xf $file");
+        run("tar --no-same-owner -x -f $file");
     } elsif ($file =~ /\.gz$/) {
         run("gunzip $file");
     }
