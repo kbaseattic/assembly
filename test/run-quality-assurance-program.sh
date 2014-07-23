@@ -64,8 +64,6 @@ function test_endpoint()
     local message
 
     endpoint=$1
-    echo "test_endpoint $endpoint"
-    return
     
     export ARAST_URL=$endpoint
     prefix="tests"
