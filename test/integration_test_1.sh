@@ -4,25 +4,10 @@
 
 source test_library.sh
 
-function download()
-{
-    local file;
-
-    file=$1
-
-    name=$(basename $file)
-
-    if ! test -f $name
-    then
-        wget $file
-    fi
-}
-
 function run_test()
 {
     local file1
     local file2
-    local server
     local file1_name
     local file2_name
 
@@ -39,26 +24,15 @@ function run_test()
     test_file $file2_name
 
     # don't use ar-upload because it is broken
-    echo arast upload -m "SRS213780" --pair $file1_name $file2_name ARAST_URL=$server
 
     arast upload -m "SRS213780" --pair $file1_name $file2_name
 }
 
 function main()
 {
-    local passed
-    local failed
-    local total
-
     run_test &> my-log
     
-    passed=$(grep PASSED my-log | wc -l)
-    failed=$(grep FAILED my-log | wc -l)
-    total=$(($passed + $failed))
-
-    cat my-log
-
-    echo "PASSED: $passed/$total FAILED: $failed/$total"
+    summarize_test my-log
 }
 
 main
