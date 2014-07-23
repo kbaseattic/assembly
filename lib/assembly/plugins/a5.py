@@ -28,6 +28,7 @@ class A5Assembler(BaseAssembler, IPlugin):
                 for up in d.files:
                     libfile.write('up={}\n'.format(up))
             try:
+                assert d.insert is not None
                 libfile.write('ins={}\n'.format(d['insert']))
             except:
                 logging.info('No Insert Info Given')
