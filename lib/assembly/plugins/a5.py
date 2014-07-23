@@ -6,7 +6,9 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class A5Assembler(BaseAssembler, IPlugin):
-    OUTPUT = 'scaffolds'
+    # TODO: update quast logic. For now output scaffolds as contigs.
+    # OUTPUT = 'scaffolds'
+
     def run(self):
         """ 
         Build the command and run.
@@ -42,8 +44,10 @@ class A5Assembler(BaseAssembler, IPlugin):
 
         output = {}
         if contigs:
-            output['contigs'] = contigs
+            # output['contigs'] = contigs
+            output['contigs'] = scaffolds
         if scaffolds:
             output['scaffolds'] = scaffolds
+
         return output
 
