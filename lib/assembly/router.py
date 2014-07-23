@@ -439,7 +439,11 @@ class JobResource:
                 if kwargs.get('format') == 'json':
                     return json.dumps(list(reversed(docs[-records:]))); 
                 for doc in docs[-records:]:
-                    row = [doc.get('job_id'), str(doc.get('data_id')), doc.get('status')[:40]]
+                    try:
+                        stat_msg = doc.get('status')[:40]
+                    except TypeError:
+                        stat_msg = ''
+                    row = [doc.get('job_id'), str(doc.get('data_id')), stat_msg]
                     row.append(str(doc.get('computation_time', '')))
                     row.append(str(doc.get('message', '')))
                     if detail:

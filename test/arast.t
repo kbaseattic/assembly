@@ -86,7 +86,7 @@ sub test_simple_cases {
 
     sysrun("ar-upload --pair p1.fq p2.fq insert=300 stdev=60 > data.6");
     sysrun("cat data.6 | ar-run -p kiki -m 'k sweep' -p 'none tagdust' velvet ?hash_length=29-37:4 > job.6");
-    sysrun("ar-stat -d > stat.detail.6");
+    sysrun("ar-stat -n 9999 -d > stat.detail.6");
     sysrun('ar-stat --job $(cat data.6|sed "s/[^0-9]*//g") > stat.data.json.6');
 
     sysrun("cat job.3 | ar-get -w -a -o out.3");
