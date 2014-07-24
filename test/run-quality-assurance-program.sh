@@ -64,7 +64,7 @@ function test_endpoint()
     local message
 
     endpoint=$1
-
+    
     export ARAST_URL=$endpoint
     prefix="tests"
     test_name=$(date +%Y-%m-%d-%H:%M:%S)
@@ -78,8 +78,8 @@ function test_endpoint()
     print_environment
 
     run_test_suite $prefix/$test_name arast.t $bucket_name
-    run_test_suite $prefix/$test_name integration_test_1.sh $bucket_name
-    run_test_suite $prefix/$test_name test_SRS213780.sh $bucket_name
+    # run_test_suite $prefix/$test_name integration_test_1.sh $bucket_name
+    # run_test_suite $prefix/$test_name test_SRS213780.sh $bucket_name
 
     ) | tee $log_file
 
@@ -102,9 +102,35 @@ Quality assurance result is available at $address."
 
 function main()
 {
-    test_endpoint "http://kbase.us/services/assembly"
+    local argc=$#
+    local prod_url="http://kbase.us/services/assembly"
+    local dev_url="140.221.84.203"
 
-    test_endpoint "140.221.84.203"
+    # default : dev && prod
+    # dev     : "140.221.84.203"
+    # prod    : "http://kbase.us/services/assembly"
+    # string  : use string as endpoint 
+
+    if test $argc -eq 0
+    then
+	main "default"
+	return
+    fi
+
+    local operand=$1
+    if test $operand = "prod"
+    then
+	test_endpoint $prod_url
+    elif test $operand = "dev"
+    then
+	test_endpoint $dev_url
+    elif test $operand = "default"
+    then
+	test_endpoint $prod_url
+	test_endpoint $dev_url
+    else
+	test_endpoint $operand
+    fi
 }
 
-main
+main $@

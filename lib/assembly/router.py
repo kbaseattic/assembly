@@ -60,7 +60,7 @@ def send_kill_message(user, job_id):
     except TypeError:
         return 'Invalid job ID'
 
-    if status == 'queued':
+    if status == 'Queued':
         metadata.update_job(uid, 'status', 'Terminated')
     elif re.search(r"(Running|Stage)", status):
         msg = json.dumps({'user':user, 'job_id':job_id})
@@ -114,7 +114,7 @@ def route_job(body):
 
     uid = metadata.insert_job(client_params)
     logging.info("Inserting job record: %s" % client_params)
-    metadata.update_job(uid, 'status', 'queued')
+    metadata.update_job(uid, 'status', 'Queued')
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
     msg = json.dumps(p)
@@ -167,7 +167,7 @@ def analyze_data(body): #run fastqc
     ## Check that user queue limit is not reached
     uid = metadata.insert_job(client_params)
     logging.info("Inserting job record: %s" % client_params)
-    metadata.update_job(uid, 'status', 'queued')
+    metadata.update_job(uid, 'status', 'Queued')
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
     msg = json.dumps(p)
@@ -439,7 +439,11 @@ class JobResource:
                 if kwargs.get('format') == 'json':
                     return json.dumps(list(reversed(docs[-records:]))); 
                 for doc in docs[-records:]:
-                    row = [doc.get('job_id'), str(doc.get('data_id')), doc.get('status')[:40]]
+                    try:
+                        stat_msg = doc.get('status')[:40]
+                    except TypeError:
+                        stat_msg = ''
+                    row = [doc.get('job_id'), str(doc.get('data_id')), stat_msg]
                     row.append(str(doc.get('computation_time', '')))
                     row.append(str(doc.get('message', '')))
                     if detail:

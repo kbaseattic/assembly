@@ -6,7 +6,9 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class A5Assembler(BaseAssembler, IPlugin):
-    OUTPUT = 'scaffolds'
+    # TODO: update quast logic. For now output scaffolds as contigs.
+    # OUTPUT = 'scaffolds'
+
     def run(self):
         """ 
         Build the command and run.
@@ -28,6 +30,7 @@ class A5Assembler(BaseAssembler, IPlugin):
                 for up in d.files:
                     libfile.write('up={}\n'.format(up))
             try:
+                assert d.insert is not None
                 libfile.write('ins={}\n'.format(d['insert']))
             except:
                 logging.info('No Insert Info Given')
@@ -41,8 +44,10 @@ class A5Assembler(BaseAssembler, IPlugin):
 
         output = {}
         if contigs:
-            output['contigs'] = contigs
+            # output['contigs'] = contigs
+            output['contigs'] = scaffolds
         if scaffolds:
             output['scaffolds'] = scaffolds
+
         return output
 

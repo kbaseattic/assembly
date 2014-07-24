@@ -60,7 +60,7 @@ sub test_setup {
 }
 
 sub test_simple_cases {
-    # This test takes 19 minutes to run on a server with 2+ queues
+    # This test takes 20 minutes to run on a server with 2+ queues
     sysrun("ar-stat > stat.0");
 
     sysrun("ar-upload --pair p1.fq p2.fq --reference ref.fa > data.1");
@@ -84,9 +84,9 @@ sub test_simple_cases {
     sysrun("ar-stat -l > stat.data.5");
     sysrun("ar-filter -c 2.5 -l 500 < contigs.5 > filter.5"); validate_contigs('filter.5');
 
-    sysrun("ar-upload --pair p1.fq p2.fq insert=300 stdev=60 > data.6");
+    sysrun("ar-upload --pair p1.fq p2.fq insert=300 stdev=100 > data.6");
     sysrun("cat data.6 | ar-run -p kiki -m 'k sweep' -p 'none tagdust' velvet ?hash_length=29-37:4 > job.6");
-    sysrun("ar-stat -d > stat.detail.6");
+    sysrun("ar-stat -n 9999 -d > stat.detail.6");
     sysrun('ar-stat --job $(cat data.6|sed "s/[^0-9]*//g") > stat.data.json.6');
 
     sysrun("cat job.3 | ar-get -w -a -o out.3");
@@ -96,6 +96,8 @@ sub test_simple_cases {
 
     sysrun('ar-run -a spades --data $(cat data.2|sed "s/[^0-9]*//g") -m "to be terminated" >job.7');
     sysrun('ar-kill -j $(cat job.7|sed "s/[^0-9]*//g")');
+
+    sysrun('cat data.6 | tee data.8 | ar-run -a a5 a6 > job.8');
 
     sysrun("cat job.2 | ar-get -w -a 1");
     sysrun("cat job.2 | ar-get -p > contigs.2"); validate_contigs('contigs.2');
@@ -109,6 +111,9 @@ sub test_simple_cases {
 
     sysrun("cat job.6 | ar-get -w -log > log.6"); validate_log('log.6');
     sysrun("cat job.6 | ar-get -w --report > report.6"); validate_report('report.6');
+
+    sysrun("cat job.8 | ar-get -w --report > report.8"); validate_report('report.8');
+    sysrun("cat job.8 | ar-get -l > log.8"); validate_log('log.8', 1);
 
     sysrun('ar-stat -j $(cat job.7|sed "s/[^0-9]*//g") > stat.term.7');
     like(`cat stat.term.7`, qr/Terminated/, 'job properly terminated'); $testCount++;

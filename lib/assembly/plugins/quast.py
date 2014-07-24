@@ -25,7 +25,8 @@ class QuastAssessment(BaseAssessment, IPlugin):
 
         ref = self.initial_data.referencefiles or None
         
-        cmd_args = [os.path.join(os.getcwd(),self.executable), 
+        cmd_args = [os.path.join(os.getcwd(),self.executable),
+                    '--threads', self.process_threads_allowed,
                     '--min-contig', self.min_contig,
                     '-o', self.outpath,
                     '--gene-finding']

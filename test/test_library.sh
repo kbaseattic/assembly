@@ -34,6 +34,10 @@ function summarize_test()
 {
     local passed
     local failed
+    local passed_ok
+    local failed_ok
+    local passed_all
+    local failed_all
     local total
     local log_file
    
@@ -41,9 +45,20 @@ function summarize_test()
 
     passed=$(grep PASSED $log_file | wc -l)
     failed=$(grep FAILED $log_file | wc -l)
-    total=$(($passed + $failed))
+
+    passed_ok=$(grep "^ok" $log_file | wc -l)
+    failed_ok=$(grep "^not ok" $log_file | wc -l)
+
+    passed_all=$(($passed + $passed_ok))
+    failed_all=$(($failed + $failed_ok))
+
+    total=$(($passed_all + $failed_all))
 
     cat $log_file
-
-    echo "PASSED: $passed/$total FAILED: $failed/$total"
+    echo -n "PASSED: $passed_all/$total"
+    if test $failed_all -ne 0
+    then 
+	 echo -n " FAILED: $failed_all/$total"
+    fi
+    echo ""
 }

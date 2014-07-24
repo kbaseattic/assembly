@@ -4,7 +4,10 @@ from yapsy.IPlugin import IPlugin
 
 class KmergenieAnalyzer(BaseAnalyzer, IPlugin):
     def run(self):
-        self.arast_popen([self.executable, self.data.readfiles[0]], cwd=self.outpath)
+        cmd_args = [self.executable]
+        cmd_args += ['-t', self.process_threads_allowed]
+        cmd_args += [self.data.readfiles[0]]
+        self.arast_popen(cmd_args, cwd=self.outpath)
         report = os.path.join(self.outpath, 'histograms_report.html')
         output = {}
         if os.path.exists(report):
