@@ -19,7 +19,7 @@ class BwaAligner(BaseAligner, IPlugin):
         bamfiles = []
         for i, readset in enumerate(self.data.readsets):
             samfile = os.path.join(self.outpath, '{}_{}.sam'.format(os.path.basename(readset.files[0]), i))
-            cmd_args = [self.executable, 'mem', '-t', '8', contig_file] + readset.files
+            cmd_args = [self.executable, 'mem', '-t', self.process_threads_allowed, contig_file] + readset.files
             if readset.type == 'paired':
                 cmd_args.append('-p')
             cmd_args += ['>', samfile]
