@@ -78,8 +78,8 @@ function test_endpoint()
     print_environment
 
     run_test_suite $prefix/$test_name arast.t $bucket_name
-    run_test_suite $prefix/$test_name integration_test_1.sh $bucket_name
-    run_test_suite $prefix/$test_name test_SRS213780.sh $bucket_name
+    # run_test_suite $prefix/$test_name integration_test_1.sh $bucket_name
+    # run_test_suite $prefix/$test_name test_SRS213780.sh $bucket_name
 
     ) | tee $log_file
 
