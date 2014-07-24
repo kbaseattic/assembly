@@ -290,6 +290,7 @@ sub install_quast {
     my $dir = 'quast-2.3';
     my $file = "$dir.tar.gz";
     download($dir, $file, "https://downloads.sourceforge.net/project/quast");
+    run("cd $dir/libs/MUMmer3.23-linux; make");
     run("cp -r -T $dir $dest_dir/quast");
 }
 

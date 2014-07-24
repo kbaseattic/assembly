@@ -111,6 +111,11 @@ recipes = {
     )
     """,
 
+    'kiki' : """
+    (begin  (tar (all_files (quast (upload (sort (list (kiki READS)) > :key (lambda (c) (arast_score c)))))) :name analysis :tag quast))
+    """,
+
+
     'test_gam_ale' : """
     (begin
       (define assemblies (list (kiki READS) (velvet READS)))

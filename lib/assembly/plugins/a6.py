@@ -6,7 +6,8 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
 class A6Assembler(BaseAssembler, IPlugin):
-    OUTPUT = 'scaffolds'
+    # TODO: update quast logic. For now output scaffolds as contigs.
+    # OUTPUT = 'scaffolds'
 
     def run(self):
         reads = self.data.readsets
@@ -36,7 +37,13 @@ class A6Assembler(BaseAssembler, IPlugin):
         contigs = glob.glob(self.outpath + '/*.contigs.fasta')
         scaffolds = glob.glob(self.outpath + '/*.final.scaffolds.fasta')
 
-        return {'contigs': contigs,
-                'scaffolds': scaffolds}
+        output = {}
+        if contigs:
+            # output['contigs'] = contigs
+            output['contigs'] = scaffolds
+        if scaffolds:
+            output['scaffolds'] = scaffolds
+
+        return output
 
 
