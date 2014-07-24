@@ -4,11 +4,12 @@ import json
 # Usage: typespec_to_assembly_data  typespec_json  >  assembly_data_json
 
 def typespec_to_assembly_data(spec):
-    lib_types = dict (
-        paired_end_libs = 'paired',
-        single_end_libs = 'single',
-        references      = 'reference',
-    )
+    lib_types = dict (paired_end_libs = 'paired',
+                      single_end_libs = 'single',
+                      references = 'reference')
+
+    attr_map = dict(insert_size_mean = 'insert',
+                    insert_size_std_dev = 'stdev')
     data = {}
     file_sets = []
     for key, val in spec.items():
@@ -18,7 +19,7 @@ def typespec_to_assembly_data(spec):
         else:
             libs = val if isinstance(val, list) else [ val ]
             for lib in libs:
-                file_set = dict((k,v) for k,v in lib.items() if not is_handle(k,v))
+                file_set = dict((attr_map.get(k,k) ,v) for k,v in lib.items() if not is_handle(k,v))
                 file_set["file_infos"] = list(extract_handle(v) for k,v in lib.items() if is_handle(k,v))
                 file_set["type"] = lib_type 
                 file_sets.append(file_set)
