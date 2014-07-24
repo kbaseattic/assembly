@@ -85,7 +85,9 @@ function test_endpoint()
     echo "Git Commit: $(git log | head -n1|awk '{print $2}')"
     echo "Service endpoint: $endpoint"
 
-    run_test_suite $prefix/$test_name arast.t $bucket_name
+    echo ""
+
+    run_test_suite $prefix/$test_name arast.t.sh $bucket_name
     # run_test_suite $prefix/$test_name integration_test_1.sh $bucket_name
     # run_test_suite $prefix/$test_name test_SRS213780.sh $bucket_name
 
