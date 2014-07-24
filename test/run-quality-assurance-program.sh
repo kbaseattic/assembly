@@ -113,23 +113,23 @@ function main()
 
     if test $argc -eq 0
     then
-	main "default"
+	    main "default"
 	return
     fi
 
     local operand=$1
     if test $operand = "prod"
     then
-	test_endpoint $prod_url
+	    test_endpoint $prod_url
     elif test $operand = "dev"
     then
-	test_endpoint $dev_url
+	    test_endpoint $dev_url
     elif test $operand = "default"
     then
-	test_endpoint $prod_url
-	test_endpoint $dev_url
+	    test_endpoint $prod_url
+	    test_endpoint $dev_url
     else
-	test_endpoint $operand
+	    test_endpoint $operand
     fi
 }
 
