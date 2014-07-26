@@ -55,10 +55,13 @@ function summarize_test()
     total=$(($passed_all + $failed_all))
 
     cat $log_file
+
     echo -n "PASSED: $passed_all/$total"
+
     if test $failed_all -ne 0
     then 
-	 echo -n " FAILED: $failed_all/$total"
+	    echo -n " FAILED: $failed_all/$total"
     fi
+
     echo ""
 }

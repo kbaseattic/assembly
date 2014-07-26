@@ -6,9 +6,15 @@ source test_library.sh
 
 function main()
 {
-    ./arast.t &> my-log
+    local log_file
+
+    log_file=$(mktemp)
+
+    ./arast.t &> $log_file
     
-    summarize_test my-log
+    summarize_test $log_file
+
+    rm $log_file
 }
 
 main
