@@ -127,7 +127,7 @@ function main()
     if test $argc -eq 0
     then
         main "default"
-	return
+        return
     fi
 
     local operand=$1
