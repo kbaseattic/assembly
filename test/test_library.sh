@@ -60,7 +60,7 @@ function summarize_test()
 
     if test $failed_all -ne 0
     then 
-	    echo -n " FAILED: $failed_all/$total"
+        echo -n " FAILED: $failed_all/$total"
     fi
 
     echo ""

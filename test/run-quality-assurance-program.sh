@@ -126,7 +126,7 @@ function main()
 
     if test $argc -eq 0
     then
-	    main "default"
+        main "default"
 	return
     fi
 
@@ -134,19 +134,19 @@ function main()
 
     if test $operand = "prod"
     then
-	    test_endpoint $prod_url $production_branch
+        test_endpoint $prod_url $production_branch
 
     elif test $operand = "dev"
     then
-	    test_endpoint $dev_url $development_branch
+        test_endpoint $dev_url $development_branch
 
     elif test $operand = "default"
     then
-	    test_endpoint $prod_url $production_branch
-	    test_endpoint $dev_url $development_branch
+        test_endpoint $prod_url $production_branch
+        test_endpoint $dev_url $development_branch
 
     else
-	    test_endpoint $operand $production_branch
+        test_endpoint $operand $production_branch
     fi
 }
 
