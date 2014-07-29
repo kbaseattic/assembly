@@ -127,15 +127,28 @@ recipes = {
     """,
 
     'fast' : """
-    ;;; Runs Tagdust on reads, Kmergenie to choose hash-length for Velvet,
-    ;;; and assembles with both Velvet and SPAdes.
+    ;;; Runs Tagdust on reads,
+    ;;; and assembles with A6, Velvet and SPAdes.
     ;;; Results are sorted by N50 Score.
     (begin
       (define pp (tagdust READS))
-      (define kval (get best_k (kmergenie pp)))
-      (define vt (begin (setparam hash_length kval) (velvet pp)))
+      (define vt (velvet pp))
+      (define aa (a6 pp))
       (define sp (spades pp))
-      (define newsort (sort (list sp vt) > :key (lambda (c) (arast_score c))))
+      (define newsort (sort (list vt aa sp) > :key (lambda (c) (arast_score c))))
+      (tar (all_files (quast (upload newsort))) :name analysis)
+    )
+    """,
+
+    'faster' : """
+    ;;; Runs Tagdust on reads,
+    ;;; and assembles with A6 and Velvet.
+    ;;; Results are sorted by N50 Score.
+    (begin
+      (define pp (tagdust READS))
+      (define vt (velvet pp))
+      (define aa (a6 pp))
+      (define newsort (sort (list vt aa) > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """,
@@ -163,6 +176,7 @@ recipes = {
     """
 }
 
+set_alias('faster', 'rast_fast')
 set_alias('fast', 'rast')
 set_alias('auto', 'rast_slow')
 
