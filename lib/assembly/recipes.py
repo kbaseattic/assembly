@@ -142,8 +142,12 @@ recipes = {
     ;;; Works well for some short read datasets.
     (begin
       (define vt (velvet READS))
-      (define aa (a6 READS))
-      (define newsort (sort (list vt aa) > :key (lambda (c) (arast_score c))))
+      (if (has_paired READS) 
+        (prog
+          (define aa (a6 READS))
+          (define assemblies (list vt aa)))
+        (define assemblies (list vt)))
+      (define newsort (sort assemblies > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """,
@@ -153,9 +157,13 @@ recipes = {
     ;;; Results are sorted by N50 Score.
     (begin
       (define vt (velvet READS))
-      (define aa (a6 READS))
       (define sp (begin (setparam only_assembler False) (spades READS)))
-      (define newsort (sort (list vt aa sp) > :key (lambda (c) (arast_score c))))
+      (if (has_paired READS) 
+        (prog
+          (define aa (a6 READS))
+          (define assemblies (list vt sp aa)))
+        (define assemblies (list vt sp)))
+      (define newsort (sort assemblies > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """,
@@ -173,7 +181,7 @@ recipes = {
           (define id (idba pp))
           (define assemblies (list id sp vt)))
         (define assemblies (list sp vt)))
-      (define newsort (sort (list vt aa sp) > :key (lambda (c) (get ale_score (ale c)))))
+      (define newsort (sort assemblies > :key (lambda (c) (get ale_score (ale c)))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """,
