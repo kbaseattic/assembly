@@ -111,11 +111,6 @@ recipes = {
     )
     """,
 
-    'kiki' : """
-    (begin  (tar (all_files (quast (upload (sort (list (kiki READS)) > :key (lambda (c) (arast_score c)))))) :name analysis :tag quast))
-    """,
-
-
     'test_gam_ale' : """
     (begin
       (define assemblies (list (kiki READS) (velvet READS)))
@@ -126,21 +121,72 @@ recipes = {
     )
     """,
 
+    'kiki' : """
+    (begin
+       (define ki (kiki READS))
+       (tar (all_files (quast (upload (sort (list ki) > :key (lambda (c) (arast_score c)))))) :name analysis :tag quast)
+    )
+    """,
+
+    'full_spades' : """
+    ;;; Runs BayesHammer on reads and assembles with SPAdes.
+    (begin
+      (define sp (begin (setparam only_assembler False) (spades READS)))
+      (tar (all_files (quast (upload (sort (list sp) > :key (lambda (c) (arast_score c)))))) :name analysis :tag quast)
+    )
+    """,
+
+    'faster' : """
+    ;;; Assembles with A6 and Velvet.
+    ;;; Results are sorted by N50 Score.
+    ;;; Works well for some short read datasets.
+    (begin
+      (define vt (velvet READS))
+      (if (has_paired READS) 
+        (prog
+          (define aa (a6 READS))
+          (define assemblies (list vt aa)))
+        (define assemblies (list vt)))
+      (define newsort (sort assemblies > :key (lambda (c) (arast_score c))))
+      (tar (all_files (quast (upload newsort))) :name analysis)
+    )
+    """,
+
     'fast' : """
-    ;;; Runs Tagdust on reads, Kmergenie to choose hash-length for Velvet,
-    ;;; and assembles with both Velvet and SPAdes.
+    ;;; Assembles with A6, Velvet and SPAdes (with BayesHammer for error correction).
     ;;; Results are sorted by N50 Score.
     (begin
-      (define pp (tagdust READS))
-      (define kval (get best_k (kmergenie pp)))
-      (define vt (begin (setparam hash_length kval) (velvet pp)))
-      (define sp (spades pp))
-      (define newsort (sort (list sp vt) > :key (lambda (c) (arast_score c))))
+      (define vt (velvet READS))
+      (define sp (begin (setparam only_assembler False) (spades READS)))
+      (if (has_paired READS) 
+        (prog
+          (define aa (a6 READS))
+          (define assemblies (list vt sp aa)))
+        (define assemblies (list vt sp)))
+      (define newsort (sort assemblies > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """,
 
     'auto': """
+    ;;; 1. Runs BayesHammer on reads
+    ;;; 2. Assembles with Velvet, IDBA and SPAdes
+    ;;; 3. Sorts assemblies by ALE score
+    (begin
+      (define pp (bhammer READS))
+      (define vt (velvet pp))
+      (define sp (spades pp))
+      (if (has_paired READS) 
+        (prog
+          (define id (idba pp))
+          (define assemblies (list id sp vt)))
+        (define assemblies (list sp vt)))
+      (define newsort (sort assemblies > :key (lambda (c) (get ale_score (ale c)))))
+      (tar (all_files (quast (upload newsort))) :name analysis)
+    )
+    """,
+
+    'smart': """
     ;;; 1. Runs BayesHammer on reads, Kmergenie to choose hash-length for Velvet
     ;;; 2. Assembles with Velvet, IDBA and SPAdes
     ;;; 3. Sorts assemblies by ALE score
@@ -163,8 +209,9 @@ recipes = {
     """
 }
 
+set_alias('faster', 'rast_fast')
 set_alias('fast', 'rast')
-set_alias('auto', 'rast_slow')
+set_alias('smart', 'rast_slow')
 
 
 

@@ -192,15 +192,24 @@ ar-avail --recipe
 ```
 ```out
 [Recipe] auto
+  1. Runs BayesHammer on reads
+  2. Assembles with Velvet, IDBA and SPAdes
+  3. Sorts assemblies by ALE score
+
+[Recipe] smart
   1. Runs BayesHammer on reads, Kmergenie to choose hash-length for Velvet
   2. Assembles with Velvet, IDBA and SPAdes
   3. Sorts assemblies by ALE score
   4. Merges the two best assemblies with GAM-NGS
 
 [Recipe] fast
-  Runs Tagdust on reads, Kmergenie to choose hash-length for Velvet,
-  and assembles with both Velvet and SPAdes.
+  Assembles with A6, Velvet and SPAdes (with BayesHammer for error correction).
   Results are sorted by N50 Score.
+
+[Recipe] faster
+  Assembles with A6 and Velvet.
+  Results are sorted by N50 Score.
+  Works well for some short read datasets.
 
 ...
 ```

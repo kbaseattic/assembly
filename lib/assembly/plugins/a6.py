@@ -12,10 +12,12 @@ class A6Assembler(BaseAssembler, IPlugin):
     def run(self):
         reads = self.data.readsets
         cmd_args = [self.executable]
+        num_pe = 0
         libfile =  open(os.path.join(self.outpath, 'a5lib.out'), 'w')
         for d in reads:
             libfile.write('[LIB]\n')
             if d.type == 'paired':
+                num_pe += 1
                 if len(d.files) == 1:
                     libfile.write('shuf={}\n'.format(d.files[0]))
                 elif len(d.files) == 2:
@@ -31,6 +33,11 @@ class A6Assembler(BaseAssembler, IPlugin):
                 logging.info('No Insert Info Given')
         cmd_args.append(libfile.name)
         libfile.close()
+
+        if not num_pe:
+            logging.error('a6 expect at least one paired-end library')
+            return
+
         cmd_args.append('a6')
         self.arast_popen(cmd_args, cwd=self.outpath)
 
