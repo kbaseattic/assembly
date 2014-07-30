@@ -127,27 +127,23 @@ recipes = {
     """,
 
     'fast' : """
-    ;;; Runs Tagdust on reads,
-    ;;; and assembles with A6, Velvet and SPAdes.
+    ;;; Runs assembles with A6, Velvet and SPAdes (with BayesHammer for error correction).
     ;;; Results are sorted by N50 Score.
     (begin
-      (define pp (tagdust READS))
-      (define vt (velvet pp))
-      (define aa (a6 pp))
-      (define sp (spades pp))
+      (define vt (velvet READS))
+      (define aa (a6 READS))
+      (define sp (begin (setparam only_assembler 0) (spades READS)))
       (define newsort (sort (list vt aa sp) > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """,
 
     'faster' : """
-    ;;; Runs Tagdust on reads,
-    ;;; and assembles with A6 and Velvet.
+    ;;; Assembles with A6 and Velvet.
     ;;; Results are sorted by N50 Score.
     (begin
-      (define pp (tagdust READS))
-      (define vt (velvet pp))
-      (define aa (a6 pp))
+      (define vt (velvet READS))
+      (define aa (a6 READS))
       (define newsort (sort (list vt aa) > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
