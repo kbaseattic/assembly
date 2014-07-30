@@ -40,11 +40,24 @@ function run_test()
 
     job_status="state-zero"
 
-    while test $job_status != "Completed"
+    while true
     do
         sleep 5
         echo "DEBUG sleep 5"
-        job_status=$(arast stat -j $job_identifier)
+        job_status=$(arast stat -j $job_identifier | awk '{print $1}')
+
+        if test $job_status = "Complete"
+        then
+            break
+        fi
+        if test $job_status = "[FAIL]"
+        then
+            break
+        fi
+        if test $job_status = "Terminated"
+        then
+            break
+        fi
     done
 }
 

@@ -26,6 +26,10 @@ my $rc = GetOptions("h|help"  => \$help,
                    ) or die $usage;
 
 my @all_tests = discover_own_tests();
+
+print("Test list:");
+print(join(', ', @all_tests));
+
 my @tests = @ARGV > 0 ? @ARGV : @all_tests;
 
 if ($dir) {

@@ -8,9 +8,7 @@ function print_environment()
     echo "Memory: $(head -n1 /proc/meminfo)"
     echo "Processor: $(grep 'model name' /proc/cpuinfo | head -n1)"
 
-    echo "Git Commit: $(git log | head -n1|awk '{print $2}')"
 
-    echo "Service endpoint: $ARAST_URL"
     echo ""
 }
 
@@ -62,8 +60,13 @@ function test_endpoint()
     local endpoint
     local subject
     local message
+    local repository
+    local branch
+
+    repository="https://github.com/kbase/assembly.git"
 
     endpoint=$1
+    branch=$2
     
     export ARAST_URL=$endpoint
     prefix="tests"
@@ -77,7 +80,14 @@ function test_endpoint()
     (
     print_environment
 
-    run_test_suite $prefix/$test_name arast.t $bucket_name
+    echo "Repository: $repository"
+    echo "Branch: $branch"
+    echo "Git Commit: $(git log | head -n1|awk '{print $2}')"
+    echo "Service endpoint: $endpoint"
+
+    echo ""
+
+    run_test_suite $prefix/$test_name arast.t.sh $bucket_name
     # run_test_suite $prefix/$test_name integration_test_1.sh $bucket_name
     # run_test_suite $prefix/$test_name test_SRS213780.sh $bucket_name
 
@@ -106,6 +116,9 @@ function main()
     local prod_url="http://kbase.us/services/assembly"
     local dev_url="140.221.84.203"
 
+    local production_branch="master"
+    local development_branch="dev"
+
     # default : dev && prod
     # dev     : "140.221.84.203"
     # prod    : "http://kbase.us/services/assembly"
@@ -113,23 +126,27 @@ function main()
 
     if test $argc -eq 0
     then
-	main "default"
-	return
+        main "default"
+        return
     fi
 
     local operand=$1
+
     if test $operand = "prod"
     then
-	test_endpoint $prod_url
+        test_endpoint $prod_url $production_branch
+
     elif test $operand = "dev"
     then
-	test_endpoint $dev_url
+        test_endpoint $dev_url $development_branch
+
     elif test $operand = "default"
     then
-	test_endpoint $prod_url
-	test_endpoint $dev_url
+        test_endpoint $prod_url $production_branch
+        test_endpoint $dev_url $development_branch
+
     else
-	test_endpoint $operand
+        test_endpoint $operand $production_branch
     fi
 }
 
