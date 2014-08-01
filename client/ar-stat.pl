@@ -14,6 +14,8 @@ Query status of running jobs
 Optional arguments:
   -h, --help            show this help message and exit
   -j JOB, --job JOB     get status of a specific job ID
+  -n STAT_N             specify number of records to show
+  -d, --detail          show pipeline/recipe/wasp details in status table
   -l, --list-data       list data objects
   --data-json DATA      print the information of a data ID
   -s server_addr        specify ARAST server address
