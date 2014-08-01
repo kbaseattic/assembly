@@ -221,7 +221,6 @@ class ArastConsumer:
         status = ''
 
         #### Parse pipeline to wasp exp
-        wasp_exp = pipelines[0][0]
         reload(recipes)
         if recipe:
             try: wasp_exp = recipes.get(recipe[0], job_id)
