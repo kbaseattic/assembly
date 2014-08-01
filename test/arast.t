@@ -26,6 +26,10 @@ my $rc = GetOptions("h|help"  => \$help,
                    ) or die $usage;
 
 my @all_tests = discover_own_tests();
+
+print("Test list:");
+print(join(', ', @all_tests));
+
 my @tests = @ARGV > 0 ? @ARGV : @all_tests;
 
 if ($dir) {
@@ -71,7 +75,7 @@ sub test_simple_cases {
     sysrun("cat data.2 | ar-run -r rast -m 'RAST recipe' > job.2");
 
     sysrun("arast upload --pair p1.fq p2.fq --reference_url $ref > data.3");
-    sysrun("ar-run --pipeline tagdust idba --pair p1.fq p2.fq -m 'my test job' > job.3");
+    sysrun("ar-run --pipeline tagdust idba --pair p1.fq p2.fq -m 'my test: tagdust-idba' > job.3");
     sysrun("ar-stat -n 50 --detail > stat.3");
     sysrun("ar-stat --list-data > stat.data.3");
     
