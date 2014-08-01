@@ -12,6 +12,8 @@
 <p>The following command will instruct the server to assemble a file of<br />single-end reads specified by the URL using the velvet assembler. This<br />should take just a couple minutes.</p>
 <pre class="inv"><code>ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait --pick &gt; ex1.contigs.fasta</code></pre>
 <p>This command will block until the assembly is done. The resulting set<br />of contigs will be saved to a FASTA file local to the client. The<br />choice of output name is arbitrary; we use <code>ex1.contigs.fasta</code> to<br />denote it's the contigs from our first exercise. You can use the Unix<br /><code>cat</code> utility to inspect the content of the contig file.</p>
+</div>
+<div>
 <pre class="inv"><code>cat ex1.contigs.fasta</code></pre>
 <pre class="out"><code>&gt;NODE_1_length_56_cov_204.767853
 TACTAAAATTATAATTTTCCTGATTTTTGTAGAGGAGTATGGGAAAGTTCTGTGTATTTT
@@ -154,6 +156,8 @@ ar-logout</code></pre>
 <h3 id="getting-assembly-results">Getting assembly results</h3>
 <p>Once a job completes, you can look at the report of assembly<br />statitistics and pick your best set of contigs. You can also choose to<br />download the whole data directory which includes detailed log files<br />and a visual comparison of all the assemblies.</p>
 <p>Use <code>ar-get -j job_id --report</code> to show the text assembly report. You<br />can add the <code>--wait</code> option to make sure the command waits for the job<br />to complete. In the following example, we specify the job ID from a<br />file we have previously saved.</p>
+</div>
+<div>
 <pre class="inv"><code>cat ex3.job_id | ar-get --report --wait</code></pre>
 <pre class="out"><code>QUAST: All statistics are based on contigs of size &gt;= 500 bp, unless otherwise noted (e.g., &quot;# contigs (&gt;= 0 bp)&quot; and &quot;Total length (&gt;= 0 bp)&quot; include all contigs).
 
@@ -254,6 +258,8 @@ tagdust kiki</code></pre>
 <div>
 <h3 id="parameters">Parameters</h3>
 <p>Some of the modules support customizable parameters. You can use them<br />to launch parameter sweep pipelines. In a parameter sweep, the value<br />of a parameter is adjusted by sweeping the parameter values through a<br />user defined range. For example, you can use the <code>-p velvet ?hash_length=29-37:4</code> option in the <code>ar-run</code> command to launch three<br />velvet jobs with different hash lengths (29, 33, 37). Here, for<br />numerical parameters, the general syntax is: <code>module ?parameter=beg-end:step_size</code></p>
+</div>
+<div>
 <p>To list the pipeline and parameter details for the jobs you have<br />launched, type:</p>
 <pre class="inv"><code>ar-stat --detail</code></pre>
 <pre class="out"><code>+--------+---------+----------------------+----------+------------------+-----------------------------------------------+
@@ -277,10 +283,10 @@ tagdust kiki</code></pre>
 <p>As you can see from the visual evaluation below (generated using the<br />QUAST quality assessment tool), our merged assembly has a<br />significantly higher NGA50 value than any individual assembly. The<br />NGA50 value is the aligned N50 size when the reference genome (ground<br />truth) is provided.</p>
 </div>
 <div>
-<p><img src="http://www.mcs.anl.gov/~fangfang/arast/quast1.png" alt="quast assembly comparison table" /></p>
+<p><img src="http://www.mcs.anl.gov/~fangfang/arast/quast_1.png" alt="quast assembly comparison table" /></p>
 </div>
 <div>
 <p>When you open the report HTML file included the analysis directory,<br />you can inspect the rankings of assembly pipelines in terms of<br />cumulative contig lengths by hovering the mouse over your selected set<br />of the top contigs.</p>
-<p><img src="http://www.mcs.anl.gov/~fangfang/arast/quast2.png" alt="quast assembly comparison plot" /></p>
+<p><img src="http://www.mcs.anl.gov/~fangfang/arast/quast_2.png" alt="quast assembly comparison plot" /></p>
 </div>
 
