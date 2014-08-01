@@ -136,9 +136,23 @@ recipes = {
     )
     """,
 
+    'miseq' : """
+    ;;; Runs Velvet with hash length 35.
+    ;;; Runs BayesHammer on reads and assembles with SPAdes with k up to 99.
+    ;;; Results are sorted by ARAST quality score.
+    (begin
+      (define vt (begin (setparam hash_length 35) (velvet READS)))
+      (define sp (begin
+         (setparam only_assembler False)
+         (setparam read_length medium2)
+         (spades READS)))
+      (tar (all_files (quast (upload (sort (list vt sp) > :key (lambda (c) (arast_score c)))))) :name analysis :tag quast)
+    )
+    """,
+
     'faster' : """
     ;;; Assembles with A6 and Velvet.
-    ;;; Results are sorted by N50 Score.
+    ;;; Results are sorted by ARAST quality Score.
     ;;; Works well for some short read datasets.
     (begin
       (define vt (velvet READS))
@@ -154,7 +168,7 @@ recipes = {
 
     'fast' : """
     ;;; Assembles with A6, Velvet and SPAdes (with BayesHammer for error correction).
-    ;;; Results are sorted by N50 Score.
+    ;;; Results are sorted by ARAST quality Score.
     (begin
       (define vt (velvet READS))
       (define sp (begin (setparam only_assembler False) (spades READS)))
