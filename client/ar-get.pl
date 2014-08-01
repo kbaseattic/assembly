@@ -21,7 +21,8 @@ Optional arguments:
   -a [ASSEMBLY], --assembly [ASSEMBLY]
                         Download an assembly or assemblies
   -p [PICK], --pick [PICK]
-                        Print assembled contigs specified by an optional ID
+                        Print a set of assembled contigs
+                        specified by an optional assembly ID
                         (e.g., '2' or 'velvet', defaults to auto selection)
   -r, --report          Print assembly stats report
   -l, --log             Print assembly job log
