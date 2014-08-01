@@ -9,7 +9,7 @@ my $usage = <<End_of_Usage;
 
 Usage: ar-get [-h] -j JOB_ID [-a [ASSEMBLY]] [--stdout] [-s server_addr]
 
-Download result data
+Download or print assembly result data
 
 Mandatory arguments:
   -j JOB_ID, --job JOB_ID
@@ -21,7 +21,8 @@ Optional arguments:
   -a [ASSEMBLY], --assembly [ASSEMBLY]
                         Download an assembly or assemblies
   -p [PICK], --pick [PICK]
-                        Print an assembly
+                        Print assembled contigs specified by an optional ID
+                        (e.g., '2' or 'velvet', defaults to auto selection)
   -r, --report          Print assembly stats report
   -l, --log             Print assembly job log
   -o OUTDIR, --outdir OUTDIR
