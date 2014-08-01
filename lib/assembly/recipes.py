@@ -140,6 +140,7 @@ recipes = {
     ;;; Runs Velvet with hash length 35.
     ;;; Runs BayesHammer on reads and assembles with SPAdes with k up to 99.
     ;;; Results are sorted by ARAST quality score.
+    ;;; Works for Illumina MiSeq reads.
     (begin
       (define vt (begin (setparam hash_length 35) (velvet READS)))
       (define sp (begin
@@ -153,7 +154,7 @@ recipes = {
     'faster' : """
     ;;; Assembles with A6 and Velvet.
     ;;; Results are sorted by ARAST quality Score.
-    ;;; Works well for some short read datasets.
+    ;;; Works for some short read datasets.
     (begin
       (define vt (velvet READS))
       (if (has_paired READS) 
