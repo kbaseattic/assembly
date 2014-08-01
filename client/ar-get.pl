@@ -17,10 +17,16 @@ Mandatory arguments:
 
 Optional arguments:
   -h, --help            show this help message and exit
-  -a [ASSEMBLY], --assembly [ASSEMBLY]
-                        get contigs for the i-th assembly only
   -s server_addr        specify ARAST server address
-  --stdout              print assembled contigs in FASTA to stdout
+  -a [ASSEMBLY], --assembly [ASSEMBLY]
+                        Download an assembly or assemblies
+  -p [PICK], --pick [PICK]
+                        Print an assembly
+  -r, --report          Print assembly stats report
+  -l, --log             Print assembly job log
+  -o OUTDIR, --outdir OUTDIR
+                        Download to specified directory
+  -w, --wait            Wait until job is done
 
 End_of_Usage
 
