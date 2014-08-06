@@ -1,259 +1,292 @@
-<h1>Using the Assembly Service Command-Line Client</h1>
+<div>
+<h1 id="using-the-assembly-service-commands">Using the Assembly Service Commands</h1>
+<h2 id="introduction">Introduction</h2>
+<p>The Assembly Service is a web-based environment that allows users to<br />submit datasets of sequence reads to be processed, assembled, and<br />analyzed. This tutorial will introduce you to the current<br />capabilities of the service as well as giving some command-line<br />recipes. You will learn how to upload a set of read files, assemble<br />them, inspect the results, and select the best assembly for your<br />downstream analysis.</p>
+</div>
+<div>
+<p>We believe the default pipeline performs well. However, we encourage<br />you to experiment with alternative assemblers, preprocessing tools,<br />and parameter settings. Our service currently supports over 20<br />assemblers and tools, and its modular design allows for<br />straightforward extension as sequencing technologies and analysis<br />tools evolve. We have also built a pipeline engine that allows you to<br />mix and match approaches and evaluate a variety of customized<br />pipelines on your datasets.</p>
+<p>We will start with a very simple example. Then, we will step through<br />the commands and options. Since a thorough assembly on a microbial<br />genome can take hours, we will use a partial dataset in the early<br />examples for quick turnaround. In the final set of examples, we will<br />work with some real data. This tutorial will focus on microbial<br />assembly, although some of the modules included in the service<br />supports assembly of low-complexity metagenomes.</p>
+</div>
+<div>
+<h2 id="a-simple-example">A Simple Example</h2>
+<p>The following command will instruct the server to assemble a file of<br />single-end reads specified by the URL using the velvet assembler. This<br />should take just a couple minutes.</p>
+<pre class="inv"><code>ar-run -a velvet --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq | ar-get --wait --pick &gt; ex1.contigs.fasta</code></pre>
+<p>This command will block until the assembly is done. The resulting set<br />of contigs will be saved to a FASTA file local to the client. The<br />choice of output name is arbitrary; we use <code>ex1.contigs.fasta</code> to<br />denote it's the contigs from our first exercise. You can use the Unix<br /><code>cat</code> utility to inspect the content of the contig file.</p>
+</div>
+<div>
+<pre class="inv"><code>cat ex1.contigs.fasta</code></pre>
+<pre class="out"><code>&gt;NODE_1_length_56_cov_204.767853
+TACTAAAATTATAATTTTCCTGATTTTTGTAGAGGAGTATGGGAAAGTTCTGTGTATTTT
+ATGCTTTTATCCGTATTTAGGAGT
+&gt;NODE_2_length_81_cov_258.320984
+TTTTATGCTTTTATCCGTATTTAGGAGTTAGAGGCTAGAGATGATGGAGTAAATTGTAAA
+ATCAGGCTAGTGAAGGATCTGAATATCCATTTCTATTTACCTGAAATAT
+&gt;NODE_3_length_1762_cov_171.553909
+AATCAACGAAGCAGGAGCATACTGGTAAGCGACAGTTAAAAGGAAGTATGCAATATTTAT
+TATTACTCCTAACAGCGCTATCAAGCTAAAGTCCTTCAAGTTAGGAAAAGATCCTTCCCA
+...</code></pre>
+<p>The one-liner command above uses two operators on Unix-like systems: the<br />pipe operator <code>|</code> for chaining commands, and the redirection operator<br /><code>&gt;</code> to save output normally directed to the screen to a designated<br />file. They are used here for convenience and are not necessary in the<br />step-by-step way of using the assembly service.</p>
+</div>
+<div>
+<h2 id="getting-started">Getting Started</h2>
+<p>The commands and options we describe in this tutorial are supported on<br />the clients of version 0.5.1 or newer. To check your client version, type:</p>
+<pre class="inv"><code>ar-stat --version</code></pre>
+<pre class="out"><code>AssemblyRAST Client 0.5.3</code></pre>
+<p>Here is the list of client commands. You can use the &quot;-h&quot; option to<br />consult the usage information for each command.</p>
+<pre><code>ar-login, ar-logout, ar-upload, ar-run, ar-stat, ar-get, ar-filter, ar-kill, ar-avail</code></pre>
+</div>
+<div>
+<h3 id="authentication">Authentication</h3>
+<p>If you are using one of the browser-based clients, you may have<br />already signed in using the widget located on the upper-right corner<br />of your window. If you are using the command-line client from the<br />terminal, you can type the following commands to authenticate, or<br />switch to a different account.</p>
+<pre><code>ar-login
+ar-logout</code></pre>
+</div>
+<div>
+<h3 id="submitting-a-set-of-read-files">Submitting a set of read files</h3>
+<p>An input dataset for assembly is usually composed of one or multiple<br />single-end libraries or paired-end libraries in the FASTQ format. You<br />can define your data object and submit it to the assembly server using<br />the <code>ar-upload</code> command with a combination of <code>--single</code> and <code>--pair</code><br />options. You can use either option more than once for multiple<br />libraries of the same type.</p>
+<p>To illustrate this, you can first download two small files we have<br />prepared to your client local space.</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">curl</span> http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq <span class="kw">&gt;</span> p1.fq
+<span class="kw">curl</span> http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq <span class="kw">&gt;</span> p2.fq</code></pre>
+</div>
+<div>
+<p>You can of course skip the above step and submit your own<br />files. Here's an example of the upload command, assuming you already<br />have two local sequence files named <code>p1.fq</code> and <code>p2.fq</code>:</p>
+<pre class="inv"><code>ar-upload --pair p1.fq p2.fq &gt; ex2.data_id</code></pre>
+<p>The upload will return a data ID from the server. The data ID allows<br />you to invoke different assemblers or pipelines on the same data<br />without resubmitting it. In the example above, we used the<br /><code>&gt; ex2.data_id</code> redirection to save the data ID to a file. If you omit<br />that part, an integer ID will be printed to the screen upon successful<br />submission:</p>
+<pre><code>Data ID: 155</code></pre>
+</div>
+<div>
+<h3 id="launching-an-assembly-job">Launching an assembly job</h3>
+<p>To launch our default assembly pipeline on the dataset you submitted<br />in the previous section, you can simply type:</p>
+<pre class="inv"><code>cat ex2.data_id | ar-run &gt; ex3.job_id</code></pre>
+<p>If you don't have the data ID saved in a file, you can instead type<br />something such as <code>ar-run --data 115</code>.</p>
+<p>Note that the assembly job is asynchrnous. The <code>ar-run</code> command should<br />return immediately with a job ID (e.g., <code>Job ID: 223</code>) with which you<br />can query the job status.</p>
+</div>
+<div>
+<p>As we have shown in our first exercise, you can also bypass the<br /><code>ar-upload</code> step and launch a job directly. Here is an example.</p>
+<pre class="inv"><code>ar-run --pair p1.fq p2.fq -p tagdust idba -m &quot;my test job&quot;</code></pre>
+<p>This command should return as soon as the data is uploaded. Note that we<br />are also explicitly invoking the <code>tagdust</code> preprocessing module and<br />the <code>idba</code> assembler using the <code>-p</code> pipeline option. You can use the<br /><code>ar-avail</code> command to list all the modules supported. We will describe<br />those and the pipeline support in the Advanced Features section.</p>
+<p>Both the <code>ar-run</code> and <code>ar-upload</code> commands allow you to specify a<br />reference genome with the <code>--reference genome.fasta</code> option. It can<br />be used to score the assemblies in the evaluation step.</p>
+</div>
+<div>
+<h3 id="assemblers-pipelines-and-recipes">Assemblers, pipelines, and recipes</h3>
+<p>There are three main options for defining an assembly job on your<br />dataset:</p>
+<ol>
+<li><code>-a assembler</code>: invokes an individual assembler on raw reads.<br /></li>
+<li><code>-p module1 module2 ... assembler</code>: runs a pipeline of preprocessing and assembler modules<br /></li>
+<li><code>-r recipe</code>: uses a predefined pipeline which we call a &quot;recipe&quot;</li>
+</ol>
+</div>
+<div>
+<p>You can combine <code>-a</code> and <code>-p</code> options but not the <code>-r</code> option. Here<br />are some valid option examples for <code>ar-run</code>:</p>
+<pre><code>-a velvet -a a6
+-p bhammer spades -a ray -p kiki sspace
+-r fast</code></pre>
+</div>
+<div>
+<p>We have curated a set of recipes that tend to work well for certain<br />datasets. You can list them using the <code>--recipe</code> option in the<br />ar-avail command:</p>
+<pre class="inv"><code>ar-avail --recipe</code></pre>
+<pre class="out"><code>[Recipe] auto
+  1. Runs BayesHammer on reads
+  2. Assembles with Velvet, IDBA and SPAdes
+  3. Sorts assemblies by ALE score
+
+[Recipe] smart
+  1. Runs BayesHammer on reads, Kmergenie to choose hash-length for Velvet
+  2. Assembles with Velvet, IDBA and SPAdes
+  3. Sorts assemblies by ALE score
+  4. Merges the two best assemblies with GAM-NGS
+
+[Recipe] fast
+  Assembles with A6, Velvet and SPAdes (with BayesHammer for error correction).
+  Results are sorted by N50 Score.
+
+[Recipe] faster
+  Assembles with A6 and Velvet.
+  Results are sorted by N50 Score.
+  Works well for some short read datasets.
+
+...</code></pre>
+</div>
+<div>
+<h3 id="job-management">Job management</h3>
+<p>To monitor the job and data status, you can use variations of the<br /><code>ar-stat</code> command. To get the list of recently submitted jobs, type:</p>
+<pre class="inv"><code>ar-stat</code></pre>
+<pre class="out"><code>+--------+---------+----------------------+----------+------------------+
+| Job ID | Data ID |        Status        | Run time |   Description    |
++--------+---------+----------------------+----------+------------------+
+|  133   |    58   |  [FAIL] Data Error   | 0:09:12  |       None       |
+|  134   |    60   |       Complete       | 0:01:57  |   my test job    |
+|  135   |    62   |       Complete       | 0:00:21  |       None       |
+|  136   |    63   |       Complete       | 0:03:53  |       None       |
+|  137   |    64   |       Complete       | 0:02:26  |       None       |
+|  138   |    65   | Stage 2/9: kmergenie | 0:00:59  | default pipeline |
+|  139   |    66   |  Stage 3/5: velvet   | 0:00:59  | parameter sweep  |
+|  140   |    68   |   Stage 2/3: idba    | 0:00:59  |   my test job    |
+|  141   |    70   |       Complete       | 0:00:21  |   RAST recipe    |
+|  142   |    71   | Stage 2/5: kmergenie | 0:00:30  |   kmer tuning    |
++--------+---------+----------------------+----------+------------------+</code></pre>
+</div>
+<div>
+<p>When a job is in progress, its stage information is updated in the<br />Status field; otherwise, it can end in one of the following states:<br />&quot;Complete&quot;, &quot;Complete with error&quot;, &quot;Terminated&quot;, and &quot;FAIL [description]&quot;.<br />You can use the <code>ar-stat -j job_id</code> command to inspect the error<br />message for a failed job.</p>
+<p>You may notice that of the two jobs we just launched, the second one<br />may finish first. That's because our default pipeline<br />invokes multiple assemblers on your dataset with parameter tuning. It<br />may even try to reconcile and merge the best individual assemblies.</p>
+</div>
+<div>
+<p>The status table also gives you the data ID for each job. However, you<br />may need to list all the datasets you have uploaded but may not<br />necessarily have computed on. For that, you can type:</p>
+<pre class="inv"><code>ar-stat -l</code></pre>
+<pre class="out"><code>+---------+--------------+---------------+-------------------------------+
+| Data ID | Description  |      Type     |             Files             |
++---------+--------------+---------------+-------------------------------+
+|   151   |     None     |               |                               |
+|         |              |     paired    | p1.fq (39.8MB) p2.fq (39.8MB) |
+|   152   |     None     |               |                               |
+|         |              |   reference   |             ref.fa            |
+|         |              |     paired    |          p2.fq p1.fq          |
+|   153   |     None     |               |                               |
+|         |              |   paired_url  |       b99_1.fq b99_2.fq       |
+|   154   |     None     |               |                               |
+|         |              |     paired    | p1.fq (39.8MB) p2.fq (39.8MB) |
+|         |              | reference_url |           b99.ref.fa          |
+|   155   | my test data |               |                               |
+|         |              |     single    |             se.fq             |
+|   156   |     None     |               |                               |
+|         |              |   single_url  |            se.fastq           |
++---------+--------------+---------------+-------------------------------+</code></pre>
+</div>
+<div>
+<h3 id="getting-assembly-results">Getting assembly results</h3>
+<p>Once a job completes, you can look at the report of assembly<br />statitistics and pick your best set of contigs. You can also choose to<br />download the whole data directory which includes detailed log files<br />and a visual comparison of all the assemblies.</p>
+<p>Use <code>ar-get -j job_id --report</code> to show the text assembly report. You<br />can add the <code>--wait</code> option to make sure the command waits for the job<br />to complete. In the following example, we specify the job ID from a<br />file we have previously saved.</p>
+</div>
+<div>
+<pre class="inv"><code>cat ex3.job_id | ar-get --report --wait</code></pre>
+<pre class="out"><code>QUAST: All statistics are based on contigs of size &gt;= 500 bp, unless otherwise noted (e.g., &quot;# contigs (&gt;= 0 bp)&quot; and &quot;Total length (&gt;= 0 bp)&quot; include all contigs).
+
+Assembly                        spades_contigs  gam_ngs_contigs  idba_contigs  velvet_contigs
+# contigs (&gt;= 0 bp)             3629            3543             3562          32840
+# contigs (&gt;= 1000 bp)          977             967              735           397
+Total length (&gt;= 0 bp)          3085770         3086007          2549247       3234730
+Total length (&gt;= 1000 bp)       1889425         1938839          1206779       665559
+# contigs                       1947            1879             1780          902
+Largest contig                  11126           11126            7592          8135
+Total length                    2571219         2578689          1929576       1025928
+Reference length                3084257         3084257          3084257       3084257
+GC (%)                          56.51           56.51            55.99         55.20
+Reference GC (%)                56.89           56.89            56.89         56.89
+N50                             1585            1664             1212          1265
+NG50                            1314            1397             723           -
+...</code></pre>
+</div>
+<div>
+<p>You can pick an assembly using numeric or string IDs (e.g., <code>ar-get --pick 1</code>, where 1 stands for the first assembly column, is equivalent<br />to <code>ar-get --pick spades</code> in the example above). By default,<br />the <code>--pick</code> option will select the best assembly based on a set of<br />common metrics. We are actively working on improving the scoring<br />functions for reference-based and reference-free assemblies.</p>
+<pre class="inv"><code>cat ex3.job_id | ar-get --wait --pick &gt; ex4.contigs.fasta</code></pre>
+<p>You can also use the <code>ar-filter</code> command to keep only the contigs<br />satisfying certain length and coverage requirements. For example, if<br />you are only interested in using contigs longer than 500 bp and with<br />read coverage above 2.0 for your downstream analysis, you can type:</p>
+<pre class="inv"><code>cat ex3.job_id | ar-get --wait --pick | ar-filter -l 500 -c 2.0 &gt; ex4.filtered.contigs.fa</code></pre>
+<p>To download the whole assembly directory on the server, type:</p>
+<pre class="inv"><code>cat ex3.job_id | ar-get -o ex5.dir</code></pre>
+</div>
+<div>
+<p>The directory <code>ex5.dir</code> will contain the report file, contig files,<br />and visualized analysis output:</p>
+<pre><code>ex5.dir/214_report.txt
+ex5.dir/214_1.spades_contigs.fasta
+ex5.dir/214_2.velvet_contigs.fa
+ex5.dir/214_analysis/report.html
+ex5.dir/214_analysis/report.pdf
+...</code></pre>
+<p>Assembly pipelines can fail for a variety reasons. Some modules do not<br />support long reads or multiple libraries; others are simply not<br />robust. When an assembly job includes multiple pipelines, it will try<br />to skip the failed ones and only include the successful assemblies in<br />the final report. You can inspect the full pipeline logs with the<br /><code>ar-get --log</code> option.</p>
+</div>
+<div>
+<h2 id="advanced-features">Advanced Features</h2>
+<h3 id="modules">Modules</h3>
+<p>You can find the list of assemblers and supporting modules<br />available in the assembly service by typing:</p>
+<pre class="inv"><code>ar-avail</code></pre>
+<pre class="out"><code>Module           Stages                              Description
+----------------------------------------------------------------
+a5               preprocess,assembler,post-process   A5 microbial assembly pipeline
+a6               preprocess,assembler,post-process   Modified A5 microbial assembly pipeline
+bhammer          preprocess                          SPAdes component for quality control of sequence data
+bowtie2          post-process                        Bowtie2 aligner that maps reads to contigs
+bwa              post-process                        BWA aligner that maps reads to contigs
+fastqc           preprocess                          FastQC quality control tool for sequence data
+filter_by_length preprocess                          Length-based sequencing reads filter and trimmer based on seqtk
+idba             assembler                           IDBA iterative graph-based assembler for single-cell and standard data
+kiki             assembler                           Kiki overlap-based parallel microbial and metagenomic assembler
+quast            post-process                        QUAST assembly quality assessment tool (run by default)
+ray              assembler                           Ray graph-based parallel microbial and metagenomic assembler
+reapr            post-process                        REAPR assembly error recognizer using paired-end reads
+sga_ec           preprocess                          SGA component for error correction (runs subcommands: &#39;index&#39; &amp; &#39;correct&#39;)
+sga_preprocess   preprocess                          SGA component for preprocessing reads (runs subcommand &#39;preprocess&#39;)
+spades           preprocess,assembler                SPAdes single-cell and standard assembler based on paired de Bruijn graphs
+sspace           post-process                        SSPACE pre-assembled contig scaffolder
+swap             assembler                           SWAP Assembler
+tagdust          preprocess                          TagDust sequencing artifacts remover
+trim_sort        preprocess                          DynamicTrim and LengthSort from SolexaQA
+velvet           assembler                           Velvet de-bruijn graph based assembler</code></pre>
+</div>
+<div>
+<p>To see the details for each module including customizable parameters,<br />version and reference information, you can use the <code>--detail</code> option:</p>
+<pre class="inv"><code>ar-avail --detail</code></pre>
+<pre class="out"><code>...
+[Module] trim_sort
+  Description: DynamicTrim and LengthSort from SolexaQA
+  Version: 1.0
+  Stages: preprocess
+  References: doi:10.1186/1471-2105-11-485
+  Customizable parameters: default (available values)
+                   length  =  25
+               probcutoff  =  0.05
+                                            
+[Module] velvet
+  Description: Velvet de-bruijn graph based assembler
+  Version: 1.0
+  Base Version: 1.2.10
+  Stages: assembler
+  References: doi:10.1101/gr.074492.107
+  Customizable parameters: default (available values)
+              auto_insert  =  False
+              hash_length  =  29</code></pre>
+</div>
+<div>
+<h3 id="pipelines">Pipelines</h3>
+<p>You can mix and match different preprocessing modules and assemblers<br />to form multiple pipelines in one submission. For example, the<br />following command will launch four pipelines and compare the resulting<br />assemblies.</p>
+<pre class="inv"><code>ar-run --pair pe1.fq pe2.fq -p &#39;none tagdust&#39; &#39;velvet kiki&#39;</code></pre>
+<p>The cartesian expansion of the pipeline expression generates four pipelines:</p>
+<pre><code>velvet
+kiki
+tagdust velvet
+tagdust kiki</code></pre>
+</div>
+<div>
+<h3 id="parameters">Parameters</h3>
+<p>Some of the modules support customizable parameters. You can use them<br />to launch parameter sweep pipelines. In a parameter sweep, the value<br />of a parameter is adjusted by sweeping the parameter values through a<br />user defined range. For example, you can use the <code>-p velvet ?hash_length=29-37:4</code> option in the <code>ar-run</code> command to launch three<br />velvet jobs with different hash lengths (29, 33, 37). Here, for<br />numerical parameters, the general syntax is: <code>module ?parameter=beg-end:step_size</code></p>
+</div>
+<div>
+<p>To list the pipeline and parameter details for the jobs you have<br />launched, type:</p>
+<pre class="inv"><code>ar-stat --detail</code></pre>
+<pre class="out"><code>+--------+---------+----------------------+----------+------------------+-----------------------------------------------+
+| Job ID | Data ID |        Status        | Run time |   Description    | Parameters                                    |
++--------+---------+----------------------+----------+------------------+-----------------------------------------------+
+|  218   |   143   |       Complete       | 0:02:26  |    kmer sweep    | -p &#39;none tagdust&#39; velvet ?hash_length=29-37:4 |
+|  224   |   152   |       Complete       | 0:18:24  |   first: auto    | -p auto                                       |
+|  225   |   153   |       Complete       | 0:11:37  |   RAST recipe    | -r rast                                       |
+|  227   |   157   |       Complete       | 0:00:21  |       None       | -p velvet                                     |
++--------+---------+----------------------+----------+------------------+-----------------------------------------------+</code></pre>
+</div>
+<div>
+<h3 id="pacbio-support">PacBio support</h3>
+<p>The assembly service supports an experimental version of the HGAP<br />pipeline for assembling PacBio reads. Here's an example:</p>
+<pre class="inv"><code>ar-run --single_url http://www.mcs.anl.gov/~fangfang/arast/m120404.bas.h5 -a pacbio ?min_long_read_length=3500 ?genome_size=40000</code></pre>
+<p>This command will assemble the lambda phage genome in a few minutes<br />from reads in the raw PacBio H5 format.</p>
+</div>
+<div>
+<h2 id="real-data-examples">Real data examples</h2>
+<p>Here we use the default recipe to assemble the Rhodobacter<br />sphaeroides genome from Illumina HiSeq reads (SRA accession: SRR522244).</p>
+<p>As you can see from the visual evaluation below (generated using the<br />QUAST quality assessment tool), our merged assembly has a<br />significantly higher NGA50 value than any individual assembly. The<br />NGA50 value is the aligned N50 size when the reference genome (ground<br />truth) is provided.</p>
+</div>
+<div>
+<p><img src="http://www.mcs.anl.gov/~fangfang/arast/quast_1.png" alt="quast assembly comparison table" /></p>
+</div>
+<div>
+<p>When you open the report HTML file included the analysis directory,<br />you can inspect the rankings of assembly pipelines in terms of<br />cumulative contig lengths by hovering the mouse over your selected set<br />of the top contigs.</p>
+<p><img src="http://www.mcs.anl.gov/~fangfang/arast/quast_2.png" alt="quast assembly comparison plot" /></p>
+</div>
 
-<h2>Introduction</h2>
-
-<p>The DOE KBase features an Assembly Service with tools that allow users to submit a variety of sequence datasets to be processed, assembled, and analyzed.  This tutorial will introduce you to the current capabilities of the service as well as give some command-line recipes.</p>
-
-<p>Currently at an early phase, the Assembly Service has the following computation capabilities:</p>
-
-<ul>
-<li>Velvet assembly</li>
-<li>Kiki assembly</li>
-<<<<<<< HEAD
-</ul>
-
-<!-- <h2>Installation</h2> -->
-
-<!-- <h3>Prerequisites</h3> -->
-
-<!-- <ul> -->
-<!-- <li>Python easy_install module</li> -->
-<!-- </ul> -->
-
-<!-- <h3>Prepackaged Installation in Unix</h3> -->
-
-<!-- <p>The Assembly Service Client uses Python's Easy Install module to manage and install dependencies.  To install, first download the latest .egg package from the <a href="http://kbase.us/index.php/developers/downloads/">KBase Downloads page</a>.  To install:</p> -->
-
-<!-- <p><code>sudo easy_install ar_client-&lt;VERSION&gt;.egg</code></p> -->
-
-<h2>Authentication</h2>
-
-<p><code>ar_login</code></p>
-
-<p><code>ar_logout</code></p>
-
-To authenticate using one's GlobusOnlien ID or switch to a different account, use the ar_login command. 
-
-<h2>Running the Service</h2>
-
-<p>We will walk through building a command-line recipe depending on desired options.  First, running an assemblies is performed via the <code>ar_run</code> command:</p>
-
-<p><code>ar_run ...</code></p>
-
-<p>NOTE: The default behavior of the client is to use the official KBase Assembly Server.  To invoke the client against an alternate server, use the <code>-s</code> flag:</p>
-
-<p><code>ar_run -s SERVER ...</code></p>
-=======
-<li>BWA alignment</li>
-</ul>
-
-<h2>Installation</h2>
-
-<h3>Prerequisites</h3>
-
-<ul>
-<li>Python easy_install module</li>
-</ul>
-
-<h3>Prepackaged Installation in Unix</h3>
-
-<p>The Assembly Service Client uses Python's Easy Install module to manage and install dependencies.  To install, first download the latest .egg package from the <a href="http://kbase.us/index.php/developers/downloads/">KBase Downloads page</a>.  To install:</p>
-
-<p><code>sudo easy_install ar_client-&lt;VERSION&gt;.egg</code></p>
-
-<h2>Running the Service</h2>
-
-<p>We will walk through building a command-line recipe depending on desired options.  First, running an assemblies is performed via the <code>run</code> subcommand:</p>
-
-<p><code>arast run ...</code></p>
-
-<p>NOTE: The default behavior of the client is to use the official KBase Assembly Server.  To invoke the client against an alternate server, use the <code>-s</code> flag:</p>
-
-<p><code>arast -s SERVER run ...</code></p>
->>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e
-
-<h3>Sequence Data</h3>
-
-<p>We can submit data in multiple fashions:</p>
-
-<h4>Separate files: <code>-f</code></h4>
-
-<<<<<<< HEAD
-<p><code>ar_run -f READS1.fa READS2.fa ...</code></p>
-
-<h4>Whole directories: <code>-d</code></h4>
-
-<p><code>ar_run -d /path/to/sequences/ ...</code></p>
-
-<h4>Paired-end reads: <code>-d</code></h4>
-
-<p><code>ar_run --pair SRRxxxx_1.fastq SRRxxxx_2.fastq ...</code></p>
-
-<!-- <h4>Previously submitted datasets: <code>--data</code></h4> -->
-
-<!-- <p><code>ar_run --data DATAID ...</code></p> -->
-
-<!-- <p>(We will explain DATAID later in the tutorial)</p> -->
-=======
-<p><code>arast run -f READS1.fa READS2.fa ...</code></p>
-
-<h4>Whole directories: <code>-d</code></h4>
-
-<p><code>arast run -d /path/to/sequences/ ...</code></p>
-
-<h4>Previously submitted datasets: <code>--data</code></h4>
-
-<p><code>arast run --data DATAID ...</code></p>
-
-<p>(We will explain DATAID later in the tutorial)</p>
->>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e
-
-<h3>Assemblers</h3>
-
-<p>The Assembly service is designed to be flexible and extensible to offer multiple assembler options.  Currently, the assembler choices are:</p>
-
-<ul>
-<li><code>kiki</code></li>
-<li><code>velvet</code></li>
-</ul>
-
-<p>Thus, to run an assembly:</p>
-
-<<<<<<< HEAD
-<p><code>ar_run -f READS.fa -a kiki [...]</code></p>
-
-<p>or multiple assemblies:</p>
-
-<p><code>ar_run -f READS.fa -a kiki velvet [...]</code></p>
-
-<h3>Processing / Analysis</h3>
-
-<!-- <p>The Assembly service currently offers the current processing services:</p> -->
-
-<!-- <h4>BWA: <code>--bwa</code></h4> -->
-
-<!-- <p>Using this option will invoke a BWA alignment which queries the initial reads against the assembled contig(s).</p> -->
-
-<!-- <p><code>ar_run -f READS.fa -a kiki --bwa</code></p> -->
-=======
-<p><code>arast run -f READS.fa -a kiki [...]</code></p>
-
-<p>or multiple assemblies:</p>
-
-<p><code>arast run -f READS.fa -a kiki velvet [...]</code></p>
-
-<h3>Processing / Analysis</h3>
-
-<p>The Assembly service currently offers the current processing services:</p>
-
-<h4>BWA: <code>--bwa</code></h4>
-
-<p>Using this option will invoke a BWA alignment which queries the initial reads against the assembled contig(s).</p>
-
-<p><code>arast run -f READS.fa -a kiki --bwa</code></p>
->>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e
-
-<h3>Other Options</h3>
-
-<h4>User Comments/Description</h4>
-
-<p>The user can submit a description with the job for personal bookkeeping:</p>
-
-<<<<<<< HEAD
-<p><code>ar_run -f READS.fa -a kiki -m "My description"</code></p>
-=======
-<p><code>arast run -f READS.fa -a kiki -m "My description"</code></p>
->>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e
-
-<h2>Job / Data Status</h2>
-
-<h3>Job Status</h3>
-
-<p>Checking the status of job and data submissions is performed via the <code>stat</code> sub-command.  To check the status of the most recent jobs:</p>
-
-<<<<<<< HEAD
-<p><code>ar_stat [...]</code></p>
-
-<p>or the status of any number of previous jobs:</p>
-
-<p><code>ar_stat -n NUM [...]</code></p>
-
-<!-- <h3>Dataset information</h3> -->
-
-<p>The returned output gives the user information about submitted jobs:</p>
-
-<pre><code>
-+--------+---------+---------------------+----------+-------------+
-| Job ID | Data ID |        Status       | Run time | Description |
-+--------+---------+---------------------+----------+-------------+
-|   1    |    1    | pipeline [success]  | 0:00:23  |     None    |
-|   2    |    2    |        queued       |          |             |
-|   3    |    3    | pipeline [success]  | 0:00:22  |     None    |
-|   4    |    4    | pipeline [success]  | 0:00:54  |     None    |
-|   5    |    5    | pipeline [success]  | 0:00:21  |     None    |
-|   6    |    6    | pipeline [success]  | 0:00:25  |     None    |
-+--------+---------+---------------------+----------+-------------+
-</code></pre>
-
-<!-- <pre><code>+--------+---------+----------+----------+-------------+ -->
-<!-- | Job ID | Data ID |  Status  | Run time | Description | -->
-<!-- +--------+---------+----------+----------+-------------+ -->
-<!-- |   42   |    17   | complete | 0:00:16  |    test3    | -->
-<!-- +--------+---------+----------+----------+-------------+ -->
-<!-- </code></pre> -->
-
-<!-- <p>Here, we can see the "Data ID" of the specific dataset.  With this, we can attain information about it:</p> -->
-
-<!-- <p><code>ar_stat --data 17</code></p> -->
-
-<!-- <p>which will output</p> -->
-
-<!-- <pre><code>+---+--------+-----------+ -->
-<!-- | # |  File  |    Size   | -->
-<!-- +---+--------+-----------+ -->
-<!-- | 1 | sm1.fa | 203372422 | -->
-<!-- | 2 | sm2.fa | 534524543 | -->
-<!-- +---+--------+-----------+ -->
-<!-- </code></pre> -->
-=======
-<p><code>arast stat [...]</code></p>
-
-<p>or the status of any number of previous jobs:</p>
-
-<p><code>arast stat -n NUM [...]</code></p>
-
-<h3>Dataset information</h3>
-
-<p>The returned output gives the user information about submitted jobs:</p>
-
-<pre><code>+--------+---------+----------+----------+-------------+
-| Job ID | Data ID |  Status  | Run time | Description |
-+--------+---------+----------+----------+-------------+
-|   42   |    17   | complete | 0:00:16  |    test3    |
-+--------+---------+----------+----------+-------------+
-</code></pre>
-
-<p>Here, we can see the "Data ID" of the specific dataset.  With this, we can attain information about it:</p>
-
-<p><code>arast stat --data 17</code></p>
-
-<p>which will output</p>
-
-<pre><code>+---+--------+-----------+
-| # |  File  |    Size   |
-+---+--------+-----------+
-| 1 | sm1.fa | 203372422 |
-| 2 | sm2.fa | 534524543 |
-+---+--------+-----------+
-</code></pre>
->>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e
-
-<h2>Retrieving Results</h2>
-
-<p>Once it is confirmed that a job's "Status" is "complete," result data can be downloaded from the server. To download result data from a particular job:</p>
-
-<<<<<<< HEAD
-<p><code>ar_get -j JOB_ID</code></p>
-=======
-<p><code>arast get -j JOB_ID</code></p>
->>>>>>> d45cf58c0dbe4cfee7b3a12d983388f1f1dde81e

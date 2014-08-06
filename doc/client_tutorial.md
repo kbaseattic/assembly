@@ -493,14 +493,14 @@ significantly higher NGA50 value than any individual assembly. The
 NGA50 value is the aligned N50 size when the reference genome (ground
 truth) is provided. 
 
-![quast assembly comparison table](http://www.mcs.anl.gov/~fangfang/arast/quast1.png)
+![quast assembly comparison table](http://www.mcs.anl.gov/~fangfang/arast/quast_1.png)
 
 When you open the report HTML file included the analysis directory,
 you can inspect the rankings of assembly pipelines in terms of
 cumulative contig lengths by hovering the mouse over your selected set
 of the top contigs.
 
-![quast assembly comparison plot](http://www.mcs.anl.gov/~fangfang/arast/quast2.png)
+![quast assembly comparison plot](http://www.mcs.anl.gov/~fangfang/arast/quast_2.png)
 
 
 
