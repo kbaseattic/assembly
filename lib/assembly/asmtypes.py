@@ -231,3 +231,6 @@ class ArastUserInterrupt(BaseException):
 
 class ArastDataInputError(Exception):
     pass
+
+class ArastDataOutputError(Exception):
+    pass
