@@ -144,6 +144,12 @@ sub test_json_input {
     sysrun('cat job.12 | ar-get -w -p > contigs.12');
 }
 
+sub test_mixed_input_with_smart {
+    sysrun('ar-run -r smart -m mixed_1s2p --pair p1.fq p2.fq --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq --pair_url http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq > job.21');
+    sysrun("cat job.21 | ar-get -w --report > report.21"); validate_report('report.21');
+    sysrun('cat job.21 | ar-get -w -p > contigs.21'); validate_contigs('contigs.21');
+}
+
 sub validate_contigs {
     my ($file) = @_;
     my $out = sysout("head $file |grep '^>'");
