@@ -333,6 +333,13 @@ sub process_input_args {
     my %pe_param_map  = ( insert => 'insert_size_mean', stdev => 'insert_size_std_dev' );
     my %ref_param_map = ( name => 'reference_name' );
 
+    # check duplicated file names
+    my %seen;
+    for (@$se_args, @$pe_args, @$ref_args) {
+        next if /=/;
+        !$seen{$_}++ or die "Input error: duplicated file: $_\n";
+    }
+
     my $i;
     for (@$ref_args) {
         if (/(\S.*?)=(.*)/) {
