@@ -161,6 +161,13 @@ sub test_mixed_input_with_smart {
     sysrun('cat job.21 | ar-get -w -p > contigs.21'); validate_contigs('contigs.21');
 }
 
+sub test_compressed_files {
+    my $pe1 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq.gz';
+    my $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq.gz';
+    sysrun("ar-run --pair_url $pe1 $pe2 -a kiki > job.31");
+    sysrun('cat job.31 | ar-get -w -p > contigs.31'); validate_contigs('contigs.31');
+}
+ 
 sub validate_contigs {
     my ($file) = @_;
     my $out = sysout("head $file |grep '^>'");

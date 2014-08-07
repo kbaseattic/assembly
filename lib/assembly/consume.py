@@ -390,6 +390,10 @@ def touch(path):
     
 def extract_file(filename):
     """ Decompress files if necessary """
+    root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
+    module_bin_path = os.path.join(self.root_path, "module_bin")
+    unp_bin = os.path.join(module_bin_path, 'unp')
+
     filepath = os.path.dirname(filename)
     supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz', 
                  'rar', 'tar', 'tgz','zip']
@@ -399,7 +403,7 @@ def extract_file(filename):
             if os.path.exists(extracted_file): # Check extracted already
                 return extracted_file
             logging.debug("Extracting %s" % filename)
-            p = subprocess.Popen(['unp', filename], 
+            p = subprocess.Popen([unp_bin, filename], 
                                  cwd=filepath, stderr=subprocess.STDOUT)
             p.wait()
             if os.path.exists(extracted_file):
