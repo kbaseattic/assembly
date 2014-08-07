@@ -391,7 +391,7 @@ def touch(path):
 def extract_file(filename):
     """ Decompress files if necessary """
     root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
-    module_bin_path = os.path.join(self.root_path, "module_bin")
+    module_bin_path = os.path.join(root_path, "module_bin")
     unp_bin = os.path.join(module_bin_path, 'unp')
 
     filepath = os.path.dirname(filename)
