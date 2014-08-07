@@ -144,6 +144,17 @@ sub test_json_input {
     sysrun('cat job.12 | ar-get -w -p > contigs.12');
 }
 
+sub test_duplicated_files {
+    # sysrun('ar-upload --pair p1.fq p1.fq', undef, 1);
+    my $out;
+    $out = sysout('ar-run --pair p1.fq p1.fq', undef, 1);
+    like($out, qr/duplicate/, "Duplication identified correctly: '$out'"); $testCount++;
+    $out = sysout('ar-upload --pair p1.fq p2.fq --single p1.fq', undef, 1);
+    like($out, qr/duplicate/, "Duplication identified correctly: '$out'"); $testCount++;
+    $out = sysout('ar-run --pair_url http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq  http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq', undef, 1);
+    like($out, qr/duplicate/, "Duplication identified correctly: '$out'"); $testCount++;
+}
+
 sub test_mixed_input_with_smart {
     sysrun('ar-run -r smart -m mixed_1s2p --pair p1.fq p2.fq --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq --pair_url http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq > job.21');
     sysrun("cat job.21 | ar-get -w --report > report.21"); validate_report('report.21');
@@ -233,7 +244,6 @@ sub sysrun {
     }
 
     $testCount++;
-
     eval { !system($command) or die $ERRNO };
     diag("unable to run: $command") if $EVAL_ERROR;
     ok(!$EVAL_ERROR, (caller(1))[3] ." > ". $message);
@@ -241,22 +251,28 @@ sub sysrun {
     exit_if_ctrl_c($CHILD_ERROR);
 }
 
-
 sub sysout {
-    my ($command, $message) = @_;
+    my ($command, $message, $expected_error) = @_;
     $message ||= abbrev_cmd($command);
 
     $testCount++;
 
     my $out;
-    eval { $out = `$command` };
-    diag("unable to run: $command") if $EVAL_ERROR;
-    
-    ok(!$CHILD_ERROR, (caller(1))[3] ." > ". $message);
-    diag("errno: $CHILD_ERROR") if $CHILD_ERROR;
+    if (! $expected_error) {
+        eval { $out = `$command` };
+        diag("unable to run: $command") if $EVAL_ERROR;
+        ok(!$CHILD_ERROR, (caller(1))[3] ." > ". $message);
+        diag("errno: $CHILD_ERROR") if $CHILD_ERROR;
+    } else {
+        eval { $out = `$command 2>/dev/stdout` };
+        my $rc = ($CHILD_ERROR >> 8);
+        ok($rc == $expected_error || $rc == 255, # perl die returns 65280 (=255<<8)
+           "Expecting error $expected_error: ". (caller(1))[3] ." > ". $message);
+    }
 
     exit_if_ctrl_c($CHILD_ERROR);
-    
+
+    chomp($out); $out =~ s/\n$//;
     wantarray ? split(/\n/, $out) : $out;
 }
 

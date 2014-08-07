@@ -34,7 +34,6 @@ ARAST_ENVIRON = None
 if os.getenv('KB_RUNNING_IN_IRIS'):
     ARAST_ENVIRON = 'IRIS'
 
-
 def get_parser():
     parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 
