@@ -110,7 +110,8 @@ class ArastConsumer:
         data_doc = self.metadata.get_data_docs(params['ARASTUSER'], params['data_id'])
         if not data_doc:
             raise Exception('Invalid Data ID: {}'.format(params['data_id']))
-
+        logging.debug('data_doc')
+        logging.debug(data_doc)
         if 'kbase_assembly_input' in data_doc:
             params['assembly_data'] = kb_to_asm(data_doc['kbase_assembly_input'])
         elif 'assembly_data' in data_doc:
@@ -137,6 +138,7 @@ class ArastConsumer:
                 if file_info['filename']:
                     local_file = os.path.join(filepath, file_info['filename'])
                     if os.path.exists(local_file):
+                        local_file = extract_file(local_file)
                         logging.info("Requested data exists on node: {}".format(local_file))
                     else:
                         local_file = self.download_shock(download_url, user, token, 
@@ -144,6 +146,7 @@ class ArastConsumer:
                 elif file_info['direct_url']:
                     local_file = os.path.join(filepath, os.path.basename(file_info['direct_url']))
                     if os.path.exists(local_file):
+                        local_file = extract_file(local_file)
                         logging.info("Requested data exists on node: {}".format(local_file))
                     else:
                         local_file = self.download_url(file_info['direct_url'], filepath)
@@ -219,6 +222,8 @@ class ArastConsumer:
         
         url = "http://%s" % (self.shockurl)
         status = ''
+        logging.debug('Job Data') 
+        logging.debug(job_data) 
 
         #### Parse pipeline to wasp exp
         reload(recipes)

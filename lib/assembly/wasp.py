@@ -75,7 +75,6 @@ def add_globals(env):
 isa = isinstance
 
 def eval(x, env):
-    logging.debug(x)
     "Evaluate an expression in an environment."
     if isa(x, Symbol):             # variable reference
         try:
@@ -394,6 +393,7 @@ class WaspLink(dict):
 class WaspEngine():
     def __init__(self, plugin_manager, job_data, meta=None):
         self.constants_reads = 'READS'
+        self.constants_contigs = 'CONTIGS'
         self.pmanager = plugin_manager
         self.assembly_env = add_globals(Env(job_data=job_data, meta=meta))
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
