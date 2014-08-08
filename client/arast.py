@@ -34,7 +34,6 @@ ARAST_ENVIRON = None
 if os.getenv('KB_RUNNING_IN_IRIS'):
     ARAST_ENVIRON = 'IRIS'
 
-
 def get_parser():
     parser = argparse.ArgumentParser(prog='arast', epilog='Use "arast command -h" for more information about a command.')
 
@@ -288,6 +287,16 @@ def prepare_assembly_data(args, aclient, usage):
             file_lists.append([])
         else:
             file_lists.append(li)
+
+    seen = {}
+    for f_list in file_lists:
+        for ls in f_list:
+            for word in ls:
+                if '=' not in word:
+                    if word in seen:
+                        sys.exit('Input error: duplicated file: {}'.format(word))
+                    else:
+                        seen[word] = True
 
     for f_list, f_type in zip(file_lists, all_types):
         for ls in f_list:

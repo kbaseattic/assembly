@@ -379,200 +379,6 @@ class ArastConsumer:
     def start(self):
         self.fetch_job()
 
-###### Legacy Support ######
-
-    def _get_data_old(self, body):
-        params = json.loads(body)
-        #filepath = self.datapath + str(params['data_id'])
-        filepath = os.path.join(self.datapath, params['ARASTUSER'],
-                                str(params['data_id']))
-        datapath = filepath
-        filepath += "/raw/"
-        all_files = []
-
-        uid = params['_id']
-        job_id = params['job_id']
-        user = params['ARASTUSER']
-
-        data_doc = self.metadata.get_doc_by_data_id(params['data_id'], params['ARASTUSER'])
-        if data_doc:
-            paired = data_doc['pair']
-            single = data_doc['single']
-            files = data_doc['filename']
-            ids = data_doc['ids']
-            token = params['oauth_token']
-            try:
-                ref = data_doc['reference']
-            except:
-                pass
-        else:
-            self.metadata.update_job(uid, 'status', 'Invalid Data ID')
-            raise Exception('Data {} does not exist on Shock Server'.format(
-                    params['data_id']))
-
-        all_files = []
-        if os.path.isdir(filepath):
-            logging.info("Requested data exists on node")
-            try:
-                for l in paired:
-                    filedict = {'type':'paired', 'files':[]}
-                    for word in l:
-                        if is_filename(word):
-                            baseword = os.path.basename(word)
-                            filedict['files'].append(
-                                extract_file(os.path.join(filepath,  baseword)))
-                        else:
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                    all_files.append(filedict)
-            except:
-                logging.info('No paired files submitted')
-
-            try:
-                for seqfiles in single:
-                    for wordpath in seqfiles:
-                        filedict = {'type':'single', 'files':[]}    
-                        if is_filename(wordpath):
-                            baseword = os.path.basename(wordpath)
-                            filedict['files'].append(
-                                extract_file(os.path.join(filepath, baseword)))
-                        else:
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                        all_files.append(filedict)
-            except:
-                logging.info(format_tb(sys.exc_info()[2]))
-                logging.info('No single files submitted!')
-            
-            try:
-                for r in ref:
-                    for wordpath in r:
-                        filedict = {'type':'reference', 'files':[]}    
-                        if is_filename(wordpath):
-                            baseword = os.path.basename(wordpath)
-                            filedict['files'].append(
-                                extract_file(os.path.join(filepath, baseword)))
-                        else:
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                        all_files.append(filedict)
-            except:
-                logging.info(format_tb(sys.exc_info()[2]))
-                logging.info('No reference files submitted!')
-            
-    
-            touch(datapath)
-
-        ## Data does not exist on current compute node
-        else:
-            self.metadata.update_job(uid, 'status', 'Data transfer')
-            os.makedirs(filepath)
-
-            # Get required space and garbage collect
-            try:
-                req_space = 0
-                for file_size in data_doc['file_sizes']:
-                    req_space += file_size
-                self.garbage_collect(self.datapath, user, req_space)
-            except:
-                pass 
-            url = "http://%s" % (self.shockurl)
-
-            try:
-                for l in paired:
-                    #FILEDICT contains a single read library's info
-                    filedict = {'type':'paired', 'files':[]}
-                    for word in l:
-                        if is_filename(word):
-                            baseword = os.path.basename(word)
-                            dl = self.download_shock(url, user, token, 
-                                               ids[files.index(baseword)], filepath)
-                            if shock.parse_handle(dl): #Shock handle, get real data
-                                logging.info('Found shock handle, getting real data...')
-                                s_addr, s_id = shock.parse_handle(dl)
-                                s_url = 'http://{}'.format(s_addr)
-                                real_file = self.download_shock(s_url, user, token, 
-                                                          s_id, filepath)
-                                filedict['files'].append(real_file)
-                            else:
-                                filedict['files'].append(dl)
-                        elif re.search('=', word):
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                    all_files.append(filedict)
-            except:
-                logging.info(format_exc(sys.exc_info()))
-                logging.info('No paired files submitted')
-
-            try:
-                for seqfiles in single:
-                    for wordpath in seqfiles:
-                        filedict = {'type':'single', 'files':[]}
-                        # Parse user directories
-                        try:
-                            path, word = wordpath.rsplit('/', 1)
-                            path += '/'
-                        except:
-                            word = wordpath
-                            path = ''
-
-                        if is_filename(word):
-                            baseword = os.path.basename(word)
-                            dl = self.download_shock(url, user, token, 
-                                               ids[files.index(baseword)], filepath)
-                            if shock.parse_handle(dl): #Shock handle, get real data
-                                logging.info('Found shock handle, getting real data...')
-                                s_addr, s_id = shock.parse_handle(dl)
-                                s_url = 'http://{}'.format(s_addr)
-                                real_file = self.download_shock(s_url, user, token, 
-                                                          s_id, filepath)
-                                filedict['files'].append(real_file)
-                            else:
-                                filedict['files'].append(dl)
-                        elif re.search('=', word):
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                        all_files.append(filedict)
-            except:
-                logging.info(format_exc(sys.exc_info()))
-                logging.info('No single end files submitted')
-
-            try:
-                for r in ref:
-                    for wordpath in r:
-                        filedict = {'type':'reference', 'files':[]}
-                        # Parse user directories
-                        try:
-                            path, word = wordpath.rsplit('/', 1)
-                            path += '/'
-                        except:
-                            word = wordpath
-                            path = ''
-
-                        if is_filename(word):
-                            baseword = os.path.basename(word)
-                            dl = self.download_shock(url, user, token, 
-                                               ids[files.index(baseword)], filepath)
-                            if shock.parse_handle(dl): #Shock handle, get real data
-                                logging.info('Found shock handle, getting real data...')
-                                s_addr, s_id = shock.parse_handle(dl)
-                                s_url = 'http://{}'.format(s_addr)
-                                real_file = self.download_shock(s_url, user, token, 
-                                                          s_id, filepath)
-                                filedict['files'].append(real_file)
-                            else:
-                                filedict['files'].append(dl)
-                        elif re.search('=', word):
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                        all_files.append(filedict)
-            except:
-                #logging.info(format_exc(sys.exc_info()))
-                logging.info('No single end files submitted')
-
-        return datapath, all_files
-
-
 
 ### Helper functions ###
 def touch(path):
@@ -589,6 +395,10 @@ def touch(path):
     
 def extract_file(filename):
     """ Decompress files if necessary """
+    root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
+    module_bin_path = os.path.join(root_path, "module_bin")
+    unp_bin = os.path.join(module_bin_path, 'unp')
+
     filepath = os.path.dirname(filename)
     supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz', 
                  'rar', 'tar', 'tgz','zip']
@@ -598,7 +408,7 @@ def extract_file(filename):
             if os.path.exists(extracted_file): # Check extracted already
                 return extracted_file
             logging.debug("Extracting %s" % filename)
-            p = subprocess.Popen(['unp', filename], 
+            p = subprocess.Popen([unp_bin, filename], 
                                  cwd=filepath, stderr=subprocess.STDOUT)
             p.wait()
             if os.path.exists(extracted_file):
