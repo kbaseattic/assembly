@@ -94,6 +94,8 @@ function test_endpoint()
     echo "Clone"
     git clone $repository
     cd assembly
+    git checkout $branch
+
     make -f Makefile.standalone deploy DEPLOY_RUNTIME=/software/python/2.7.3-1/
     ) &> clone.txt
 
