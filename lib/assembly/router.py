@@ -111,7 +111,6 @@ def route_job(body):
     client_params['job_id'] = job_id
 
     ## Check that user queue limit is not reached
-
     uid = metadata.insert_job(client_params)
     logging.info("Inserting job record: %s" % client_params)
     metadata.update_job(uid, 'status', 'Queued')
@@ -252,12 +251,15 @@ def start(config_file, mongo_host=None, mongo_port=None,
 
     parser = SafeConfigParser()
     parser.read(config_file)
+    collections = {'jobs': parser.get('meta', 'mongo.collection'),
+                   'auth': parser.get('meta', 'mongo.collection.auth'),
+                   'data': parser.get('meta', 'mongo.collection.data'),
+                   'running': parser.get('meta', 'mongo.collection.running')
+}
     metadata = meta.MetadataConnection(parser.get('assembly', 'mongo_host'),
                                        int(parser.get('assembly', 'mongo_port')),
                                        parser.get('meta', 'mongo.db'),
-                                       parser.get('meta', 'mongo.collection'),
-                                       parser.get('meta', 'mongo.collection.auth'),
-                                       parser.get('meta', 'mongo.collection.data'))
+                                       collections)
 
     ##### CherryPy ######
     conf = {
