@@ -9,13 +9,14 @@ import uuid
 from ConfigParser import SafeConfigParser
 
 class MetadataConnection:
-    def __init__(self, host, port, db, collection, auth_collection, data_collection=None):
+    def __init__(self, host, port, db, collections):
         self.host = host
         self.port = port
         self.db = db
-        self.collection = collection
-        self.auth_collection = auth_collection
-        self.data_collection = data_collection
+        self.collection = collections.get('jobs')
+        self.auth_collection = collections.get('auth')
+        self.data_collection = collections.get('data')
+        self.rjobs_collection = collections.get('running')
 
         # Connect
         self.connection = pymongo.Connection(self.host, self.port)
