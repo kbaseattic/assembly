@@ -119,7 +119,7 @@ class BasePlugin(object):
             t.daemon = True # thread dies with the program
             t.start()
 
-            ## Poll for kill requests and send heartbeat
+            ## Poll for kill requests
             while p.poll() is None:
                 if self.killed():
                     os.killpg(p.pid, signal.SIGTERM)

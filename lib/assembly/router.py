@@ -14,7 +14,9 @@ import os
 import re
 import requests
 import sys
+import threading
 import tarfile
+import time
 import uuid
 from bson import json_util
 from ConfigParser import SafeConfigParser
@@ -53,10 +55,12 @@ def send_message(body, routingKey):
 def send_kill_message(user, job_id):
     """ Place the kill request on the correct job queue """
     ## Set status to killed if not running yet. Otherwise, send.
+    print user
     job_doc = metadata.get_job(user, job_id)
     try:
         uid = job_doc['_id']
         status = job_doc['status']
+        print status
     except TypeError:
         return 'Invalid job ID'
 
@@ -77,6 +81,7 @@ def send_kill_message(user, job_id):
     elif re.search(r"(Complete|Terminate)", status):
         return "Job is no longer running"
     else:
+
         return 'Unexpected error in killing job'
 
 
@@ -112,10 +117,12 @@ def route_job(body):
 
     ## Check that user queue limit is not reached
     uid = metadata.insert_job(client_params)
+    metadata.rjob_insert(uid, client_params)
     logging.info("Inserting job record: %s" % client_params)
     metadata.update_job(uid, 'status', 'Queued')
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
+
     msg = json.dumps(p)
     send_message(msg, routing_key)
     response = str(job_id)
@@ -254,12 +261,18 @@ def start(config_file, mongo_host=None, mongo_port=None,
     collections = {'jobs': parser.get('meta', 'mongo.collection'),
                    'auth': parser.get('meta', 'mongo.collection.auth'),
                    'data': parser.get('meta', 'mongo.collection.data'),
-                   'running': parser.get('meta', 'mongo.collection.running')
-}
+                   'running': parser.get('meta', 'mongo.collection.running')}
+
     metadata = meta.MetadataConnection(parser.get('assembly', 'mongo_host'),
                                        int(parser.get('assembly', 'mongo_port')),
                                        parser.get('meta', 'mongo.db'),
                                        collections)
+
+    
+
+    ##### Running Job Monitor #####
+    rjobmon = RunningJobsMonitor(metadata, 45)
+    rjobmon.start()
 
     ##### CherryPy ######
     conf = {
@@ -809,3 +822,35 @@ class Root(object):
         print 'root'
 
 
+########### Running Jobs Service
+class RunningJobsMonitor(threading.Thread):
+    def __init__(self, meta_obj, interval):
+        self.meta = meta_obj
+        self.interval = interval
+        self.past_jobs = {}
+        threading.Thread.__init__(self)
+
+    def run(self):
+        time.sleep(self.interval)
+        while cherrypy.engine.state == cherrypy.engine.states.STARTED:
+            rjobs = self.meta.rjob_all()
+            self.purge(rjobs)
+            time.sleep(self.interval)
+
+    def stats(self, jobs):
+        print jobs
+
+    def purge(self, jobs):
+        set_past = set(self.past_jobs.keys())
+        set_current = set(jobs.keys())
+        set_intersect = set_current.intersection(set_past)
+        print 'same', set_intersect
+
+        for same in set_intersect:
+            if self.past_jobs[same]['timestamp'] == jobs[same]['timestamp']:
+                print 'Stale, removing:', same
+                self.meta.rjob_remove(same)
+            else:
+                print 'Running:', same
+        self.past_jobs = jobs
+        
