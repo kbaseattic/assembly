@@ -6,6 +6,7 @@ import config
 import logging
 import pymongo
 import uuid
+import time
 from ConfigParser import SafeConfigParser
 
 class MetadataConnection:
@@ -159,3 +160,18 @@ class MetadataConnection:
             print user
             doc = self.data_collection.find({'ARASTUSER': user})
         return doc
+
+
+####### Running jobs ########
+    def rjob_insert(self, uid, data):
+        fields = ['job_id', 'ARASTUSER', 'pipeline']
+        jdata = {k:data[k] for k in fields}
+        jdata['job_uid'] = uid
+        logging.info('Running job: {}'.format(jdata))
+        self.database[self.rjobs_collection].insert(jdata)
+
+    def rjob_update_timestamp(self, job_uid):
+        logging.info('Updating timestap for {}'.format(job_uid))
+        rjob = self.database[self.rjobs_collection].find_one({'job_uid':job_uid})
+        rjob.update({'$set' : {'timestamp' : str(time.time())}})
+
