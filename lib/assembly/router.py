@@ -55,7 +55,6 @@ def send_message(body, routingKey):
 def send_kill_message(user, job_id):
     """ Place the kill request on the correct job queue """
     ## Set status to killed if not running yet. Otherwise, send.
-    print user
     job_doc = metadata.get_job(user, job_id)
     try:
         uid = job_doc['_id']
@@ -411,8 +410,8 @@ class JobResource:
         elif resource == 'status':
             return self.status(userid, job_id=job_id, **kwargs)
         elif resource == 'kill':
-            user = authenticate_request()
-            return self.kill(job_id=job_id, userid=user)
+            authenticate_request()
+            return self.kill(job_id=job_id, userid=userid)
         else:
             raise cherrypy.HTTPError(403, 'Resource not found: {}'.format(resource))
 
