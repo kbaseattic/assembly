@@ -167,11 +167,15 @@ class MetadataConnection:
         fields = ['job_id', 'ARASTUSER', 'pipeline']
         jdata = {k:data[k] for k in fields}
         jdata['job_uid'] = uid
-        logging.info('Running job: {}'.format(jdata))
+        jdata['timestamp'] = str(time.time())
         self.database[self.rjobs_collection].insert(jdata)
 
     def rjob_update_timestamp(self, job_uid):
-        logging.info('Updating timestap for {}'.format(job_uid))
-        rjob = self.database[self.rjobs_collection].find_one({'job_uid':job_uid})
-        rjob.update({'$set' : {'timestamp' : str(time.time())}})
+        self.database[self.rjobs_collection].update({'job_uid': job_uid},
+                                                    {'$set' : {'timestamp': str(time.time())}})
 
+    def rjob_all(self):
+        return {d['job_uid']: d for d in self.database[self.rjobs_collection].find()}
+
+    def rjob_remove(self, job_uid):
+        self.database[self.rjobs_collection].remove({'job_uid': job_uid})
