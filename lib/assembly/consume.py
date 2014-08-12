@@ -58,10 +58,14 @@ class ArastConsumer:
         m = ctrl_conf['meta']        
         a = ctrl_conf['assembly']
         
+        collections = {'jobs': m.get('mongo.collection'),
+                   'auth': m.get('mongo.collection.auth'),
+                   'data': m.get('mongo.collection.data'),
+                   'running': m.get('mongo.collection.running')}
 
         ###### TODO Use REST API
         self.metadata = meta.MetadataConnection(arasturl, int(a['mongo_port']), m['mongo.db'],
-                                                m['mongo.collection'], m['mongo.collection.auth'], m['mongo.collection.data'] )
+                                                collections)
         self.gc_lock = multiprocessing.Lock()
 
     def garbage_collect(self, datapath, user, required_space):
