@@ -270,8 +270,8 @@ def start(config_file, mongo_host=None, mongo_port=None,
     
 
     ##### Running Job Monitor #####
-    rjobmon = RunningJobsMonitor(metadata, 45)
-    rjobmon.start()
+    rjobmon = RunningJobsMonitor(metadata)
+    cherrypy.process.plugins.Monitor(cherrypy.engine, rjobmon.purge, frequency=5).subscribe()
 
     ##### CherryPy ######
     conf = {
@@ -822,28 +822,20 @@ class Root(object):
 
 
 ########### Running Jobs Service
-class RunningJobsMonitor(threading.Thread):
-    def __init__(self, meta_obj, interval):
+class RunningJobsMonitor():
+    def __init__(self, meta_obj):
         self.meta = meta_obj
-        self.interval = interval
+        #self.interval = interval
         self.past_jobs = {}
-        threading.Thread.__init__(self)
-
-    def run(self):
-        time.sleep(self.interval)
-        while cherrypy.engine.state == cherrypy.engine.states.STARTED:
-            rjobs = self.meta.rjob_all()
-            self.purge(rjobs)
-            time.sleep(self.interval)
 
     def stats(self, jobs):
         print jobs
 
-    def purge(self, jobs):
+    def purge(self):
+        jobs = self.meta.rjob_all()
         set_past = set(self.past_jobs.keys())
         set_current = set(jobs.keys())
         set_intersect = set_current.intersection(set_past)
-        print 'same', set_intersect
 
         for same in set_intersect:
             if self.past_jobs[same]['timestamp'] == jobs[same]['timestamp']:
