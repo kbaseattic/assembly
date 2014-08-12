@@ -25,7 +25,7 @@ function run_test_suite()
     bucket_name=$2
     test_name=$3
 
-    echo "DEBUG $(pwd)"
+    #echo "DEBUG $(pwd)"
 
     log_file=$entry_point.txt
 
