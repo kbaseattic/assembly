@@ -769,6 +769,8 @@ class SystemResource:
                     return self.close_connection(node_ip)
         elif resource == 'config':
             return json.dumps(parser_as_dict(parser))
+        elif resource == 'jobs':
+            return rjobmon.stats()
 
     def get_connections(self):
         """Returns a list of deduped connection IPs"""
@@ -836,13 +838,15 @@ class RunningJobsMonitor():
                 print 'Stale, removing:', same
                 self.meta.rjob_remove(same)
             elif jobs[same]['status'] == 'running':
-                print 'Running:', same
+                logging.info('Running: {}'.format(same))
             elif jobs[same]['status'] == 'queued':
-                print 'Queued:', same
+                logging.info('Queued: {}'.format(same))
         self.past_jobs = jobs
-        print self.meta.rjob_admin_stats()
-        
+
     def user_jobs(self, user):
         """ Returns all current jobs of USER. """
         user_jobs = self.meta.rjob_user_jobs(user)
         return user_jobs
+
+    def stats(self):
+        return self.meta.rjob_admin_stats()
