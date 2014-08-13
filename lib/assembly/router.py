@@ -93,7 +93,7 @@ def send_kill_message(user, job_id=None):
             kill_status += 'Job {}: No longer running.\n'.format(jid)
         else:
             kill_status += 'Job {}: Unexpected error.\n'.format(jid)
-    return kill_status.rstrip()
+    return kill_status.rstrip() or 'No jobs to be killed'
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
