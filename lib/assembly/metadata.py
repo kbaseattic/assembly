@@ -6,16 +6,19 @@ import config
 import logging
 import pymongo
 import uuid
+import time
+import json
 from ConfigParser import SafeConfigParser
 
 class MetadataConnection:
-    def __init__(self, host, port, db, collection, auth_collection, data_collection=None):
+    def __init__(self, host, port, db, collections):
         self.host = host
         self.port = port
         self.db = db
-        self.collection = collection
-        self.auth_collection = auth_collection
-        self.data_collection = data_collection
+        self.collection = collections.get('jobs')
+        self.auth_collection = collections.get('auth')
+        self.data_collection = collections.get('data')
+        self.rjobs_collection = collections.get('running')
 
         # Connect
         self.connection = pymongo.Connection(self.host, self.port)
@@ -158,3 +161,47 @@ class MetadataConnection:
             print user
             doc = self.data_collection.find({'ARASTUSER': user})
         return doc
+
+
+####### Running jobs ########
+    def rjob_insert(self, uid, data):
+        fields = ['job_id', 'ARASTUSER', 'pipeline']
+        jdata = {k:data[k] for k in fields}
+        jdata['job_uid'] = uid
+        jdata['timestamp'] = str(time.time())
+        jdata['status'] = 'queued'
+        self.database[self.rjobs_collection].insert(jdata)
+
+    def rjob_update_timestamp(self, job_uid):
+        ## If accidentally purged, reinsert
+        if self.database[self.rjobs_collection].find({'job_uid': job_uid}).count() == 0:
+            self.rjob_insert(job_uid, self.get_jobs().find({'_id': job_uid})[0])
+        self.database[self.rjobs_collection].update({'job_uid': job_uid},
+                                                    {'$set' : {'timestamp': str(time.time()),
+                                                               'status': 'running'}})
+
+    def rjob_all(self):
+        return {d['job_uid']: d for d in self.database[self.rjobs_collection].find()}
+
+    def rjob_user_jobs(self, user):
+        return {d['job_uid']: d for d in self.database[self.rjobs_collection].find({'ARASTUSER': user})}
+
+    def rjob_remove(self, job_uid):
+        self.database[self.rjobs_collection].remove({'job_uid': job_uid})
+
+    def rjob_admin_stats(self):
+        from collections import defaultdict
+
+        class NestedDD(defaultdict):
+            def __add__(self, other):
+                return other
+
+        ndefaultdict = lambda: NestedDD(ndefaultdict)
+        d = ndefaultdict()
+
+        for rjob in self.database[self.rjobs_collection].find():
+            if rjob['status'] == 'running':
+                d[rjob['ARASTUSER']]['running'] += 1
+            elif rjob['status'] == 'queued':
+                d[rjob['ARASTUSER']]['queued'] += 1
+        return json.dumps(d)

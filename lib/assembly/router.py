@@ -14,7 +14,9 @@ import os
 import re
 import requests
 import sys
+import threading
 import tarfile
+import time
 import uuid
 from bson import json_util
 from ConfigParser import SafeConfigParser
@@ -61,8 +63,10 @@ def send_kill_message(user, job_id):
         return 'Invalid job ID'
 
     if status == 'Queued':
-        metadata.update_job(uid, 'status', 'Terminated')
-    elif re.search(r"(Running|Stage)", status):
+        metadata.update_job(uid, 'status', 'Terminated by user')
+        metadata.rjob_remove(uid)
+
+    elif re.search(r"(Running|Stage|Data)", status):
         msg = json.dumps({'user':user, 'job_id':job_id})
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host='localhost'))
@@ -77,6 +81,7 @@ def send_kill_message(user, job_id):
     elif re.search(r"(Complete|Terminate)", status):
         return "Job is no longer running"
     else:
+
         return 'Unexpected error in killing job'
 
 
@@ -107,16 +112,16 @@ def route_job(body):
     if not client_params['data_id']:
         data_id, _ = register_data(body)
         client_params['data_id'] = data_id
-        
     client_params['job_id'] = job_id
 
     ## Check that user queue limit is not reached
-
     uid = metadata.insert_job(client_params)
+    metadata.rjob_insert(uid, client_params)
     logging.info("Inserting job record: %s" % client_params)
     metadata.update_job(uid, 'status', 'Queued')
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
+
     msg = json.dumps(p)
     send_message(msg, routing_key)
     response = str(job_id)
@@ -240,24 +245,29 @@ def authenticate_request():
 def CORS():
     cherrypy.response.headers["Access-Control-Allow-Origin"] = "*"
     cherrypy.response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-#    cherrypy.response.headers["Access-Control-Allow-Headers"] = "X-Requested-With"
     cherrypy.response.headers["Access-Control-Allow-Headers"] = "Authorization, origin, content-type, accept"
-#    cherrypy.response.headers["Content-Type"] = "application/json"
-
 
 def start(config_file, mongo_host=None, mongo_port=None,
           rabbit_host=None, rabbit_port=None):
-    global parser, metadata
+    global parser, metadata, rjobmon
     logging.basicConfig(level=logging.DEBUG)
 
     parser = SafeConfigParser()
     parser.read(config_file)
+    collections = {'jobs': parser.get('meta', 'mongo.collection'),
+                   'auth': parser.get('meta', 'mongo.collection.auth'),
+                   'data': parser.get('meta', 'mongo.collection.data'),
+                   'running': parser.get('meta', 'mongo.collection.running')}
+
     metadata = meta.MetadataConnection(parser.get('assembly', 'mongo_host'),
                                        int(parser.get('assembly', 'mongo_port')),
                                        parser.get('meta', 'mongo.db'),
-                                       parser.get('meta', 'mongo.collection'),
-                                       parser.get('meta', 'mongo.collection.auth'),
-                                       parser.get('meta', 'mongo.collection.data'))
+                                       collections)
+
+    ##### Running Job Monitor #####
+    rjobmon = RunningJobsMonitor(metadata)
+    cherrypy.process.plugins.Monitor(cherrypy.engine, rjobmon.purge, 
+                                     frequency=int(parser.get('monitor', 'running_job_freq'))).subscribe()
 
     ##### CherryPy ######
     conf = {
@@ -285,7 +295,6 @@ def start(config_file, mongo_host=None, mongo_port=None,
     rmq_pass = parser.get('rabbitmq', 'management_pass')
     root.admin = SystemResource(rmq_host, rmq_mp, rmq_user, rmq_pass)
 
-    #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.request.hooks.attach('before_finalize', CORS)
     cherrypy.quickstart(root, '/', conf)
 
@@ -329,7 +338,6 @@ def qc_callback():
 ###########
 
 class JobResource:
-
     @cherrypy.expose
     def new(self, userid=None):
         token_user = authenticate_request()
@@ -337,6 +345,8 @@ class JobResource:
             return ('New Job Request') # To handle initial html OPTIONS requess
         if not (userid == token_user or userid.split('_rast')[0] == token_user):
             raise cherrypy.HTTPError(403)
+        if len(rjobmon.user_jobs(userid)) >= 3:
+            raise cherrypy.HTTPError(403, "User Job limit reached")
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
@@ -396,8 +406,8 @@ class JobResource:
         elif resource == 'status':
             return self.status(userid, job_id=job_id, **kwargs)
         elif resource == 'kill':
-            user = authenticate_request()
-            return self.kill(job_id=job_id, userid=user)
+            authenticate_request()
+            return self.kill(job_id=job_id, userid=userid)
         else:
             raise cherrypy.HTTPError(403, 'Resource not found: {}'.format(resource))
 
@@ -665,9 +675,12 @@ class FilesResource:
 class DataResource:
     @cherrypy.expose
     def new(self, userid=None):
-        userid = authenticate_request()
-        if userid == 'OPTIONS':
+        token_user = authenticate_request()
+        if token_user == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
+        if not (userid == token_user or userid.split('_rast')[0] == token_user):
+            raise cherrypy.HTTPError(403)
+
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
@@ -759,6 +772,8 @@ class SystemResource:
                     return self.close_connection(node_ip)
         elif resource == 'config':
             return json.dumps(parser_as_dict(parser))
+        elif resource == 'jobs':
+            return rjobmon.stats()
 
     def get_connections(self):
         """Returns a list of deduped connection IPs"""
@@ -807,3 +822,34 @@ class Root(object):
         print 'root'
 
 
+########### Running Jobs Service
+class RunningJobsMonitor():
+    def __init__(self, meta_obj):
+        self.meta = meta_obj
+        self.past_jobs = {}
+
+    def purge(self, user=None):
+        jobs = self.meta.rjob_all()
+        set_past = set(self.past_jobs.keys())
+        set_current = set(jobs.keys())
+        set_intersect = set_current.intersection(set_past)
+
+        ### Remove Stale Jobs
+        for same in set_intersect:
+            if (self.past_jobs[same]['timestamp'] == jobs[same]['timestamp'] and
+                jobs[same]['status'] == 'running'):
+                print 'Stale, removing:', same
+                self.meta.rjob_remove(same)
+            elif jobs[same]['status'] == 'running':
+                logging.info('Running: {}'.format(same))
+            elif jobs[same]['status'] == 'queued':
+                logging.info('Queued: {}'.format(same))
+        self.past_jobs = jobs
+
+    def user_jobs(self, user):
+        """ Returns all current jobs of USER. """
+        user_jobs = self.meta.rjob_user_jobs(user)
+        return user_jobs
+
+    def stats(self):
+        return self.meta.rjob_admin_stats()

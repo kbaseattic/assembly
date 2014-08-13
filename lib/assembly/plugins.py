@@ -292,11 +292,6 @@ class BasePlugin(object):
         for root, sub_dirs, files in os.walk(self.outpath):
             for f in files:
                 allfiles.append(os.path.join(root, f))
-
-        # if os.path.exists(self.outpath):
-        #     return [os.path.join(self.outpath, f) for 
-        #             f in os.listdir(self.outpath)]
-        # raise Exception("No output files in directory")
         return allfiles
 
     def run_checks(self, settings, job_data):
@@ -772,34 +767,6 @@ class ModuleManager():
         """
         stages = phelper.parse_branches(pipe)
         return stages
-
-    # def parse_pipe(self, pipe):
-    #     """ Returns the pipeline(s)z of modules.
-    #     Returns parameter overrides from string.
-    #     e.g Input: [sga_ec 'kiki ?k=31 velvet ?ins=500' sspace]
-    #     Output: [kiki, velvet, a5], [{k:31}, {ins:500}, {}]
-    #     """
-
-    #     # Parse param overrides
-    #     overrides = []
-    #     pipeline = []
-    #     module_num = -1
-    #     for group in pipe:
-    #         for word in group.split('+'):
-    #             if word.lower() == 'none':
-    #                 pass
-    #             elif not word.startswith('?') and self.has_plugin(word): # is module
-    #                 module_num = module_num + 1
-    #                 pipeline.append(word)
-    #                 overrides.append({})
-
-    #             elif word[1:-1].find('=') != -1: # is param
-    #                 kv = word[1:].split('=')
-    #                 overrides[module_num] = dict(overrides[module_num].items() +
-    #                                              dict([kv]).items())
-
-    #     return pipeline, overrides
-
 
 ##### Helper Functions ######
 def handle_output(out, q):

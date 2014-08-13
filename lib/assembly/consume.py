@@ -58,10 +58,14 @@ class ArastConsumer:
         m = ctrl_conf['meta']        
         a = ctrl_conf['assembly']
         
+        collections = {'jobs': m.get('mongo.collection'),
+                       'auth': m.get('mongo.collection.auth'),
+                       'data': m.get('mongo.collection.data'),
+                       'running': m.get('mongo.collection.running')}
 
         ###### TODO Use REST API
         self.metadata = meta.MetadataConnection(arasturl, int(a['mongo_port']), m['mongo.db'],
-                                                m['mongo.collection'], m['mongo.collection.auth'], m['mongo.collection.data'] )
+                                                collections)
         self.gc_lock = multiprocessing.Lock()
 
     def garbage_collect(self, datapath, user, required_space):
@@ -439,10 +443,12 @@ class UpdateTimer(threading.Thread):
                 elapsed_time = time.time() - self.start_time
                 ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
                 self.meta.update_job(self.uid, 'computation_time', ftime)
+                self.meta.rjob_remove(self.uid)
                 return
             elapsed_time = time.time() - self.start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
             self.meta.update_job(self.uid, 'computation_time', ftime)
+            self.meta.rjob_update_timestamp(self.uid)
             if int(elapsed_time) < self.interval:
                 time.sleep(3)
             else:
