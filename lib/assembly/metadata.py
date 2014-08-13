@@ -184,3 +184,10 @@ class MetadataConnection:
 
     def rjob_remove(self, job_uid):
         self.database[self.rjobs_collection].remove({'job_uid': job_uid})
+
+    def rjob_admin_stats(self):
+        from collections import defaultdict
+        d = defaultdict(int)
+        for rjob in self.database[self.rjobs_collection].find():
+            d[rjob['ARASTUSER']] += 1
+        print d
