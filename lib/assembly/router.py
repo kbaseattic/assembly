@@ -74,7 +74,7 @@ def send_kill_message(user, job_id=None):
         if status == 'Queued':
             metadata.update_job(uid, 'status', 'Terminated by user')
             metadata.rjob_remove(uid)
-            kill_status += 'Job {}: Cancelled\n'.format(jid)
+            kill_status += 'Job {}: Removed From Queue\n'.format(jid)
 
         elif re.search(r"(Running|Stage|Data)", status):
             msg = json.dumps({'user':user, 'job_id':str(jid)})
@@ -88,12 +88,12 @@ def send_kill_message(user, job_id=None):
                                   body=msg,)
             logging.debug(" [x] Sent to kill exchange: %r" % (jid))
             connection.close()
-            kill_status += 'Job {}: Kill Request Sent.\n'.format(jid)
+            kill_status += 'Job {}: Kill Request Sent\n'.format(jid)
         elif re.search(r"(Complete|Terminate)", status):
             kill_status += 'Job {}: No longer running.\n'.format(jid)
         else:
             kill_status += 'Job {}: Unexpected error.\n'.format(jid)
-    return kill_status
+    return kill_status.rstrip()
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
