@@ -59,7 +59,6 @@ def send_kill_message(user, job_id):
     try:
         uid = job_doc['_id']
         status = job_doc['status']
-        print status
     except TypeError:
         return 'Invalid job ID'
 
@@ -824,11 +823,13 @@ class RunningJobsMonitor():
         self.meta = meta_obj
         self.past_jobs = {}
 
-    def purge(self):
+    def purge(self, user=None):
         jobs = self.meta.rjob_all()
         set_past = set(self.past_jobs.keys())
         set_current = set(jobs.keys())
         set_intersect = set_current.intersection(set_past)
+
+        ### Remove Stale Jobs
         for same in set_intersect:
             if (self.past_jobs[same]['timestamp'] == jobs[same]['timestamp'] and
                 jobs[same]['status'] == 'running'):
@@ -839,10 +840,9 @@ class RunningJobsMonitor():
             elif jobs[same]['status'] == 'queued':
                 print 'Queued:', same
         self.past_jobs = jobs
+        print self.meta.rjob_admin_stats()
         
     def user_jobs(self, user):
         """ Returns all current jobs of USER. """
         user_jobs = self.meta.rjob_user_jobs(user)
-        print user_jobs.keys()
-        print ['{} {}'.format(user, u['job_id']) for u in user_jobs.values()]
         return user_jobs

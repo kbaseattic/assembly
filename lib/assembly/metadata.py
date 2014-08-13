@@ -190,4 +190,4 @@ class MetadataConnection:
         d = defaultdict(int)
         for rjob in self.database[self.rjobs_collection].find():
             d[rjob['ARASTUSER']] += 1
-        print d
+        return d
