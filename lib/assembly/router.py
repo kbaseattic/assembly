@@ -675,9 +675,12 @@ class FilesResource:
 class DataResource:
     @cherrypy.expose
     def new(self, userid=None):
-        userid = authenticate_request()
-        if userid == 'OPTIONS':
+        token_user = authenticate_request()
+        if token_user == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
+        if not (userid == token_user or userid.split('_rast')[0] == token_user):
+            raise cherrypy.HTTPError(403)
+
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
