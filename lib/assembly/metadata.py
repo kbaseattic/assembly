@@ -7,6 +7,7 @@ import logging
 import pymongo
 import uuid
 import time
+import json
 from ConfigParser import SafeConfigParser
 
 class MetadataConnection:
@@ -187,7 +188,17 @@ class MetadataConnection:
 
     def rjob_admin_stats(self):
         from collections import defaultdict
-        d = defaultdict(int)
+
+        class NestedDD(defaultdict):
+            def __add__(self, other):
+                return other
+
+        ndefaultdict = lambda: NestedDD(ndefaultdict)
+        d = ndefaultdict()
+
         for rjob in self.database[self.rjobs_collection].find():
-            d[rjob['ARASTUSER']] += 1
-        return d
+            if rjob['status'] == 'running':
+                d[rjob['ARASTUSER']]['running'] += 1
+            elif rjob['status'] == 'queued':
+                d[rjob['ARASTUSER']]['queued'] += 1
+        return json.dumps(d)
