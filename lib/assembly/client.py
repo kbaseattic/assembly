@@ -51,13 +51,11 @@ class Client:
 
     def submit_job(self, data):
         url = '{}/user/{}/job/new'.format(self.url, self.user)
-        r = requests.post(url, data=data, headers=self.headers)
-        return r.content
+        return self.req_post(url, data=data)
 
     def submit_data(self, data):
         url = '{}/user/{}/data/new'.format(self.url, self.user)
-        r = requests.post(url, data=data, headers=self.headers)
-        return r.content
+        return self.req_post(url, data=data)
 
     def get_job_status(self, stat_n, job_id=None, detail=False):
         if job_id:
@@ -188,10 +186,13 @@ class Client:
     def get_config(self):
         return self.req_get('{}/admin/system/config'.format(self.url))
 
-    def req_get(self, url, ret=None):
-        """Authenticated get. Parses CherryPy message and raises HTTPError"""
+    def req(self, url, req_type='get', data=None, ret=None):
+        """Authenticated request. Parses CherryPy message and raises HTTPError"""
         try:
-            r = requests.get(url, headers=self.headers)
+            if req_type == 'get':
+                r = requests.get(url, headers=self.headers)
+            elif req_type == 'post':
+                r = requests.post(url, data=data, headers=self.headers)
         except requests.exceptions.ConnectionError as e:
             raise ConnectionError(e)
         if r.status_code != requests.codes.ok:
@@ -200,6 +201,12 @@ class Client:
             msg = match.group(1) if match else r.reason
             raise HTTPError("{} (HTTP status code {})".format(msg, r.status_code))
         return {'text': r.text, 'json': r.json}.get(ret, r.content)
+
+    def req_get(self, url, ret=None):
+        return self.req(url, req_type='get', ret=ret)
+
+    def req_post(self, url, data=None, ret=None):
+        return self.req(url, req_type='post', data=data, ret=ret)
     
     @contextlib.contextmanager
     def smart_open(self, filename=None):

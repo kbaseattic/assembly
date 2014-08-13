@@ -116,6 +116,13 @@ class MetadataConnection:
             logging.error("Job %s does not exist" % job_id)
         return job
 
+    def get_job_by_uid(self, uid):
+        try:
+            job = self.get_jobs().find({'_id': uid})[0]
+        except:
+            job = None
+        return job
+
     def job_is_complete(self, user, job_id):
         job = self.get_job(user, job_id)
         return job['status'].find('success') != -1

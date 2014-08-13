@@ -52,38 +52,48 @@ def send_message(body, routingKey):
     connection.close()
 
 
-def send_kill_message(user, job_id):
+def send_kill_message(user, job_id=None):
     """ Place the kill request on the correct job queue """
-    ## Set status to killed if not running yet. Otherwise, send.
-    job_doc = metadata.get_job(user, job_id)
-    try:
-        uid = job_doc['_id']
-        status = job_doc['status']
-    except TypeError:
-        return 'Invalid job ID'
+    ## Try to kill all
+    if job_id == 'all':
+        rjobmon.user_jobs(user)
+        uids = rjobmon.user_jobs(user).keys()
+        jobs = [metadata.get_job_by_uid(u) for u in uids]
+    elif job_id:
+        jobs = [metadata.get_job(user, job_id)]
 
-    if status == 'Queued':
-        metadata.update_job(uid, 'status', 'Terminated by user')
-        metadata.rjob_remove(uid)
+    kill_status = ''
+    for job_doc in jobs:
+        try:
+            jid = job_doc['job_id']
+            uid = job_doc['_id']
+            status = job_doc['status']
+        except TypeError:
+            kill_status += 'Job {}: Invalid ID\n'.format(jid)
 
-    elif re.search(r"(Running|Stage|Data)", status):
-        msg = json.dumps({'user':user, 'job_id':job_id})
-        connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host='localhost'))
-        channel = connection.channel()
-        channel.exchange_declare(exchange='kill',
-                                 type='fanout')
-        channel.basic_publish(exchange = 'kill',
-                              routing_key='',
-                              body=msg,)
-        logging.debug(" [x] Sent to kill exchange: %r" % (job_id))
-        connection.close()
-    elif re.search(r"(Complete|Terminate)", status):
-        return "Job is no longer running"
-    else:
+        if status == 'Queued':
+            metadata.update_job(uid, 'status', 'Terminated by user')
+            metadata.rjob_remove(uid)
+            kill_status += 'Job {}: Removed From Queue\n'.format(jid)
 
-        return 'Unexpected error in killing job'
-
+        elif re.search(r"(Running|Stage|Data)", status):
+            msg = json.dumps({'user':user, 'job_id':str(jid)})
+            connection = pika.BlockingConnection(pika.ConnectionParameters(
+                    host='localhost'))
+            channel = connection.channel()
+            channel.exchange_declare(exchange='kill',
+                                     type='fanout')
+            channel.basic_publish(exchange = 'kill',
+                                  routing_key='',
+                                  body=msg,)
+            logging.debug(" [x] Sent to kill exchange: %r" % (jid))
+            connection.close()
+            kill_status += 'Job {}: Kill Request Sent\n'.format(jid)
+        elif re.search(r"(Complete|Terminate)", status):
+            kill_status += 'Job {}: No longer running.\n'.format(jid)
+        else:
+            kill_status += 'Job {}: Unexpected error.\n'.format(jid)
+    return kill_status.rstrip() or 'No jobs to be killed'
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
@@ -345,7 +355,7 @@ class JobResource:
             return ('New Job Request') # To handle initial html OPTIONS requess
         if not (userid == token_user or userid.split('_rast')[0] == token_user):
             raise cherrypy.HTTPError(403)
-        if len(rjobmon.user_jobs(userid)) >= 3:
+        if len(rjobmon.user_jobs(userid)) >= int(parser.get('monitor', 'running_job_limit')):
             raise cherrypy.HTTPError(403, "User Job limit reached")
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
@@ -356,7 +366,7 @@ class JobResource:
     def kill(self, userid=None, job_id=None):
         if userid == 'OPTIONS':
             return ('New kill Request') # To handle initial html OPTIONS requess
-        k = send_kill_message(userid, job_id)
+        k = send_kill_message(userid, job_id=job_id)
         if k:
             return k
         return 'Kill request sent for job {}'.format(job_id)
