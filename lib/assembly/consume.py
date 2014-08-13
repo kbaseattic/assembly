@@ -443,7 +443,7 @@ class UpdateTimer(threading.Thread):
                 elapsed_time = time.time() - self.start_time
                 ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
                 self.meta.update_job(self.uid, 'computation_time', ftime)
-                self.meta.rjob_update_timestamp(self.uid)
+                self.meta.rjob_remove(self.uid)
                 return
             elapsed_time = time.time() - self.start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
