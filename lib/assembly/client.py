@@ -208,7 +208,7 @@ class Client:
     def req_get(self, url, ret=None):
         return self.req(url, req_type='get', ret=ret)
 
-    def req_get(self, url, data=None, ret=None):
+    def req_post(self, url, data=None, ret=None):
         return self.req(url, req_type='post', data=data, ret=ret)
     
     @contextlib.contextmanager
