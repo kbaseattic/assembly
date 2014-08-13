@@ -365,7 +365,7 @@ class ArastConsumer:
         job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
         uid = job_doc['_id']
         ## Check if job was not killed
-        if job_doc['status'] == 'Terminated':
+        if job_doc['status'] == 'Terminated by user':
             print 'Job {} was killed, skipping'.format(params['job_id'])
         else:
             self.done_flag = threading.Event()
