@@ -168,14 +168,19 @@ class MetadataConnection:
         jdata = {k:data[k] for k in fields}
         jdata['job_uid'] = uid
         jdata['timestamp'] = str(time.time())
+        jdata['status'] = 'queued'
         self.database[self.rjobs_collection].insert(jdata)
 
     def rjob_update_timestamp(self, job_uid):
         self.database[self.rjobs_collection].update({'job_uid': job_uid},
-                                                    {'$set' : {'timestamp': str(time.time())}})
+                                                    {'$set' : {'timestamp': str(time.time()),
+                                                               'status': 'running'}})
 
     def rjob_all(self):
         return {d['job_uid']: d for d in self.database[self.rjobs_collection].find()}
+
+    def rjob_user_jobs(self, user):
+        return {d['job_uid']: d for d in self.database[self.rjobs_collection].find({'ARASTUSER': user})}
 
     def rjob_remove(self, job_uid):
         self.database[self.rjobs_collection].remove({'job_uid': job_uid})

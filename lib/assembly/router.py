@@ -65,6 +65,8 @@ def send_kill_message(user, job_id):
 
     if status == 'Queued':
         metadata.update_job(uid, 'status', 'Terminated')
+        metadata.rjob_remove(uid)
+
     elif re.search(r"(Running|Stage)", status):
         msg = json.dumps({'user':user, 'job_id':job_id})
         connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -111,7 +113,6 @@ def route_job(body):
     if not client_params['data_id']:
         data_id, _ = register_data(body)
         client_params['data_id'] = data_id
-        
     client_params['job_id'] = job_id
 
     ## Check that user queue limit is not reached
@@ -245,14 +246,11 @@ def authenticate_request():
 def CORS():
     cherrypy.response.headers["Access-Control-Allow-Origin"] = "*"
     cherrypy.response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-#    cherrypy.response.headers["Access-Control-Allow-Headers"] = "X-Requested-With"
     cherrypy.response.headers["Access-Control-Allow-Headers"] = "Authorization, origin, content-type, accept"
-#    cherrypy.response.headers["Content-Type"] = "application/json"
-
 
 def start(config_file, mongo_host=None, mongo_port=None,
           rabbit_host=None, rabbit_port=None):
-    global parser, metadata
+    global parser, metadata, rjobmon
     logging.basicConfig(level=logging.DEBUG)
 
     parser = SafeConfigParser()
@@ -267,11 +265,10 @@ def start(config_file, mongo_host=None, mongo_port=None,
                                        parser.get('meta', 'mongo.db'),
                                        collections)
 
-    
-
     ##### Running Job Monitor #####
     rjobmon = RunningJobsMonitor(metadata)
-    cherrypy.process.plugins.Monitor(cherrypy.engine, rjobmon.purge, frequency=5).subscribe()
+    cherrypy.process.plugins.Monitor(cherrypy.engine, rjobmon.purge, 
+                                     frequency=int(parser.get('monitor', 'running_job_freq'))).subscribe()
 
     ##### CherryPy ######
     conf = {
@@ -299,7 +296,6 @@ def start(config_file, mongo_host=None, mongo_port=None,
     rmq_pass = parser.get('rabbitmq', 'management_pass')
     root.admin = SystemResource(rmq_host, rmq_mp, rmq_user, rmq_pass)
 
-    #cherrypy.request.hooks.attach('before_request_body', authenticate_request)
     cherrypy.request.hooks.attach('before_finalize', CORS)
     cherrypy.quickstart(root, '/', conf)
 
@@ -343,7 +339,6 @@ def qc_callback():
 ###########
 
 class JobResource:
-
     @cherrypy.expose
     def new(self, userid=None):
         token_user = authenticate_request()
@@ -351,6 +346,8 @@ class JobResource:
             return ('New Job Request') # To handle initial html OPTIONS requess
         if not (userid == token_user or userid.split('_rast')[0] == token_user):
             raise cherrypy.HTTPError(403)
+        if len(rjobmon.user_jobs(userid)) >= 3:
+            raise cherrypy.HTTPError(403, "User Job limit reached")
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
         params['oauth_token'] = cherrypy.request.headers['Authorization']
@@ -825,23 +822,27 @@ class Root(object):
 class RunningJobsMonitor():
     def __init__(self, meta_obj):
         self.meta = meta_obj
-        #self.interval = interval
         self.past_jobs = {}
-
-    def stats(self, jobs):
-        print jobs
 
     def purge(self):
         jobs = self.meta.rjob_all()
         set_past = set(self.past_jobs.keys())
         set_current = set(jobs.keys())
         set_intersect = set_current.intersection(set_past)
-
         for same in set_intersect:
-            if self.past_jobs[same]['timestamp'] == jobs[same]['timestamp']:
+            if (self.past_jobs[same]['timestamp'] == jobs[same]['timestamp'] and
+                jobs[same]['status'] == 'running'):
                 print 'Stale, removing:', same
                 self.meta.rjob_remove(same)
-            else:
+            elif jobs[same]['status'] == 'running':
                 print 'Running:', same
+            elif jobs[same]['status'] == 'queued':
+                print 'Queued:', same
         self.past_jobs = jobs
         
+    def user_jobs(self, user):
+        """ Returns all current jobs of USER. """
+        user_jobs = self.meta.rjob_user_jobs(user)
+        print user_jobs.keys()
+        print ['{} {}'.format(user, u['job_id']) for u in user_jobs.values()]
+        return user_jobs
