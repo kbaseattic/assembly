@@ -66,7 +66,7 @@ def send_kill_message(user, job_id):
         metadata.update_job(uid, 'status', 'Terminated by user')
         metadata.rjob_remove(uid)
 
-    elif re.search(r"(Running|Stage)", status):
+    elif re.search(r"(Running|Stage|Data)", status):
         msg = json.dumps({'user':user, 'job_id':job_id})
         connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host='localhost'))
