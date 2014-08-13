@@ -355,7 +355,7 @@ class JobResource:
             return ('New Job Request') # To handle initial html OPTIONS requess
         if not (userid == token_user or userid.split('_rast')[0] == token_user):
             raise cherrypy.HTTPError(403)
-        if len(rjobmon.user_jobs(userid)) >= 3:
+        if len(rjobmon.user_jobs(userid)) >= int(parser.get('monitor', 'running_job_limit')):
             raise cherrypy.HTTPError(403, "User Job limit reached")
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
