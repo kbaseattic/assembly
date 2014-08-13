@@ -173,6 +173,9 @@ class MetadataConnection:
         self.database[self.rjobs_collection].insert(jdata)
 
     def rjob_update_timestamp(self, job_uid):
+        ## If accidentally purged, reinsert
+        if self.database[self.rjobs_collection].find({'job_uid': job_uid}).count() == 0:
+            self.rjob_insert(job_uid, self.get_jobs().find({'_id': job_uid})[0])
         self.database[self.rjobs_collection].update({'job_uid': job_uid},
                                                     {'$set' : {'timestamp': str(time.time()),
                                                                'status': 'running'}})
