@@ -51,13 +51,11 @@ class Client:
 
     def submit_job(self, data):
         url = '{}/user/{}/job/new'.format(self.url, self.user)
-        r = requests.post(url, data=data, headers=self.headers)
-        return r.content
+        return self.req_post(url, data=data)
 
     def submit_data(self, data):
         url = '{}/user/{}/data/new'.format(self.url, self.user)
-        r = requests.post(url, data=data, headers=self.headers)
-        return r.content
+        return self.req_post(url, data=data)
 
     def get_job_status(self, stat_n, job_id=None, detail=False):
         if job_id:
@@ -192,7 +190,6 @@ class Client:
         """Authenticated request. Parses CherryPy message and raises HTTPError"""
         try:
             if req_type == 'get':
-                print 'getting'
                 r = requests.get(url, headers=self.headers)
             elif req_type == 'post':
                 r = requests.post(url, data=data, headers=self.headers)
