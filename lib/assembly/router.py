@@ -63,7 +63,7 @@ def send_kill_message(user, job_id):
         return 'Invalid job ID'
 
     if status == 'Queued':
-        metadata.update_job(uid, 'status', 'Terminated')
+        metadata.update_job(uid, 'status', 'Terminated by user')
         metadata.rjob_remove(uid)
 
     elif re.search(r"(Running|Stage)", status):
