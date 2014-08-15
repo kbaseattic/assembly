@@ -846,14 +846,18 @@ class RunningJobsMonitor():
 
         ### Remove Stale Jobs
         for same in set_intersect:
+            job = self.meta.get_job_by_uid(same)
             if (self.past_jobs[same]['timestamp'] == jobs[same]['timestamp'] and
                 jobs[same]['status'] == 'running'):
                 print 'Stale, removing:', same
                 self.meta.rjob_remove(same)
             elif jobs[same]['status'] == 'running':
                 logging.info('Running: {}'.format(same))
-            elif jobs[same]['status'] == 'queued':
+            elif job['status'] == 'queued':
                 logging.info('Queued: {}'.format(same))
+            else:
+                self.meta.rjob_remove(same)
+                print 'Rogue job, removing', same
         self.past_jobs = jobs
 
     def user_jobs(self, user):
