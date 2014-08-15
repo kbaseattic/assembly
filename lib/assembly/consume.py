@@ -239,6 +239,8 @@ class ArastConsumer:
                 wasp_exp = recipes.get('auto', job_id)
             ##########
             else:
+                if type(pipelines[0]) is not list: # --assemblers
+                    pipelines = [pipelines]
                 all_pipes = []
                 for p in pipelines:
                     all_pipes += self.pmanager.parse_input(p)
