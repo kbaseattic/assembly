@@ -36,10 +36,11 @@ from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
     def __init__(self, shockurl, rmq_host, rmq_port, arasturl, config, threads, queue, 
-                 kill_queue, job_list, ctrl_conf, datapath, binpath):
+                 kill_queue, job_list, job_list_lock, ctrl_conf, datapath, binpath):
         self.parser = SafeConfigParser()
         self.parser.read(config)
         self.job_list = job_list
+        self.job_list_lock = job_list_lock
         # Load plugins
         self.pmanager = ModuleManager(threads, kill_queue, job_list, binpath)
 
@@ -160,6 +161,7 @@ class ArastConsumer:
         return datapath, all_files                    
 
     def compute(self, body):
+        self.job_list_lock.acquire()
         error = False
         params = json.loads(body)
         job_id = params['job_id']
@@ -214,6 +216,7 @@ class ArastConsumer:
                     
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         self.job_list.append(job_data)
+        self.job_list_lock.release()
         self.start_time = time.time()
 
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
