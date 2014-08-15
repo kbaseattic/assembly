@@ -158,8 +158,6 @@ def cmd_run(args, aclient, usage, log=None):
 
     if args.assemblers:
         args.pipeline = [(" ".join(args.assemblers))]
-    elif not args.pipeline:  # even if args.recipe or args.wasp is defined
-        args.pipeline = 'auto'
 
     options = vars(args)
     options['client'] = CLIENT_NAME

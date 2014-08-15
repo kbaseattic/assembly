@@ -166,15 +166,10 @@ class ArastConsumer:
         uid = params['_id']
         user = params['ARASTUSER']
         token = params['oauth_token']
-        pipelines = params['pipeline']
+        pipelines = params.get('pipeline')
         recipe = params.get('recipe')
         wasp_in = params.get('wasp')
 
-        #support legacy arast client
-        if len(pipelines) > 0:
-            if type(pipelines[0]) is not list:
-                pipelines = [pipelines]
-                
         ### Download files (if necessary)
         datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
@@ -236,18 +231,25 @@ class ArastConsumer:
             except AttributeError: raise Exception('"{}" recipe not found.'.format(recipe[0]))
         elif wasp_in:
             wasp_exp = wasp_in[0]
-        elif pipelines[0] == 'auto':
+        elif not pipelines: 
             wasp_exp = recipes.get('auto', job_id)
+        elif pipelines:
+            ## Legacy client
+            if pipelines[0] == 'auto':
+                wasp_exp = recipes.get('auto', job_id)
+            ##########
+            else:
+                if type(pipelines[0]) is not list: # --assemblers
+                    pipelines = [pipelines]
+                all_pipes = []
+                for p in pipelines:
+                    all_pipes += self.pmanager.parse_input(p)
+                logging.info(all_pipes)
+                wasp_exp = wasp.pipelines_to_exp(all_pipes, params['job_id'])
         else:
-            all_pipes = []
-            for p in pipelines:
-                all_pipes += self.pmanager.parse_input(p)
-            print all_pipes
-            wasp_exp = wasp.pipelines_to_exp(all_pipes, params['job_id'])
-            logging.info('Wasp Expression: {}'.format(wasp_exp))
-        print('Wasp Expression: {}'.format(wasp_exp))
+            raise asmtypes.ArastClientRequestError('Malformed job request.')
+        logging.info('Wasp Expression: {}'.format(wasp_exp))
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
-
 
         ###### Run Job
         try: 
