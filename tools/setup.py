@@ -1,5 +1,8 @@
 import os
 from setuptools import setup, find_packages
+from assembly import __version__
+
+CLIENT_VERSION = __version__
 
 # Utility function to read the README file.
 def read(fname):
@@ -7,13 +10,13 @@ def read(fname):
 
 setup(
     name = "ar_client",
-    version = "0.4.0.1",
+    version = CLIENT_VERSION,
     author = "Chris Bun",
     author_email = "chrisbun@gmail.com",
     description = ("A commandline client for the KBASE Assembly Service"),
     url = "http://www.kbase.us/services/assembly",
     packages = find_packages(),
-    install_requires = ['requests>=2.1.0', 'httplib2', 'appdirs'],
+    install_requires = ['requests>=2.1.0', 'httplib2', 'appdirs', 'prettytable'],
     entry_points={'console_scripts':[
             'arast = assembly.arast:main']},
 )
