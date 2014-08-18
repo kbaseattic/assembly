@@ -51,6 +51,8 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     mongo_host = ctrl_conf['assembly']['mongo_host']
     rmq_port = int(ctrl_conf['assembly']['rabbitmq_port'])
     rmq_host = ctrl_conf['assembly']['rabbitmq_host']
+    if not queue:
+        queue = ctrl_conf['rabbitmq']['default_routing_key']
     if mongo_host == 'localhost':
         mongo_host = arasturl
     if rmq_host == 'localhost':
@@ -60,7 +62,6 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
         print ' [.] Retrieved Shock URL: {}'.format(shockurl)
     except:
         raise Exception('Could not communicate with server')
-
 
     print " [.] AssemblyRAST host: %s" % arasturl
     print " [.] MongoDB port: %s" % mongo_port

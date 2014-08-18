@@ -50,11 +50,7 @@ class ArastConsumer:
         self.datapath = datapath
         self.rmq_host = rmq_host
         self.rmq_port = rmq_port
-        if queue:
-            self.queue = queue
-            logging.info('Using queue:{}'.format(self.queue))
-        else:
-            self.queue = self.parser.get('rabbitmq','default_routing_key')
+        self.queue = queue
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
         m = ctrl_conf['meta']        
         a = ctrl_conf['assembly']
