@@ -4,6 +4,7 @@ Consumes a job from the queue
 
 import copy
 import errno
+import glob
 import logging
 import pika
 import sys
@@ -50,12 +51,9 @@ class ArastConsumer:
         self.datapath = datapath
         self.rmq_host = rmq_host
         self.rmq_port = rmq_port
-        if queue:
-            self.queue = queue
-            logging.info('Using queue:{}'.format(self.queue))
-        else:
-            self.queue = self.parser.get('rabbitmq','default_routing_key')
+        self.queue = queue
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
+        self.data_expiration_days = float(self.parser.get('compute','data_expiration_days'))
         m = ctrl_conf['meta']        
         a = ctrl_conf['assembly']
         
@@ -69,28 +67,48 @@ class ArastConsumer:
                                                 collections)
         self.gc_lock = multiprocessing.Lock()
 
-    def garbage_collect(self, datapath, user, required_space):
+    def garbage_collect(self, datapath, required_space):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""
         self.gc_lock.acquire()
+        datapath = self.datapath
+        required_space = self.min_free_space
+        expiration = self.data_expiration_days
+
+        ### Remove expired directories
+        dir_depth = 3
+        dirs = filter(lambda f: os.path.isdir(f), glob.glob(datapath + '/' + '*/' * dir_depth))
+        removed = []
+        logging.info('Searching for directories older than {} days'.format(expiration))
+        for d in dirs:
+            file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(d))
+            if datetime.datetime.now() - file_modified > datetime.timedelta(days=expiration):
+                print 'GC: Removing: ', d, datetime.datetime.now() - file_modified
+                removed.append(d)
+                shutil.rmtree(d, ignore_errors=True)
+            else:
+                logging.info('GC: Not removing:', d, datetime.datetime.now() - file_modified)
+        for r in removed:
+            dirs.remove(r)
+
+        ### Check free space and remove old directories
         s = os.statvfs(datapath)
-        free_space = float(s.f_bsize * s.f_bavail)
-        logging.debug("Free space in bytes: %s" % free_space)
-        logging.debug("Required space in bytes: %s" % required_space)
-        while ((free_space - self.min_free_space) < required_space):
-            #Delete old data
-            dirs = os.listdir(os.path.join(datapath, user))
+        free_space = float(s.f_bsize * s.f_bavail / (10**9))
+        logging.debug("Free space in GB: %s" % free_space)
+        logging.debug("Required space in GB: %s" % required_space)
+        while free_space < self.min_free_space:
             times = []
             for dir in dirs:
-                times.append(os.path.getmtime(os.path.join(datapath, user, dir)))
+                times.append(os.path.getmtime(dir))
             if len(dirs) > 0:
-                old_dir = os.path.join(datapath, user, dirs[times.index(min(times))])
+                old_dir = dirs[times.index(min(times))]
+                dir.remove(old_dir)
                 shutil.rmtree(old_dir, ignore_errors=True)
             else:
                 logging.error("No more directories to remove")
                 break
             logging.info("Space required.  %s removed." % old_dir)
             s = os.statvfs(datapath)
-            free_space = float(s.f_bsize * s.f_bavail)
+            free_space = float(s.f_bsize * s.f_bavail / (10**9))
             logging.debug("Free space in bytes: %s" % free_space)
         self.gc_lock.release()
 
@@ -101,6 +119,7 @@ class ArastConsumer:
         return self._get_data(body)
 
     def _get_data(self, body):
+        self.garbage_collect(self.datapath, self.min_free_space)
         params = json.loads(body)
         filepath = os.path.join(self.datapath, params['ARASTUSER'],
                                 str(params['data_id']))
@@ -127,7 +146,6 @@ class ArastConsumer:
         with ignored(OSError):
             os.makedirs(filepath)
 
-          ### TODO Garbage collect ###
         download_url = 'http://{}'.format(self.shockurl)
         file_sets = params['assembly_data']['file_sets']
         for file_set in file_sets:
