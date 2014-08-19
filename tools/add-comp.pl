@@ -22,12 +22,13 @@ Options:
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
       regular      - regular components (modules to be deployed on all compute nodes)
-      special      - special components (large modules: pacbio, allpaths-lg, etc)
+      special      - special components (large modules: pacbio, allpathslg, etc)
       all          - all components
 
       a5           - A5 pipeline (v.20140604)
       a6           - Modified A5 pipeline (git)
       ale          - ALE reference-free assembler evaluator (git)
+      allpathslg   - AllPaths-LG (FTP latest)
       bowtie2      - Bowtie aligner (v2.1)
       bwa          - BWA aligner (git)
       discovar     - Discovar assembler (FTP latest)
@@ -66,7 +67,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
 my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet); 
-my @special_comps = qw (discovar pacbio jgi_rqc);
+my @special_comps = qw (allpathslg discovar pacbio jgi_rqc);
 my @extra_depends = qw (cmake3);
 
 my @all_comps = (@regular_comps, @special_comps);
@@ -163,6 +164,16 @@ sub install_ale {
     git("git://github.com/sc932/ALE.git");
     run("mkdir -p $dest_dir/$dir");
     run("cd ALE/src; make ALE; cp -r ALE samtools-0.1.19 *.sh *.py *.pl $dest_dir/$dir/");
+}
+
+sub install_allpathslg {
+    check_gcc();
+    my $file = "LATEST_VERSION.tar.gz";
+    my $dir = "allpathslg";
+    download($dir, $file, 'ftp://ftp.broadinstitute.org/pub/crd/ALLPATHS/Release-LG/latest_source_code');
+    run("mv allpathslg-* $dir");
+    run("mkdir -p $dest_dir/$dir");
+    run("cd $dir; ./configure --prefix=$dest_dir/$dir; make -j 8; make install");
 }
 
 sub install_bowtie2 {
