@@ -110,6 +110,13 @@ class ArastConsumer:
             s = os.statvfs(datapath)
             free_space = float(s.f_bsize * s.f_bavail / (10**9))
             logging.debug("Free space in bytes: %s" % free_space)
+
+        ### Remove empty data directories
+        data_dirs = filter(lambda f: os.path.isdir(f), glob.glob(datapath + '/' + '*/' * (dir_depth - 1)))
+        for dd in data_dirs:
+            if not os.listdir(dd):
+                logging.info('Dir empty, removing: {}'.format(dd))
+                os.rmdir(dd)
         self.gc_lock.release()
 
     def get_data(self, body):
