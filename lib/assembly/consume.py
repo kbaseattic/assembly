@@ -67,7 +67,7 @@ class ArastConsumer:
                                                 collections)
         self.gc_lock = multiprocessing.Lock()
 
-    def garbage_collect(self, datapath, required_space):
+    def garbage_collect(self, datapath, required_space, user, job_id, data_id):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""
         self.gc_lock.acquire()
         datapath = self.datapath
@@ -75,8 +75,17 @@ class ArastConsumer:
         expiration = self.data_expiration_days
 
         ### Remove expired directories
+        def can_remove(d, user, job_id):
+            u, data, j = d.split('/')[-4:-1]
+            if u == user and j == str(job_id):
+                return False
+            if data == str(data_id) and j == 'raw':
+                return False
+            if os.path.isdir(d):
+                return True
+
         dir_depth = 3
-        dirs = filter(lambda f: os.path.isdir(f), glob.glob(datapath + '/' + '*/' * dir_depth))
+        dirs = filter(lambda f: can_remove(f, user, job_id), glob.glob(datapath + '/' + '*/' * dir_depth))
         removed = []
         logging.info('Searching for directories older than {} days'.format(expiration))
         for d in dirs:
@@ -126,7 +135,6 @@ class ArastConsumer:
         return self._get_data(body)
 
     def _get_data(self, body):
-        self.garbage_collect(self.datapath, self.min_free_space)
         params = json.loads(body)
         filepath = os.path.join(self.datapath, params['ARASTUSER'],
                                 str(params['data_id']))
@@ -134,8 +142,11 @@ class ArastConsumer:
         filepath += "/raw/"
         all_files = []
         user = params['ARASTUSER']
+        job_id = params['job_id']
+        data_id = params['data_id']
         token = params['oauth_token']
         uid = params['_id']
+        self.garbage_collect(self.datapath, self.min_free_space, user, job_id, data_id)
 
         ##### Get data from ID #####
         data_doc = self.metadata.get_data_docs(params['ARASTUSER'], params['data_id'])
@@ -152,7 +163,8 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'status', 'Data transfer')
         with ignored(OSError):
             os.makedirs(filepath)
-
+            touch(filepath)
+        
         download_url = 'http://{}'.format(self.shockurl)
         file_sets = params['assembly_data']['file_sets']
         for file_set in file_sets:
@@ -418,11 +430,8 @@ class ArastConsumer:
 def touch(path):
     now = time.time()
     try:
-        # assume it's there
         os.utime(path, (now, now))
     except os.error:
-        # if it isn't, try creating the directory,
-        # a file with that name
         os.makedirs(os.path.dirname(path))
         open(path, "w").close()
         os.utime(path, (now, now))
