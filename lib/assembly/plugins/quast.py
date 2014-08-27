@@ -47,9 +47,22 @@ class QuastAssessment(BaseAssessment, IPlugin):
         
         output = {}
         report = os.path.join(self.outpath, 'report.txt')
+        ttsv = os.path.join(self.outpath, 'transposed_report.tsv')
         if not os.path.exists(report):
             print 'No Quast Output'
             report = None
-        else: output['report'] = report
+        else: 
+            output['report'] = report
+            output['stats'] = self.parse_ttsv(ttsv)
         return output
     
+    def parse_ttsv(self, ttsv):
+        "Parse the transposed TSV report"
+        stats = {}
+        with open(ttsv) as report:
+            labels = report.readline().split('\t')
+            for line in report:
+                vals = line.split('\t')
+                stats[vals[0]] = dict(zip(labels[1:], vals[1:]))
+        return stats
+            
