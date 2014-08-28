@@ -311,6 +311,7 @@ class ArastConsumer:
                     new_report.write('{}: {}\n'.format(i, e))
             try: ## Get Quast output
                 quast_report = job_data['wasp_chain'].find_module('quast')['data'].find_type('report')[0].files[0]
+                print job_data['wasp_chain'].find_module('quast').get('info').get('stats')
                 with open(quast_report) as q:
                     new_report.write(q.read())
             except:
