@@ -23,7 +23,8 @@ class VelvetAssembler(BaseAssembler, IPlugin):
             else: p_suffix = str(pair_num + 1)
             read1 = pairset.files[0]
             cmd_args.append('-shortPaired' + p_suffix)
-            cmd_args.append('-' + infer_filetype(read1))
+            if infer_filetype(read1):
+                cmd_args.append('-' + infer_filetype(read1))
             try:
                 read2 = pairset.files[1]
                 cmd_args.append('-separate')

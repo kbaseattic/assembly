@@ -234,3 +234,7 @@ class ArastDataInputError(Exception):
 
 class ArastDataOutputError(Exception):
     pass
+
+class ArastClientRequestError(Exception):
+    pass
+

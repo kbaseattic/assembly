@@ -4,6 +4,7 @@ Consumes a job from the queue
 
 import copy
 import errno
+import glob
 import logging
 import pika
 import sys
@@ -36,10 +37,11 @@ from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
     def __init__(self, shockurl, rmq_host, rmq_port, arasturl, config, threads, queue, 
-                 kill_queue, job_list, ctrl_conf, datapath, binpath):
+                 kill_queue, job_list, job_list_lock, ctrl_conf, datapath, binpath):
         self.parser = SafeConfigParser()
         self.parser.read(config)
         self.job_list = job_list
+        self.job_list_lock = job_list_lock
         # Load plugins
         self.pmanager = ModuleManager(threads, kill_queue, job_list, binpath)
 
@@ -49,44 +51,81 @@ class ArastConsumer:
         self.datapath = datapath
         self.rmq_host = rmq_host
         self.rmq_port = rmq_port
-        if queue:
-            self.queue = queue
-            logging.info('Using queue:{}'.format(self.queue))
-        else:
-            self.queue = self.parser.get('rabbitmq','default_routing_key')
+        self.queue = queue
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
+        self.data_expiration_days = float(self.parser.get('compute','data_expiration_days'))
         m = ctrl_conf['meta']        
         a = ctrl_conf['assembly']
         
+        collections = {'jobs': m.get('mongo.collection'),
+                       'auth': m.get('mongo.collection.auth'),
+                       'data': m.get('mongo.collection.data'),
+                       'running': m.get('mongo.collection.running')}
 
         ###### TODO Use REST API
         self.metadata = meta.MetadataConnection(arasturl, int(a['mongo_port']), m['mongo.db'],
-                                                m['mongo.collection'], m['mongo.collection.auth'], m['mongo.collection.data'] )
+                                                collections)
         self.gc_lock = multiprocessing.Lock()
 
-    def garbage_collect(self, datapath, user, required_space):
+    def garbage_collect(self, datapath, required_space, user, job_id, data_id):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""
         self.gc_lock.acquire()
+        datapath = self.datapath
+        required_space = self.min_free_space
+        expiration = self.data_expiration_days
+
+        ### Remove expired directories
+        def can_remove(d, user, job_id):
+            u, data, j = d.split('/')[-4:-1]
+            if u == user and j == str(job_id):
+                return False
+            if data == str(data_id) and j == 'raw':
+                return False
+            if os.path.isdir(d):
+                return True
+
+        dir_depth = 3
+        dirs = filter(lambda f: can_remove(f, user, job_id), glob.glob(datapath + '/' + '*/' * dir_depth))
+        removed = []
+        logging.info('Searching for directories older than {} days'.format(expiration))
+        for d in dirs:
+            file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(d))
+            if datetime.datetime.now() - file_modified > datetime.timedelta(days=expiration):
+                print 'GC: Removing: ', d, datetime.datetime.now() - file_modified
+                removed.append(d)
+                shutil.rmtree(d, ignore_errors=True)
+            else:
+                logging.info('GC: Not removing:', d, datetime.datetime.now() - file_modified)
+        for r in removed:
+            dirs.remove(r)
+
+        ### Check free space and remove old directories
         s = os.statvfs(datapath)
-        free_space = float(s.f_bsize * s.f_bavail)
-        logging.debug("Free space in bytes: %s" % free_space)
-        logging.debug("Required space in bytes: %s" % required_space)
-        while ((free_space - self.min_free_space) < required_space):
-            #Delete old data
-            dirs = os.listdir(os.path.join(datapath, user))
+        free_space = float(s.f_bsize * s.f_bavail / (10**9))
+        logging.debug("Free space in GB: %s" % free_space)
+        logging.debug("Required space in GB: %s" % required_space)
+        while free_space < self.min_free_space:
             times = []
             for dir in dirs:
-                times.append(os.path.getmtime(os.path.join(datapath, user, dir)))
+                times.append(os.path.getmtime(dir))
             if len(dirs) > 0:
-                old_dir = os.path.join(datapath, user, dirs[times.index(min(times))])
+                old_dir = dirs[times.index(min(times))]
+                dir.remove(old_dir)
                 shutil.rmtree(old_dir, ignore_errors=True)
             else:
                 logging.error("No more directories to remove")
                 break
             logging.info("Space required.  %s removed." % old_dir)
             s = os.statvfs(datapath)
-            free_space = float(s.f_bsize * s.f_bavail)
+            free_space = float(s.f_bsize * s.f_bavail / (10**9))
             logging.debug("Free space in bytes: %s" % free_space)
+
+        ### Remove empty data directories
+        data_dirs = filter(lambda f: os.path.isdir(f), glob.glob(datapath + '/' + '*/' * (dir_depth - 1)))
+        for dd in data_dirs:
+            if not os.listdir(dd):
+                logging.info('Dir empty, removing: {}'.format(dd))
+                os.rmdir(dd)
         self.gc_lock.release()
 
     def get_data(self, body):
@@ -103,14 +142,18 @@ class ArastConsumer:
         filepath += "/raw/"
         all_files = []
         user = params['ARASTUSER']
+        job_id = params['job_id']
+        data_id = params['data_id']
         token = params['oauth_token']
         uid = params['_id']
+        self.garbage_collect(self.datapath, self.min_free_space, user, job_id, data_id)
 
         ##### Get data from ID #####
         data_doc = self.metadata.get_data_docs(params['ARASTUSER'], params['data_id'])
         if not data_doc:
             raise Exception('Invalid Data ID: {}'.format(params['data_id']))
-
+        logging.debug('data_doc')
+        logging.debug(data_doc)
         if 'kbase_assembly_input' in data_doc:
             params['assembly_data'] = kb_to_asm(data_doc['kbase_assembly_input'])
         elif 'assembly_data' in data_doc:
@@ -120,8 +163,8 @@ class ArastConsumer:
         self.metadata.update_job(uid, 'status', 'Data transfer')
         with ignored(OSError):
             os.makedirs(filepath)
-
-          ### TODO Garbage collect ###
+            touch(filepath)
+        
         download_url = 'http://{}'.format(self.shockurl)
         file_sets = params['assembly_data']['file_sets']
         for file_set in file_sets:
@@ -137,6 +180,7 @@ class ArastConsumer:
                 if file_info['filename']:
                     local_file = os.path.join(filepath, file_info['filename'])
                     if os.path.exists(local_file):
+                        local_file = extract_file(local_file)
                         logging.info("Requested data exists on node: {}".format(local_file))
                     else:
                         local_file = self.download_shock(download_url, user, token, 
@@ -144,6 +188,7 @@ class ArastConsumer:
                 elif file_info['direct_url']:
                     local_file = os.path.join(filepath, os.path.basename(file_info['direct_url']))
                     if os.path.exists(local_file):
+                        local_file = extract_file(local_file)
                         logging.info("Requested data exists on node: {}".format(local_file))
                     else:
                         local_file = self.download_url(file_info['direct_url'], filepath)
@@ -153,21 +198,17 @@ class ArastConsumer:
         return datapath, all_files                    
 
     def compute(self, body):
+        self.job_list_lock.acquire()
         error = False
         params = json.loads(body)
         job_id = params['job_id']
         uid = params['_id']
         user = params['ARASTUSER']
         token = params['oauth_token']
-        pipelines = params['pipeline']
+        pipelines = params.get('pipeline')
         recipe = params.get('recipe')
         wasp_in = params.get('wasp')
 
-        #support legacy arast client
-        if len(pipelines) > 0:
-            if type(pipelines[0]) is not list:
-                pipelines = [pipelines]
-                
         ### Download files (if necessary)
         datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
@@ -212,6 +253,7 @@ class ArastConsumer:
                     
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         self.job_list.append(job_data)
+        self.job_list_lock.release()
         self.start_time = time.time()
 
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
@@ -219,6 +261,8 @@ class ArastConsumer:
         
         url = "http://%s" % (self.shockurl)
         status = ''
+        logging.debug('Job Data') 
+        logging.debug(job_data) 
 
         #### Parse pipeline to wasp exp
         reload(recipes)
@@ -227,18 +271,25 @@ class ArastConsumer:
             except AttributeError: raise Exception('"{}" recipe not found.'.format(recipe[0]))
         elif wasp_in:
             wasp_exp = wasp_in[0]
-        elif pipelines[0] == 'auto':
+        elif not pipelines: 
             wasp_exp = recipes.get('auto', job_id)
+        elif pipelines:
+            ## Legacy client
+            if pipelines[0] == 'auto':
+                wasp_exp = recipes.get('auto', job_id)
+            ##########
+            else:
+                if type(pipelines[0]) is not list: # --assemblers
+                    pipelines = [pipelines]
+                all_pipes = []
+                for p in pipelines:
+                    all_pipes += self.pmanager.parse_input(p)
+                logging.info(all_pipes)
+                wasp_exp = wasp.pipelines_to_exp(all_pipes, params['job_id'])
         else:
-            all_pipes = []
-            for p in pipelines:
-                all_pipes += self.pmanager.parse_input(p)
-            print all_pipes
-            wasp_exp = wasp.pipelines_to_exp(all_pipes, params['job_id'])
-            logging.info('Wasp Expression: {}'.format(wasp_exp))
-        print('Wasp Expression: {}'.format(wasp_exp))
+            raise asmtypes.ArastClientRequestError('Malformed job request.')
+        logging.info('Wasp Expression: {}'.format(wasp_exp))
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
-
 
         ###### Run Job
         try: 
@@ -356,7 +407,7 @@ class ArastConsumer:
         job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
         uid = job_doc['_id']
         ## Check if job was not killed
-        if job_doc['status'] == 'Terminated':
+        if job_doc['status'] == 'Terminated by user':
             print 'Job {} was killed, skipping'.format(params['job_id'])
         else:
             self.done_flag = threading.Event()
@@ -374,216 +425,23 @@ class ArastConsumer:
     def start(self):
         self.fetch_job()
 
-###### Legacy Support ######
-
-    def _get_data_old(self, body):
-        params = json.loads(body)
-        #filepath = self.datapath + str(params['data_id'])
-        filepath = os.path.join(self.datapath, params['ARASTUSER'],
-                                str(params['data_id']))
-        datapath = filepath
-        filepath += "/raw/"
-        all_files = []
-
-        uid = params['_id']
-        job_id = params['job_id']
-        user = params['ARASTUSER']
-
-        data_doc = self.metadata.get_doc_by_data_id(params['data_id'], params['ARASTUSER'])
-        if data_doc:
-            paired = data_doc['pair']
-            single = data_doc['single']
-            files = data_doc['filename']
-            ids = data_doc['ids']
-            token = params['oauth_token']
-            try:
-                ref = data_doc['reference']
-            except:
-                pass
-        else:
-            self.metadata.update_job(uid, 'status', 'Invalid Data ID')
-            raise Exception('Data {} does not exist on Shock Server'.format(
-                    params['data_id']))
-
-        all_files = []
-        if os.path.isdir(filepath):
-            logging.info("Requested data exists on node")
-            try:
-                for l in paired:
-                    filedict = {'type':'paired', 'files':[]}
-                    for word in l:
-                        if is_filename(word):
-                            baseword = os.path.basename(word)
-                            filedict['files'].append(
-                                extract_file(os.path.join(filepath,  baseword)))
-                        else:
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                    all_files.append(filedict)
-            except:
-                logging.info('No paired files submitted')
-
-            try:
-                for seqfiles in single:
-                    for wordpath in seqfiles:
-                        filedict = {'type':'single', 'files':[]}    
-                        if is_filename(wordpath):
-                            baseword = os.path.basename(wordpath)
-                            filedict['files'].append(
-                                extract_file(os.path.join(filepath, baseword)))
-                        else:
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                        all_files.append(filedict)
-            except:
-                logging.info(format_tb(sys.exc_info()[2]))
-                logging.info('No single files submitted!')
-            
-            try:
-                for r in ref:
-                    for wordpath in r:
-                        filedict = {'type':'reference', 'files':[]}    
-                        if is_filename(wordpath):
-                            baseword = os.path.basename(wordpath)
-                            filedict['files'].append(
-                                extract_file(os.path.join(filepath, baseword)))
-                        else:
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                        all_files.append(filedict)
-            except:
-                logging.info(format_tb(sys.exc_info()[2]))
-                logging.info('No reference files submitted!')
-            
-    
-            touch(datapath)
-
-        ## Data does not exist on current compute node
-        else:
-            self.metadata.update_job(uid, 'status', 'Data transfer')
-            os.makedirs(filepath)
-
-            # Get required space and garbage collect
-            try:
-                req_space = 0
-                for file_size in data_doc['file_sizes']:
-                    req_space += file_size
-                self.garbage_collect(self.datapath, user, req_space)
-            except:
-                pass 
-            url = "http://%s" % (self.shockurl)
-
-            try:
-                for l in paired:
-                    #FILEDICT contains a single read library's info
-                    filedict = {'type':'paired', 'files':[]}
-                    for word in l:
-                        if is_filename(word):
-                            baseword = os.path.basename(word)
-                            dl = self.download_shock(url, user, token, 
-                                               ids[files.index(baseword)], filepath)
-                            if shock.parse_handle(dl): #Shock handle, get real data
-                                logging.info('Found shock handle, getting real data...')
-                                s_addr, s_id = shock.parse_handle(dl)
-                                s_url = 'http://{}'.format(s_addr)
-                                real_file = self.download_shock(s_url, user, token, 
-                                                          s_id, filepath)
-                                filedict['files'].append(real_file)
-                            else:
-                                filedict['files'].append(dl)
-                        elif re.search('=', word):
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                    all_files.append(filedict)
-            except:
-                logging.info(format_exc(sys.exc_info()))
-                logging.info('No paired files submitted')
-
-            try:
-                for seqfiles in single:
-                    for wordpath in seqfiles:
-                        filedict = {'type':'single', 'files':[]}
-                        # Parse user directories
-                        try:
-                            path, word = wordpath.rsplit('/', 1)
-                            path += '/'
-                        except:
-                            word = wordpath
-                            path = ''
-
-                        if is_filename(word):
-                            baseword = os.path.basename(word)
-                            dl = self.download_shock(url, user, token, 
-                                               ids[files.index(baseword)], filepath)
-                            if shock.parse_handle(dl): #Shock handle, get real data
-                                logging.info('Found shock handle, getting real data...')
-                                s_addr, s_id = shock.parse_handle(dl)
-                                s_url = 'http://{}'.format(s_addr)
-                                real_file = self.download_shock(s_url, user, token, 
-                                                          s_id, filepath)
-                                filedict['files'].append(real_file)
-                            else:
-                                filedict['files'].append(dl)
-                        elif re.search('=', word):
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                        all_files.append(filedict)
-            except:
-                logging.info(format_exc(sys.exc_info()))
-                logging.info('No single end files submitted')
-
-            try:
-                for r in ref:
-                    for wordpath in r:
-                        filedict = {'type':'reference', 'files':[]}
-                        # Parse user directories
-                        try:
-                            path, word = wordpath.rsplit('/', 1)
-                            path += '/'
-                        except:
-                            word = wordpath
-                            path = ''
-
-                        if is_filename(word):
-                            baseword = os.path.basename(word)
-                            dl = self.download_shock(url, user, token, 
-                                               ids[files.index(baseword)], filepath)
-                            if shock.parse_handle(dl): #Shock handle, get real data
-                                logging.info('Found shock handle, getting real data...')
-                                s_addr, s_id = shock.parse_handle(dl)
-                                s_url = 'http://{}'.format(s_addr)
-                                real_file = self.download_shock(s_url, user, token, 
-                                                          s_id, filepath)
-                                filedict['files'].append(real_file)
-                            else:
-                                filedict['files'].append(dl)
-                        elif re.search('=', word):
-                            kv = word.split('=')
-                            filedict[kv[0]] = kv[1]
-                        all_files.append(filedict)
-            except:
-                #logging.info(format_exc(sys.exc_info()))
-                logging.info('No single end files submitted')
-
-        return datapath, all_files
-
-
 
 ### Helper functions ###
 def touch(path):
     now = time.time()
     try:
-        # assume it's there
         os.utime(path, (now, now))
     except os.error:
-        # if it isn't, try creating the directory,
-        # a file with that name
         os.makedirs(os.path.dirname(path))
         open(path, "w").close()
         os.utime(path, (now, now))
     
 def extract_file(filename):
     """ Decompress files if necessary """
+    root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
+    module_bin_path = os.path.join(root_path, "module_bin")
+    unp_bin = os.path.join(module_bin_path, 'unp')
+
     filepath = os.path.dirname(filename)
     supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz', 
                  'rar', 'tar', 'tgz','zip']
@@ -593,7 +451,7 @@ def extract_file(filename):
             if os.path.exists(extracted_file): # Check extracted already
                 return extracted_file
             logging.debug("Extracting %s" % filename)
-            p = subprocess.Popen(['unp', filename], 
+            p = subprocess.Popen([unp_bin, filename], 
                                  cwd=filepath, stderr=subprocess.STDOUT)
             p.wait()
             if os.path.exists(extracted_file):
@@ -624,10 +482,12 @@ class UpdateTimer(threading.Thread):
                 elapsed_time = time.time() - self.start_time
                 ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
                 self.meta.update_job(self.uid, 'computation_time', ftime)
+                self.meta.rjob_remove(self.uid)
                 return
             elapsed_time = time.time() - self.start_time
             ftime = str(datetime.timedelta(seconds=int(elapsed_time)))
             self.meta.update_job(self.uid, 'computation_time', ftime)
+            self.meta.rjob_update_timestamp(self.uid)
             if int(elapsed_time) < self.interval:
                 time.sleep(3)
             else:
