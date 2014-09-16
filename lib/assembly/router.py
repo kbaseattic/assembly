@@ -21,6 +21,7 @@ import uuid
 from bson import json_util
 from ConfigParser import SafeConfigParser
 from distutils.version import StrictVersion
+from netaddr import IPAddress, IPNetwork
 from prettytable import PrettyTable
 from traceback import format_exc
 
@@ -101,10 +102,19 @@ def determine_routing_key(size, params):
     return routing_key or parser.get('rabbitmq','default_routing_key')
 
 
-def get_upload_url():
+def get_upload_url(request_ip=None):
+    "Checks incoming ip to see if in same subnet.  Return accordingly."
     global parser
-    return parser.get('shock', 'host')
-
+    if not request_ip:
+        return parser.get('shock', 'host')
+    else: 
+        print request_ip
+        print parser.get('assembly', 'subnet')
+        if (IPAddress(request_ip) in IPNetwork(parser.get('assembly', 'subnet')) or
+            request_ip == '127.0.0.1'):
+            return parser.get('shock', 'host_internal')
+        else:
+            raise Exception("Error getting shock url")
 
 def check_valid_client(body):
     client_params = json.loads(body) #dict of params
@@ -564,7 +574,9 @@ class JobResource:
         try: 
             url = '{}/node/{}?download'.format(handle['shock_url'], handle['shock_id'])
             report = shock.get(url).content
-        except:
+        except Exception as e:
+            print e
+            print url
             raise cherrypy.HTTPError(403, 'Could not get report using shock')
         return report
 
@@ -823,7 +835,9 @@ class ShockResource(object):
 
     @cherrypy.expose
     def default(self):
-        return json.dumps(self.content)
+        ip = cherrypy.request.headers['Remote-Addr']
+        url = get_upload_url(request_ip = ip)
+        return json.dumps({'shockurl': url})
 
 
 class Root(object):
