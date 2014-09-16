@@ -58,7 +58,9 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     if rmq_host == 'localhost':
         rmq_host = arasturl
     try:
-        shockurl = ctrl_conf['shock']['host']
+        shockurl = json.loads(requests.get('http://{}:8000/shock'.format(arasturl)).text).get('shockurl')
+        if not shockurl:
+            shockurl = ctrl_conf['shock']['host']
         print ' [.] Retrieved Shock URL: {}'.format(shockurl)
     except:
         raise Exception('Could not communicate with server')
