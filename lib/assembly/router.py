@@ -108,8 +108,6 @@ def get_upload_url(request_ip=None):
     if not request_ip:
         return parser.get('shock', 'host')
     else: 
-        print request_ip
-        print parser.get('assembly', 'subnet')
         if (IPAddress(request_ip) in IPNetwork(parser.get('assembly', 'subnet')) or
             request_ip == '127.0.0.1'):
             return parser.get('shock', 'host_internal')
@@ -575,8 +573,6 @@ class JobResource:
             url = '{}/node/{}?download'.format(handle['shock_url'], handle['shock_id'])
             report = shock.get(url).content
         except Exception as e:
-            print e
-            print url
             raise cherrypy.HTTPError(403, 'Could not get report using shock')
         return report
 
