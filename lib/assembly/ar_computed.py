@@ -30,7 +30,7 @@ job_list = mgr.list()
 job_list_lock = multiprocessing.Lock()
 kill_list = mgr.list()
 
-def start(arast_server, config, num_threads, queue, datapath, binpath):
+def start(arasturl, config, num_threads, queue, datapath, binpath):
 
     #### Get default configuration from ar_compute.conf
     print " [.] Starting Assembly Service Compute Node"    
@@ -41,13 +41,9 @@ def start(arast_server, config, num_threads, queue, datapath, binpath):
     logging.getLogger('pika').propagate = True
     logging.getLogger('pika').setLevel(logging.WARNING)
 
-    arasturl =  cparser.get('assembly','arast_url')
     arastport = cparser.get('assembly','arast_port')
-    if arast_server and arast_server != '':
-        arasturl = arast_server
     if not num_threads:
         num_threads =  cparser.get('compute','threads')
-
 
     #### Retrieve system configuration from AssemblyRAST server
     ctrl_conf = json.loads(requests.get('http://{}:{}/admin/system/config'.format(arasturl, arastport)).content)
@@ -55,6 +51,8 @@ def start(arast_server, config, num_threads, queue, datapath, binpath):
     mongo_host = ctrl_conf['assembly']['mongo_host']
     rmq_port = int(ctrl_conf['assembly']['rabbitmq_port'])
     rmq_host = ctrl_conf['assembly']['rabbitmq_host']
+    if not queue:
+        queue = ctrl_conf['rabbitmq']['default_routing_key']
     if mongo_host == 'localhost':
         mongo_host = arasturl
     if rmq_host == 'localhost':
@@ -64,7 +62,6 @@ def start(arast_server, config, num_threads, queue, datapath, binpath):
         print ' [.] Retrieved Shock URL: {}'.format(shockurl)
     except:
         raise Exception('Could not communicate with server')
-
 
     print " [.] AssemblyRAST host: %s" % arasturl
     print " [.] MongoDB port: %s" % mongo_port
@@ -158,7 +155,7 @@ parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command 
 parser.add_argument("-v", "--verbose", help="increase output verbosity",
                     action="store_true")
 parser.add_argument("-s", "--server", help="specify AssemblyRAST server",
-                    action="store")
+                    action="store", required=True)
 parser.add_argument("-c", "--config", help="specify configuration file",
                     action="store", required=True)
 parser.add_argument("-t", "--threads", help="specify number of worker threads",
