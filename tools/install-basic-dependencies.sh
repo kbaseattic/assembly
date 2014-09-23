@@ -9,6 +9,7 @@ sudo cpanm install DateTime
 sudo cpanm install File::Basename
 sudo cpanm install File::Copy
 sudo cpanm install Getopt::Long
+sudo cpanm install Perl4::CoreLibs
 sudo cpanm install Term::ReadKey
 sudo cpanm install Text::Table
 
