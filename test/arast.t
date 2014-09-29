@@ -155,6 +155,7 @@ sub test_duplicated_files {
     like($out, qr/duplicate/, "Duplication identified correctly: '$out'"); $testCount++;
 }
 
+
 sub test_mixed_input_with_smart {
     sysrun('ar-run -r smart -m mixed_1s2p --pair p1.fq p2.fq --single_url http://www.mcs.anl.gov/~fangfang/arast/se.fastq --pair_url http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq > job.21');
     sysrun("cat job.21 | ar-get -w --report > report.21"); validate_report('report.21');
@@ -167,6 +168,14 @@ sub test_compressed_files {
     sysrun("ar-run --pair_url $pe1 $pe2 -a kiki > job.31");
     sysrun('cat job.31 | ar-get -w -p > contigs.31'); validate_contigs('contigs.31');
 }
+
+sub test_failures {
+    sysrun("ar-upload -f se.fq -m 'my test data' > data.41");
+    sysrun('cat data.41 | ar-run -a idba velvet > job.41');
+    sysrun("cat job.41 | ar-get -w");
+    sysrun("cat job.41 | ar-get -l > log.41"); validate_log('log.41', 2);
+}
+
  
 sub validate_contigs {
     my ($file) = @_;
@@ -184,8 +193,12 @@ sub validate_log {
     my ($file, $check_errors) = @_;
     my $out = sysout("head $file");
     like($out, qr/Arast Pipeline: Job/, "$file is valid assembly log"); $testCount++;
-    if ($check_errors) {
+    if ($check_errors == 1) {
         unlike($out, qr/PIPELINE ERRORS/, "$file has no reported errors");
+        $testCount++;
+    }
+    elsif ($check_errors == 2){
+        like($out, qr/PIPELINE ERRORS/, "$file has reported errors");
         $testCount++;
     }
 }
