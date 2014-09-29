@@ -3,6 +3,7 @@ import logging
 import subprocess
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
+from asmtypes import ArastDataInputError
 
 class IdbaAssembler(BaseAssembler, IPlugin):
     new_version = True
@@ -15,7 +16,7 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         # Only supports one set of reads
         
         if not len(self.data.readsets_paired) == 1:
-            raise Exception('IDBA assembler requires one paired-end library')
+            raise ArastDataInputError('IDBA assembler requires one paired-end library')
 
         readset = self.data.readsets[0]
         if self.data.readsets_single:

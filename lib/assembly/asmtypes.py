@@ -229,10 +229,13 @@ def filepaths(filesets):
 class ArastUserInterrupt(BaseException):
     pass
 
-class ArastDataInputError(Exception):
+class ArastDataError(Exception):
     pass
 
-class ArastDataOutputError(Exception):
+class ArastDataInputError(ArastDataError):
+    pass
+
+class ArastDataOutputError(ArastDataError):
     pass
 
 class ArastClientRequestError(Exception):
