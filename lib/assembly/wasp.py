@@ -123,6 +123,7 @@ def eval(x, env):
             env.exceptions.append(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':
+        print 'sort', x[1]
         seq = [link for link in eval(x[1], env) if link is not None and link.output]
         logging.debug(seq)
         if len(seq) == 1: return seq
@@ -233,7 +234,6 @@ def eval(x, env):
         if val:
             return val if len(val) > 1 else val[0]
 
-
     else:                          # (proc exp*)
         exps = [eval(exp, env) for exp in x]
         proc = exps.pop(0)
@@ -243,6 +243,14 @@ def eval(x, env):
         except TypeError as e: ## Built-in functions
             logging.info(traceback.format_exc())
             return proc(*exps)
+        except asmtypes.ArastDataError as e:
+            env.errors.append(e)
+            env.exceptions.append(traceback.format_exc())
+        except Exception as e:
+            env.errors.append(e)
+            env.exceptions.append(traceback.format_exc())
+
+
 ################ parse, read, and user interaction
 
 def extract_kwargs(exp):
