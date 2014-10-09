@@ -424,7 +424,7 @@ class ArastConsumer:
         self.done_flag.set()
         try:
             self.job_list_lock.release()
-        except ThreadError:
+        except ValueError:
             logging.info("job_list_lock already free")
 
     def start(self):
