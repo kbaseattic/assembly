@@ -104,6 +104,7 @@ class Shock:
         self.user = user
         self.token = token
         self.attrs = {'user': user}
+        self.headers = {'Authorization': token}
 
     def upload_reads(self, filename, curl=False):
         if curl:
@@ -127,8 +128,12 @@ class Shock:
 
 
     def curl_download_file(self, node_id, outdir=None):
-        cmd = ['curl', 
+        ## Authenticated download
+        cmd = ['curl', '-k', 
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
+        for k,v in self.headers.items():
+            cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
+
         r = subprocess.check_output(cmd)
         try:
             filename = json.loads(r)['data']['file']['name']
