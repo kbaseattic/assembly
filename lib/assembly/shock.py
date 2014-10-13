@@ -134,7 +134,7 @@ class Shock:
         for k,v in self.headers.items():
             cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
 
-        r = subprocess.check_output(cmd)
+        r = subprocess.check_output(' '.join(cmd), shell=True)
         try:
             filename = json.loads(r)['data']['file']['name']
         except:
