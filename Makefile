@@ -12,7 +12,7 @@ ARAST_AUTH_SERVICE = KBase
 include $(TOP_DIR)/tools/Makefile.common
 
 TPAGE_ARGS = --define arast_url=$(ARAST_URL) \
-	--define arast_auth_serivce=$(ARAST_AUTH_SERVICE)
+	--define arast_auth_service=$(ARAST_AUTH_SERVICE)
 
 
 # to wrap scripts and deploy them to $(TARGET)/bin using tools in
