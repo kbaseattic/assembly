@@ -65,7 +65,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet); 
+my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet);
 my @special_comps = qw (discovar pacbio jgi_rqc);
 my @extra_depends = qw (cmake3);
 
@@ -99,8 +99,8 @@ for my $c (@comps) {
     print "Installing $c...\n";
     next if $dry_run;
 
-    my $func = "install_$c";    
-    
+    my $func = "install_$c";
+
     chdir($tmp_dir);
     { no strict 'refs'; &$func(); }
     chdir($curr_dir);
@@ -113,7 +113,7 @@ for my $c (@comps) {
 # TODO: python: fallback: strip path prefix and check exe in path
 
 sub install_template {
-    # we are in the $tmp_dir directory 
+    # we are in the $tmp_dir directory
     # 1. download source files
     # 2. compile
     # 3. copy executables to $dest_dir
@@ -123,6 +123,7 @@ sub install_basic {
     my @apt = qw(python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools gcc-4.7 g++-4.7 graphviz csh pkg-config sparsehash libboost-all-dev gawk);
     my @pip = qw(pika python-daemon pymongo requests yapsy numpy biopython);
 
+    run("apt-get -y purge openmpi*");
     # run("apt-get -q -y update");
     run("apt-get -y install " . join(" ", @apt));
     run("pip install "        . join(" ", @pip));
@@ -198,7 +199,7 @@ sub install_fastx {
     my $dir = 'fastx_toolkit';
     # there is no fastx plugin; so we need this extra check
     if (-e "$dest_dir/$dir/fastx_trimmer") {
-        print "Found component fastx, skipping...\n"; 
+        print "Found component fastx, skipping...\n";
         return;
     }
     run("mkdir -p $dir");
@@ -253,12 +254,12 @@ sub install_pacbio {
     download($dir, $file, $url);
 
     # current configurations
-    # 
+    #
     # directories
     #   tmpdir   -> /mnt/tmp           # chmod 777 /mnt/tmp
     #   userdata -> /space/smrtdata    # mkdir -p /space/smrtdata; chown ubuntu:ubuntu /space/smrtdata;
-    #                                    ln -s /space/smrtdata $AR_DIR/third_party/smrt/userdata                                     
-    # 
+    #                                    ln -s /space/smrtdata $AR_DIR/third_party/smrt/userdata
+    #
     # SMRT Analysis user:     ubuntu
     # MySQL user/password:    root/root
     # Job management system:  NONE
@@ -361,7 +362,7 @@ sub install_reapr {
 sub install_seqtk {
     # seqtk is not a plugin; need to check if it exists
     if (-e "$dest_dir/seqtk") {
-        print "Found component seqtk, skipping...\n"; 
+        print "Found component seqtk, skipping...\n";
         return;
     }
     git('git://github.com/levinas/seqtk.git');
@@ -375,7 +376,7 @@ sub install_solexa {
     my $found = 1;
     for (@exes) { $found = 0 unless -e "$dest_dir/solexa/$_"; }
     if ($found) {
-        print "Found component seqtk, skipping...\n"; 
+        print "Found component seqtk, skipping...\n";
         return;
     }
     my $dir = 'SolexaQA_v.2.1';
@@ -450,7 +451,7 @@ sub check_if_installed {
 sub git {
     my ($url, $repo) = @_;
     if (!$repo) { $repo = $url; $repo =~ s|.*/||; $repo =~ s|\.git$||; }
-    
+
     if (-d "$repo") {
         run("cd $repo; git pull");
     } else {
@@ -487,4 +488,3 @@ sub verify_user {
 }
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
-
