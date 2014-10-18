@@ -123,7 +123,6 @@ sub install_basic {
     my @apt = qw(python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools gcc-4.7 g++-4.7 graphviz csh pkg-config sparsehash libboost-all-dev gawk);
     my @pip = qw(pika python-daemon pymongo requests yapsy numpy biopython);
 
-    run("apt-get -y purge openmpi*");
     # run("apt-get -q -y update");
     run("apt-get -y install " . join(" ", @apt));
     run("pip install "        . join(" ", @pip));
@@ -224,6 +223,7 @@ sub install_idba {
 }
 
 sub install_kiki {
+    run("apt-get -y purge openmpi*");
     git('git://github.com/GeneAssembly/kiki.git');
     chdir("kiki");
     run("mkdir -p bin; cd bin; cmake ..; make -j ki");
