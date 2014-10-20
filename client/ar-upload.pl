@@ -13,7 +13,7 @@ use JSON;
 use Term::ReadKey;
 use Text::Table;
 
-our $cli_upload_compatible_version = "0.5.0"; 
+our $cli_upload_compatible_version = "0.5.0";
 
 my $have_kbase = 0;
 eval {
@@ -51,6 +51,8 @@ Supported sequence file types:
 Examples:
   Upload a hybrid library of paired and single reads:
     % ar-upload --pair r1.fastq r2.fastq insert=300 stdev=60 --single unpaired.fasta --pair f1.fq f2.fq insert=180
+  Upload an interleaved paired-end library (by explictly setting "interleaved" to 1):
+    % ar-upload --pair pe12.fastq interleaved=1
   Upload PacBio reads with a reference assembly:
     % ar-upload -f pb1.bas.h5 -f pb2.bas.h5 --cov 15.0 --gs 40000 -r lambda.fa name="Lambda phage" -ws pb
 
@@ -102,7 +104,7 @@ if (@ws_args) {
     my ($curr_url, $curr_name) = current_workspace();
     $ws_url  ||= $curr_url;
     $ws_name ||= $curr_name or die "Error: workspace name not set, and no active workspace found\n";
-    
+
     # $ws_url ||= 'http://140.221.84.209:7058';   # dev
     # $ws_url ||= 'http://kbase.us/services/ws/'; # prod
 
@@ -131,7 +133,7 @@ sub submit_data {
     my $ua = LWP::UserAgent->new; $ua->timeout(10);
     my $req = HTTP::Request->new( POST => $url );
     $req->header( Authorization => $token );
-    
+
     # ARAST assembly_data style: dummy data
     # my $tmp = '{"assembly_data": {"file_sets": [{"file_infos": [], "type": "paired"}, {"file_infos": [{"create_time": "2014-01-31 04:51:50.931737", "filename": "s1.fa", "filesize": 7, "metadata": null, "shock_id": "dedc9e52-d41a-45ae-914e-457120ec1f83", "shock_url": "http://140.221.84.205:8000/"}], "type": "single"}, {"file_infos": [], "type": "reference"}]}, "client": "CLI", "message": null, "version": "0.3.8.2"}';
     # $req->content( $tmp );
@@ -142,7 +144,7 @@ sub submit_data {
                         client => "CLI/ar-upload.pl" };
     $req->content( encode_json($client_data) );
     # print encode_json($client_data);
-    
+
     my $res = $ua->request($req);
 
     $res->is_success or die "Error submitting data: ".$res->message."\n";
@@ -173,11 +175,11 @@ sub authenticate {
         $user  = $ENV{KB_AUTH_USER_ID};
         $token = $ENV{KB_AUTH_TOKEN};
         return ($user, $token);
-    } 
+    }
 
     my $ar_auth_file = glob join('/', '~/.config', $config->{APPNAME}, $config->{OAUTH_FILENAME});
     my ($user, $token) = get_arast_user_token($ar_auth_file);
-    
+
     if ($have_kbase) {
         my @auth_params = (token => $token) if $token;
         my $auth = Bio::KBase::AuthToken->new(@auth_params); # Auth will try to read ~/.kbase_config if necessary
@@ -194,7 +196,7 @@ sub authenticate {
             my $date = DateTime->now->ymd;
             set_arast_user_token($ar_auth_file, $user, $token, $date);
         }
-    }    
+    }
 
     return ($user, $token);
 }
@@ -231,14 +233,14 @@ sub is_handle {
 
 sub update_handle {
     my ($handle, $shock) = @_;
-    
+
     my $file = $handle->{file_name};
     my $id = curl_post_file($file, $shock);
 
     $handle->{type} = 'shock';
     $handle->{url}  = $shock->{url};
     $handle->{id}   = $id;
-    
+
     return $handle;
 }
 
@@ -258,7 +260,7 @@ sub curl_post_file {
 
 sub get_shock {
     my ($config, $user, $token) = @_;
-    my $url = complete_url($config->{URL}, 8000, 'shock'); 
+    my $url = complete_url($config->{URL}, 8000, 'shock');
     my $ua = LWP::UserAgent->new; $ua->timeout(10);
     my $req = HTTP::Request->new( GET => $url ); $req->header( Authorization => $token );
     my $res = $ua->request($req);
@@ -370,7 +372,12 @@ sub process_input_args {
             $pe_libs[$i]->{$param_key} = check_numerical($2);
         } else {
             my $file = validate_seq_file($_);
-            if (@pair == 2) { 
+            if ($pe_libs[$i]->{interleaved}) {
+                @pair == 1 and die "Interleaved paired end library should contain one file.\n";
+                $pe_libs[$i]->{handle_1} = $file;
+                $i++;
+            }
+            elsif (@pair == 2) {
                 $pe_libs[$i]->{handle_1} = $pair[0];
                 $pe_libs[$i]->{handle_2} = $pair[1];
                 @pair = ( $file );
@@ -383,6 +390,8 @@ sub process_input_args {
     if (@pair == 2) {
         $pe_libs[$i]->{handle_1} = $pair[0];
         $pe_libs[$i]->{handle_2} = $pair[1];
+    elsif (@pair == 1 && $pe_libs[$i]->{interleaved}) {
+        $pe_libs[$i]->{handle_1} = $pair[0];
     } elsif (@pair > 0) {
         die "Incorrect number of paired end files.\n"
     }
@@ -391,7 +400,7 @@ sub process_input_args {
     $data->{paired_end_libs} = \@pe_libs if @pe_libs;
     $data->{single_end_libs} = \@se_libs if @se_libs;
     $data->{references}      = \@refs    if @refs;
-    
+
     return $data;
 }
 
