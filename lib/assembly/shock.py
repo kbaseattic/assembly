@@ -147,7 +147,10 @@ class Shock:
         cmd = ['curl', 
                '-o', filename, d_url]
 
-        p = subprocess.Popen(cmd, cwd=outdir)
+        for k,v in self.headers.items():
+            cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
+
+        p = subprocess.Popen(' '.join(cmd), cwd=outdir, shell=True)
         p.wait()
 
         downloaded = os.path.join(outdir, filename)
