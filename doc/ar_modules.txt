@@ -1,0 +1,168 @@
+[Module] a5
+  Description: A5 microbial assembly pipeline
+  Version: 1.1
+  Stages: preprocess,assembler,post-process
+  Modules: tagdust,sga,idba,sspace
+  Limitations: Updated to 2014 version; may crashes on some datasets (try a modified version in A6)
+  References: doi:10.1371/journal.pone.0042304
+
+[Module] a6
+  Description: Modified A5 microbial assembly pipeline
+  Version: 1.0
+  Stages: preprocess,assembler,post-process
+  Modules: tagdust,sga,idba,sspace
+  Limitations: Does not support reads longer than 255 bp
+  References: https://github.com/levinas/a5
+
+[Module] bhammer
+  Description: SPAdes component for quality control of sequence data
+  Version: 1.0
+  Stages: preprocess
+  References: doi:10.1089/cmb.2012.0021
+
+[Module] bowtie2
+  Description: Bowtie2 aligner that maps reads to contigs
+  Version: 1.0
+  Stages: post-process
+  References: doi:10.1038/nmeth.1923
+
+[Module] bwa
+  Description: BWA aligner that maps reads to contigs
+  Version: 1.0
+  Stages: post-process
+  References: 10.1093/bioinformatics/btp324
+
+[Module] fastqc
+  Description: FastQC quality control tool for sequence data
+  Version: 1.0
+  Stages: preprocess
+  References: http://www.bioinformatics.babraham.ac.uk/projects/fastqc
+
+[Module] filter_by_length
+  Description: Length-based sequencing reads filter and trimmer based on seqtk
+  Version: 1.0
+  Stages: preprocess
+  References: https://github.com/levinas/seqtk
+  Customizable parameters: default (available values)
+                      end  =  200
+                      min  =  250
+                     sync  =  True
+
+[Module] idba
+  Description: IDBA iterative graph-based assembler for single-cell and standard data
+  Version: 1.0
+  Stages: assembler
+  References: doi:10.1093/bioinformatics/bts174
+  Customizable parameters: default (available values)
+                    max_k  =  50
+                 scaffold  =  True
+
+[Module] kiki
+  Description: Kiki overlap-based parallel microbial and metagenomic assembler
+  Version: 1.0
+  Stages: assembler
+  References: https://github.com/GeneAssembly/kiki
+  Customizable parameters: default (available values)
+         contig_threshold  =  1000
+                        k  =  29
+
+[Module] quast
+  Description: QUAST assembly quality assessment tool (run by default)
+  Version: 1.0
+  Stages: post-process
+  References: doi:10.1093/bioinformatics/btt086
+  Customizable parameters: default (available values)
+               min_contig  =  500
+
+[Module] ray
+  Description: Ray graph-based parallel microbial and metagenomic assembler
+  Version: 1.0
+  Stages: assembler
+  References: doi:10.1186/gb-2012-13-12-r122
+  Customizable parameters: default (available values)
+                        k  =  31
+
+[Module] reapr
+  Description: REAPR assembly error recognizer using paired-end reads
+  Version: 1.0
+  Stages: post-process
+  References: doi:10.1186/gb-2013-14-5-r47
+  Customizable parameters: default (available values)
+                        a  =  True
+
+[Module] sga_ec
+  Description: SGA component for error correction (runs subcommands: 'index' & 'correct')
+  Version: 1.0
+  Stages: preprocess
+  References: doi:10.1101/gr.126953.111
+
+[Module] sga_preprocess
+  Description: SGA component for preprocessing reads (runs subcommand 'preprocess')
+  Version: 1.0
+  Stages: preprocess
+  References: doi:10.1101/gr.126953.111
+  Customizable parameters: default (available values)
+               min_length  =  29
+        permute_ambiguous  =  True
+           quality_filter  =  20
+             quality_trim  =  10
+
+[Module] spades
+  Description: SPAdes single-cell and standard assembler based on paired de Bruijn graphs
+  Version: 1.2
+  Base Version: 3.1.0
+  Stages: preprocess,assembler
+  Modules: bhammer
+  References: doi:10.1089/cmb.2012.0021
+  Customizable parameters: default (available values)
+      mismatch_correction  =  True (bool)
+           only_assembler  =  True (bool)
+              read_length  =  short (short, medium, medium2, long)
+
+[Module] sspace
+  Description: SSPACE pre-assembled contig scaffolder
+  Version: 1.0
+  Stages: post-process
+  References: doi:10.1093/bioinformatics/btq683
+  Customizable parameters: default (available values)
+                        a  =  0.4
+                   extend  =  False
+                        k  =  -1
+                        m  =  -1
+          minimum_overlap  =  15
+                        n  =  -1
+                        x  =  0
+
+[Module] swap
+  Description: SWAP Assembler
+  Version: 1.0
+  Stages: assembler
+  References: http://sourceforge.net/projects/swapassembler
+  Customizable parameters: default (available values)
+                        k  =  31
+
+[Module] tagdust
+  Description: TagDust sequencing artifacts remover
+  Version: 1.0
+  Stages: preprocess
+  References: doi:10.1093/bioinformatics/btp527
+
+[Module] trim_sort
+  Description: DynamicTrim and LengthSort from SolexaQA
+  Version: 1.0
+  Stages: preprocess
+  References: doi:10.1186/1471-2105-11-485
+  Customizable parameters: default (available values)
+                   length  =  25
+               probcutoff  =  0.05
+
+[Module] velvet
+  Description: Velvet de-bruijn graph based assembler
+  Version: 1.0
+  Base Version: 1.2.10
+  Stages: assembler
+  References: doi:10.1101/gr.074492.107
+  Customizable parameters: default (available values)
+              auto_insert  =  False
+              hash_length  =  29
+
