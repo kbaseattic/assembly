@@ -119,7 +119,9 @@ def get_parser():
 
 
 def cmd_login(args):
-    auth_service = 'RAST' if args.rast else 'KBase'
+    auth_service = 'KBase'
+    auth_service = conf.AUTH_SERVICE if conf.AUTH_SERVICE else auth_service
+    auth_service = 'RAST' if args.rast else auth_service
     auth.authenticate(service=auth_service, save=True)
     sys.stderr.write('[.] Logged in\n')
 
