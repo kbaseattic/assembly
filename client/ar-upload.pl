@@ -67,7 +67,7 @@ my $rc = GetOptions(
                     "h|help"             => \$help,
                     "s=s"                => \$server,
                     'f|single=s{1,}'     => \@se_args,
-                    'p|pair=s{2,}'       => \@pe_args,
+                    'p|pair=s{1,}'       => \@pe_args,
                     'r|references=s{1,}' => \@ref_args,
                     "ws=s{1,}"           => \@ws_args,
                     "ws-url=s"           => \$ws_url,
@@ -372,28 +372,32 @@ sub process_input_args {
             $pe_libs[$i]->{$param_key} = check_numerical($2);
         } else {
             my $file = validate_seq_file($_);
+            push @pair, $file;
             if ($pe_libs[$i]->{interleaved}) {
-                @pair == 1 and die "Interleaved paired end library should contain one file.\n";
-                $pe_libs[$i]->{handle_1} = $file;
+                # @pair == 2 and die "Interleaved paired end library should contain one file.\n";
+                # $pe_libs[$i]->{handle_1} = $file;
+                $pe_libs[$i]->{handle_1} = shift @pair;
+                $i++;
+            } elsif (@pair > 2) {
+                $pe_libs[$i]->{handle_1} = shift @pair;
+                $pe_libs[$i]->{handle_2} = shift @pair;
+                # $pe_libs[$i]->{handle_1} = $pair[0];
+                # $pe_libs[$i]->{handle_2} = $pair[1];
+                # @pair = ( $file );
                 $i++;
             }
-            elsif (@pair == 2) {
-                $pe_libs[$i]->{handle_1} = $pair[0];
-                $pe_libs[$i]->{handle_2} = $pair[1];
-                @pair = ( $file );
-                $i++;
-            } else {
-                push @pair, $file;
-            }
+            # else {
+                # push @pair, $file;
+            # }
         }
     }
     if (@pair == 2) {
         $pe_libs[$i]->{handle_1} = $pair[0];
         $pe_libs[$i]->{handle_2} = $pair[1];
-    elsif (@pair == 1 && $pe_libs[$i]->{interleaved}) {
+    } elsif (@pair == 1 && $pe_libs[$i]->{interleaved}) {
         $pe_libs[$i]->{handle_1} = $pair[0];
     } elsif (@pair > 0) {
-        die "Incorrect number of paired end files.\n"
+        die "Incorrect number of paired end files. Set interleaved=1 for interleaved reads.\n"
     }
 
     my $data = { %params };
