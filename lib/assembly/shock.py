@@ -104,6 +104,7 @@ class Shock:
         self.user = user
         self.token = token
         self.attrs = {'user': user}
+        self.headers = {'Authorization': token}
 
     def upload_reads(self, filename, curl=False):
         if curl:
@@ -127,9 +128,13 @@ class Shock:
 
 
     def curl_download_file(self, node_id, outdir=None):
-        cmd = ['curl', 
+        ## Authenticated download
+        cmd = ['curl', '-k', 
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
-        r = subprocess.check_output(cmd)
+        for k,v in self.headers.items():
+            cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
+
+        r = subprocess.check_output(' '.join(cmd), shell=True)
         try:
             filename = json.loads(r)['data']['file']['name']
         except:
@@ -142,7 +147,10 @@ class Shock:
         cmd = ['curl', 
                '-o', filename, d_url]
 
-        p = subprocess.Popen(cmd, cwd=outdir)
+        for k,v in self.headers.items():
+            cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
+
+        p = subprocess.Popen(' '.join(cmd), cwd=outdir, shell=True)
         p.wait()
 
         downloaded = os.path.join(outdir, filename)
