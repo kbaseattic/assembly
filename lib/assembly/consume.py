@@ -183,8 +183,9 @@ class ArastConsumer:
                         local_file = extract_file(local_file)
                         logging.info("Requested data exists on node: {}".format(local_file))
                     else:
-                        local_file = self.download_shock(download_url, user, token, 
+                        local_file = self.download_shock(file_info['shock_url'], user, token, 
                                                    file_info['shock_id'], filepath)
+
                 elif file_info['direct_url']:
                     local_file = os.path.join(filepath, os.path.basename(file_info['direct_url']))
                     if os.path.exists(local_file):
@@ -421,6 +422,10 @@ class ArastConsumer:
                 self.metadata.update_job(uid, 'status', status)
         ch.basic_ack(delivery_tag=method.delivery_tag)
         self.done_flag.set()
+        try:
+            self.job_list_lock.release()
+        except ValueError:
+            logging.info("job_list_lock already free")
 
     def start(self):
         self.fetch_job()
