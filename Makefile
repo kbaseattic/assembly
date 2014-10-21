@@ -6,7 +6,14 @@ SERVICE_NAME = assembly
 SERVICE_DIR = $(TARGET)/services/$(SERVICE)
 VAR_DIR = $(SERVICE_DIR)/var
 
+ARAST_URL = http://kbase.us/services/assembly
+ARAST_AUTH_SERVICE = KBase
+
 include $(TOP_DIR)/tools/Makefile.common
+
+TPAGE_ARGS = --define arast_url=$(ARAST_URL) \
+	--define arast_auth_service=$(ARAST_AUTH_SERVICE)
+
 
 # to wrap scripts and deploy them to $(TARGET)/bin using tools in
 # the dev_container. right now, these vars are defined in
@@ -31,7 +38,7 @@ MODULE_DIR = $(TARGET)/modules/assembly
 LIB_PYTHON = $(MODULE_DIR)/lib/python2.7/site-packages
 
 
-default:
+default: build-config
 
 # Test
 
@@ -86,7 +93,10 @@ deploy: deploy-client
 # deploy: deploy-client deploy-service
 
 # deploy-client: install-client-dep deploy-dir install-client deploy-client-scripts deploy-docs
-deploy-client: install-client-dep deploy-libs deploy-scripts deploy-docs
+deploy-client: install-client-dep build-config deploy-libs deploy-scripts deploy-docs
+
+build-config:
+	$(TPAGE) $(TPAGE_ARGS) config.py.tt > lib/assembly/config.py	
 
 # deploy-libs: 
 # 	rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
