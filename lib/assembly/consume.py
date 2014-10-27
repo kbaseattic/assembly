@@ -172,6 +172,8 @@ class ArastConsumer:
                 file_set['type'] = 'paired'
             elif file_set['type'] == 'single_url':
                 file_set['type'] = 'single'
+            elif file_set['type'] == 'pacbio_url':
+                file_set['type'] = 'pacbio'
             elif file_set['type'] == 'reference_url':
                 file_set['type'] = 'reference'
             file_set['files'] = [] #legacy
@@ -231,7 +233,8 @@ class ArastConsumer:
         for fileset in all_files:
             if len(fileset['files']) != 0:
                 if (fileset['type'] == 'single' or 
-                    fileset['type'] == 'paired'):
+                    fileset['type'] == 'paired' or
+                    fileset['type'] == 'pacbio'):
                     reads.append(fileset)
                 elif fileset['type'] == 'reference':
                     reference.append(fileset)

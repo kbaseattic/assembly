@@ -88,7 +88,7 @@ def eval(x, env):
         return exp
 
     ####### Casting to FileSet Types
-    elif x[0] in ['contigs', 'paired', 'single', 'reference']:
+    elif x[0] in ['contigs', 'paired', 'single', 'pacbio', 'reference']:
         wlink = WaspLink()
         eval_files = []
         try:

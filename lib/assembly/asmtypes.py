@@ -128,7 +128,7 @@ def set_factory(set_type, file_infos, keep_name=False, **kwargs):
         if type(f) is not FileInfo and os.path.exists(f):
             file_infos[i] = FileInfo(f, keep_name=keep_name)
             
-    if set_type in ['paired', 'single']:
+    if set_type in ['paired', 'single', 'pacbio']:
         return ReadSet(set_type, file_infos, **kwargs)
     elif set_type == 'contigs':
         return ContigSet(set_type, file_infos, **kwargs)
@@ -167,6 +167,11 @@ class FileSetContainer(dict):
         return [readset for readset in self.readsets if readset['type'] == 'paired']
 
     @property
+    def readsets_pacbio(self):
+        """ Returns a list of all paired-end  ReadSet objects"""
+        return [readset for readset in self.readsets if readset['type'] == 'pacbio']
+
+    @property
     def readsets_single(self):
         """ Returns a list of all single-end  ReadSet objects"""
         return [readset for readset in self.readsets if readset['type'] == 'single']
@@ -178,6 +183,10 @@ class FileSetContainer(dict):
     @property
     def readfiles_paired(self):
         return [readfile for readset in self.readsets_paired for readfile in readset.files]
+
+    @property
+    def readfiles_pacbio(self):
+        return [readfile for readset in self.readsets_pacbio for readfile in readset.files]
 
     @property
     def readfiles_single(self):

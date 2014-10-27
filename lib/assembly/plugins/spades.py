@@ -39,6 +39,9 @@ class SpadesAssembler(BaseAssembler, IPlugin):
             cmd_args += ['--pe{}-s'.format(single_num), readset.files[0]]
             lib_num += 1
 
+        for read in self.data.readfiles_pacbio:
+            cmd_args += ['--pacbio', read]
+
         if self.only_assembler == 'True':
             cmd_args.append('--only-assembler')
 

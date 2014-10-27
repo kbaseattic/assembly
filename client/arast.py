@@ -59,6 +59,8 @@ def get_parser():
     p_upload.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
     p_upload.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
     p_upload.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
+    p_upload.add_argument("--pacbio", action="append", dest="pacbio", nargs='*', help="Specify pacbio reads and parameters")
+    p_upload.add_argument("--pacbio_url", action="append", dest="pacbio_url", nargs='*', help="Specify URLs for pacbio reads and parameters")
     p_upload.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify a reference contig file")
     p_upload.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
     p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
@@ -73,6 +75,8 @@ def get_parser():
     p_run.add_argument("--pair_url", action="append", dest="pair_url", nargs='*', help="Specify URLs for a paired-end library and parameters")
     p_run.add_argument("--single", action="append", dest="single", nargs='*', help="Specify a single end file and parameters")
     p_run.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
+    p_run.add_argument("--pacbio", action="append", dest="pacbio", nargs='*', help="Specify a pacbio library and parameters")
+    p_run.add_argument("--pacbio_url", action="append", dest="pacbio_url", nargs='*', help="Specify URLs for a pacbio library and parameters")
     p_run.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
     p_run.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
     p_run.add_argument("--curl", action="store_true", help="Use curl for http requests")
@@ -265,7 +269,7 @@ def cmd_avail(args, aclient):
 def prepare_assembly_data(args, aclient, usage):
     """Parses args and uploads files
     returns data spec for submission in run/upload commands"""
-    if not (args.pair or args.single or args.pair_url or args.single_url):
+    if not (args.pair or args.single or args.pair_url or args.single_url or args.pacbio or args.pacbio_url):
         sys.exit(usage)
 
     adata = client.AssemblyData()
@@ -277,9 +281,9 @@ def prepare_assembly_data(args, aclient, usage):
     file_list = []
     file_lists = []
     
-    all_lists = [args.pair, args.pair_url, args.single, args.single_url, 
+    all_lists = [args.pair, args.pair_url, args.single, args.single_url, args.pacbio, args.pacbio_url,
                  args.reference, args.reference_url]
-    all_types = ['paired', 'paired_url', 'single', 'single_url',
+    all_types = ['paired', 'paired_url', 'single', 'single_url', 'pacbio', 'pacbio_url',
                  'reference', 'reference_url']
 
     for li in all_lists:
