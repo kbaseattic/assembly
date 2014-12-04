@@ -13,7 +13,7 @@ import requests
 import os
 import shutil
 import time
-import datetime 
+import datetime
 import socket
 import multiprocessing
 import re
@@ -28,7 +28,7 @@ import assembly as asm
 from assembly import ignored
 import metadata as meta
 import asmtypes
-import shock 
+import shock
 import wasp
 import recipes
 from kbase import typespec_to_assembly_data as kb_to_asm
@@ -36,7 +36,7 @@ from kbase import typespec_to_assembly_data as kb_to_asm
 from ConfigParser import SafeConfigParser
 
 class ArastConsumer:
-    def __init__(self, shockurl, rmq_host, rmq_port, arasturl, config, threads, queue, 
+    def __init__(self, shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, threads, queue,
                  kill_queue, job_list, job_list_lock, ctrl_conf, datapath, binpath):
         self.parser = SafeConfigParser()
         self.parser.read(config)
@@ -47,23 +47,24 @@ class ArastConsumer:
 
     # Set up environment
         self.shockurl = shockurl
-        self.arasturl = arasturl
         self.datapath = datapath
         self.rmq_host = rmq_host
         self.rmq_port = rmq_port
+        self.mongo_host = mongo_host
+        self.mongo_port = mongo_port
         self.queue = queue
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
         self.data_expiration_days = float(self.parser.get('compute','data_expiration_days'))
-        m = ctrl_conf['meta']        
+        m = ctrl_conf['meta']
         a = ctrl_conf['assembly']
-        
-        collections = {'jobs': m.get('mongo.collection'),
-                       'auth': m.get('mongo.collection.auth'),
-                       'data': m.get('mongo.collection.data'),
-                       'running': m.get('mongo.collection.running')}
+
+        collections = {'jobs': m.get('mongo.collection', 'jobs'),
+                       'auth': m.get('mongo.collection.auth', 'auth'),
+                       'data': m.get('mongo.collection.data', 'data'),
+                       'running': m.get('mongo.collection.running', 'running_jobs')}
 
         ###### TODO Use REST API
-        self.metadata = meta.MetadataConnection(arasturl, int(a['mongo_port']), m['mongo.db'],
+        self.metadata = meta.MetadataConnection(self.mongo_host, self.mongo_port, m['mongo.db'],
                                                 collections)
         self.gc_lock = multiprocessing.Lock()
 
@@ -164,7 +165,7 @@ class ArastConsumer:
         with ignored(OSError):
             os.makedirs(filepath)
             touch(filepath)
-        
+
         download_url = 'http://{}'.format(self.shockurl)
         file_sets = params['assembly_data']['file_sets']
         for file_set in file_sets:
@@ -183,7 +184,7 @@ class ArastConsumer:
                         local_file = extract_file(local_file)
                         logging.info("Requested data exists on node: {}".format(local_file))
                     else:
-                        local_file = self.download_shock(file_info['shock_url'], user, token, 
+                        local_file = self.download_shock(file_info['shock_url'], user, token,
                                                    file_info['shock_id'], filepath)
 
                 elif file_info['direct_url']:
@@ -196,7 +197,7 @@ class ArastConsumer:
                 file_info['local_file'] = local_file
                 file_set['files'].append(local_file) #legacy
             all_files.append(file_set)
-        return datapath, all_files                    
+        return datapath, all_files
 
     def compute(self, body):
         self.job_list_lock.acquire()
@@ -214,7 +215,7 @@ class ArastConsumer:
         datapath, all_files = self.get_data(body)
         rawpath = datapath + '/raw/'
         jobpath = os.path.join(datapath, str(job_id))
-        
+
         try:
             os.makedirs(jobpath)
         except OSError as e:
@@ -230,7 +231,7 @@ class ArastConsumer:
         reference = []
         for fileset in all_files:
             if len(fileset['files']) != 0:
-                if (fileset['type'] == 'single' or 
+                if (fileset['type'] == 'single' or
                     fileset['type'] == 'paired'):
                     reads.append(fileset)
                 elif fileset['type'] == 'reference':
@@ -238,7 +239,7 @@ class ArastConsumer:
                 else:
                     raise Exception('fileset error')
 
-        job_data = ArastJob({'job_id' : params['job_id'], 
+        job_data = ArastJob({'job_id' : params['job_id'],
                     'uid' : params['_id'],
                     'user' : params['ARASTUSER'],
                     'reads': reads,
@@ -251,7 +252,7 @@ class ArastConsumer:
                     'pipeline_data': {},
                     'datapath': datapath,
                     'out_report' : self.out_report})
-                    
+
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         self.job_list.append(job_data)
         self.job_list_lock.release()
@@ -259,11 +260,11 @@ class ArastConsumer:
 
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
         timer_thread.start()
-        
+
         url = "http://%s" % (self.shockurl)
         status = ''
-        logging.debug('Job Data') 
-        logging.debug(job_data) 
+        logging.debug('Job Data')
+        logging.debug(job_data)
 
         #### Parse pipeline to wasp exp
         reload(recipes)
@@ -272,7 +273,7 @@ class ArastConsumer:
             except AttributeError: raise Exception('"{}" recipe not found.'.format(recipe[0]))
         elif wasp_in:
             wasp_exp = wasp_in[0]
-        elif not pipelines: 
+        elif not pipelines:
             wasp_exp = recipes.get('auto', job_id)
         elif pipelines:
             ## Legacy client
@@ -293,7 +294,7 @@ class ArastConsumer:
         w_engine = wasp.WaspEngine(self.pmanager, job_data, self.metadata)
 
         ###### Run Job
-        try: 
+        try:
             w_engine.run_expression(wasp_exp, job_data)
             ###### Upload all result files and place them into appropriate tags
             uploaded_fsets = job_data.upload_results(url, token)
@@ -406,6 +407,7 @@ class ArastConsumer:
         print ' [+] Incoming:', ', '.join(['{}: {}'.format(k, params[k]) for k in display])
         logging.info(params)
         job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
+        print body
         uid = job_doc['_id']
         ## Check if job was not killed
         if job_doc['status'] == 'Terminated by user':
@@ -418,7 +420,7 @@ class ArastConsumer:
                 tb = format_exc()
                 status = "[FAIL] {}".format(e)
                 print e
-                print logging.error(tb) 
+                print logging.error(tb)
                 self.metadata.update_job(uid, 'status', status)
         ch.basic_ack(delivery_tag=method.delivery_tag)
         self.done_flag.set()
@@ -440,7 +442,7 @@ def touch(path):
         os.makedirs(os.path.dirname(path))
         open(path, "w").close()
         os.utime(path, (now, now))
-    
+
 def extract_file(filename):
     """ Decompress files if necessary """
     root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
@@ -448,7 +450,7 @@ def extract_file(filename):
     unp_bin = os.path.join(module_bin_path, 'unp')
 
     filepath = os.path.dirname(filename)
-    supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz', 
+    supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz',
                  'rar', 'tar', 'tgz','zip']
     for ext in supported:
         if filename.endswith(ext):
@@ -456,7 +458,7 @@ def extract_file(filename):
             if os.path.exists(extracted_file): # Check extracted already
                 return extracted_file
             logging.debug("Extracting %s" % filename)
-            p = subprocess.Popen([unp_bin, filename], 
+            p = subprocess.Popen([unp_bin, filename],
                                  cwd=filepath, stderr=subprocess.STDOUT)
             p.wait()
             if os.path.exists(extracted_file):
@@ -465,7 +467,7 @@ def extract_file(filename):
                 print "{} does not exist!".format(extracted_file)
                 raise Exception('Archive structure error')
     logging.debug("Could not extract %s" % filename)
-    return filename            
+    return filename
 
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1
