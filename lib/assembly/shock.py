@@ -144,7 +144,7 @@ class Shock:
         else:
             outdir = os.getcwd()
         d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
-        cmd = ['curl', 
+        cmd = ['curl', '-k',
                '-o', filename, d_url]
 
         for k,v in self.headers.items():
