@@ -31,6 +31,7 @@ import asmtypes
 import shock
 import wasp
 import recipes
+import utils
 from kbase import typespec_to_assembly_data as kb_to_asm
 
 from ConfigParser import SafeConfigParser
@@ -166,7 +167,9 @@ class ArastConsumer:
             os.makedirs(filepath)
             touch(filepath)
 
-        download_url = 'http://{}'.format(self.shockurl)
+        # download_url = 'http://{}'.format(self.shockurl)
+        download_url = shock.verify_shock_url(self.shockurl)
+
         file_sets = params['assembly_data']['file_sets']
         for file_set in file_sets:
             if file_set['type'] == 'paired_url':
@@ -261,7 +264,9 @@ class ArastConsumer:
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
         timer_thread.start()
 
-        url = "http://%s" % (self.shockurl)
+        # url = "http://%s" % (self.shockurl)
+        url = shock.verify_shock_url(self.shockurl)
+
         status = ''
         logging.debug('Job Data')
         logging.debug(job_data)
@@ -371,7 +376,8 @@ class ArastConsumer:
         if filetype == 'contigs' or filetype == 'scaffolds':
             res = sclient.upload_contigs(file)
         else:
-            res = sclient.upload_misc(file, filetype)
+            res = sclient.upload_misc(file, filetype, curl=True)
+            # res = sclient.upload_misc(file, filetype)
         return res
 
     def download_shock(self, url, user, token, node_id, outdir):

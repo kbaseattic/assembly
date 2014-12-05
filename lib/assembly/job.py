@@ -148,7 +148,7 @@ class ArastJob(dict):
         files = {}
         files["file"] = (os.path.basename(file), open(file, 'rb'))
         sclient = shock.Shock(url, user, token)
-        res = sclient.upload_misc(file, filetype)
+        res = sclient.upload_misc(file, filetype, curl=True)
         return res
 
     def wasp_data(self):

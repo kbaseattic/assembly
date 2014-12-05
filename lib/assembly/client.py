@@ -14,24 +14,24 @@ import traceback
 from prettytable import PrettyTable
 
 import asmtypes
+import utils
 from kbase import typespec_to_assembly_data as kb_to_asm
 from shock import Shock
 from shock import get as shock_get
-    
 
 """ Assembly Service client library. """
 
 
 class Client:
     def __init__(self, url, user, token):
-        self.url = verify_url(url)
+        self.url = utils.verify_url(url)
         self.user = user
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),
                         'Content-type': 'application/json', 
                         'Accept': 'text/plain'}
         shockres = self.req_get('{}/shock'.format(self.url))
-        self.shockurl = verify_url(json.loads(shockres)['shockurl'])
+        self.shockurl = utils.verify_url(json.loads(shockres)['shockurl'])
         self.shock = Shock(self.shockurl, self.user, self.token)
 
     def upload_data_shock(self, filename, curl=False):
@@ -203,6 +203,9 @@ class Client:
         return {'text': r.text, 'json': r.json}.get(ret, r.content)
 
     def req_get(self, url, ret=None):
+        print url
+        print self.token
+        print self.headers
         return self.req(url, req_type='get', ret=ret)
 
     def req_post(self, url, data=None, ret=None):
@@ -229,7 +232,7 @@ class Client:
         if stdout:
             filename = None
         else:
-            outdir = verify_dir(outdir) if outdir else None 
+            outdir = utils.verify_dir(outdir) if outdir else None 
             filename = handle.get('filename') or handle.get('local_file') or shock_id
             filename = prefix + filename.split('/')[-1]
             filename = os.path.join(outdir, filename) if outdir else filename
@@ -272,63 +275,6 @@ class HTTPError(Error):
 
 class ConnectionError(Error):
     pass
-
-
-def verify_url(url, port=8000):
-    """Returns complete URL with http prefix and port number
-    """
-    pattern = re.compile(  
-        r'^(https?://)?'   # capture 1: http prefix
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain
-        r'localhost|'      # localhost
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # IP
-        r'(?::\d+)?'       # optional port
-        r'(/?|[/?]\S+)$',  # capture 2: trailing args
-        re.IGNORECASE)
-    match = pattern.search(url)
-    if not match:
-        raise URLError(url)
-    if not match.group(1):
-        url = 'http://' + url
-    if not match.group(2) and url.count(':') < 2 and port:
-        url += ":{}".format(port)
-    return url
-
-
-def test_verify_url():
-    """unittest: py.test client.py -v"""
-    assert verify_url('localhost') == 'http://localhost:8000'
-    assert verify_url('140.221.84.203') == 'http://140.221.84.203:8000'
-    assert verify_url('kbase.us/services/assembly') == 'http://kbase.us/services/assembly'
-    assert verify_url('http://kbase.us/services/assembly') == 'http://kbase.us/services/assembly'
-    assert verify_url('https://kbase.us/services/assembly') == 'https://kbase.us/services/assembly'
-    try:
-        import pytest
-        with pytest.raises(URLError):
-            verify_url('badURL')
-            verify_url('badURL/with/path:8000')
-            verify_url('http://very bad url.com')
-            verify_url('')
-    except ImportError:
-        pass
-
-
-def verify_dir(path):
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-    return path
-
-
-def load_json_from_file(json_file):
-    try:
-        with open(json_file) as f: js = f.read()
-        doc = json.loads(js)
-    except (IOError, ValueError) as e:
-        raise Error(e)
-    return doc
 
 
 def assembly_data_to_rows(data):
