@@ -200,7 +200,7 @@ def curl_download_url(url, outdir=None, token=None):
 
     p = subprocess.Popen(cmd, cwd=outdir)
     p.wait()
-    downloaded = os.path.join(outdir, os.path.basename(url))
+    downloaded = os.path.join(outdir, filename)
     if os.path.exists(downloaded):
         print('File Downloaded:', downloaded)
         return downloaded
