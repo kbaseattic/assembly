@@ -22,12 +22,13 @@ Options:
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
       regular      - regular components (modules to be deployed on all compute nodes)
-      special      - special components (large modules: pacbio, allpaths-lg, etc)
+      special      - special components (large modules: pacbio, allpathslg, etc)
       all          - all components
 
       a5           - A5 pipeline (v.20140604)
       a6           - Modified A5 pipeline (git)
       ale          - ALE reference-free assembler evaluator (git)
+      allpathslg   - AllPaths-LG (FTP latest)
       bowtie2      - Bowtie aligner (v2.1)
       bwa          - BWA aligner (git)
       discovar     - Discovar assembler (FTP latest)
@@ -65,8 +66,8 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet); 
-my @special_comps = qw (discovar pacbio jgi_rqc);
+my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet);
+my @special_comps = qw (allpathslg discovar pacbio jgi_rqc);
 my @extra_depends = qw (cmake3);
 
 my @all_comps = (@regular_comps, @special_comps);
@@ -99,8 +100,8 @@ for my $c (@comps) {
     print "Installing $c...\n";
     next if $dry_run;
 
-    my $func = "install_$c";    
-    
+    my $func = "install_$c";
+
     chdir($tmp_dir);
     { no strict 'refs'; &$func(); }
     chdir($curr_dir);
@@ -113,7 +114,7 @@ for my $c (@comps) {
 # TODO: python: fallback: strip path prefix and check exe in path
 
 sub install_template {
-    # we are in the $tmp_dir directory 
+    # we are in the $tmp_dir directory
     # 1. download source files
     # 2. compile
     # 3. copy executables to $dest_dir
@@ -165,6 +166,16 @@ sub install_ale {
     run("cd ALE/src; make ALE; cp -r ALE samtools-0.1.19 *.sh *.py *.pl $dest_dir/$dir/");
 }
 
+sub install_allpathslg {
+    check_gcc();
+    my $file = "LATEST_VERSION.tar.gz";
+    my $dir = "allpathslg";
+    download($dir, $file, 'ftp://ftp.broadinstitute.org/pub/crd/ALLPATHS/Release-LG/latest_source_code');
+    run("mv allpathslg-* $dir");
+    run("mkdir -p $dest_dir/$dir");
+    run("cd $dir; ./configure --prefix=$dest_dir/$dir; make -j 8; make install");
+}
+
 sub install_bowtie2 {
     my $file = "bowtie2-2.1.0-linux-x86_64.zip";
     my $dir = "bowtie2-2.1.0";
@@ -198,7 +209,7 @@ sub install_fastx {
     my $dir = 'fastx_toolkit';
     # there is no fastx plugin; so we need this extra check
     if (-e "$dest_dir/$dir/fastx_trimmer") {
-        print "Found component fastx, skipping...\n"; 
+        print "Found component fastx, skipping...\n";
         return;
     }
     run("mkdir -p $dir");
@@ -223,6 +234,7 @@ sub install_idba {
 }
 
 sub install_kiki {
+    run("apt-get -y purge openmpi*");
     git('git://github.com/GeneAssembly/kiki.git');
     chdir("kiki");
     run("mkdir -p bin; cd bin; cmake ..; make -j ki");
@@ -253,12 +265,12 @@ sub install_pacbio {
     download($dir, $file, $url);
 
     # current configurations
-    # 
+    #
     # directories
     #   tmpdir   -> /mnt/tmp           # chmod 777 /mnt/tmp
     #   userdata -> /space/smrtdata    # mkdir -p /space/smrtdata; chown ubuntu:ubuntu /space/smrtdata;
-    #                                    ln -s /space/smrtdata $AR_DIR/third_party/smrt/userdata                                     
-    # 
+    #                                    ln -s /space/smrtdata $AR_DIR/third_party/smrt/userdata
+    #
     # SMRT Analysis user:     ubuntu
     # MySQL user/password:    root/root
     # Job management system:  NONE
@@ -361,7 +373,7 @@ sub install_reapr {
 sub install_seqtk {
     # seqtk is not a plugin; need to check if it exists
     if (-e "$dest_dir/seqtk") {
-        print "Found component seqtk, skipping...\n"; 
+        print "Found component seqtk, skipping...\n";
         return;
     }
     git('git://github.com/levinas/seqtk.git');
@@ -375,7 +387,7 @@ sub install_solexa {
     my $found = 1;
     for (@exes) { $found = 0 unless -e "$dest_dir/solexa/$_"; }
     if ($found) {
-        print "Found component seqtk, skipping...\n"; 
+        print "Found component seqtk, skipping...\n";
         return;
     }
     my $dir = 'SolexaQA_v.2.1';
@@ -450,7 +462,7 @@ sub check_if_installed {
 sub git {
     my ($url, $repo) = @_;
     if (!$repo) { $repo = $url; $repo =~ s|.*/||; $repo =~ s|\.git$||; }
-    
+
     if (-d "$repo") {
         run("cd $repo; git pull");
     } else {
@@ -487,4 +499,3 @@ sub verify_user {
 }
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
-
