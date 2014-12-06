@@ -34,19 +34,21 @@ def start(config_file, mongo_host=None, mongo_port=None,
     if not mongo_host:
         mongo_host = cparser.get('assembly', 'mongo_host')
     if not mongo_port:
-        mongo_port = cparser.get('assembly', 'mongo_port')
+        mongo_port = int(cparser.get('assembly', 'mongo_port'))
     if not rabbit_host:
         rabbit_host = cparser.get('assembly', 'rabbitmq_host')
     if not rabbit_port:
-        rabbit_port = cparser.get('assembly', 'rabbitmq_port')
+        rabbit_port = int(cparser.get('assembly', 'rabbitmq_port'))
 
     print " [.] Starting Assembly Service Control Server"
-    print " [.] MongoDB port: " + mongo_port
-    print " [.] RabbitMQ port: " + rabbit_port
+    print " [.] MongoDB host: %s" % mongo_host
+    print " [.] MongoDB port: %s" % mongo_port
+    print " [.] RabbitMQ host: %s" % rabbit_host
+    print " [.] RabbitMQ port: %s" % rabbit_port
     
     # Check MongoDB status
     try:
-        connection = pymongo.Connection(mongo_host)
+        connection = pymongo.Connection(mongo_host, mongo_port)
         logging.info("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
         logging.error("MongoDB connection error: {}".format(e))
