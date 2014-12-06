@@ -17,7 +17,6 @@ import asmtypes
 import utils
 from kbase import typespec_to_assembly_data as kb_to_asm
 from shock import Shock
-from shock import get as shock_get
 
 """ Assembly Service client library. """
 
