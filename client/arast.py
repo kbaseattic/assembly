@@ -14,9 +14,10 @@ import time
 from ConfigParser import SafeConfigParser
 
 from assembly import asmtypes
+from assembly import auth
 from assembly import client
 from assembly import config as conf
-from assembly import auth
+from assembly import shock
 from assembly import utils
 from assembly import __version__
 
@@ -386,6 +387,8 @@ def main():
             raise
     except auth.Error as e:
         sys.exit('Authentication error: {}'.format(e))
+    except shock.Error as e:
+        sys.exit('Shock error: {}'.format(e))
     except client.URLError as e:
         sys.exit('Invalid URL: {}'.format(e))
     except client.ConnectionError as e:

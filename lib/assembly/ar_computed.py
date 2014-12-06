@@ -84,8 +84,8 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
 
     print " [.] Connecting to Shock server..."
     url = utils.verify_url(shockurl, 7445)
-    # url = "http://{}".format(shockurl)
-    res = shock.get(url)
+    res = requests.get(url)
+    # res = shock.get(url)
 
     if res is not None:
         print " [.] Shock connection successful"

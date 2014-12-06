@@ -563,7 +563,8 @@ class JobResource:
             raise cherrypy.HTTPError(403, 'Report not found for job {}'.format(job_id))
         try: 
             url = '{}/node/{}?download'.format(handle['shock_url'], handle['shock_id'])
-            report = shock.get(url).content
+            # report = shock.get(url).content
+            report = requests.get(url).content
         except:
             raise cherrypy.HTTPError(403, 'Could not get report using shock')
         return report

@@ -18,76 +18,76 @@ class Error(Exception):
     pass
 
 
-def download(url, node_id, outdir):
-    logging.info("Downloading id: %s" % node_id)
-    u = url
-    u += "/node/%s" % node_id
-    print u
-    r = get(u)
-    print r
-    print r.text
-    res = json.loads(r.text)
-    filename = res['data']['file']['name']
-    durl = url + "/node/%s?download" % node_id
-    utils.verify_dir(outdir)
-    dfile = outdir + filename
-    print dfile
-    r = get(durl)
-    with open(dfile, "wb") as code:
-        code.write(r.content)
-    logging.info("File downloaded: %s" % dfile)
-    print "File downloaded: %s" % dfile
-    return dfile
+# def download(url, node_id, outdir):
+#     logging.info("Downloading id: %s" % node_id)
+#     u = url
+#     u += "/node/%s" % node_id
+#     print u
+#     r = get(u)
+#     print r
+#     print r.text
+#     res = json.loads(r.text)
+#     filename = res['data']['file']['name']
+#     durl = url + "/node/%s?download" % node_id
+#     utils.verify_dir(outdir)
+#     dfile = outdir + filename
+#     print dfile
+#     r = get(durl)
+#     with open(dfile, "wb") as code:
+#         code.write(r.content)
+#     logging.info("File downloaded: %s" % dfile)
+#     print "File downloaded: %s" % dfile
+#     return dfile
 
-def post(url, files, user, password):
-	r = None
-	if user and password:
-            r = requests.post(url, auth=(user, password), files=files)
-	else:
-            r = requests.post(url, files=files)
+# def post(url, files, user, password):
+# 	r = None
+# 	if user and password:
+#             r = requests.post(url, auth=(user, password), files=files)
+# 	else:
+#             r = requests.post(url, files=files)
 
-        res = json.loads(r.text)
-        logging.info(r.text)
-	return res
-
-
-def get(url, user='assembly', password='service1234'):
-
-    r = None
-    r = requests.get(url, auth=(user, password), timeout=20)
-
-    return r
+#         res = json.loads(r.text)
+#         logging.info(r.text)
+# 	return res
 
 
-def curl_download_file(url, node_id, token, outdir=None):
-    cmd = ['curl',
-           '-X', 'GET', '{}/node/{}'.format(url, node_id)]
-    r = subprocess.check_output(cmd)
-    filename = json.loads(r)['data']['file']['name']
-    if outdir:
-        utils.verify_dir(outdir)
-    else:
-        outdir = os.getcwd()
-    d_url = '{}/node/{}?download'.format(url, node_id)
-    cmd = ['curl', '-k',
-           '-o', filename, d_url]
-    p = subprocess.Popen(cmd, cwd=outdir)
-    p.wait()
-    print "File downloaded: {}/{}".format(outdir, filename)
-    return os.path.join(outdir, filename)
+# def get(url, user='assembly', password='service1234'):
 
-def parse_handle(sn_handle):
-    handle_parts = sn_handle.split('.')
-    if handle_parts[-1] == 'shock': # Is shock file
-        shockfile = open(sn_handle)
-        shockinfo = json.loads(shockfile.read())
-        try:
-            shock_id = shockinfo['id']
-            shock_url = shockinfo['url']
-            return shock_url, shock_id
-        except AttributeError:
-            return False
-    return False
+#     r = None
+#     r = requests.get(url, auth=(user, password), timeout=20)
+
+#     return r
+
+
+# def curl_download_file(url, node_id, token, outdir=None):
+#     cmd = ['curl',
+#            '-X', 'GET', '{}/node/{}'.format(url, node_id)]
+#     r = subprocess.check_output(cmd)
+#     filename = json.loads(r)['data']['file']['name']
+#     if outdir:
+#         utils.verify_dir(outdir)
+#     else:
+#         outdir = os.getcwd()
+#     d_url = '{}/node/{}?download'.format(url, node_id)
+#     cmd = ['curl', '-k',
+#            '-o', filename, d_url]
+#     p = subprocess.Popen(cmd, cwd=outdir)
+#     p.wait()
+#     print "File downloaded: {}/{}".format(outdir, filename)
+#     return os.path.join(outdir, filename)
+
+# def parse_handle(sn_handle):
+#     handle_parts = sn_handle.split('.')
+#     if handle_parts[-1] == 'shock': # Is shock file
+#         shockfile = open(sn_handle)
+#         shockinfo = json.loads(shockfile.read())
+#         try:
+#             shock_id = shockinfo['id']
+#             shock_url = shockinfo['url']
+#             return shock_url, shock_id
+#         except AttributeError:
+#             return False
+#     return False
 
 
 def verify_shock_url(url):
@@ -97,10 +97,11 @@ def verify_shock_url(url):
 class Shock:
     def __init__(self, shockurl, user, token):
         self.shockurl = shockurl
+        self.posturl = '{}/node/'.format(shockurl)
         self.user = user
         self.token = token
         self.attrs = {'user': user}
-        self.headers = {'Authorization': token}
+        self.headers = {'Authorization': 'OAuth {}'.format(token)}
 
     def upload_reads(self, filename, curl=False):
         if curl:
@@ -127,8 +128,10 @@ class Shock:
         ## Authenticated download
         cmd = ['curl', '-k',
                '-X', 'GET', '{}/node/{}'.format(self.shockurl, node_id)]
-        for k,v in self.headers.items():
-            cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
+
+        cmd += ['-H', '"Authorization: OAuth {}"'.format(self.token)]
+        # for k,v in self.headers.items():
+            # cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
 
         r = subprocess.check_output(' '.join(cmd), shell=True)
         try:
@@ -144,8 +147,10 @@ class Shock:
         cmd = ['curl', '-k',
                '-o', filename, d_url]
 
-        for k,v in self.headers.items():
-            cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
+        cmd += ['-H', '"Authorization: OAuth {}"'.format(token)]
+
+        # for k,v in self.headers.items():
+            # cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
 
         p = subprocess.Popen(' '.join(cmd), cwd=outdir, shell=True)
         p.wait()
@@ -208,13 +213,12 @@ class Shock:
                 files = {'upload': f,
                          'attributes': attr_fd}
                 if auth:
-                    r = requests.post('{}/node/'.format(self.shockurl), files=files, headers=self.headers)
+                    r = requests.post(self.posturl, files=files, headers=self.headers)
                 else:
-                    r = requests.post('{}/node/'.format(self.shockurl), files=files)
+                    r = requests.post(self.posturl, files=files)
 
         except requests.exceptions.RequestException as e:
-            print "ERROR: python-requests error, try with --curl flag"
-            return
+            raise Error("python-requests error: {}. Try with --curl flag.".format(e))
 
         attr_fd.close()
         res = json.loads(r.text)
@@ -225,7 +229,8 @@ class Shock:
             else:
                 print >> sys.stderr, "Upload error: {}".format(res['status'])
         except AttributeError:
-            print >> sys.stderr, "Upload error"
+            raise Error("Upload error, shock reponse = {}".format(res))
+
 	return res
 
     def _curl_post_file(self, filename, filetype='', auth=True):
@@ -239,8 +244,9 @@ class Shock:
                '{}/node/'.format(self.shockurl)]
 
         if auth:
-            for k,v in self.headers.items():
-                cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
+            cmd += ['-H', '"Authorization: OAuth {}"'.format(self.token)]
+            # for k,v in self.headers.items():
+                # cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
 
         print >> sys.stderr, "curl_post_file: {}".format(' '.join(cmd))
 
