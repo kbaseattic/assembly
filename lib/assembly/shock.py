@@ -103,26 +103,21 @@ class Shock:
         self.attrs = {'user': user}
         self.headers = {'Authorization': 'OAuth {}'.format(token)}
 
-    def upload_reads(self, filename, curl=False):
+    def upload_file(self, filename, filetype, curl=False, auth=False):
         if curl:
-            return self._curl_post_file(filename, filetype='reads')
-        return self._post_file(filename, filetype='reads')
+            res = self._curl_post_file(filename, filetype, auth)
+        else:
+            res = self._post_file(filename, filetype, auth)
+        return res
 
-    def upload_contigs(self, filename, curl=False):
-        if curl:
-            return self._curl_post_file(filename, filetype='contigs')
-        return self._post_file(filename, filetype='contigs')
+    def upload_reads(self, filename, curl=False, auth=False):
+        return self.upload_file(filename, filetype='reads', curl=curl, auth=auth)
 
-    def upload_results(self, filename, curl=False):
-        if curl:
-            return self._curl_post_file(filename, filetype='reads')
-        return self._post_file(filename, filetype='reads')
+    def upload_contigs(self, filename, curl=False, auth=False):
+        return self.upload_file(filename, filetype='contigs', curl=curl, auth=auth)
 
-    def upload_misc(self, filename, ftype, curl=False):
-        if curl:
-            return self._curl_post_file(filename, filetype=ftype)
-        return self._post_file(filename, filetype=ftype)
-
+    def upload_results(self, filename, curl=False, auth=False):
+        return self.upload_file(filename, filetype='results', curl=curl, auth=auth)
 
     def curl_download_file(self, node_id, outdir=None):
         ## Authenticated download
@@ -147,7 +142,7 @@ class Shock:
         cmd = ['curl', '-k',
                '-o', filename, d_url]
 
-        cmd += ['-H', '"Authorization: OAuth {}"'.format(token)]
+        cmd += ['-H', '"Authorization: OAuth {}"'.format(self.token)]
 
         # for k,v in self.headers.items():
             # cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
@@ -201,7 +196,7 @@ class Shock:
         """ Create in mem filehandle """
         return StringIO.StringIO(json.dumps(attrs))
 
-    def _post_file(self, filename, filetype='', auth=True):
+    def _post_file(self, filename, filetype='', auth=False):
         """ Upload using requests """
         tmp_attr = dict(self.attrs)
         tmp_attr['filetype'] = filetype
@@ -233,7 +228,7 @@ class Shock:
 
 	return res
 
-    def _curl_post_file(self, filename, filetype='', auth=True):
+    def _curl_post_file(self, filename, filetype='', auth=False):
         tmp_attr = dict(self.attrs)
         tmp_attr['filetype'] = filetype
         attr_file = self.create_attr_file(tmp_attr, 'attrs')
@@ -245,8 +240,6 @@ class Shock:
 
         if auth:
             cmd += ['-H', '"Authorization: OAuth {}"'.format(self.token)]
-            # for k,v in self.headers.items():
-                # cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
 
         print >> sys.stderr, "curl_post_file: {}".format(' '.join(cmd))
 

@@ -187,6 +187,7 @@ class Client:
 
     def req(self, url, req_type='get', data=None, ret=None):
         """Authenticated request. Parses CherryPy message and raises HTTPError"""
+        print "req {}: {}".format(req_type, url)
         try:
             if req_type == 'get':
                 r = requests.get(url, headers=self.headers)
@@ -202,9 +203,6 @@ class Client:
         return {'text': r.text, 'json': r.json}.get(ret, r.content)
 
     def req_get(self, url, ret=None):
-        print url
-        print self.token
-        print self.headers
         return self.req(url, req_type='get', ret=ret)
 
     def req_post(self, url, data=None, ret=None):

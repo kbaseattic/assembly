@@ -376,8 +376,7 @@ class ArastConsumer:
         if filetype == 'contigs' or filetype == 'scaffolds':
             res = sclient.upload_contigs(file)
         else:
-            res = sclient.upload_misc(file, filetype, curl=True)
-            # res = sclient.upload_misc(file, filetype)
+            res = sclient.upload_file(file, filetype, curl=True)
         return res
 
     def download_shock(self, url, user, token, node_id, outdir):
