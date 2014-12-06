@@ -181,14 +181,26 @@ def arast_reads(filelist):
     return filedicts
 
 
-def curl_download_url(url, outdir=None):
+def curl_download_url(url, outdir=None, token=None):
     if outdir:
         try: os.makedirs(outdir)
         except OSError: pass
-    else: outdir = os.getcwd()
-    p = subprocess.Popen('curl -O {}'.format(url).split(), cwd=outdir)
+    else:
+        outdir = os.getcwd()
+
+    filename = os.path.basename(url)
+    filename = re.sub(r'\?download', '', filename)
+    filename = re.sub(r'[?&]', '_', filename)
+
+    cmd = ['curl', '-k', '-o', filename, url ]
+    if token:
+        cmd += ['-H', '"Authorization: OAuth {}"'.format(token)]
+
+    logging.info("curl cmd = {}".format(" ".join(cmd)))
+
+    p = subprocess.Popen(cmd, cwd=outdir)
     p.wait()
-    downloaded = os.path.join(outdir, os.path.basename(url))
+    downloaded = os.path.join(outdir, filename)
     if os.path.exists(downloaded):
         print('File Downloaded:', downloaded)
         return downloaded

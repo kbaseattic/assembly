@@ -69,7 +69,7 @@ def curl_download_file(url, node_id, token, outdir=None):
     else:
         outdir = os.getcwd()
     d_url = '{}/node/{}?download'.format(url, node_id)
-    cmd = ['curl',
+    cmd = ['curl', '-k',
            '-o', filename, d_url]
     p = subprocess.Popen(cmd, cwd=outdir)
     p.wait()
@@ -140,7 +140,8 @@ class Shock:
         else:
             outdir = os.getcwd()
         d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
-        cmd = ['curl',
+
+        cmd = ['curl', '-k',
                '-o', filename, d_url]
 
         for k,v in self.headers.items():
@@ -241,8 +242,7 @@ class Shock:
             for k,v in self.headers.items():
                 cmd += ['-H', '"{}: OAuth {}"'.format(k,v)]
 
-        print >> sys.stderr, "haha"
-        print >> sys.stderr, ' '.join(cmd)
+        print >> sys.stderr, "curl_post_file: {}".format(' '.join(cmd))
 
         r = subprocess.check_output(' '.join(cmd), shell=True)
         res = json.loads(r)
