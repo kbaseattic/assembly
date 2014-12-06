@@ -102,17 +102,23 @@ class Shock:
         self.token = token
         self.attrs = {'user': user}
         self.headers = {'Authorization': 'OAuth {}'.format(token)}
-        self.auth = False if self.check_anonymous_post_allowed() else True
+        self.auth_checked = False
+        self.auth = True
 
     def check_anonymous_post_allowed(self):
         cmd = ['curl', '-s', '-k', '-X', 'POST', self.posturl]
         r = subprocess.check_output(' '.join(cmd), shell=True)
         res = json.loads(r)
         status = res.get("status", 0)
-        return status == 200
+        self.auth = False if status == 200 else True
+        self.auth_checked = True
+        return self.auth
 
     def upload_file(self, filename, filetype, curl=False, auth=False):
+        if not self.auth_checked:
+            self.check_anonymous_post_allowed()
         auth = auth or self.auth
+        print >> sys.stderr, "upload: filename={}, filetype={}, curl={}, auth={}".format(filename, filetype, curl, auth)
         if curl:
             res = self._curl_post_file(filename, filetype, auth)
         else:
