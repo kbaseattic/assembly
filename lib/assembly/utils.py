@@ -1,5 +1,6 @@
 import errno
 import json
+import os
 import re
 
 def verify_url(url, port=8000):
