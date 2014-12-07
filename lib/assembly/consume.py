@@ -167,7 +167,6 @@ class ArastConsumer:
             os.makedirs(filepath)
             touch(filepath)
 
-        # download_url = 'http://{}'.format(self.shockurl)
         download_url = shock.verify_shock_url(self.shockurl)
 
         file_sets = params['assembly_data']['file_sets']

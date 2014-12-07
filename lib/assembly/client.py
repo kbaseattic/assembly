@@ -27,13 +27,18 @@ class Client:
         self.user = user
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),
-                        'Content-type': 'application/json', 
+                        'Content-type': 'application/json',
                         'Accept': 'text/plain'}
-        shockres = self.req_get('{}/shock'.format(self.url))
-        self.shockurl = utils.verify_url(json.loads(shockres)['shockurl'])
-        self.shock = Shock(self.shockurl, self.user, self.token)
+        self.shock = None
+
+    def init_shock(self):
+        if self.shock is None:
+            shockres = self.req_get('{}/shock'.format(self.url))
+            self.shockurl = utils.verify_url(json.loads(shockres)['shockurl'])
+            self.shock = Shock(self.shockurl, self.user, self.token)
 
     def upload_data_shock(self, filename, curl=False):
+        self.init_shock()
         res = self.shock.upload_reads(filename, curl=curl)
         shock_info = {'filename': os.path.basename(filename),
                                   'filesize': os.path.getsize(filename),
@@ -44,6 +49,7 @@ class Client:
 
     def upload_data_file_info(self, filename, curl=False):
         """ Returns FileInfo Object """
+        self.init_shock()
         res = self.shock.upload_reads(filename, curl=curl)
         return asmtypes.FileInfo(filename, shock_url=self.shockurl, shock_id=res['data']['id'],
                                  create_time=str(datetime.datetime.utcnow()))
@@ -117,7 +123,7 @@ class Client:
         return self.get_job_status(1, job_id)
 
     def check_job(self, job_id):
-        if not self.is_job_done(job_id): 
+        if not self.is_job_done(job_id):
             sys.stderr.write("Job in progress. Use -w to wait for the job.\n")
             sys.exit()
 
@@ -187,7 +193,7 @@ class Client:
 
     def req(self, url, req_type='get', data=None, ret=None):
         """Authenticated request. Parses CherryPy message and raises HTTPError"""
-        print "req {}: {}".format(req_type, url)
+        print "req_{}: {}".format(req_type, url)
         try:
             if req_type == 'get':
                 r = requests.get(url, headers=self.headers)
@@ -207,7 +213,7 @@ class Client:
 
     def req_post(self, url, data=None, ret=None):
         return self.req(url, req_type='post', data=data, ret=ret)
-    
+
     @contextlib.contextmanager
     def smart_open(self, filename=None):
         if filename and filename != '-':
@@ -224,18 +230,18 @@ class Client:
         shock_url = handle.get('shock_url') or handle.get('url')
         shock_id  = handle.get('shock_id')  or handle.get('id')
         if not shock_url or not shock_id:
-            raise Error("Invalid shock handle: {}".format(handle))        
+            raise Error("Invalid shock handle: {}".format(handle))
         url = "{}/node/{}?download".format(shock_url, shock_id)
         if stdout:
             filename = None
         else:
-            outdir = utils.verify_dir(outdir) if outdir else None 
+            outdir = utils.verify_dir(outdir) if outdir else None
             filename = handle.get('filename') or handle.get('local_file') or shock_id
             filename = prefix + filename.split('/')[-1]
             filename = os.path.join(outdir, filename) if outdir else filename
         r = requests.get(url, stream=True)
         with self.smart_open(filename) as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -252,10 +258,10 @@ class AssemblyData(dict):
     def __init__(self, *args):
         self['file_sets'] = []
         dict.__init__(self, *args)
-        
+
     def add_set(self, file_set):
         self['file_sets'].append(file_set)
-        
+
 
 class Error(Exception):
     """Base class for exceptions in this module"""
@@ -281,7 +287,7 @@ def assembly_data_to_rows(data):
     kbase_key = "kbase_assembly_input"
     lib_key   = "file_sets"
     info_key  = "file_infos"
-    
+
     if data_key in data:
         data = data[data_key]
     else:
@@ -299,7 +305,7 @@ def assembly_data_to_rows(data):
             filesize = " (%s)" % sizeof_fmt(filesize) if filesize else ""
             files.append("%s%s" % (filename, filesize))
         rows.append([libtype, " ".join(files)])
-    
+
     return rows
 
 
@@ -314,8 +320,8 @@ def print_recipes(recipes, detail=False):
             print rec['recipe'],
         print
 
-    
-def print_modules(modules, detail=False):    
+
+def print_modules(modules, detail=False):
     if detail:
         for mod in modules:
             keys = ('description', 'version', 'base version', 'stages',
@@ -349,7 +355,7 @@ def sizeof_fmt(num):
         if num < 1024.0 and num > -1024.0:
             return "%3.1f%s" % (num, x)
         num /= 1024.0
-    return "%3.1f%s" % (num, 'TB')    
+    return "%3.1f%s" % (num, 'TB')
 
 
 def dump(var):
