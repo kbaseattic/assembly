@@ -171,7 +171,7 @@ sub test_compressed_files {
 }
 
 sub test_shock_url_input {
-    my $json = sysout('ar-upload --single se.fastq --ws-json');
+    my $json = sysout('ar-upload --single se.fq --ws-json');
     is_valid_json($json, 'AssemblyInput is valid json'); $testCount++;
     my $obj = decode_json($json);
     my $handle = $obj->{'single_end_libs'}->[0]->{'handle'};
