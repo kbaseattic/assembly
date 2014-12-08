@@ -300,9 +300,11 @@ class ArastConsumer:
             ###### Upload all result files and place them into appropriate tags
             uploaded_fsets = job_data.upload_results(url, token)
 
+            self.job_list_lock.acquire()
             for i, job in enumerate(self.job_list):
                 if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
                     self.job_list.pop(i)
+            self.job_list_lock.release()
 
             # Format report
             new_report = open('{}.tmp'.format(self.out_report_name), 'w')
