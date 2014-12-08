@@ -104,7 +104,7 @@ class Shock:
         if not self.auth_checked:
             self.check_anonymous_post_allowed()
         auth = auth or self.auth
-        print >> sys.stderr, "upload: filename={}, filetype={}, curl={}, auth={}".format(filename, filetype, curl, auth)
+        # print >> sys.stderr, "upload: filename={}, filetype={}, curl={}, auth={}".format(filename, filetype, curl, auth)
         if curl:
             res = self._curl_post_file(filename, filetype, auth)
         else:
