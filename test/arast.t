@@ -11,10 +11,12 @@
 use strict vars;
 
 use Carp;
+use Test::JSON;
 use Test::More;
 use Data::Dumper;
 use English;
 use Getopt::Long;
+use JSON;
 
 my $usage = "$0 [options] [test1 test2 ...]\n";
 
@@ -169,7 +171,13 @@ sub test_compressed_files {
 }
 
 sub test_shock_url_input {
-    sysrun('ar-run -a kiki --single_url "https://kbase.us/services/shock-api/node/95d35067-ccb2-40ac-8fb3-47aadbcf0b5a?download" -m test_shock_token_url > job.41');
+    my $json = sysout('ar-upload --single se.fastq --ws-json');
+    is_valid_json($json, 'AssemblyInput is valid json'); $testCount++;
+    my $obj = decode_json($json);
+    my $handle = $obj->{'single_end_libs'}->[0]->{'handle'};
+    # "https://kbase.us/services/shock-api/node/95d35067-ccb2-40ac-8fb3-47aadbcf0b5a?download"
+    my $url = sprintf("%s/node/%s?download", $handle->{url} || $handle->{shock_url}, $handle->{id} || $handle->{shock_id});
+    sysrun("ar-run -a kiki --single_url '$url' -m test_shock_token_url > job.41");
     sysrun('cat job.41 | ar-get -w -p > contigs.41'); validate_contigs('contigs.41');
 }
 
