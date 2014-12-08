@@ -48,7 +48,14 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
         num_threads =  cparser.get('compute','threads')
 
     #### Retrieve system configuration from AssemblyRAST server
-    ctrl_conf = json.loads(requests.get('{}/admin/system/config'.format(full_arasturl)).content)
+    print " [.] AssemblyRAST host: %s" % arasturl
+    try:
+        ctrl_conf = json.loads(requests.get('{}/admin/system/config'.format(full_arasturl)).content)
+        print " [.] Retrieved system config from host"
+    except:
+        raise Exception('Could not communicate with server for system config')
+
+    shockurl = ctrl_conf['shock']['host']
     mongo_port = int(ctrl_conf['assembly']['mongo_port'])
     mongo_host = ctrl_conf['assembly']['mongo_host']
     rmq_port = int(ctrl_conf['assembly']['rabbitmq_port'])
@@ -59,20 +66,28 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
         mongo_host = arasturl
     if rmq_host == 'localhost':
         rmq_host = arasturl
-    try:
-        shockurl = ctrl_conf['shock']['host']
-        print ' [.] Retrieved Shock URL: {}'.format(shockurl)
-    except:
-        raise Exception('Could not communicate with server')
 
-    print " [.] AssemblyRAST host: %s" % arasturl
+    print ' [.] Shock URL: %s' % shockurl
     print " [.] MongoDB host: %s" % mongo_host
     print " [.] MongoDB port: %s" % mongo_port
     print " [.] RabbitMQ host: %s" % rmq_host
     print " [.] RabbitMQ port: %s" % rmq_port
+
+    # Check shock status
+    print " [.] Connecting to Shock server..."
+    shockurl = utils.verify_url(shockurl, 7445)
+    try:
+        res = requests.get(shockurl)
+    except Exception as e:
+        logging.error("Shock connection error: {}".format(e))
+        sys.exit(1)
+    print " [.] Shock connection successful"
+
     # Check MongoDB status
+    print " [.] Connecting to MongoDB server..."
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
+        connection.close()
         logging.info("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
         logging.error("MongoDB connection error: {}".format(e))
@@ -80,17 +95,16 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     print " [.] MongoDB connection successful."
 
     # Check RabbitMQ status
-        #TODO
+    print " [.] Connecting to RabbitMQ server..."
+    try:
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host=rmq_host, port=rmq_port))
+        connection.close()
+    except Exception as e:
+        logging.error("RabbitMQ connection error: {}".format(e))
+        sys.exit(1)
+    print " [.] RabbitMQ connection successful"
 
-    print " [.] Connecting to Shock server..."
-    url = utils.verify_url(shockurl, 7445)
-    res = requests.get(url)
-    # res = shock.get(url)
-
-    if res is not None:
-        print " [.] Shock connection successful"
-    else:
-        raise Exception("Shock connection error: {}".format(shockurl))
 
     #### Check data write permissions
     rootpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
