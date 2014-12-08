@@ -239,7 +239,8 @@ class Client:
             filename = handle.get('filename') or handle.get('local_file') or shock_id
             filename = prefix + filename.split('/')[-1]
             filename = os.path.join(outdir, filename) if outdir else filename
-        r = requests.get(url, stream=True)
+        headers = {'Authorization': 'OAuth {}'.format(self.token)}
+        r = requests.get(url, stream=True, headers=headers)
         with self.smart_open(filename) as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks

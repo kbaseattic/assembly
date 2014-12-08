@@ -93,6 +93,28 @@ class Error(Exception):
 def verify_shock_url(url):
     return utils.verify_url(url, 7445)
 
+def handle_to_url(handle):
+    shock_url = handle.get('shock_url') or handle.get('url')
+    shock_id  = handle.get('shock_id')  or handle.get('id')
+    if not shock_url or not shock_id:
+        raise Error("Invalid shock handle: {}".format(handle))
+    return '{}/node/{}?download'.format(shock_url, shock_id)
+
+def token_to_req_headers(token):
+    headers = {'Authorization': 'OAuth {}'.format(token)} if token else None
+    return headers
+
+def get_handle(handle, token=None, ret=None):
+    url = handle_to_url(handle)
+    headers = token_to_req_headers(token)
+    try:
+        r = requests.get(url, headers=headers)
+    except requests.exceptions.ConnectionError as e:
+        raise Error("requests.get error: {}".format(e))
+    if r.status_code != requests.codes.ok:
+        raise Error("requests.get failed: {}: {}".format(r.status_code, r.reason))
+    return {'text': r.text, 'json': r.json}.get(ret, r.content)
+
 
 class Shock:
     def __init__(self, shockurl, user, token):
@@ -101,7 +123,7 @@ class Shock:
         self.user = user
         self.token = token
         self.attrs = {'user': user}
-        self.headers = {'Authorization': 'OAuth {}'.format(token)}
+        self.headers = token_to_req_headers(token)
         self.auth_checked = False
         self.auth = True
 

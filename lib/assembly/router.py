@@ -403,6 +403,9 @@ class JobResource:
         except:
             raise cherrypy.HTTPError(403)
 
+        token = cherrypy.request.headers.get('Authorization')
+        print token
+
         ### No job_id, return all
         if not job_id:
             return self.status(job_id=job_id, format='json', **kwargs)
@@ -424,12 +427,12 @@ class JobResource:
             return self.get_results(userid, job_id, *args, **kwargs)
         elif resource == 'data':
             return self.get_job_data(userid, job_id)
-        elif resource == 'report':
-            return self.get_report_stats(userid, job_id)
         elif resource == 'report_handle':
             return self.get_report_handle(userid, job_id)
+        elif resource == 'report':
+            return self.get_report_stats(userid, job_id, token)
         elif resource == 'log':
-            return self.get_report_log(userid, job_id)
+            return self.get_report_log(userid, job_id, token)
         elif resource == 'analysis':
             return self.get_analysis_handle(userid, job_id)
         elif resource == 'status':
@@ -575,28 +578,26 @@ class JobResource:
             raise cherrypy.HTTPError(403, "Report not found for job {}".format(job_id))
         return json.dumps(handle)
 
-    def get_report(self, userid=None, job_id=None):
+    def get_report(self, userid=None, job_id=None, token=None):
         """ Get job report in text """
         handle = json.loads(self.get_report_handle(userid, job_id))
         if not handle:
             raise cherrypy.HTTPError(403, 'Report not found for job {}'.format(job_id))
         try:
-            url = '{}/node/{}?download'.format(handle['shock_url'], handle['shock_id'])
-            # report = shock.get(url).content
-            report = requests.get(url).content
-        except:
-            raise cherrypy.HTTPError(403, 'Could not get report using shock')
+            report = shock.get_handle(handle, token)
+        except Exception as e:
+            raise cherrypy.HTTPError(403, 'Could not get report using shock: {}'.format(e))
         return report
 
-    def get_report_log(self, userid=None, job_id=None):
-        log = self.get_report(userid, job_id)
+    def get_report_log(self, userid=None, job_id=None, token=None):
+        log = self.get_report(userid, job_id, token)
         if not log: return
         pat = self.get_quast_pattern()
         log = pat.sub('', log)
         return log
 
-    def get_report_stats(self, userid=None, job_id=None):
-        report = self.get_report(userid, job_id)
+    def get_report_stats(self, userid=None, job_id=None, token=None):
+        report = self.get_report(userid, job_id, token)
         if not report: return
         pat = self.get_quast_pattern()
         match = pat.search(report)
