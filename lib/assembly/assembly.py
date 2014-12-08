@@ -35,7 +35,7 @@ def get_tar_name(job_id, suffix):
     name += suffix
     name += '.tar.gz'
     return name
-    
+
 def tar(outpath, asm_data, tarname):
     print "Compressing"
     outfile = outpath + '/tar/'
@@ -116,13 +116,13 @@ def rename_file_symlink(filepath, newname):
     newfile =  os.path.split(filepath)[0] + f
     os.symlink(filepath, newfile)
     return newfile
-    
+
 
 def get_fasta(directory):
     """ Return the list of Fasta files in DIRECTORY
     """
     files = os.listdir(directory)
-    fasta_files = [file for file in files 
+    fasta_files = [file for file in files
                    if re.search(r'\.fa$|\.fasta$', file, re.IGNORECASE) is not None]
     return fasta_files
 
@@ -130,15 +130,15 @@ def get_fastq(directory):
     """ Return the list of Fastq files in DIRECTORY
     """
     files = os.listdir(directory)
-    fastq_files = [file for file in files 
+    fastq_files = [file for file in files
                    if re.search(r'\.fq$|\.fastq$', file, re.IGNORECASE) is not None]
     return fastq_files
-    
+
 def get_quala(directory):
     """ Return the list of Quala files in DIRECTORY
     """
     files = os.listdir(directory)
-    quala_files = [file for file in files 
+    quala_files = [file for file in files
                    if re.search(r'\.qa$|\.quala$', file, re.IGNORECASE) is not None]
     return fastq_files
 
@@ -181,29 +181,29 @@ def arast_reads(filelist):
     return filedicts
 
 
-def curl_download_url(url, outdir=None, token=None):
-    if outdir:
-        try: os.makedirs(outdir)
-        except OSError: pass
-    else:
-        outdir = os.getcwd()
+# def curl_download_url(url, outdir=None, token=None):
+#     if outdir:
+#         try: os.makedirs(outdir)
+#         except OSError: pass
+#     else:
+#         outdir = os.getcwd()
 
-    filename = os.path.basename(url)
-    filename = re.sub(r'\?download', '', filename)
-    filename = re.sub(r'[?&]', '_', filename)
+#     filename = os.path.basename(url)
+#     filename = re.sub(r'\?download', '', filename)
+#     filename = re.sub(r'[?&]', '_', filename)
 
-    cmd = ['curl', '-k', '-o', filename, url ]
-    if token:
-        cmd += ['-H', '"Authorization: OAuth {}"'.format(token)]
+#     cmd = ['curl', '-k', '-o', filename, "{}".format(url) ]
+#     if token:
+#         cmd += ['-H', '"Authorization: OAuth {}"'.format(token)]
 
-    logging.info("curl cmd = {}".format(" ".join(cmd)))
+#     print("curl cmd = {}".format(" ".join(cmd)))
 
-    p = subprocess.Popen(cmd, cwd=outdir)
-    p.wait()
-    downloaded = os.path.join(outdir, filename)
-    if os.path.exists(downloaded):
-        print('File Downloaded:', downloaded)
-        return downloaded
+#     p = subprocess.Popen(cmd, cwd=outdir)
+#     p.wait()
+#     downloaded = os.path.join(outdir, filename)
+#     if os.path.exists(downloaded):
+#         print('File Downloaded: {}'.format(downloaded))
+#         return downloaded
 
 
 

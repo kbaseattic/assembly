@@ -167,8 +167,6 @@ class ArastConsumer:
             os.makedirs(filepath)
             touch(filepath)
 
-        download_url = shock.verify_shock_url(self.shockurl)
-
         file_sets = params['assembly_data']['file_sets']
         for file_set in file_sets:
             if file_set['type'] == 'paired_url':
@@ -263,7 +261,6 @@ class ArastConsumer:
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
         timer_thread.start()
 
-        # url = "http://%s" % (self.shockurl)
         url = shock.verify_shock_url(self.shockurl)
 
         status = ''
@@ -384,7 +381,7 @@ class ArastConsumer:
         return extract_file(downloaded)
 
     def download_url(self, url, outdir, token=None):
-        downloaded = asm.curl_download_url(url, outdir=outdir, token=token)
+        downloaded = shock.curl_download_url(url, outdir=outdir, token=token)
         return extract_file(downloaded)
 
     def fetch_job(self):
