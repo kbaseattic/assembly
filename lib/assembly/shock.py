@@ -146,6 +146,8 @@ class Shock:
         return curl_download_url(d_url, outdir, filename, self.token)
 
 
+    # see implementation in client.download_shock_handle
+    #
     # def download_file(self, node_id, outdir=None):
     #     r = requests.get('{}/node/{}'.format(self.shockurl, node_id))
     #     filename = json.loads(r.content)['data']['file']['name'].split('/')[-1]
