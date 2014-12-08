@@ -13,7 +13,7 @@ use JSON;
 use Term::ReadKey;
 use Text::Table;
 
-our $cli_upload_compatible_version = "0.5.0";
+our $cli_upload_compatible_version = "0.5.5";
 
 my $have_kbase = 0;
 eval {
