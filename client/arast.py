@@ -14,9 +14,11 @@ import time
 from ConfigParser import SafeConfigParser
 
 from assembly import asmtypes
+from assembly import auth
 from assembly import client
 from assembly import config as conf
-from assembly import auth
+from assembly import shock
+from assembly import utils
 from assembly import __version__
 
 
@@ -154,7 +156,7 @@ def cmd_run(args, aclient, usage, log=None):
     if args.data_id:
         data = None
     elif args.data_json:
-        data = client.load_json_from_file(args.data_json)
+        data = utils.load_json_from_file(args.data_json)
     else:
         data = prepare_assembly_data(args, aclient, usage)
 
@@ -310,7 +312,7 @@ def prepare_assembly_data(args, aclient, usage):
                     f_info = aclient.upload_data_file_info(word, curl=curl)
                     f_infos.append(f_info)
                 elif f_type.endswith('_url'):
-                    file_url = client.verify_url(word)
+                    file_url = utils.verify_url(word)
                     f_info = asmtypes.FileInfo(direct_url=file_url)
                     f_infos.append(f_info)
                 else:
@@ -356,7 +358,7 @@ def run_command():
 
     # main command options
     a_url = args.arast_url or ARAST_URL
-    a_url = client.verify_url(a_url)
+    a_url = utils.verify_url(a_url)
     logging.info('ARAST_URL: {}'.format(a_url))
 
     aclient = client.Client(a_url, a_user, a_token)
@@ -385,6 +387,8 @@ def main():
             raise
     except auth.Error as e:
         sys.exit('Authentication error: {}'.format(e))
+    except shock.Error as e:
+        sys.exit('Shock error: {}'.format(e))
     except client.URLError as e:
         sys.exit('Invalid URL: {}'.format(e))
     except client.ConnectionError as e:

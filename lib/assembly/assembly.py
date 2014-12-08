@@ -35,7 +35,7 @@ def get_tar_name(job_id, suffix):
     name += suffix
     name += '.tar.gz'
     return name
-    
+
 def tar(outpath, asm_data, tarname):
     print "Compressing"
     outfile = outpath + '/tar/'
@@ -116,13 +116,13 @@ def rename_file_symlink(filepath, newname):
     newfile =  os.path.split(filepath)[0] + f
     os.symlink(filepath, newfile)
     return newfile
-    
+
 
 def get_fasta(directory):
     """ Return the list of Fasta files in DIRECTORY
     """
     files = os.listdir(directory)
-    fasta_files = [file for file in files 
+    fasta_files = [file for file in files
                    if re.search(r'\.fa$|\.fasta$', file, re.IGNORECASE) is not None]
     return fasta_files
 
@@ -130,15 +130,15 @@ def get_fastq(directory):
     """ Return the list of Fastq files in DIRECTORY
     """
     files = os.listdir(directory)
-    fastq_files = [file for file in files 
+    fastq_files = [file for file in files
                    if re.search(r'\.fq$|\.fastq$', file, re.IGNORECASE) is not None]
     return fastq_files
-    
+
 def get_quala(directory):
     """ Return the list of Quala files in DIRECTORY
     """
     files = os.listdir(directory)
-    quala_files = [file for file in files 
+    quala_files = [file for file in files
                    if re.search(r'\.qa$|\.quala$', file, re.IGNORECASE) is not None]
     return fastq_files
 
@@ -179,20 +179,6 @@ def arast_reads(filelist):
     for f in filelist:
         filedicts.append({'type':'single', 'files':[f]})
     return filedicts
-
-
-def curl_download_url(url, outdir=None):
-    if outdir:
-        try: os.makedirs(outdir)
-        except OSError: pass
-    else: outdir = os.getcwd()
-    p = subprocess.Popen('curl -O {}'.format(url).split(), cwd=outdir)
-    p.wait()
-    downloaded = os.path.join(outdir, os.path.basename(url))
-    if os.path.exists(downloaded):
-        print('File Downloaded:', downloaded)
-        return downloaded
-
 
 
 parser = SafeConfigParser()

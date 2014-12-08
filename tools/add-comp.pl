@@ -130,6 +130,7 @@ sub install_basic {
 
     run('curl -L http://cpanmin.us | perl - App::cpanminus');
     run('cpanm File::Spec::Link');
+    run('cpanm Perl4::CoreLibs');
 
     install_cmake3();
 }
