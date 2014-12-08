@@ -171,8 +171,6 @@ parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command 
 
 parser.add_argument("-v", "--verbose", help="increase output verbosity",
                     action="store_true")
-parser.add_argument("-s", "--server", help="specify AssemblyRAST server",
-                    action="store", required=True)
 parser.add_argument("-c", "--config", help="specify configuration file",
                     action="store", required=True)
 parser.add_argument("-t", "--threads", help="specify number of worker threads",
