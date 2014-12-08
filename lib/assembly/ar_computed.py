@@ -164,7 +164,10 @@ def kill_callback(ch, method, properties, body):
             if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
                 print 'on this node'
                 kill_list.append(kill_request)
-        job_list_lock.release()
+        try:
+            job_list_lock.release()
+        except ValueError:
+            logging.info("job_list_lock already free")
 
 
 parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command -h" for more information about a command.')
