@@ -255,7 +255,11 @@ class ArastConsumer:
 
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
         self.job_list.append(job_data)
-        self.job_list_lock.release()
+        try:
+            self.job_list_lock.release()
+        except ValueError:
+            logging.info("job_list_lock already free")
+
         self.start_time = time.time()
 
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
@@ -304,7 +308,10 @@ class ArastConsumer:
             for i, job in enumerate(self.job_list):
                 if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
                     self.job_list.pop(i)
-            self.job_list_lock.release()
+            try:
+                self.job_list_lock.release()
+            except ValueError:
+                logging.info("job_list_lock already free")
 
             # Format report
             new_report = open('{}.tmp'.format(self.out_report_name), 'w')
