@@ -123,6 +123,16 @@ class Shock:
             res = self._curl_post_file(filename, filetype, auth)
         else:
             res = self._post_file(filename, filetype, auth)
+
+        print res
+        try:
+            if res['status'] == 200:
+                print >> sys.stderr, "Upload complete: {}".format(filename)
+            else:
+                raise Error("Upload failed: {}. {}".format(res['status'], res.get("error")))
+        except AttributeError:
+            raise Error("Upload error, shock reponse = {}".format(res))
+
         return res
 
     def upload_reads(self, filename, curl=False, auth=False):
@@ -172,37 +182,30 @@ class Shock:
         else:
             raise Error('Data does not exist')
 
-    def download_file(self, node_id, outdir=None):
-        r = requests.get('{}/node/{}'.format(self.shockurl, node_id))
-        filename = json.loads(r.content)['data']['file']['name'].split('/')[-1]
-        if outdir:
-            utils.verify_dir(outdir)
-        else:
-            outdir = os.getcwd()
+    # def download_file(self, node_id, outdir=None):
+    #     r = requests.get('{}/node/{}'.format(self.shockurl, node_id))
+    #     filename = json.loads(r.content)['data']['file']['name'].split('/')[-1]
+    #     if outdir:
+    #         utils.verify_dir(outdir)
+    #     else:
+    #         outdir = os.getcwd()
 
-        d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
-        downloaded = os.path.join(outdir, filename)
-        r = requests.get(d_url, stream=True)
-        with open(downloaded, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk: # filter out keep-alive new chunks
-                    f.write(chunk)
-                    f.flush()
+    #     d_url = '{}/node/{}?download'.format(self.shockurl, node_id)
+    #     downloaded = os.path.join(outdir, filename)
+    #     r = requests.get(d_url, stream=True)
+    #     with open(downloaded, 'wb') as f:
+    #         for chunk in r.iter_content(chunk_size=1024):
+    #             if chunk: # filter out keep-alive new chunks
+    #                 f.write(chunk)
+    #                 f.flush()
 
-        if os.path.exists(downloaded):
-            print "File downloaded: {}".format(downloaded)
-            return downloaded
-        else:
-            raise Error('Data does not exist')
+    #     if os.path.exists(downloaded):
+    #         print "File downloaded: {}".format(downloaded)
+    #         return downloaded
+    #     else:
+    #         raise Error('Data does not exist')
 
 
-    def create_attr_file(self, attrs, outname):
-        """ Writes to attr OUTFILE from dict of attrs """
-        f = tempfile.NamedTemporaryFile(delete=False)
-        outjson = f.name
-        f.write(json.dumps(attrs))
-        f.close()
-        return outjson
 
 
 
@@ -210,6 +213,14 @@ class Shock:
     def _create_attr_mem(self, attrs):
         """ Create in mem filehandle """
         return StringIO.StringIO(json.dumps(attrs))
+
+    def _create_attr_file(self, attrs, outname):
+        """ Writes to attr OUTFILE from dict of attrs """
+        f = tempfile.NamedTemporaryFile(delete=False)
+        outjson = f.name
+        f.write(json.dumps(attrs))
+        f.close()
+        return outjson
 
     def _post_file(self, filename, filetype='', auth=False):
         """ Upload using requests """
@@ -232,21 +243,13 @@ class Shock:
 
         attr_fd.close()
         res = json.loads(r.text)
-        logging.info(r.text)
-        try:
-            if res['status'] == 200:
-                print >> sys.stderr, "Upload complete: {}".format(filename)
-            else:
-                print >> sys.stderr, "Upload error: {}".format(res['status'])
-        except AttributeError:
-            raise Error("Upload error, shock reponse = {}".format(res))
 
 	return res
 
     def _curl_post_file(self, filename, filetype='', auth=False):
         tmp_attr = dict(self.attrs)
         tmp_attr['filetype'] = filetype
-        attr_file = self.create_attr_file(tmp_attr, 'attrs')
+        attr_file = self._create_attr_file(tmp_attr, 'attrs')
         cmd = ['curl',
                '-X', 'POST',
                '-F', 'attributes=@{}'.format(attr_file),
@@ -256,8 +259,7 @@ class Shock:
         if auth:
             cmd += ['-H', '"Authorization: OAuth {}"'.format(self.token)]
 
-        print >> sys.stderr, "curl_post_file: {}".format(' '.join(cmd))
-
+        # print >> sys.stderr, "curl_post_file: {}".format(' '.join(cmd))
         r = subprocess.check_output(' '.join(cmd), shell=True)
         res = json.loads(r)
         return res
