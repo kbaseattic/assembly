@@ -1,0 +1,14 @@
+[
+    {
+	"user": "cbun",
+	"job_limit": -1
+    },
+    {
+	"user": "fangfang",
+	"job_limit": -1
+    },
+    {
+	"user": "brettin",
+	"job_limit": 100
+    }
+]
