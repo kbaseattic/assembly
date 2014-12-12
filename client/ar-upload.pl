@@ -23,6 +23,12 @@ eval {
     $have_kbase = 1;
 };
 
+my $handle_service = undef;
+eval {
+    require Bio::KBase::HandleService;
+    $handle_service = Bio::KBase::HandleService->new();
+}
+
 my $usage = <<End_of_Usage;
 
 Usage: ar-upload [ options ]
@@ -153,7 +159,7 @@ sub submit_data {
 
 sub current_workspace {
     my ($ws_url, $ws_name);
-    if (defined $ENV{KB_RUNNING_IN_IRIS}) {
+    if ($ENV{KB_WORKSPACEURL}) {
         $ws_url  = $ENV{KB_WORKSPACEURL};
         $ws_name = $ENV{KB_WORKSPACE};
     } else {
@@ -171,7 +177,7 @@ sub authenticate {
 
     my ($user, $token);
 
-    if ($ENV{KB_RUNNING_IN_IRIS}) {
+    if ($ENV{KB_AUTH_USER_ID} && $ENV{KB_AUTH_TOKEN}) {
         $user  = $ENV{KB_AUTH_USER_ID};
         $token = $ENV{KB_AUTH_TOKEN};
         return ($user, $token);
@@ -240,6 +246,11 @@ sub update_handle {
     $handle->{type} = 'shock';
     $handle->{url}  = $shock->{url};
     $handle->{id}   = $id;
+
+    if ($handle_service) {
+        my $hid = $handle_service->persist_handle($handle);
+        $handle->{hid} = $hid;
+    }
 
     return $handle;
 }
