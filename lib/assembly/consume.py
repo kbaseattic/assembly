@@ -201,16 +201,10 @@ class ArastConsumer:
             all_files.append(file_set)
         return datapath, all_files
 
-    def compute(self, body):
-        error = False
+
+    def prepare_job_data(self, body):
         params = json.loads(body)
         job_id = params['job_id']
-        uid = params['_id']
-        user = params['ARASTUSER']
-        token = params['oauth_token']
-        pipelines = params.get('pipeline')
-        recipe = params.get('recipe')
-        wasp_in = params.get('wasp')
 
         ### Download files (if necessary)
         datapath, all_files = self.get_data(body)
@@ -255,11 +249,19 @@ class ArastConsumer:
                     'out_report' : self.out_report})
 
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
+
+        return job_data
+
+
+    def compute(self, body):
+        print 'compute'
+
         self.job_list_lock.acquire()
         try:
+            job_data = self.prepare_job_data(body)
             self.job_list.append(job_data)
         except:
-            logging.error("Unexpected error in appending new job to job_list")
+            logging.error("Error in adding new job to job_list")
             raise
         finally:
             self.job_list_lock.release()
@@ -269,11 +271,20 @@ class ArastConsumer:
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
         timer_thread.start()
 
-        url = shock.verify_shock_url(self.shockurl)
-
         status = ''
         logging.debug('Job Data')
         logging.debug(job_data)
+
+        params = json.loads(body)
+        job_id = params['job_id']
+        uid = params['_id']
+        user = params['ARASTUSER']
+        token = params['oauth_token']
+        pipelines = params.get('pipeline')
+        recipe = params.get('recipe')
+        wasp_in = params.get('wasp')
+
+        url = shock.verify_shock_url(self.shockurl)
 
         #### Parse pipeline to wasp exp
         reload(recipes)
@@ -307,29 +318,6 @@ class ArastConsumer:
             w_engine.run_expression(wasp_exp, job_data)
             ###### Upload all result files and place them into appropriate tags
             uploaded_fsets = job_data.upload_results(url, token)
-
-            self.job_list_lock.acquire()
-            try:
-                for i, job in enumerate(self.job_list):
-                    if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
-                        self.job_list.pop(i)
-            except:
-                logging.error("Unexpected error in removing executed jobs from job_list")
-                raise
-            finally:
-                self.job_list_lock.release()
-
-            # kill_list cleanup for cases where a kill request is enqueued right before the corresponding job gets popped
-            self.kill_list_lock.acquire()
-            try:
-                for i, kill_request in enumerate(self.kill_list):
-                    if kill_request['user'] == job_data['user'] and kill_request['job_id'] == job_data['job_id']:
-                        self.kill_list.pop(i)
-            except:
-                logging.error("Unexpected error in removing executed jobs from kill_list")
-                raise
-            finally:
-                self.kill_list_lock.release()
 
             # Format report
             new_report = open('{}.tmp'.format(self.out_report_name), 'w')
@@ -386,10 +374,41 @@ class ArastConsumer:
             ###################
 
             print '============== JOB COMPLETE ==============='
+
         except asmtypes.ArastUserInterrupt:
             status = 'Terminated by user'
             print '============== JOB KILLED ==============='
+
+        finally:
+            self.remove_job_from_lists(job_data)
+
         self.metadata.update_job(uid, 'status', status)
+
+
+    def remove_job_from_lists(self, job_data):
+        self.job_list_lock.acquire()
+        try:
+            for i, job in enumerate(self.job_list):
+                if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
+                    self.job_list.pop(i)
+        except:
+            logging.error("Unexpected error in removing executed jobs from job_list")
+            raise
+        finally:
+            self.job_list_lock.release()
+
+        # kill_list cleanup for cases where a kill request is enqueued right before the corresponding job gets popped
+        self.kill_list_lock.acquire()
+        try:
+            for i, kill_request in enumerate(self.kill_list):
+                if kill_request['user'] == job_data['user'] and kill_request['job_id'] == job_data['job_id']:
+                    self.kill_list.pop(i)
+        except:
+            logging.error("Unexpected error in removing executed jobs from kill_list")
+            raise
+        finally:
+            self.kill_list_lock.release()
+
 
     def upload(self, url, user, token, file, filetype='default'):
         files = {}
