@@ -182,6 +182,20 @@ sub test_shock_url_input {
     sysrun('cat job.41 | ar-get -w -p > contigs.41'); validate_contigs('contigs.41');
 }
 
+sub test_kill_requests {
+    my $out;
+    sysrun("ar-run -a kiki --single_url $se -m 'kill after done' >job.51");
+
+    $out = sysout('ar-kill -j 9999999', undef, 1);
+    like($out, qr/Invalid/, "Invalid job handled correctly for kill request: '$out'"); $testCount++;
+
+    sysrun("cat job.51 | ar-get --wait --pick > contigs.51");
+    validate_contigs('contigs.51');
+
+    $out = sysout('ar-kill -j $(cat job.51|sed "s/[^0-9]*//g")', undef, 1);
+    like($out, qr/No longer running/, "Completed job handled correctly for kill request: '$out'"); $testCount++;
+}
+
 sub validate_contigs {
     my ($file) = @_;
     my $out = sysout("head $file |grep '^>'");
