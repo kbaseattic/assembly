@@ -23,7 +23,7 @@ class MetadataConnection:
         # Connect
         self.connection = pymongo.Connection(self.host, self.port)
         self.database = self.connection[self.db]
-        
+
         # Get local data
         self.jobs = self.get_jobs()
         self.data_collection = self.get_data()
@@ -56,7 +56,7 @@ class MetadataConnection:
         for r in col.find({}):
             print r
         return col.find({})
-        
+
     def remove_doc(self, collection, key, value):
         connection = pymongo.Connection(self.host, self.port)
         database = connection[self.db]
@@ -75,7 +75,7 @@ class MetadataConnection:
         else:
             logging.warning("Doc %s not updated!" % query_value)
 
-        
+
     def get_next_id(self, user, category):
         connection = pymongo.Connection(self.host, self.port)
         database = connection[self.db]
@@ -87,7 +87,7 @@ class MetadataConnection:
             doc = ids.find_and_modify(query={'user' : user}, update={'$inc': {'c' : 1}})
             next_id = doc['c'] + 1
         return next_id
-    
+
     def get_next_job_id(self, user):
         return self.get_next_id(user, 'ids')
 
@@ -148,8 +148,8 @@ class MetadataConnection:
                    'token', token)
         self.update_doc(self.auth_collection, 'globus_user', globus_user,
                    'token_time', token_time)
-        
-        
+
+
 ######## DATA COLLECTION ############
     def insert_data(self, user, data):
         if not 'data_id' in data:
@@ -181,6 +181,7 @@ class MetadataConnection:
 
     def rjob_update_timestamp(self, job_uid):
         ## If accidentally purged, reinsert
+
         if self.database[self.rjobs_collection].find({'job_uid': job_uid}).count() == 0:
             self.rjob_insert(job_uid, self.get_jobs().find({'_id': job_uid})[0])
         self.database[self.rjobs_collection].update({'job_uid': job_uid},

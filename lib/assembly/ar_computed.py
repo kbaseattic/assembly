@@ -14,12 +14,13 @@ import json
 import pymongo
 import multiprocessing
 import pika
+import re
 import requests
 
 from ConfigParser import SafeConfigParser
 import consume
 import shock
-import client
+import utils
 
 #context = daemon.DaemonContext(stdout=sys.stdout) #temp print to stdout
 #TODO change to log file
@@ -29,11 +30,12 @@ mgr = multiprocessing.Manager()
 job_list = mgr.list()
 job_list_lock = multiprocessing.Lock()
 kill_list = mgr.list()
+kill_list_lock = multiprocessing.Lock()
 
 def start(arasturl, config, num_threads, queue, datapath, binpath):
 
     #### Get default configuration from ar_compute.conf
-    print " [.] Starting Assembly Service Compute Node"    
+    print " [.] Starting Assembly Service Compute Node"
     cparser = SafeConfigParser()
     cparser.read(config)
     logging.getLogger('yapsy').setLevel(logging.WARNING)
@@ -42,11 +44,19 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     logging.getLogger('pika').setLevel(logging.WARNING)
 
     arastport = cparser.get('assembly','arast_port')
+    full_arasturl = utils.verify_url(arasturl, arastport)
     if not num_threads:
         num_threads =  cparser.get('compute','threads')
 
     #### Retrieve system configuration from AssemblyRAST server
-    ctrl_conf = json.loads(requests.get('http://{}:{}/admin/system/config'.format(arasturl, arastport)).content)
+    print " [.] AssemblyRAST host: %s" % arasturl
+    try:
+        ctrl_conf = json.loads(requests.get('{}/admin/system/config'.format(full_arasturl)).content)
+        print " [.] Retrieved system config from host"
+    except:
+        raise Exception('Could not communicate with server for system config')
+
+    shockurl = ctrl_conf['shock']['host']
     mongo_port = int(ctrl_conf['assembly']['mongo_port'])
     mongo_host = ctrl_conf['assembly']['mongo_host']
     rmq_port = int(ctrl_conf['assembly']['rabbitmq_port'])
@@ -57,18 +67,28 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
         mongo_host = arasturl
     if rmq_host == 'localhost':
         rmq_host = arasturl
-    try:
-        shockurl = ctrl_conf['shock']['host']
-        print ' [.] Retrieved Shock URL: {}'.format(shockurl)
-    except:
-        raise Exception('Could not communicate with server')
 
-    print " [.] AssemblyRAST host: %s" % arasturl
+    print ' [.] Shock URL: %s' % shockurl
+    print " [.] MongoDB host: %s" % mongo_host
     print " [.] MongoDB port: %s" % mongo_port
+    print " [.] RabbitMQ host: %s" % rmq_host
     print " [.] RabbitMQ port: %s" % rmq_port
+
+    # Check shock status
+    print " [.] Connecting to Shock server..."
+    shockurl = utils.verify_url(shockurl, 7445)
+    try:
+        res = requests.get(shockurl)
+    except Exception as e:
+        logging.error("Shock connection error: {}".format(e))
+        sys.exit(1)
+    print " [.] Shock connection successful"
+
     # Check MongoDB status
+    print " [.] Connecting to MongoDB server..."
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
+        connection.close()
         logging.info("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
         logging.error("MongoDB connection error: {}".format(e))
@@ -76,16 +96,16 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     print " [.] MongoDB connection successful."
 
     # Check RabbitMQ status
-        #TODO
-        
-    print " [.] Connecting to Shock server..."
-    url = "http://{}".format(shockurl)
-    res = shock.get(url)
-    
-    if res is not None:
-        print " [.] Shock connection successful"
-    else:
-        raise Exception("Shock connection error: {}".format(shockurl))
+    print " [.] Connecting to RabbitMQ server..."
+    try:
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host=rmq_host, port=rmq_port))
+        connection.close()
+    except Exception as e:
+        logging.error("RabbitMQ connection error: {}".format(e))
+        sys.exit(1)
+    print " [.] RabbitMQ connection successful"
+
 
     #### Check data write permissions
     rootpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
@@ -112,8 +132,8 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     workers = []
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
-        compute = consume.ArastConsumer(shockurl, rmq_host, rmq_port, arasturl, config, num_threads, 
-                                        queue, kill_list, job_list, job_list_lock, ctrl_conf, datapath, binpath)
+        compute = consume.ArastConsumer(shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, num_threads,
+                                        queue, kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf, datapath, binpath)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
         workers.append(p)
@@ -141,13 +161,13 @@ def kill_callback(ch, method, properties, body):
         kill_request = json.loads(body)
         print 'job_list:', job_list
         job_list_lock.acquire()
+        kill_list_lock.acquire()
         for job_data in job_list:
             if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
                 print 'on this node'
                 kill_list.append(kill_request)
+        kill_list_lock.release()
         job_list_lock.release()
-
-
 
 
 parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command -h" for more information about a command.')

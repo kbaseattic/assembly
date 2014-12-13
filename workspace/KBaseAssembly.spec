@@ -3,10 +3,14 @@ module KBaseAssembly {
 
     typedef int bool;
 
-    /* 
-       @optional file_name type url remote_md5 remote_sha1
+    /* @id handle */
+    typedef string HandleId;
+
+    /*
+       @optional hid file_name type url remote_md5 remote_sha1
     */
     typedef structure {
+	HandleId hid;
         string file_name;
         string id;
         string type;
@@ -15,7 +19,7 @@ module KBaseAssembly {
         string remote_sha1;
     } Handle;
 
-    /* 
+    /*
        @optional reference_name
     */
     typedef structure {
@@ -27,8 +31,8 @@ module KBaseAssembly {
 	Handle handle;
     } SingleEndLibrary;
 
-    /* 
-       @optional handle_2 insert_size_mean insert_size_std_dev interleaved read_orientation_outward 
+    /*
+       @optional handle_2 insert_size_mean insert_size_std_dev interleaved read_orientation_outward
     */
     typedef structure {
 	Handle handle_1;
@@ -39,7 +43,7 @@ module KBaseAssembly {
         bool read_orientation_outward;
     } PairedEndLibrary;
 
-    /* 
+    /*
        @optional paired_end_libs single_end_libs references expected_coverage expected_coverage estimated_genome_size dataset_prefix dataset_description
     */
     typedef structure {

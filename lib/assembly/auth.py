@@ -39,12 +39,12 @@ def authenticate(service='KBase', save=True):
 
     success = False
     for attempt in range(2):
-        try: 
+        try:
             token_map = get_token_map(username, password, service)
             token = token_map['access_token']
             success = True
             break
-        except Error as e: 
+        except Error as e:
             password = getpass.getpass(prompt="{} Password: ".format(service))
             error = e
         except AttributeError as e:
@@ -52,8 +52,9 @@ def authenticate(service='KBase', save=True):
 
     if not success: raise error
 
-    if service == 'RAST':
-        username = '{}_rast'.format(username)
+    # ARAST server on P3 is configured with RAST-only shock
+    # if service == 'RAST':
+        # username = '{}_rast'.format(username)
 
     if save:
         try:
@@ -72,14 +73,14 @@ def authenticate(service='KBase', save=True):
             raise Error(e)
 
     return username, token
-    
+
 
 def get_token_map(username, password, service='KBase'):
     h = httplib2.Http(disable_ssl_certificate_validation=True)
-    
+
     auth = base64.encodestring(username + ':' + password)
     headers = {'Authorization' : 'Basic ' + auth}
-    
+
     h.add_credentials(username, password)
     h.follow_all_redirects = True
     url = get_service_auth_url(service)
@@ -90,9 +91,9 @@ def get_token_map(username, password, service='KBase'):
         globus_map = json.loads(content)
     elif status == 403:
         raise Error('Bad username/password combination')
-    else: 
+    else:
         raise Error(str(resp))
-        
+
     return globus_map
 
 
@@ -127,4 +128,3 @@ def remove_stored_token():
         os.remove(OAUTH_FILE)
     except OSError:
         pass
-    

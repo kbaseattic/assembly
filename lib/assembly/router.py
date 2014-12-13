@@ -30,9 +30,13 @@ import recipes
 import metadata as meta
 import shock
 from nexus import client as nexusclient
-import client as ar_client 
+import client as ar_client
 from assembly import ignored
 
+# Global variables
+parser = None
+metadata = None
+rjobmon = None
 
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
@@ -69,31 +73,41 @@ def send_kill_message(user, job_id=None):
             uid = job_doc['_id']
             status = job_doc['status']
         except TypeError:
-            kill_status += 'Job {}: Invalid ID\n'.format(jid)
+            kill_status += 'Invalid job ID\n'
+            break
 
         if status == 'Queued':
             metadata.update_job(uid, 'status', 'Terminated by user')
             metadata.rjob_remove(uid)
             kill_status += 'Job {}: Removed From Queue\n'.format(jid)
+            publish_kill_request(user, jid)
 
         elif re.search(r"(Running|Stage|Data)", status):
-            msg = json.dumps({'user':user, 'job_id':str(jid)})
-            connection = pika.BlockingConnection(pika.ConnectionParameters(
-                    host='localhost'))
-            channel = connection.channel()
-            channel.exchange_declare(exchange='kill',
-                                     type='fanout')
-            channel.basic_publish(exchange = 'kill',
-                                  routing_key='',
-                                  body=msg,)
-            logging.debug(" [x] Sent to kill exchange: %r" % (jid))
-            connection.close()
+            publish_kill_request(user, jid)
             kill_status += 'Job {}: Kill Request Sent\n'.format(jid)
+
         elif re.search(r"(Complete|Terminate)", status):
             kill_status += 'Job {}: No longer running.\n'.format(jid)
+
         else:
             kill_status += 'Job {}: Unexpected error.\n'.format(jid)
+
     return kill_status.rstrip() or 'No jobs to be killed'
+
+
+def publish_kill_request(user, job_id):
+    msg = json.dumps({'user':user, 'job_id':str(job_id)})
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host='localhost'))
+    channel = connection.channel()
+    channel.exchange_declare(exchange='kill',
+                             type='fanout')
+    channel.basic_publish(exchange='kill',
+                          routing_key='',
+                          body=msg,)
+    logging.debug(" [x] Sent to kill exchange: {}".format(job_id))
+    connection.close()
+
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
@@ -178,7 +192,7 @@ def analyze_data(body): #run fastqc
     analysis_pipes = ['fastqc']
     client_params['pipeline'] = analysis_pipes
     client_params['compute_type'] = 'qc'
-        
+
     ## Check that user queue limit is not reached
     uid = metadata.insert_job(client_params)
     logging.info("Inserting job record: %s" % client_params)
@@ -208,7 +222,7 @@ def authenticate_request():
     if not token:
         print "Auth error"
         raise cherrypy.HTTPError(403)
-    
+
     #parse out username
     r = re.compile('un=(.*?)\|')
     m = r.search(token)
@@ -250,15 +264,17 @@ def authenticate_request():
         return globus_user
     except:
         raise cherrypy.HTTPError(403, 'Failed Authorization')
-    
+
 
 def CORS():
     cherrypy.response.headers["Access-Control-Allow-Origin"] = "*"
     cherrypy.response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     cherrypy.response.headers["Access-Control-Allow-Headers"] = "Authorization, origin, content-type, accept"
 
-def start(config_file, mongo_host=None, mongo_port=None,
+def start(config_file, shock_url=None,
+          mongo_host=None, mongo_port=None,
           rabbit_host=None, rabbit_port=None):
+
     global parser, metadata, rjobmon
     logging.basicConfig(level=logging.DEBUG)
 
@@ -269,6 +285,19 @@ def start(config_file, mongo_host=None, mongo_port=None,
                    'data': parser.get('meta', 'mongo.collection.data'),
                    'running': parser.get('meta', 'mongo.collection.running')}
 
+    # Config precedence: args > config file
+
+    if shock_url:
+        parser.set('shock', 'host', shock.verify_shock_url(shock_url))
+    if mongo_host:
+        parser.set('assembly', 'mongo_host', mongo_host)
+    if mongo_port:
+        parser.set('assembly', 'mongo_port', str(mongo_port))
+    if rabbit_host:
+        parser.set('assembly', 'rabbitmq_host', rabbit_host)
+    if rabbit_port:
+        parser.set('assembly', 'rabbitmq_port', str(rabbit_port))
+
     metadata = meta.MetadataConnection(parser.get('assembly', 'mongo_host'),
                                        int(parser.get('assembly', 'mongo_port')),
                                        parser.get('meta', 'mongo.db'),
@@ -276,7 +305,7 @@ def start(config_file, mongo_host=None, mongo_port=None,
 
     ##### Running Job Monitor #####
     rjobmon = RunningJobsMonitor(metadata)
-    cherrypy.process.plugins.Monitor(cherrypy.engine, rjobmon.purge, 
+    cherrypy.process.plugins.Monitor(cherrypy.engine, rjobmon.purge,
                                      frequency=int(parser.get('monitor', 'running_job_freq'))).subscribe()
 
     ##### CherryPy ######
@@ -355,7 +384,20 @@ class JobResource:
             return ('New Job Request') # To handle initial html OPTIONS requess
         if not (userid == token_user or userid.split('_rast')[0] == token_user):
             raise cherrypy.HTTPError(403)
-        if len(rjobmon.user_jobs(userid)) >= int(parser.get('monitor', 'running_job_limit')):
+
+        path = parser.get('monitor', 'running_job_user_list')
+        if not os.path.isabs(path):
+            libpath = os.path.abspath(os.path.dirname( __file__ ))
+            path = os.path.join(libpath, path)
+        with open(path) as j:
+            user_list = json.load(j)
+        user = next((u for u in user_list if u["user"] == userid), None)
+        if user:
+            if user["job_limit"] == -1:
+                pass
+            elif len(rjobmon.user_jobs(userid)) >= user["job_limit"]:
+                raise cherrypy.HTTPError(403, "User Job limit reached")
+        elif len(rjobmon.user_jobs(userid)) >= int(parser.get('monitor', 'running_job_limit')):
             raise cherrypy.HTTPError(403, "User Job limit reached")
         params = json.loads(cherrypy.request.body.read())
         params['ARASTUSER'] = userid
@@ -384,11 +426,14 @@ class JobResource:
         except:
             raise cherrypy.HTTPError(403)
 
+        token = cherrypy.request.headers.get('Authorization')
+        print token
+
         ### No job_id, return all
-        if not job_id:  
+        if not job_id:
             return self.status(job_id=job_id, format='json', **kwargs)
 
-        ### job_id 
+        ### job_id
         if resource == 'shock_node':
             return self.get_shock_node(userid, job_id)
         elif resource == 'assembly':
@@ -405,12 +450,12 @@ class JobResource:
             return self.get_results(userid, job_id, *args, **kwargs)
         elif resource == 'data':
             return self.get_job_data(userid, job_id)
-        elif resource == 'report':
-            return self.get_report_stats(userid, job_id)
         elif resource == 'report_handle':
             return self.get_report_handle(userid, job_id)
+        elif resource == 'report':
+            return self.get_report_stats(userid, job_id, token)
         elif resource == 'log':
-            return self.get_report_log(userid, job_id)
+            return self.get_report_log(userid, job_id, token)
         elif resource == 'analysis':
             return self.get_analysis_handle(userid, job_id)
         elif resource == 'status':
@@ -450,14 +495,14 @@ class JobResource:
             detail = kwargs.get('detail')
             docs = [sanitize_doc(d) for d in metadata.list_jobs(userid)]
             columns = ["Job ID", "Data ID", "Status", "Run time", "Description"]
-            if detail: 
+            if detail:
                 columns.append("Parameters")
             pt = PrettyTable(columns)
-            if detail: 
+            if detail:
                 pt.align["Parameters"] = "l"
             if docs:
                 if kwargs.get('format') == 'json':
-                    return json.dumps(list(reversed(docs[-records:]))); 
+                    return json.dumps(list(reversed(docs[-records:])));
                 for doc in docs[-records:]:
                     try:
                         stat_msg = doc.get('status')[:40]
@@ -467,14 +512,14 @@ class JobResource:
                     row.append(str(doc.get('computation_time', '')))
                     row.append(str(doc.get('message', '')))
                     if detail:
-                        try: 
+                        try:
                             row.append(self.parse_job_doc_to_parameter(doc))
-                        except: 
+                        except:
                             row += ['']
                     pt.add_row(row)
                 return pt.get_string() + "\n"
 
-    
+
     def get_validated_job(self, user=None, job=None):
         if not job:  raise cherrypy.HTTPError(403, 'Undefined Job ID')
         if not user: raise cherrypy.HTTPError(403, 'Undefined user ID')
@@ -550,33 +595,32 @@ class JobResource:
         """ Get job report file handles """
         doc = self.get_validated_job(userid, job_id)
         handle = None
-        try: 
+        try:
             handle = doc['report'][0]['file_infos'][0]
         except:
             raise cherrypy.HTTPError(403, "Report not found for job {}".format(job_id))
         return json.dumps(handle)
 
-    def get_report(self, userid=None, job_id=None):
+    def get_report(self, userid=None, job_id=None, token=None):
         """ Get job report in text """
         handle = json.loads(self.get_report_handle(userid, job_id))
         if not handle:
             raise cherrypy.HTTPError(403, 'Report not found for job {}'.format(job_id))
-        try: 
-            url = '{}/node/{}?download'.format(handle['shock_url'], handle['shock_id'])
-            report = shock.get(url).content
-        except:
-            raise cherrypy.HTTPError(403, 'Could not get report using shock')
+        try:
+            report = shock.get_handle(handle, token)
+        except Exception as e:
+            raise cherrypy.HTTPError(403, 'Could not get report using shock: {}'.format(e))
         return report
 
-    def get_report_log(self, userid=None, job_id=None):
-        log = self.get_report(userid, job_id)
+    def get_report_log(self, userid=None, job_id=None, token=None):
+        log = self.get_report(userid, job_id, token)
         if not log: return
         pat = self.get_quast_pattern()
         log = pat.sub('', log)
         return log
 
-    def get_report_stats(self, userid=None, job_id=None):
-        report = self.get_report(userid, job_id)
+    def get_report_stats(self, userid=None, job_id=None, token=None):
+        report = self.get_report(userid, job_id, token)
         if not report: return
         pat = self.get_quast_pattern()
         match = pat.search(report)
@@ -704,7 +748,7 @@ class DataResource:
         else: ## /user/USERID/data/<data.id>
             return json_util.dumps(metadata.get_data_docs(userid, data_id))
 
-        
+
 class UserResource(object):
     @cherrypy.expose
     def new():
@@ -753,7 +797,7 @@ class RecipeResource:
         if module_name == 'avail' or module_name == 'all':
             return json.dumps(all)
         else:
-            try: 
+            try:
                 if args[0] == 'raw':
                     return json.dumps(all[module_name]['recipe'])
                 elif args[0] == 'description':
@@ -788,7 +832,7 @@ class SystemResource:
     def get_connections(self):
         """Returns a list of deduped connection IPs"""
         conns = json.loads(requests.get('http://{}:{}/api/connections'.format(
-                    self.rmq_host, self.rmq_admin_port), 
+                    self.rmq_host, self.rmq_admin_port),
                                         auth=(self.rmq_admin_user, self.rmq_admin_pass)).text)
         ## Dedupe
         unique = set()
@@ -801,14 +845,14 @@ class SystemResource:
 
     def close_connection(self, host):
         conns = json.loads(requests.get('http://{}:{}/api/connections'.format(
-                    self.rmq_host, self.rmq_admin_port), 
+                    self.rmq_host, self.rmq_admin_port),
                                         auth=(self.rmq_admin_user, self.rmq_admin_pass)).text)
         shutdown_success = False
         for c in conns:
             if c['peer_host'] == host:
                 res = requests.delete('http://{}:{}/api/connections/{}'.format(
-                self.rmq_host, self.rmq_admin_port, c['name']), 
-                                        auth=(self.rmq_admin_user, self.rmq_admin_pass)).text
+                    self.rmq_host, self.rmq_admin_port, c['name']),
+                                      auth=(self.rmq_admin_user, self.rmq_admin_pass)).text
                 shutdown_success = True
         if shutdown_success:
             return '{} will shutdown after completing running job(s)\n'.format(host)

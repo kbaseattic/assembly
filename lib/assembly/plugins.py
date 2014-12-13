@@ -1,12 +1,12 @@
 import abc
 import copy
-import logging 
+import logging
 import itertools
 import os
 import uuid
 import sys
 import time
-import datetime 
+import datetime
 import signal
 import subprocess
 import re
@@ -27,7 +27,7 @@ import pipe as phelper
 import wasp
 
 class BasePlugin(object):
-    """ 
+    """
     job_data dictionary must contain:
     - job_id
     - uid
@@ -46,7 +46,7 @@ class BasePlugin(object):
         """ Plugin wrapper """
         ### This might be a recursive call, backup Plugin object attrs
         ### !!! This won't work in parallel
-        try: 
+        try:
             backup = self._save()
             logging.info('Previous instance found, backing up.')
         except AttributeError: pass
@@ -57,8 +57,8 @@ class BasePlugin(object):
         self.out_module.close()
 
         #### If this was an internal plugin run, restore outer plugin logfile
-        try: 
-            self._restore(backup) 
+        try:
+            self._restore(backup)
             logging.info('Restored Plugin Object self attributes')
         except UnboundLocalError: pass
         return output
@@ -109,7 +109,7 @@ class BasePlugin(object):
             env_copy = os.environ.copy()
             env_copy['OMP_NUM_THREADS'] = self.process_threads_allowed
             p = subprocess.Popen(cmd_args, env=env_copy,
-                                 stdout=subprocess.PIPE, 
+                                 stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT,
                                  preexec_fn=os.setsid, **kwargs)
 
@@ -124,7 +124,7 @@ class BasePlugin(object):
                 if self.killed():
                     os.killpg(p.pid, signal.SIGTERM)
                     raise asmtypes.ArastUserInterrupt('Terminated by user')
-                
+
                 ## Flush STDOUT to logs
                 while True:
                     try:  line = q.get_nowait() # or q.get(timeout=.1)
@@ -156,7 +156,7 @@ class BasePlugin(object):
         except: print 'Could not write to report: {}'.format(cmd_string)
 
     def is_urgent_output(self, line):
-        """ 
+        """
         Plugins should override this if functionality depends on stdout.
         Should return False if no action should be taken.
         Returning a non-zero value will terminate the process and return
@@ -169,19 +169,29 @@ class BasePlugin(object):
 
     def killed(self):
         """ Check the kill queue to see if job should be killed """
-        kl = self.pmanager.kill_list
+
         my_user = self.job_data['user']
         my_jobid = self.job_data['job_id']
-        
-        for i,kr in enumerate(kl):
-            if my_user == kr['user'] and str(my_jobid) == kr['job_id']:
-                kl.pop(i)
-                return True
-        return False
+
+        popped = False
+        self.pmanager.kill_list_lock.acquire()
+        try:
+            kl = self.pmanager.kill_list
+            for i,kr in enumerate(kl):
+                if my_user == kr['user'] and str(my_jobid) == kr['job_id']:
+                    kl.pop(i)
+                    popped = True
+        except:
+            logging.error("Unexpected error in removing executed job to be killed from kill_list")
+            raise
+        finally:
+            self.pmanager.kill_list_lock.release()
+
+        return popped
 
 
     def create_directories(self, job_data):
-        datapath = (job_data['datapath'] + '/' + str(job_data['job_id']) + 
+        datapath = (job_data['datapath'] + '/' + str(job_data['job_id']) +
                     '/' + self.name + '_' + str(uuid.uuid4())) + '/'
         logging.info("Creating directory: {}".format(datapath))
 
@@ -264,10 +274,10 @@ class BasePlugin(object):
                 else:
                     raise Exception('Wasp Link Error')
             self.data = asmtypes.FileSetContainer(all_sets)
-        else: 
+        else:
             self.data = job_data.wasp_data()
         self.initial_data = job_data['initial_data']
-                                             
+
     def _save(self):
         attrs = ['outpath', 'job_data', 'out_report', 'out_module', 'data']
         saved = {'repr': self.__repr__()}
@@ -280,7 +290,7 @@ class BasePlugin(object):
         attrs = ['outpath', 'job_data', 'out_report', 'out_module', 'data']
         for attr in attrs:
             setattr(self, attr, data[attr])
- 
+
     def linuxRam(self):
         """Returns the RAM of a linux system"""
         totalMemory = os.popen("free -m").readlines()[1].split()[1]
@@ -301,12 +311,12 @@ class BasePlugin(object):
         pass
 
     def get_insert_info(self, libs):
-        """ Returns a list of tuples for initial read insert and stdev info 
+        """ Returns a list of tuples for initial read insert and stdev info
         eg [(100, 20), (500, 50), ()]"""
         libs_info = []
         for lib in libs:
             if (lib['type'] == 'paired'):
-                try: 
+                try:
                     ins_sd = (lib['insert'], lib['stdev'])
                 except:
                     ins_sd = ()
@@ -319,7 +329,7 @@ class BasePlugin(object):
         self.name = name
 
     def tar(self, files, job_id):
-        return assembly.tar_list(self.outpath, files, 
+        return assembly.tar_list(self.outpath, files,
                                  self.name + str(job_id) + '.tar.gz')
 
     def tar_output(self, job_id):
@@ -337,11 +347,11 @@ class BasePlugin(object):
         pass
 
     def calculate_read_info(self, job_data=None):
-        """ 
+        """
         Analyze subset of reads to infer:
         - Max read length
         - ...
-        Modifies each read library in JOB_DATA as well as returns global 
+        Modifies each read library in JOB_DATA as well as returns global
         values.
         """
         if not job_data:
@@ -365,7 +375,7 @@ class BasePlugin(object):
             all_max_read_length.append(max_read_length)
             total_read_count += read_count
         return max(all_max_read_length), total_read_count
-    
+
 
     def estimate_insert_stdev(self, contig_file, reads, min_lines=4000):
         """ Map READS to CONTIGS using bwa and return insert size """
@@ -399,7 +409,7 @@ class BasePlugin(object):
         s = re.sub(r'>[^\n\r]*', '', s)
         s = re.sub(r'\s+', '', s)
         return len(s)
-    
+
 class BaseAssembler(BasePlugin):
     """
     An assembler plugin should implement a run() function
@@ -449,9 +459,9 @@ class BaseScaffolder(BasePlugin):
     def run(self, job_data, read_records, contig_file):
         """
         Input: READS: list of dicts contain file and read info
-        Output: Updated READS (each read['files'] list should be updated 
+        Output: Updated READS (each read['files'] list should be updated
         with the new processed reads
-          
+
         """
         return
 
@@ -481,7 +491,7 @@ class BasePreprocessor(BasePlugin):
         readsets = orig_sets
         try:
             for extra in output['extra']:
-                readsets.append(asmtypes.set_factory('single', extra, 
+                readsets.append(asmtypes.set_factory('single', extra,
                                                      name='{}_single'.format(self.name)))
         except Exception as e: print e
         return {'reads': readsets}
@@ -495,7 +505,7 @@ class BasePreprocessor(BasePlugin):
         Output: list of full paths to contig files.  File extensions should reflect
           the file type
           eg. return ['/data/contigs1.fa', '/data/contigs2.fa']
-          
+
         """
         return
 
@@ -538,7 +548,7 @@ class BasePostprocessor(BasePlugin):
         Output: list of full paths to contig files.  File extensions should reflect
           the file type
           eg. return ['/data/contigs1.fa', '/data/contigs2.fa']
-          
+
         """
         return
 
@@ -550,17 +560,17 @@ class BaseAssessment(BasePlugin):
     """
     # Default behavior for run()
     INPUT = 'contigs', 'scaffolds'
-    OUTPUT = 'report' 
+    OUTPUT = 'report'
 
     def wasp_run(self):
         return self.run()
-        
+
     # Must implement run() method
     @abc.abstractmethod
     def run(self, contigs, reads):
         """
         Return reports
-          
+
         """
         return
 
@@ -577,7 +587,7 @@ class BaseMetaAssembler(BasePlugin):
     def run(self, contigs):
         """
         Return contigs
-          
+
         """
         return
 
@@ -598,15 +608,16 @@ class BaseAligner(BasePlugin):
     def run(self, contigs, reads, merged_pair=False):
         """
         Return SAM file
-          
+
         """
         return
 
 
 class ModuleManager():
-    def __init__(self, threads, kill_list, job_list, binpath):
+    def __init__(self, threads, kill_list, kill_list_lock, job_list, binpath):
         self.threads = threads
         self.kill_list = kill_list
+        self.kill_list_lock = kill_list_lock
         self.job_list = job_list # Running jobs
         self.binpath = binpath
 
@@ -638,7 +649,7 @@ class ModuleManager():
                 full_execs = [(k, self.get_executable_path(v)) for k,v in executables]
                 for binary in full_execs:
                     if not os.path.exists(binary[1]):
-                        if float(version) < 1: 
+                        if float(version) < 1:
                             print '[Warning]: {} (v{}) -- Binary does not exist for beta plugin -- {}'.format(plugin.name, version, binary[1])
                         else:
                             raise Exception('[ERROR]: {} (v{})-- Binary does not exist -- {}'.format(plugin.name, version, binary[1]))
@@ -650,7 +661,7 @@ class ModuleManager():
 
     def run_proc(self, module, wlink, job_data, parameters):
         """ Run module adapter for wasp interpreter
-        To support the Job_data mechanism, injects wlink 
+        To support the Job_data mechanism, injects wlink
         """
         if not self.has_plugin(module):
             raise Exception("No plugin named {}".format(module))
@@ -665,7 +676,7 @@ class ModuleManager():
                 if not k in settings:
                     settings[k] = v
             settings = settings.items()
-        except: 
+        except:
             # settings = config_settings
             raise Exception("Plugin Config not updated: {}!".format(module))
 
@@ -676,8 +687,8 @@ class ModuleManager():
                     continue
                 if link['module']:
                     try:
-                        assert (self.output_type(link['module']) == self.input_type(module) or 
-                                self.output_type(link['module']) in self.input_type(module)) 
+                        assert (self.output_type(link['module']) == self.input_type(module) or
+                                self.output_type(link['module']) in self.input_type(module))
                     except AssertionError:
                         raise Exception('{} and {} have mismatched input/output types'.format(module, link['module']))
         #### Run
@@ -688,7 +699,7 @@ class ModuleManager():
                             plugin.name)
         if not wlink.output:
             raise Exception('"{}" module failed to produce {}'.format(module, ot))
-            
+
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT
@@ -723,7 +734,7 @@ class ModuleManager():
     def verify_file(self, filename):
         if not os.path.exists(filename):
             raise Exception("File not found: %s" % filename)
-        
+
     def get_executable_path(self, filename, verify=False):
         guess1 = os.path.join(self.module_bin_path, filename)
         guess2 = os.path.join(self.binpath, filename)
@@ -746,10 +757,10 @@ class ModuleManager():
             for word in stage.replace('+', ' ').split(' '):
                 if not (word.startswith('?') or self.has_plugin(word)):
                     raise Exception('Invalid pipeline command')
-                
+
 
     def split_pipe(self, l):
-        """ Splits a multi-module string in to bins 
+        """ Splits a multi-module string in to bins
         Ex: 'kiki ?k=29 velvet' -> [[kiki, ?k=29], [velvet]]
         """
         bins = []
@@ -759,7 +770,7 @@ class ModuleManager():
             elif word.startswith('?'):
                 bins[-1].append(word)
         return bins
-            
+
     def parse_input(self, pipe):
         """
         Parses inital pipe and separates branching bins
@@ -776,7 +787,7 @@ def handle_output(out, q):
 
 def update_settings(settings, new_dict):
     """
-    Overwrite any new settings passed in 
+    Overwrite any new settings passed in
     """
     updated = []
     for tup in settings:
