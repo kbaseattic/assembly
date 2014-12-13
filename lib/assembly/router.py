@@ -375,7 +375,11 @@ class JobResource:
         if not (userid == token_user or userid.split('_rast')[0] == token_user):
             raise cherrypy.HTTPError(403)
 
-        with open(parser.get('monitor', 'running_job_user_list')) as j:
+        path = parser.get('monitor', 'running_job_user_list')
+        if not os.path.isabs(path):
+            libpath = os.path.abspath(os.path.dirname( __file__ ))
+            path = os.path.join(libpath, path)
+        with open(path) as j:
             user_list = json.load(j)
         user = next((u for u in user_list if u["user"] == userid), None)
         if user:
