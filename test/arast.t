@@ -11,7 +11,6 @@
 use strict vars;
 
 use Carp;
-use Test::JSON;
 use Test::More;
 use Data::Dumper;
 use English;
@@ -172,10 +171,15 @@ sub test_compressed_files {
 
 sub test_shock_url_input {
     my $json = sysout('ar-upload --single se.fq --ws-json');
-    my $valid = is_valid_json($json, 'AssemblyInput is valid json'); $testCount++;
-    return unless $valid;
-    my $obj = decode_json($json);
-    my $handle = $obj->{'single_end_libs'}->[0]->{'handle'};
+    my $obj;
+    my $handle;
+    eval {
+        $obj = decode_json($json);
+        $handle = $obj->{'single_end_libs'}->[0]->{'handle'};
+    };
+    ok($obj, 'AssemblyInput is valid json'); $testCount++;
+    ok($handle, 'AssemblyInput contains a handle'); $testCount++;
+    return unless $handle;
     # "https://kbase.us/services/shock-api/node/95d35067-ccb2-40ac-8fb3-47aadbcf0b5a?download"
     my $url = sprintf("%s/node/%s?download", $handle->{url} || $handle->{shock_url}, $handle->{id} || $handle->{shock_id});
     sysrun("ar-run -a kiki --single_url '$url' -m test_shock_token_url > job.41");
