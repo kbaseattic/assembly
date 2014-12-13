@@ -317,6 +317,18 @@ class ArastConsumer:
             finally:
                 self.job_list_lock.release()
 
+            # kill_list cleanup for cases where a kill request is enqueued right before the corresponding job gets popped
+            self.kill_list_lock.acquire()
+            try:
+                for i, kill_request in enumerate(self.kill_list):
+                    if kill_request['user'] == job_data['user'] and kill_request['job_id'] == job_data['job_id']:
+                        self.kill_list.pop(i)
+            except:
+                logging.error("Unexpected error in removing executed jobs from kill_list")
+                raise
+            finally:
+                self.kill_list_lock.release()
+
             # Format report
             new_report = open('{}.tmp'.format(self.out_report_name), 'w')
 
