@@ -167,10 +167,7 @@ def kill_callback(ch, method, properties, body):
                 print 'on this node'
                 kill_list.append(kill_request)
         kill_list_lock.release()
-        try:
-            job_list_lock.release()
-        except ValueError:
-            logging.info("job_list_lock already free")
+        job_list_lock.release()
 
 
 parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command -h" for more information about a command.')
