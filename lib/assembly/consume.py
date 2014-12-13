@@ -41,6 +41,8 @@ class ArastConsumer:
                  kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf, datapath, binpath):
         self.parser = SafeConfigParser()
         self.parser.read(config)
+        self.kill_list = kill_list
+        self.kill_list_lock = kill_list_lock
         self.job_list = job_list
         self.job_list_lock = job_list_lock
         # Load plugins
