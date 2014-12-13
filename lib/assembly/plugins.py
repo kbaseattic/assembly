@@ -175,12 +175,17 @@ class BasePlugin(object):
 
         popped = False
         self.pmanager.kill_list_lock.acquire()
-        kl = self.pmanager.kill_list
-        for i,kr in enumerate(kl):
-            if my_user == kr['user'] and str(my_jobid) == kr['job_id']:
-                kl.pop(i)
-                popped = True
-        self.pmanager.kill_list_lock.release()
+        try:
+            kl = self.pmanager.kill_list
+            for i,kr in enumerate(kl):
+                if my_user == kr['user'] and str(my_jobid) == kr['job_id']:
+                    kl.pop(i)
+                    popped = True
+        except:
+            logging.error("Unexpected error in removing executed job to be killed from kill_list")
+            raise
+        finally:
+            self.pmanager.kill_list_lock.release()
 
         return popped
 
