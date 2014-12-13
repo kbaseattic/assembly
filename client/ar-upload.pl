@@ -13,7 +13,7 @@ use JSON;
 use Term::ReadKey;
 use Text::Table;
 
-our $cli_upload_compatible_version = "0.5.0";
+our $cli_upload_compatible_version = "0.5.5";
 
 my $have_kbase = 0;
 eval {
@@ -21,6 +21,12 @@ eval {
     require Bio::KBase::AuthToken;
     require Bio::KBase::workspace::Client;
     $have_kbase = 1;
+};
+
+my $handle_service = undef;
+eval {
+    require Bio::KBase::HandleService;
+    $handle_service = Bio::KBase::HandleService->new("https://kbase.us/services/handle_service");
 };
 
 my $usage = <<End_of_Usage;
@@ -153,7 +159,7 @@ sub submit_data {
 
 sub current_workspace {
     my ($ws_url, $ws_name);
-    if (defined $ENV{KB_RUNNING_IN_IRIS}) {
+    if ($ENV{KB_WORKSPACEURL}) {
         $ws_url  = $ENV{KB_WORKSPACEURL};
         $ws_name = $ENV{KB_WORKSPACE};
     } else {
@@ -171,7 +177,7 @@ sub authenticate {
 
     my ($user, $token);
 
-    if ($ENV{KB_RUNNING_IN_IRIS}) {
+    if ($ENV{KB_AUTH_USER_ID} && $ENV{KB_AUTH_TOKEN}) {
         $user  = $ENV{KB_AUTH_USER_ID};
         $token = $ENV{KB_AUTH_TOKEN};
         return ($user, $token);
@@ -241,21 +247,36 @@ sub update_handle {
     $handle->{url}  = $shock->{url};
     $handle->{id}   = $id;
 
+    if ($handle_service) {
+        my $hid = $handle_service->persist_handle($handle);
+        $handle->{hid} = $hid;
+    }
+
     return $handle;
 }
 
 sub curl_post_file {
     my ($file, $shock) = @_;
+    my $auth  = ! check_anonymous_post_allowed($shock);
     my $user  = $shock->{user};
     my $token = $shock->{token};
     my $url   = $shock->{url};
     my $attr = q('{"filetype":"reads"}'); # should reference have a different type?
-    my $cmd  = 'curl --connect-timeout 10 -s -X POST -F attributes=@- -F upload=@'.$file." $url/node \n";
+    my $cmd  = 'curl --connect-timeout 10 -s -X POST -F attributes=@- -F upload=@'.$file." $url/node ";
+    $cmd    .= " -H 'Authorization: OAuth $token'" if $auth;
     my $out  = `echo $attr | $cmd` or die "Connection timeout uploading file to Shock: $file\n";
     my $json = decode_json($out);
     $json->{status} == 200 or die "Error uploading file: $file\n".$json->{status}." ".$json->{error}->[0]."\n";
-    print STDERR "Upload complete: $file\n";
     return $json->{data}->{id};
+}
+
+sub check_anonymous_post_allowed {
+    my ($shock) = @_;
+    my $posturl = $shock->{url}."/node";
+    my $cmd = "curl -s -k -X POST $posturl";
+    my $out = `$cmd`;
+    my $json = decode_json($out);
+    return $json->{status} == 200;
 }
 
 sub get_shock {
@@ -266,15 +287,27 @@ sub get_shock {
     my $res = $ua->request($req);
     $res->is_success or die "Error getting Shock URL from ARAST server: ". $res->message. "\n";
     my $shock_url = decode_json($res->decoded_content)->{shockurl};
-    $shock_url = "http://$shock_url" if $shock_url =~ /^\d/;
+    $shock_url = complete_url($shock_url);
+    # print "shock_url=$shock_url, user=$user, token=$token\n";
     { user => $user, token => $token, url => $shock_url };
 }
 
 sub complete_url {
     my ($url, $port, $subdir) = @_;
+
+    my $pattern = qr{
+        ^(https?://)?                         # capture 1: http prefix
+        (?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|  # domain
+         localhost|                           # localhost
+         \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})  # IP
+        (?::\d+)?                             # optional port
+        (/?|[/?]\S+)$                         # capture 2: trailing args
+    }xi;
+
+    $url =~ m/$pattern/ or die "Bad URL: $url\n";
+    $url = "http://$url" if !$1;
+    $url .= ":$port" if !$2 && $url =~ tr/:/:/ < 2 && $port;
     $url =~ s|/$||;
-    $url .= ":$port" if $url !~ /:/ && $port;
-    $url = "http://$url" if $url !~ /^http/;
     $url .= "/$subdir" if $subdir;
     return $url;
 }

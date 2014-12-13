@@ -18,10 +18,12 @@ import pika
 import router
 from ConfigParser import SafeConfigParser
 
-import shock 
-import cloud 
+import shock
+import cloud
 
-def start(config_file, mongo_host=None, mongo_port=None,
+# Config precedence: command-line args > config file
+
+def start(config_file, shock_url=None, mongo_host=None, mongo_port=None,
           rabbit_host=None, rabbit_port=None, deploy_config=None):
     # Read config file
     cparser = SafeConfigParser()
@@ -31,31 +33,39 @@ def start(config_file, mongo_host=None, mongo_port=None,
     else:
         cparser.read(config_file)
 
+    if not shock_url:
+        shock_host = cparser.get('shock', 'host')
+        shock_url = shock.verify_shock_url(shock_host)
     if not mongo_host:
         mongo_host = cparser.get('assembly', 'mongo_host')
     if not mongo_port:
-        mongo_port = cparser.get('assembly', 'mongo_port')
+        mongo_port = int(cparser.get('assembly', 'mongo_port'))
     if not rabbit_host:
         rabbit_host = cparser.get('assembly', 'rabbitmq_host')
     if not rabbit_port:
-        rabbit_port = cparser.get('assembly', 'rabbitmq_port')
+        rabbit_port = int(cparser.get('assembly', 'rabbitmq_port'))
 
     print " [.] Starting Assembly Service Control Server"
-    print " [.] MongoDB port: " + mongo_port
-    print " [.] RabbitMQ port: " + rabbit_port
-    
+    print " [.] Shock URL: %s" % shock_url
+    print " [.] MongoDB host: %s" % mongo_host
+    print " [.] MongoDB port: %s" % mongo_port
+    print " [.] RabbitMQ host: %s" % rabbit_host
+    print " [.] RabbitMQ port: %s" % rabbit_port
+
     # Check MongoDB status
     try:
-        connection = pymongo.Connection(mongo_host)
+        connection = pymongo.Connection(mongo_host, mongo_port)
         logging.info("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
         logging.error("MongoDB connection error: {}".format(e))
-        sys.exit()
+        sys.exit('MongoDB error: {}'.format(e))
+
     print " [.] MongoDB connection successful."
 
-
-    router_kwargs = {'mongo_host': mongo_host, 'mongo_port': mongo_port,
+    router_kwargs = {'shock_url': shock_url,
+                     'mongo_host': mongo_host, 'mongo_port': mongo_port,
                      'rabbit_host' :rabbit_host, 'rabbit_port' : rabbit_port}
+
     router_process = multiprocessing.Process(name='router', target=start_router,
                                              args=(config_file,), kwargs=router_kwargs)
     router_process.start()
@@ -83,7 +93,7 @@ parser.add_argument("-v", "--verbose", help="increase output verbosity",
                     action="store_true")
 parser.add_argument("-p", "--pidfile", help="Process ID file",
                     action="store")
-parser.add_argument("--shock-host", help="specify the shock server url",
+parser.add_argument("--shock-url", help="specify the shock server url",
                     action="store")
 parser.add_argument("--mongo-host", help="specify the mongodb url",
                     action="store")
@@ -116,6 +126,6 @@ if args.verbose:
 else:
     logging.basicConfig(level=logging.DEBUG, filename=logfile)
 
-start(args.config, mongo_host=args.mongo_host, mongo_port=args.mongo_port,
-      rabbit_host=args.rabbit_host, rabbit_port=args.rabbit_port, 
+start(args.config, shock_url=args.shock_url, mongo_host=args.mongo_host, mongo_port=args.mongo_port,
+      rabbit_host=args.rabbit_host, rabbit_port=args.rabbit_port,
       deploy_config=args.deploy_config)

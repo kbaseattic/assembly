@@ -1,7 +1,7 @@
 #! /usr/bin/env perl
 
 # 2014/07/07 new client integration test
-# 
+#
 # Respects environmental variables:
 #
 #   ARAST_URL
@@ -15,6 +15,7 @@ use Test::More;
 use Data::Dumper;
 use English;
 use Getopt::Long;
+use JSON;
 
 my $usage = "$0 [options] [test1 test2 ...]\n";
 
@@ -55,7 +56,7 @@ sub test_setup {
     $ref = 'http://www.mcs.anl.gov/~fangfang/arast/b99.ref.fa';
     $pe1 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq';
     $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
-    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';    
+    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
 
     sysrun("curl -s $ref > ref.fa");
     sysrun("curl -s $pe1 > p1.fq");
@@ -78,7 +79,7 @@ sub test_simple_cases {
     sysrun("ar-run --pipeline tagdust idba --pair p1.fq p2.fq -m 'my test: tagdust-idba' > job.3");
     sysrun("ar-stat -n 50 --detail > stat.3");
     sysrun("ar-stat --list-data > stat.data.3");
-    
+
     sysrun("ar-upload -f se.fq -m 'my test data' > data.4");
     sysrun("ar-run -a velvet --single_url $se | ar-get --wait --pick > contigs.4");
     validate_contigs('contigs.4');
@@ -105,7 +106,7 @@ sub test_simple_cases {
 
     sysrun("cat job.2 | ar-get -w -a 1");
     sysrun("cat job.2 | ar-get -p > contigs.2"); validate_contigs('contigs.2');
-    sysrun("cat job.2 | ar-get -r > report.2"); validate_report('report.2'); 
+    sysrun("cat job.2 | ar-get -r > report.2"); validate_report('report.2');
     sysrun("cat job.2 | ar-get -l > log.2"); validate_log('log.2', 1);
 
     sysrun("cat job.1 | ar-get -w");
@@ -167,7 +168,39 @@ sub test_compressed_files {
     sysrun("ar-run --pair_url $pe1 $pe2 -a kiki > job.31");
     sysrun('cat job.31 | ar-get -w -p > contigs.31'); validate_contigs('contigs.31');
 }
- 
+
+sub test_shock_url_input {
+    my $json = sysout('ar-upload --single se.fq --ws-json');
+    my $obj;
+    my $handle;
+    eval {
+        $obj = decode_json($json);
+        $handle = $obj->{'single_end_libs'}->[0]->{'handle'};
+    };
+    ok($obj, 'AssemblyInput is valid json'); $testCount++;
+    ok($handle, 'AssemblyInput contains a handle'); $testCount++;
+    return unless $handle;
+    # "https://kbase.us/services/shock-api/node/95d35067-ccb2-40ac-8fb3-47aadbcf0b5a?download"
+    my $url = sprintf("%s/node/%s?download", $handle->{url} || $handle->{shock_url}, $handle->{id} || $handle->{shock_id});
+    sysrun("ar-run -a kiki --single_url '$url' -m test_shock_token_url > job.41");
+    sysrun('cat job.41 | ar-get -w -p > contigs.41'); validate_contigs('contigs.41');
+}
+
+sub test_kill_requests {
+    my $out;
+    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
+    sysrun("ar-run -a kiki --single_url $se -m 'kill after done' >job.51");
+
+    $out = sysout('ar-kill -j 9999999');
+    like($out, qr/Invalid/, "Invalid job handled correctly for kill request: '$out'"); $testCount++;
+
+    sysrun("cat job.51 | ar-get --wait --pick > contigs.51");
+    validate_contigs('contigs.51');
+
+    $out = sysout('ar-kill -j $(cat job.51|sed "s/[^0-9]*//g")');
+    like($out, qr/No longer running/, "Completed job handled correctly for kill request: '$out'"); $testCount++;
+}
+
 sub validate_contigs {
     my ($file) = @_;
     my $out = sysout("head $file |grep '^>'");

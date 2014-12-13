@@ -14,9 +14,11 @@ import time
 from ConfigParser import SafeConfigParser
 
 from assembly import asmtypes
+from assembly import auth
 from assembly import client
 from assembly import config as conf
-from assembly import auth
+from assembly import shock
+from assembly import utils
 from assembly import __version__
 
 
@@ -29,6 +31,7 @@ ARAST_URL = os.getenv('ARAST_URL') or conf.URL
 ARAST_QUEUE = os.getenv('ARAST_QUEUE')
 ARAST_AUTH_USER = os.getenv('ARAST_AUTH_USER') or os.getenv('KB_AUTH_USER_ID')
 ARAST_AUTH_TOKEN = os.getenv('ARAST_AUTH_TOKEN') or os.getenv('KB_AUTH_TOKEN')
+ARAST_AUTH_SERVICE = os.getenv('ARAST_AUTH_SERVICE')
 
 ARAST_ENVIRON = None
 if os.getenv('KB_RUNNING_IN_IRIS'):
@@ -120,7 +123,12 @@ def get_parser():
 
 def cmd_login(args):
     auth_service = 'KBase'
-    auth_service = conf.AUTH_SERVICE if conf.AUTH_SERVICE else auth_service
+    try:
+        auth_service = conf.AUTH_SERVICE if conf.AUTH_SERVICE else auth_service
+    except AttributeError:
+        pass
+    if ARAST_AUTH_SERVICE:
+        auth_service = ARAST_AUTH_SERVICE
     auth_service = 'RAST' if args.rast else auth_service
     auth.authenticate(service=auth_service, save=True)
     sys.stderr.write('[.] Logged in\n')
@@ -154,7 +162,7 @@ def cmd_run(args, aclient, usage, log=None):
     if args.data_id:
         data = None
     elif args.data_json:
-        data = client.load_json_from_file(args.data_json)
+        data = utils.load_json_from_file(args.data_json)
     else:
         data = prepare_assembly_data(args, aclient, usage)
 
@@ -173,7 +181,7 @@ def cmd_run(args, aclient, usage, log=None):
     arast_msg = dict((k, options[k]) for k in keys if k in options)
 
     if data:
-        if 'file_sets' in data:        # 
+        if 'file_sets' in data:        #
             arast_msg['assembly_data'] = data
         elif 'assembly_data' in data:  # from: --json data.json
             arast_msg['assembly_data'] = data['assembly_data']
@@ -209,7 +217,7 @@ def cmd_stat(args, aclient):
         else:
             print 'Press CTRL-C to quit.'
         ### Spinner loop
-        spinners = ['-', '\\', '|', '/'] 
+        spinners = ['-', '\\', '|', '/']
         sleep_seconds = 25
         spins_per_sec = 4
         for i in range(sleep_seconds * spins_per_sec):
@@ -217,7 +225,7 @@ def cmd_stat(args, aclient):
             print('[{}] Assembly Service Status').format(spinners[i%4])
             print response
             print 'Press CTRL-C to quit.'
-            time.sleep(1.0/spins_per_sec)			
+            time.sleep(1.0/spins_per_sec)
 
 
 def cmd_get(args, aclient):
@@ -276,8 +284,8 @@ def prepare_assembly_data(args, aclient, usage):
     file_sizes = []
     file_list = []
     file_lists = []
-    
-    all_lists = [args.pair, args.pair_url, args.single, args.single_url, 
+
+    all_lists = [args.pair, args.pair_url, args.single, args.single_url,
                  args.reference, args.reference_url]
     all_types = ['paired', 'paired_url', 'single', 'single_url',
                  'reference', 'reference_url']
@@ -310,7 +318,7 @@ def prepare_assembly_data(args, aclient, usage):
                     f_info = aclient.upload_data_file_info(word, curl=curl)
                     f_infos.append(f_info)
                 elif f_type.endswith('_url'):
-                    file_url = client.verify_url(word)
+                    file_url = utils.verify_url(word)
                     f_info = asmtypes.FileInfo(direct_url=file_url)
                     f_infos.append(f_info)
                 else:
@@ -319,7 +327,7 @@ def prepare_assembly_data(args, aclient, usage):
             adata.add_set(f_set)
 
     return adata
-                
+
 
 def run_command():
     parser = get_parser()
@@ -345,7 +353,7 @@ def run_command():
     if args.command == 'logout':
         cmd_logout(args)
         sys.exit()
-    
+
     a_user, a_token = auth.verify_token(ARAST_AUTH_USER,ARAST_AUTH_TOKEN)
     if not a_user or not a_token:
         if ARAST_ENVIRON:
@@ -356,7 +364,7 @@ def run_command():
 
     # main command options
     a_url = args.arast_url or ARAST_URL
-    a_url = client.verify_url(a_url)
+    a_url = utils.verify_url(a_url)
     logging.info('ARAST_URL: {}'.format(a_url))
 
     aclient = client.Client(a_url, a_user, a_token)
@@ -385,6 +393,8 @@ def main():
             raise
     except auth.Error as e:
         sys.exit('Authentication error: {}'.format(e))
+    except shock.Error as e:
+        sys.exit('Shock error: {}'.format(e))
     except client.URLError as e:
         sys.exit('Invalid URL: {}'.format(e))
     except client.ConnectionError as e:

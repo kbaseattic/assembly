@@ -14,27 +14,31 @@ import traceback
 from prettytable import PrettyTable
 
 import asmtypes
+import utils
 from kbase import typespec_to_assembly_data as kb_to_asm
 from shock import Shock
-from shock import get as shock_get
-    
 
 """ Assembly Service client library. """
 
 
 class Client:
     def __init__(self, url, user, token):
-        self.url = verify_url(url)
+        self.url = utils.verify_url(url)
         self.user = user
         self.token = token
         self.headers = {'Authorization': '{}'.format(self.token),
-                        'Content-type': 'application/json', 
+                        'Content-type': 'application/json',
                         'Accept': 'text/plain'}
-        shockres = self.req_get('{}/shock'.format(self.url))
-        self.shockurl = verify_url(json.loads(shockres)['shockurl'])
-        self.shock = Shock(self.shockurl, self.user, self.token)
+        self.shock = None
+
+    def init_shock(self):
+        if self.shock is None:
+            shockres = self.req_get('{}/shock'.format(self.url))
+            self.shockurl = utils.verify_url(json.loads(shockres)['shockurl'])
+            self.shock = Shock(self.shockurl, self.user, self.token)
 
     def upload_data_shock(self, filename, curl=False):
+        self.init_shock()
         res = self.shock.upload_reads(filename, curl=curl)
         shock_info = {'filename': os.path.basename(filename),
                                   'filesize': os.path.getsize(filename),
@@ -45,6 +49,7 @@ class Client:
 
     def upload_data_file_info(self, filename, curl=False):
         """ Returns FileInfo Object """
+        self.init_shock()
         res = self.shock.upload_reads(filename, curl=curl)
         return asmtypes.FileInfo(filename, shock_url=self.shockurl, shock_id=res['data']['id'],
                                  create_time=str(datetime.datetime.utcnow()))
@@ -118,7 +123,7 @@ class Client:
         return self.get_job_status(1, job_id)
 
     def check_job(self, job_id):
-        if not self.is_job_done(job_id): 
+        if not self.is_job_done(job_id):
             sys.stderr.write("Job in progress. Use -w to wait for the job.\n")
             sys.exit()
 
@@ -188,6 +193,7 @@ class Client:
 
     def req(self, url, req_type='get', data=None, ret=None):
         """Authenticated request. Parses CherryPy message and raises HTTPError"""
+        # print "req_{}: {}".format(req_type, url)
         try:
             if req_type == 'get':
                 r = requests.get(url, headers=self.headers)
@@ -207,7 +213,7 @@ class Client:
 
     def req_post(self, url, data=None, ret=None):
         return self.req(url, req_type='post', data=data, ret=ret)
-    
+
     @contextlib.contextmanager
     def smart_open(self, filename=None):
         if filename and filename != '-':
@@ -224,18 +230,19 @@ class Client:
         shock_url = handle.get('shock_url') or handle.get('url')
         shock_id  = handle.get('shock_id')  or handle.get('id')
         if not shock_url or not shock_id:
-            raise Error("Invalid shock handle: {}".format(handle))        
+            raise Error("Invalid shock handle: {}".format(handle))
         url = "{}/node/{}?download".format(shock_url, shock_id)
         if stdout:
             filename = None
         else:
-            outdir = verify_dir(outdir) if outdir else None 
+            outdir = utils.verify_dir(outdir) if outdir else None
             filename = handle.get('filename') or handle.get('local_file') or shock_id
             filename = prefix + filename.split('/')[-1]
             filename = os.path.join(outdir, filename) if outdir else filename
-        r = requests.get(url, stream=True)
+        headers = {'Authorization': 'OAuth {}'.format(self.token)}
+        r = requests.get(url, stream=True, headers=headers)
         with self.smart_open(filename) as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -252,10 +259,10 @@ class AssemblyData(dict):
     def __init__(self, *args):
         self['file_sets'] = []
         dict.__init__(self, *args)
-        
+
     def add_set(self, file_set):
         self['file_sets'].append(file_set)
-        
+
 
 class Error(Exception):
     """Base class for exceptions in this module"""
@@ -274,63 +281,6 @@ class ConnectionError(Error):
     pass
 
 
-def verify_url(url, port=8000):
-    """Returns complete URL with http prefix and port number
-    """
-    pattern = re.compile(  
-        r'^(https?://)?'   # capture 1: http prefix
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain
-        r'localhost|'      # localhost
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # IP
-        r'(?::\d+)?'       # optional port
-        r'(/?|[/?]\S+)$',  # capture 2: trailing args
-        re.IGNORECASE)
-    match = pattern.search(url)
-    if not match:
-        raise URLError(url)
-    if not match.group(1):
-        url = 'http://' + url
-    if not match.group(2) and url.count(':') < 2 and port:
-        url += ":{}".format(port)
-    return url
-
-
-def test_verify_url():
-    """unittest: py.test client.py -v"""
-    assert verify_url('localhost') == 'http://localhost:8000'
-    assert verify_url('140.221.84.203') == 'http://140.221.84.203:8000'
-    assert verify_url('kbase.us/services/assembly') == 'http://kbase.us/services/assembly'
-    assert verify_url('http://kbase.us/services/assembly') == 'http://kbase.us/services/assembly'
-    assert verify_url('https://kbase.us/services/assembly') == 'https://kbase.us/services/assembly'
-    try:
-        import pytest
-        with pytest.raises(URLError):
-            verify_url('badURL')
-            verify_url('badURL/with/path:8000')
-            verify_url('http://very bad url.com')
-            verify_url('')
-    except ImportError:
-        pass
-
-
-def verify_dir(path):
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-    return path
-
-
-def load_json_from_file(json_file):
-    try:
-        with open(json_file) as f: js = f.read()
-        doc = json.loads(js)
-    except (IOError, ValueError) as e:
-        raise Error(e)
-    return doc
-
-
 def assembly_data_to_rows(data):
     """Converts assembly data dictionary to text rows"""
     rows = []
@@ -338,7 +288,7 @@ def assembly_data_to_rows(data):
     kbase_key = "kbase_assembly_input"
     lib_key   = "file_sets"
     info_key  = "file_infos"
-    
+
     if data_key in data:
         data = data[data_key]
     else:
@@ -356,7 +306,7 @@ def assembly_data_to_rows(data):
             filesize = " (%s)" % sizeof_fmt(filesize) if filesize else ""
             files.append("%s%s" % (filename, filesize))
         rows.append([libtype, " ".join(files)])
-    
+
     return rows
 
 
@@ -371,8 +321,8 @@ def print_recipes(recipes, detail=False):
             print rec['recipe'],
         print
 
-    
-def print_modules(modules, detail=False):    
+
+def print_modules(modules, detail=False):
     if detail:
         for mod in modules:
             keys = ('description', 'version', 'base version', 'stages',
@@ -406,7 +356,7 @@ def sizeof_fmt(num):
         if num < 1024.0 and num > -1024.0:
             return "%3.1f%s" % (num, x)
         num /= 1024.0
-    return "%3.1f%s" % (num, 'TB')    
+    return "%3.1f%s" % (num, 'TB')
 
 
 def dump(var):
