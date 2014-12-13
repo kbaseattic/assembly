@@ -79,25 +79,34 @@ def send_kill_message(user, job_id=None):
             metadata.update_job(uid, 'status', 'Terminated by user')
             metadata.rjob_remove(uid)
             kill_status += 'Job {}: Removed From Queue\n'.format(jid)
+            publish_kill_request(user, jid)
 
         elif re.search(r"(Running|Stage|Data)", status):
-            msg = json.dumps({'user':user, 'job_id':str(jid)})
-            connection = pika.BlockingConnection(pika.ConnectionParameters(
-                    host='localhost'))
-            channel = connection.channel()
-            channel.exchange_declare(exchange='kill',
-                                     type='fanout')
-            channel.basic_publish(exchange = 'kill',
-                                  routing_key='',
-                                  body=msg,)
-            logging.debug(" [x] Sent to kill exchange: %r" % (jid))
-            connection.close()
+            publish_kill_request(user, jid)
             kill_status += 'Job {}: Kill Request Sent\n'.format(jid)
+
         elif re.search(r"(Complete|Terminate)", status):
             kill_status += 'Job {}: No longer running.\n'.format(jid)
+
         else:
             kill_status += 'Job {}: Unexpected error.\n'.format(jid)
+
     return kill_status.rstrip() or 'No jobs to be killed'
+
+
+def publish_kill_request(user, job_id):
+    msg = json.dumps({'user':user, 'job_id':str(job_id)})
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host='localhost'))
+    channel = connection.channel()
+    channel.exchange_declare(exchange='kill',
+                             type='fanout')
+    channel.basic_publish(exchange='kill',
+                          routing_key='',
+                          body=msg,)
+    logging.debug(" [x] Sent to kill exchange: {}".format(job_id))
+    connection.close()
+
 
 def determine_routing_key(size, params):
     """Depending on job submission, decide which queue to route to."""
