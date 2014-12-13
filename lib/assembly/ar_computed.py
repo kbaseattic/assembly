@@ -30,6 +30,7 @@ mgr = multiprocessing.Manager()
 job_list = mgr.list()
 job_list_lock = multiprocessing.Lock()
 kill_list = mgr.list()
+kill_list_lock = multiprocessing.Lock()
 
 def start(arasturl, config, num_threads, queue, datapath, binpath):
 
@@ -132,7 +133,7 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     for i in range(int(num_threads)):
         worker_name = "[Worker %s]:" % i
         compute = consume.ArastConsumer(shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, num_threads,
-                                        queue, kill_list, job_list, job_list_lock, ctrl_conf, datapath, binpath)
+                                        queue, kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf, datapath, binpath)
         logging.info("[Master]: Starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
         workers.append(p)
@@ -160,10 +161,12 @@ def kill_callback(ch, method, properties, body):
         kill_request = json.loads(body)
         print 'job_list:', job_list
         job_list_lock.acquire()
+        kill_list_lock.acquire()
         for job_data in job_list:
             if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
                 print 'on this node'
                 kill_list.append(kill_request)
+        kill_list_lock.release()
         try:
             job_list_lock.release()
         except ValueError:
