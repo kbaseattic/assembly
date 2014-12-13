@@ -74,6 +74,7 @@ def send_kill_message(user, job_id=None):
             status = job_doc['status']
         except TypeError:
             kill_status += 'Invalid job ID\n'
+            break
 
         if status == 'Queued':
             metadata.update_job(uid, 'status', 'Terminated by user')

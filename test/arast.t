@@ -184,6 +184,7 @@ sub test_shock_url_input {
 
 sub test_kill_requests {
     my $out;
+    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
     sysrun("ar-run -a kiki --single_url $se -m 'kill after done' >job.51");
 
     $out = sysout('ar-kill -j 9999999', undef, 1);
@@ -192,7 +193,7 @@ sub test_kill_requests {
     sysrun("cat job.51 | ar-get --wait --pick > contigs.51");
     validate_contigs('contigs.51');
 
-    $out = sysout('ar-kill -j $(cat job.51|sed "s/[^0-9]*//g")', undef, 1);
+    $out = sysout('ar-kill -j $(cat job.51|sed "s/[^0-9]*//g")', undef);
     like($out, qr/No longer running/, "Completed job handled correctly for kill request: '$out'"); $testCount++;
 }
 
