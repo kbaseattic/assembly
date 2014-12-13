@@ -1,0 +1,6 @@
+APPNAME = 'assembly'
+APPAUTHOR = 'kbase'
+URL = '[% arast_url %]'
+AUTH_SERVICE = '[% arast_auth_service %]'
+OAUTH_EXP_DAYS = 14
+OAUTH_FILENAME = 'globus_oauth.prop'

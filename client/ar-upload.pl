@@ -13,7 +13,7 @@ use JSON;
 use Term::ReadKey;
 use Text::Table;
 
-our $cli_upload_compatible_version = "0.5.0"; 
+our $cli_upload_compatible_version = "0.5.5";
 
 my $have_kbase = 0;
 eval {
@@ -21,6 +21,12 @@ eval {
     require Bio::KBase::AuthToken;
     require Bio::KBase::workspace::Client;
     $have_kbase = 1;
+};
+
+my $handle_service = undef;
+eval {
+    require Bio::KBase::HandleService;
+    $handle_service = Bio::KBase::HandleService->new();
 };
 
 my $usage = <<End_of_Usage;
@@ -51,6 +57,8 @@ Supported sequence file types:
 Examples:
   Upload a hybrid library of paired and single reads:
     % ar-upload --pair r1.fastq r2.fastq insert=300 stdev=60 --single unpaired.fasta --pair f1.fq f2.fq insert=180
+  Upload an interleaved paired-end library (by explictly setting "interleaved" to 1):
+    % ar-upload --pair pe12.fastq interleaved=1
   Upload PacBio reads with a reference assembly:
     % ar-upload -f pb1.bas.h5 -f pb2.bas.h5 --cov 15.0 --gs 40000 -r lambda.fa name="Lambda phage" -ws pb
 
@@ -65,7 +73,7 @@ my $rc = GetOptions(
                     "h|help"             => \$help,
                     "s=s"                => \$server,
                     'f|single=s{1,}'     => \@se_args,
-                    'p|pair=s{2,}'       => \@pe_args,
+                    'p|pair=s{1,}'       => \@pe_args,
                     'r|references=s{1,}' => \@ref_args,
                     "ws=s{1,}"           => \@ws_args,
                     "ws-url=s"           => \$ws_url,
@@ -102,7 +110,7 @@ if (@ws_args) {
     my ($curr_url, $curr_name) = current_workspace();
     $ws_url  ||= $curr_url;
     $ws_name ||= $curr_name or die "Error: workspace name not set, and no active workspace found\n";
-    
+
     # $ws_url ||= 'http://140.221.84.209:7058';   # dev
     # $ws_url ||= 'http://kbase.us/services/ws/'; # prod
 
@@ -131,7 +139,7 @@ sub submit_data {
     my $ua = LWP::UserAgent->new; $ua->timeout(10);
     my $req = HTTP::Request->new( POST => $url );
     $req->header( Authorization => $token );
-    
+
     # ARAST assembly_data style: dummy data
     # my $tmp = '{"assembly_data": {"file_sets": [{"file_infos": [], "type": "paired"}, {"file_infos": [{"create_time": "2014-01-31 04:51:50.931737", "filename": "s1.fa", "filesize": 7, "metadata": null, "shock_id": "dedc9e52-d41a-45ae-914e-457120ec1f83", "shock_url": "http://140.221.84.205:8000/"}], "type": "single"}, {"file_infos": [], "type": "reference"}]}, "client": "CLI", "message": null, "version": "0.3.8.2"}';
     # $req->content( $tmp );
@@ -142,7 +150,7 @@ sub submit_data {
                         client => "CLI/ar-upload.pl" };
     $req->content( encode_json($client_data) );
     # print encode_json($client_data);
-    
+
     my $res = $ua->request($req);
 
     $res->is_success or die "Error submitting data: ".$res->message."\n";
@@ -151,7 +159,7 @@ sub submit_data {
 
 sub current_workspace {
     my ($ws_url, $ws_name);
-    if (defined $ENV{KB_RUNNING_IN_IRIS}) {
+    if ($ENV{KB_WORKSPACEURL}) {
         $ws_url  = $ENV{KB_WORKSPACEURL};
         $ws_name = $ENV{KB_WORKSPACE};
     } else {
@@ -169,15 +177,15 @@ sub authenticate {
 
     my ($user, $token);
 
-    if ($ENV{KB_RUNNING_IN_IRIS}) {
+    if ($ENV{KB_AUTH_USER_ID} && $ENV{KB_AUTH_TOKEN}) {
         $user  = $ENV{KB_AUTH_USER_ID};
         $token = $ENV{KB_AUTH_TOKEN};
         return ($user, $token);
-    } 
+    }
 
     my $ar_auth_file = glob join('/', '~/.config', $config->{APPNAME}, $config->{OAUTH_FILENAME});
     my ($user, $token) = get_arast_user_token($ar_auth_file);
-    
+
     if ($have_kbase) {
         my @auth_params = (token => $token) if $token;
         my $auth = Bio::KBase::AuthToken->new(@auth_params); # Auth will try to read ~/.kbase_config if necessary
@@ -194,7 +202,7 @@ sub authenticate {
             my $date = DateTime->now->ymd;
             set_arast_user_token($ar_auth_file, $user, $token, $date);
         }
-    }    
+    }
 
     return ($user, $token);
 }
@@ -231,48 +239,75 @@ sub is_handle {
 
 sub update_handle {
     my ($handle, $shock) = @_;
-    
+
     my $file = $handle->{file_name};
     my $id = curl_post_file($file, $shock);
 
     $handle->{type} = 'shock';
     $handle->{url}  = $shock->{url};
     $handle->{id}   = $id;
-    
+
+    if ($handle_service) {
+        my $hid = $handle_service->persist_handle($handle);
+        $handle->{hid} = $hid;
+    }
+
     return $handle;
 }
 
 sub curl_post_file {
     my ($file, $shock) = @_;
+    my $auth  = ! check_anonymous_post_allowed($shock);
     my $user  = $shock->{user};
     my $token = $shock->{token};
     my $url   = $shock->{url};
     my $attr = q('{"filetype":"reads"}'); # should reference have a different type?
-    my $cmd  = 'curl --connect-timeout 10 -s -X POST -F attributes=@- -F upload=@'.$file." $url/node \n";
+    my $cmd  = 'curl --connect-timeout 10 -s -X POST -F attributes=@- -F upload=@'.$file." $url/node ";
+    $cmd    .= " -H 'Authorization: OAuth $token'" if $auth;
     my $out  = `echo $attr | $cmd` or die "Connection timeout uploading file to Shock: $file\n";
     my $json = decode_json($out);
     $json->{status} == 200 or die "Error uploading file: $file\n".$json->{status}." ".$json->{error}->[0]."\n";
-    print STDERR "Upload complete: $file\n";
     return $json->{data}->{id};
+}
+
+sub check_anonymous_post_allowed {
+    my ($shock) = @_;
+    my $posturl = $shock->{url}."/node";
+    my $cmd = "curl -s -k -X POST $posturl";
+    my $out = `$cmd`;
+    my $json = decode_json($out);
+    return $json->{status} == 200;
 }
 
 sub get_shock {
     my ($config, $user, $token) = @_;
-    my $url = complete_url($config->{URL}, 8000, 'shock'); 
+    my $url = complete_url($config->{URL}, 8000, 'shock');
     my $ua = LWP::UserAgent->new; $ua->timeout(10);
     my $req = HTTP::Request->new( GET => $url ); $req->header( Authorization => $token );
     my $res = $ua->request($req);
     $res->is_success or die "Error getting Shock URL from ARAST server: ". $res->message. "\n";
     my $shock_url = decode_json($res->decoded_content)->{shockurl};
-    $shock_url = "http://$shock_url" if $shock_url =~ /^\d/;
+    $shock_url = complete_url($shock_url);
+    # print "shock_url=$shock_url, user=$user, token=$token\n";
     { user => $user, token => $token, url => $shock_url };
 }
 
 sub complete_url {
     my ($url, $port, $subdir) = @_;
+
+    my $pattern = qr{
+        ^(https?://)?                         # capture 1: http prefix
+        (?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|  # domain
+         localhost|                           # localhost
+         \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})  # IP
+        (?::\d+)?                             # optional port
+        (/?|[/?]\S+)$                         # capture 2: trailing args
+    }xi;
+
+    $url =~ m/$pattern/ or die "Bad URL: $url\n";
+    $url = "http://$url" if !$1;
+    $url .= ":$port" if !$2 && $url =~ tr/:/:/ < 2 && $port;
     $url =~ s|/$||;
-    $url .= ":$port" if $url !~ /:/ && $port;
-    $url = "http://$url" if $url !~ /^http/;
     $url .= "/$subdir" if $subdir;
     return $url;
 }
@@ -370,28 +405,39 @@ sub process_input_args {
             $pe_libs[$i]->{$param_key} = check_numerical($2);
         } else {
             my $file = validate_seq_file($_);
-            if (@pair == 2) { 
-                $pe_libs[$i]->{handle_1} = $pair[0];
-                $pe_libs[$i]->{handle_2} = $pair[1];
-                @pair = ( $file );
+            push @pair, $file;
+            if ($pe_libs[$i]->{interleaved}) {
+                # @pair == 2 and die "Interleaved paired end library should contain one file.\n";
+                # $pe_libs[$i]->{handle_1} = $file;
+                $pe_libs[$i]->{handle_1} = shift @pair;
                 $i++;
-            } else {
-                push @pair, $file;
+            } elsif (@pair > 2) {
+                $pe_libs[$i]->{handle_1} = shift @pair;
+                $pe_libs[$i]->{handle_2} = shift @pair;
+                # $pe_libs[$i]->{handle_1} = $pair[0];
+                # $pe_libs[$i]->{handle_2} = $pair[1];
+                # @pair = ( $file );
+                $i++;
             }
+            # else {
+                # push @pair, $file;
+            # }
         }
     }
     if (@pair == 2) {
         $pe_libs[$i]->{handle_1} = $pair[0];
         $pe_libs[$i]->{handle_2} = $pair[1];
+    } elsif (@pair == 1 && $pe_libs[$i]->{interleaved}) {
+        $pe_libs[$i]->{handle_1} = $pair[0];
     } elsif (@pair > 0) {
-        die "Incorrect number of paired end files.\n"
+        die "Incorrect number of paired end files. Set interleaved=1 for interleaved reads.\n"
     }
 
     my $data = { %params };
     $data->{paired_end_libs} = \@pe_libs if @pe_libs;
     $data->{single_end_libs} = \@se_libs if @se_libs;
     $data->{references}      = \@refs    if @refs;
-    
+
     return $data;
 }
 

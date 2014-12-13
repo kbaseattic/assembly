@@ -3,7 +3,7 @@ import uuid
 
 ### arast ###
 import client
-import assembly as utils
+import assembly
 
 
 #### Single Files #####
@@ -15,7 +15,7 @@ class FileInfo(dict):
             assert os.path.exists(filename)
             filesize = os.path.getsize(filename)
             fname = os.path.basename(filename)
-        else: 
+        else:
             filesize = None
             fname = None
         self.update({'direct_url': direct_url,
@@ -29,16 +29,16 @@ class FileInfo(dict):
                      'metadata': metadata})
         self.id = uuid.uuid4()
 
-    def fetch_file(self, outdir=None):
-        """ If file has a direct_url, download the file"""
-        downloaded = utils.curl_download_url(self.direct_url, outdir=outdir)
-        self.update({'filesize': os.path.getsize(downloaded),
-                     'filename': os.path.basename(self.direct_url),
-                     'local_file': downloaded})
+    # def fetch_file(self, outdir=None):
+    #     """ If file has a direct_url, download the file"""
+    #     downloaded = assembly.curl_download_url(self.direct_url, outdir=outdir)
+    #     self.update({'filesize': os.path.getsize(downloaded),
+    #                  'filename': os.path.basename(self.direct_url),
+    #                  'local_file': downloaded})
 
 ##### Set of Files ######
 class FileSet(dict):
-    def __init__(self, set_type, file_infos, 
+    def __init__(self, set_type, file_infos,
                  **kwargs):
         dict.__init__(self)
         self.update({'type': set_type,
@@ -127,7 +127,7 @@ def set_factory(set_type, file_infos, keep_name=False, **kwargs):
     for i,f in enumerate(file_infos):
         if type(f) is not FileInfo and os.path.exists(f):
             file_infos[i] = FileInfo(f, keep_name=keep_name)
-            
+
     if set_type in ['paired', 'single']:
         return ReadSet(set_type, file_infos, **kwargs)
     elif set_type == 'contigs':
@@ -170,7 +170,7 @@ class FileSetContainer(dict):
     def readsets_single(self):
         """ Returns a list of all single-end  ReadSet objects"""
         return [readset for readset in self.readsets if readset['type'] == 'single']
-    
+
     @property
     def readfiles(self):
         return [readfile for readset in self.readsets for readfile in readset.files]
@@ -237,4 +237,3 @@ class ArastDataOutputError(Exception):
 
 class ArastClientRequestError(Exception):
     pass
-
