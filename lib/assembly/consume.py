@@ -266,11 +266,6 @@ class ArastConsumer:
         finally:
             self.job_list_lock.release()
 
-        self.start_time = time.time()
-
-        timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
-        timer_thread.start()
-
         status = ''
         logging.debug('Job Data')
         logging.debug(job_data)
@@ -285,6 +280,11 @@ class ArastConsumer:
         wasp_in = params.get('wasp')
 
         url = shock.verify_shock_url(self.shockurl)
+
+        self.start_time = time.time()
+
+        timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
+        timer_thread.start()
 
         #### Parse pipeline to wasp exp
         reload(recipes)
