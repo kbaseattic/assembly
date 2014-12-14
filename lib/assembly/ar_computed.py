@@ -157,17 +157,16 @@ def start_kill_monitor(rmq_host, rmq_port):
     channel.start_consuming()
 
 def kill_callback(ch, method, properties, body):
-        print " [x] %r" % (body,)
-        kill_request = json.loads(body)
-        print 'job_list:', job_list
-        job_list_lock.acquire()
-        kill_list_lock.acquire()
-        for job_data in job_list:
-            if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
-                print 'on this node'
-                kill_list.append(kill_request)
-        kill_list_lock.release()
-        job_list_lock.release()
+    kill_request = json.loads(body)
+    print 'job_list:', job_list
+    job_list_lock.acquire()
+    kill_list_lock.acquire()
+    for job_data in job_list:
+        if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
+            print 'on this node'
+            kill_list.append(kill_request)
+    kill_list_lock.release()
+    job_list_lock.release()
 
 
 parser = argparse.ArgumentParser(prog='ar_computed', epilog='Use "arast command -h" for more information about a command.')

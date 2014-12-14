@@ -80,8 +80,8 @@ def start(config_file, shock_url=None, mongo_host=None, mongo_port=None,
 def start_router(config_file, **kwargs):
     router.start(config_file, **kwargs)
 
-def start_qc_monitor(rabbit_host):
-    router.start_qc_monitor(rabbit_host)
+def start_qc_monitor(rabbit_host, rabbit_port):
+    router.start_qc_monitor(rabbit_host, rabbit_port)
 
 def tear_down():
     print "Tear down"
