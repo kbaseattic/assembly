@@ -38,11 +38,11 @@ parser = None
 metadata = None
 rjobmon = None
 
-rmq_host = parser.get('assembly', 'rabbitmq_host')
-rmq_port = parser.get('assembly', 'rabbitmq_port')
-
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
+
+    rmq_host = parser.get('assembly', 'rabbitmq_host')
+    rmq_port = parser.get('assembly', 'rabbitmq_port')
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host=rmq_host, port=rmq_port))
@@ -99,6 +99,10 @@ def send_kill_message(user, job_id=None):
 
 def publish_kill_request(user, job_id):
     msg = json.dumps({'user':user, 'job_id':str(job_id)})
+
+    rmq_host = parser.get('assembly', 'rabbitmq_host')
+    rmq_port = parser.get('assembly', 'rabbitmq_port')
+
     connection = pika.BlockingConnection(pika.ConnectionParameters(
             host=rmq_host, port=rmq_port))
     channel = connection.channel()
