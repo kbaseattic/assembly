@@ -45,7 +45,7 @@ def send_message(body, routingKey):
     rmq_port = parser.get('assembly', 'rabbitmq_port')
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=rmq_host, port=rmq_port))
+            host=rmq_host, port=int(rmq_port)))
     channel = connection.channel()
     channel.queue_declare(queue=routingKey, durable=True)
     #channel.basic_qos(prefetch_count=1)
@@ -104,7 +104,7 @@ def publish_kill_request(user, job_id):
     rmq_port = parser.get('assembly', 'rabbitmq_port')
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=rmq_host, port=rmq_port))
+            host=rmq_host, port=int(rmq_port)))
     channel = connection.channel()
     channel.exchange_declare(exchange='kill',
                              type='fanout')
@@ -358,7 +358,7 @@ def start_qc_monitor(rabbit_host, rabbit_port):
     Listens on QC queue for finished QC jobs
     """
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=rabbit_host, port=rabbit_port))
+            host=rabbit_host, port=int(rabbit_port)))
     channel = connection.channel()
     channel.exchange_declare(exchange='qc-complete',
                              type='fanout')
