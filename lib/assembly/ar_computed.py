@@ -158,12 +158,12 @@ def start_kill_monitor(rmq_host, rmq_port):
 
 def kill_callback(ch, method, properties, body):
     kill_request = json.loads(body)
-    print 'job_list:', job_list
     job_list_lock.acquire()
+    print 'job_list (len={}): {}'.format(len(job_list), job_list)
     kill_list_lock.acquire()
     for job_data in job_list:
         if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
-            print 'on this node'
+            print 'Job to be deleted is on this node: {}'.format(kill_request)
             kill_list.append(kill_request)
     kill_list_lock.release()
     job_list_lock.release()
