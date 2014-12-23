@@ -114,7 +114,6 @@ class ArastConsumer:
                 times.append(os.path.getmtime(dir))
             if len(dirs) > 0:
                 old_dir = dirs[times.index(min(times))]
-                dir.remove(old_dir)
                 shutil.rmtree(old_dir, ignore_errors=True)
             else:
                 logging.error("No more directories to remove")
