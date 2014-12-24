@@ -115,6 +115,7 @@ class ArastConsumer:
             if len(dirs) > 0:
                 old_dir = dirs[times.index(min(times))]
                 shutil.rmtree(old_dir, ignore_errors=True)
+                dirs.remove(old_dir)
             else:
                 logging.error("No more directories to remove")
                 break
