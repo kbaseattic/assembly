@@ -455,13 +455,18 @@ class ArastConsumer:
         logging.info(params)
         job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
         print body
-        uid = job_doc['_id']
         ## Check if job was not killed
-        if job_doc['status'] == 'Terminated by user':
+        if job_doc is None:
+            print 'Error: no job_doc found for {}'.format(params['job_id'])
+            return
+
+        if job_doc.get('status') == 'Terminated by user':
             print 'Job {} was killed, skipping'.format(params['job_id'])
         else:
             self.done_flag = threading.Event()
+            uid = None
             try:
+                uid = job_doc['_id']
                 self.compute(body)
             except Exception as e:
                 tb = format_exc()
