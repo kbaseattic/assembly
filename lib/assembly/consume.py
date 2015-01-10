@@ -79,7 +79,7 @@ class ArastConsumer:
         expiration = self.data_expiration_days
 
         ### Remove expired directories
-        def can_remove(d, user, job_id):
+        def can_remove(d, user, job_id, data_id):
             u, data, j = d.split('/')[-4:-1]
             if u == user and j == str(job_id):
                 return False
@@ -89,7 +89,7 @@ class ArastConsumer:
                 return True
 
         dir_depth = 3
-        dirs = filter(lambda f: can_remove(f, user, job_id), glob.glob(datapath + '/' + '*/' * dir_depth))
+        dirs = filter(lambda f: can_remove(f, user, job_id, data_id), glob.glob(datapath + '/' + '*/' * dir_depth))
         removed = []
         logging.info('Searching for directories older than {} days'.format(expiration))
         for d in dirs:
