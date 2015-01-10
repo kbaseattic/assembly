@@ -73,7 +73,6 @@ class ArastConsumer:
 
     def garbage_collect(self, datapath, required_space, user, job_id, data_id):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""
-        self.gc_lock.acquire()
         datapath = self.datapath
         required_space = self.min_free_space
         expiration = self.data_expiration_days
@@ -144,9 +143,8 @@ class ArastConsumer:
                 try:
                     os.rmdir(dd)
                 except os.error as e:
-                    logging.error('GC could not remove empty dir "{}": {}'.format(dd, e))
+                    logging.warning('GC could not remove empty dir "{}": {}'.format(dd, e))
 
-        self.gc_lock.release()
 
     def get_data(self, body):
         """Get data from cache or Shock server."""
@@ -166,7 +164,15 @@ class ArastConsumer:
         data_id = params['data_id']
         token = params['oauth_token']
         uid = params['_id']
-        self.garbage_collect(self.datapath, self.min_free_space, user, job_id, data_id)
+
+        self.gc_lock.acquire()
+        try:
+            self.garbage_collect(self.datapath, self.min_free_space, user, job_id, data_id)
+        except:
+            logging.error('Unexpected error in GC.')
+            raise
+        finally:
+            self.gc_lock.release()
 
         ##### Get data from ID #####
         data_doc = self.metadata.get_data_docs(params['ARASTUSER'], params['data_id'])
