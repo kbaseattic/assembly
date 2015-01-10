@@ -87,6 +87,7 @@ class ArastConsumer:
                 return False
             if os.path.isdir(d):
                 return True
+            return False
 
         dir_depth = 3
         dirs = filter(lambda f: can_remove(f, user, job_id, data_id), glob.glob(datapath + '/' + '*/' * dir_depth))
@@ -97,7 +98,7 @@ class ArastConsumer:
             try:
                 file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(d))
             except os.error as e:
-                logging.warning('GC Ignored "{}": could not get timestamp..'.format(d))
+                logging.warning('GC Ignored "{}": could not get timestamp: {}'.format(d, e))
                 continue
             if datetime.datetime.now() - file_modified > datetime.timedelta(days=expiration):
                 print 'GC: Removing: ', d, datetime.datetime.now() - file_modified
@@ -113,27 +114,38 @@ class ArastConsumer:
         free_space = float(s.f_bsize * s.f_bavail / (10**9))
         logging.debug("Free space in GB: %s" % free_space)
         logging.debug("Required space in GB: %s" % required_space)
-        while free_space < self.min_free_space:
-            times = []
-            for dir in dirs:
-                times.append(os.path.getmtime(dir))
-            if len(dirs) > 0:
-                old_dir = dirs[times.index(min(times))]
-                shutil.rmtree(old_dir, ignore_errors=True)
-            else:
-                logging.error("No more directories to remove")
-                break
-            logging.info("Space required.  %s removed." % old_dir)
+
+        times = []
+        for d in dirs:
+            try:
+                t = os.path.getmtime(d)
+                times.append([t, d])
+            except:
+                pass
+        times.sort()
+        dirs = [x[1] for x in times]
+
+        while free_space < self.min_free_space and len(dirs) > 0:
+            old_dir = dirs.pop(0)
+            shutil.rmtree(old_dir, ignore_errors=True)
+            logging.info("GC: Space required.  %s removed." % old_dir)
             s = os.statvfs(datapath)
             free_space = float(s.f_bsize * s.f_bavail / (10**9))
             logging.debug("Free space in bytes: %s" % free_space)
+
+        if free_space < self.min_free_space and len(dirs) == 0:
+            logging.error("GC: No more directories to remove")
 
         ### Remove empty data directories
         data_dirs = filter(lambda f: os.path.isdir(f), glob.glob(datapath + '/' + '*/' * (dir_depth - 1)))
         for dd in data_dirs:
             if not os.listdir(dd):
                 logging.info('Dir empty, removing: {}'.format(dd))
-                os.rmdir(dd)
+                try:
+                    os.rmdir(dd)
+                except os.error as e:
+                    logging.error('GC could not remove empty dir "{}": {}'.format(dd, e))
+
         self.gc_lock.release()
 
     def get_data(self, body):
