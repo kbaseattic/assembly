@@ -9,17 +9,17 @@ executable = ki
 short_name = ki
 filetypes = fasta,fa,fastq,fq
 dashes = 1
-k = 27
+k = 21
 contig_threshold = 800
 
 [Parameters]
-k = 27
+k = 21
 contig_threshold = 800
 
 
 [Documentation]
 Author = Chris Bun
 Version = 1.0
-Description = Kiki overlap-based parallel microbial and metagenomic assembler 
+Description = Kiki overlap-based parallel microbial and metagenomic assembler
 Stages = assembler
 References = https://github.com/GeneAssembly/kiki
