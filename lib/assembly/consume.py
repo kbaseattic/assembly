@@ -93,7 +93,12 @@ class ArastConsumer:
         removed = []
         logging.info('Searching for directories older than {} days'.format(expiration))
         for d in dirs:
-            file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(d))
+            file_modified = None
+            try:
+                file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(d))
+            except os.error as e:
+                logging.warning('GC Ignored "{}": could not get timestamp..'.format(d))
+                continue
             if datetime.datetime.now() - file_modified > datetime.timedelta(days=expiration):
                 print 'GC: Removing: ', d, datetime.datetime.now() - file_modified
                 removed.append(d)
