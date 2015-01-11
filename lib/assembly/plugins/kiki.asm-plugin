@@ -9,11 +9,11 @@ executable = ki
 short_name = ki
 filetypes = fasta,fa,fastq,fq
 dashes = 1
-k = 21
+k = 23
 contig_threshold = 800
 
 [Parameters]
-k = 21
+k = 23
 contig_threshold = 800
 
 
