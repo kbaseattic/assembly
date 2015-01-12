@@ -47,6 +47,7 @@ Compute server components:
       reapr        - REAPR reference-free evaluator (v1.0.17)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
+      spate        - Spate metagenome assembler (v0.4.1)
       spades       - SPAdes assembler (v3.1.0)
       velvet       - Velvet assembler (git)
 
@@ -67,6 +68,8 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
 my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet);
+push @regular_comps, "spate";
+
 my @special_comps = qw (allpathslg discovar pacbio jgi_rqc);
 my @extra_depends = qw (cmake3);
 
@@ -240,6 +243,25 @@ sub install_kiki {
     chdir("kiki");
     run("mkdir -p bin; cd bin; cmake ..; make -j ki");
     run("cp bin/ki $dest_dir/");
+}
+
+# To install spate, use this command:
+# ./add-comp.pl -d $(pwd)/assets -t $(pwd)/tmp spate
+sub install_spate {
+    my $app = "spate";
+    my $version = "0.4.1";
+    my $tag = "v$version";
+    my $tarball = "$tag.tar.gz";
+    my $address = "https://github.com/GeneAssembly/biosal/archive";
+    my $build_directory = $tmp_dir;
+#download($build_directory, $tarball, $address);
+    run("wget $address/$tarball ; tar -xzf $tarball");
+    chdir("$tmp_dir/biosal-$version");
+    run("pwd");
+    run("make -j applications/spate_metagenome_assembler/spate");
+    chdir("../..");
+    run("mkdir -p $dest_dir/$app/$version");
+    run("cp $tmp_dir/biosal-$version/applications/spate_metagenome_assembler/spate $dest_dir/$app/$version");
 }
 
 sub install_kmergenie {
