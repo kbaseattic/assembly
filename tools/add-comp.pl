@@ -474,9 +474,13 @@ sub git {
 sub download {
     my ($dir, $file, $url) = @_;
     $dir && $file && $url or die "Subroutine download needs three paramters: dir, file, url";
+
+# TODO: the dir argument is not used after this line.
+
     run("rm -rf $file $dir");
     print("wget $url/$file\n");
     run("wget $url/$file");
+
     if ($file =~ /\.zip$/) {
         run("unzip -o $file");
     } elsif ($file =~ /(\.tar\.gz|\.tgz|\.tar\.bz2)$/) {
