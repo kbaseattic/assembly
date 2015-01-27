@@ -260,7 +260,7 @@ sub validate_modules_detail {
 sub validate_recipes {
     my ($file) = @_;
     my $out = sysout("cat $file");
-    ok($out =~ /Recipe.*auto.*fast.*rast/sg, "$file has valid recipes"); $testCount++;
+    ok($out =~ /Recipe.*fast.*rast/sg && $out =~ /auto/, "$file has valid recipes"); $testCount++;
 }
 
 sub validate_recipes_detail {
