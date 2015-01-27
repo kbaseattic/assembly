@@ -3,6 +3,15 @@ import json
 import os
 import re
 
+class Error(Exception):
+    """Base class for exceptions in this module"""
+    pass
+
+
+class URLError(Error, ValueError):
+    pass
+
+
 def verify_url(url, port=8000):
     """Returns complete URL with http prefix and port number
     """
