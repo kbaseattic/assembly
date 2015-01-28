@@ -8,13 +8,13 @@ class SpadesAssembler(BaseAssembler, IPlugin):
     new_version = True
 
     def run(self):
-        """ 
+        """
         Build the command and run.
         Return list of contig file(s)
 
         SPAdes takes as input forward-reverse paired-end reads as well as single (unpaired) reads in FASTA or FASTQ format. However, in order to run read error correction, reads should be in FASTQ format. Currently SPAdes accepts only one paired-end library, which can be stored in several files or several pairs of files. The number of unpaired libraries is unlimited.
         """
-        
+
         cmd_args = [self.executable]
         lib_num = 1
         for readset in self.data.readsets_paired:
@@ -51,11 +51,15 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         if self.read_length == 'long' or self.read_length == '250':
             cmd_args += ['-k', '21,33,55,77,99,127']
 
+        if self.read_length == 'longer' or self.read_length >= '300':
+            cmd_args += ['-k', '21,33,55,77,99,127,155']
 
         cmd_args += ['-o', self.outpath]
         cmd_args += ['-t', self.process_threads_allowed]  # number of threads = 4
         if self.mismatch_correction == 'True':
             cmd_args.append('--mismatch-correction')
+        if self.careful == 'True':
+            cmd_args.append('--careful')
         self.arast_popen(cmd_args)
         contigs = os.path.join(self.outpath, 'contigs.fasta')
         scaffolds = os.path.join(self.outpath, 'scaffolds.fasta')
