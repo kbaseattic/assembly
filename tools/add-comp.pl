@@ -245,23 +245,16 @@ sub install_kiki {
     run("cp bin/ki $dest_dir/");
 }
 
-# To install spate, use this command:
-# ./add-comp.pl -d $(pwd)/assets -t $(pwd)/tmp spate
 sub install_spate {
     my $app = "spate";
     my $version = "0.4.1";
     my $tag = "v$version";
-    my $tarball = "$tag.tar.gz";
-    my $address = "https://github.com/GeneAssembly/biosal/archive";
-    my $build_directory = $tmp_dir;
-#download($build_directory, $tarball, $address);
-    run("wget $address/$tarball ; tar -xzf $tarball");
-    chdir("$tmp_dir/biosal-$version");
-    run("pwd");
+    my $file = "$tag.tar.gz";
+    my $url = "https://github.com/GeneAssembly/biosal/archive";
+    download($tag, $file, $url);
+    chdir("$tag/biosal-$version");
     run("make -j applications/spate_metagenome_assembler/spate");
-    chdir("../..");
-    run("mkdir -p $dest_dir/$app/$version");
-    run("cp $tmp_dir/biosal-$version/applications/spate_metagenome_assembler/spate $dest_dir/$app/$version");
+    run("cp applications/spate_metagenome_assembler/spate $dest_dir/");
 }
 
 sub install_kmergenie {
@@ -496,8 +489,6 @@ sub git {
 sub download {
     my ($dir, $file, $url) = @_;
     $dir && $file && $url or die "Subroutine download needs three paramters: dir, file, url";
-
-# TODO: the dir argument is not used after this line.
 
     run("rm -rf $file $dir");
     print("wget $url/$file\n");
