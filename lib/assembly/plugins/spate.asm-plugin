@@ -3,7 +3,7 @@ Name = spate
 Module = spate
 
 [Executables]
-executable = spate/spate
+executable = spate
 
 [Settings]
 short_name = spa
