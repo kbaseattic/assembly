@@ -6,7 +6,7 @@ Module = spate
 executable = spate
 
 [Settings]
-short_name = spa
+short_name = spt
 filetypes = fasta,fa,fastq,fq
 dashes = 1
 k = 31
