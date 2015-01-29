@@ -17,7 +17,7 @@ careful = False
 only_assembler = True (bool)
 mismatch_correction = True (bool)
 careful = False (bool)
-read_length = short (short, medium, medium2, long, longer)
+read_length = short (short, medium, medium2, long)
 
 
 [Documentation]
