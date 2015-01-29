@@ -51,9 +51,6 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         if self.read_length == 'long' or self.read_length == '250':
             cmd_args += ['-k', '21,33,55,77,99,127']
 
-        if self.read_length == 'longer' or self.read_length >= '300':
-            cmd_args += ['-k', '21,33,55,77,99,127,155']
-
         cmd_args += ['-o', self.outpath]
         cmd_args += ['-t', self.process_threads_allowed]  # number of threads = 4
         if self.mismatch_correction == 'True':
