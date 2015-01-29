@@ -11,11 +11,13 @@ filetypes = fasta,fa,fastq,fq
 only_assembler = True
 mismatch_correction = True
 read_length = short
+careful = False
 
 [Parameters]
 only_assembler = True (bool)
 mismatch_correction = True (bool)
-read_length = short (short, medium, medium2, long)
+careful = False (bool)
+read_length = short (short, medium, medium2, long, longer)
 
 
 [Documentation]
@@ -26,4 +28,3 @@ Description = SPAdes single-cell and standard assembler based on paired de Bruij
 Stages = preprocess,assembler
 Modules = bhammer
 References = doi:10.1089/cmb.2012.0021
-
