@@ -67,9 +67,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet);
-push @regular_comps, "spate";
-
+my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades spate velvet);
 my @special_comps = qw (allpathslg discovar pacbio jgi_rqc);
 my @extra_depends = qw (cmake3);
 
@@ -252,7 +250,7 @@ sub install_spate {
     my $file = "$tag.tar.gz";
     my $url = "https://github.com/GeneAssembly/biosal/archive";
     download($tag, $file, $url);
-    chdir("$tag/biosal-$version");
+    chdir("biosal-$version");
     run("make -j applications/spate_metagenome_assembler/spate");
     run("cp applications/spate_metagenome_assembler/spate $dest_dir/");
 }
@@ -423,10 +421,6 @@ sub install_spades {
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.5.0');
     run("cp -r -T SPAdes-3.5.0-Linux $dest_dir/spades");
-    # chdir($dir);
-    # run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
-    # run("chmod 755 install/bin/spades.py");
-    # run("cp -r -T install $dest_dir/spades");
 }
 
 sub install_velvet {
