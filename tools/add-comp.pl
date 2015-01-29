@@ -422,10 +422,11 @@ sub install_spades {
     my $dir = 'SPAdes-3.5.0-Linux';
     my $file = "$dir.tar.gz";
     download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.5.0');
-    chdir($dir);
-    run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
-    run("chmod 755 install/bin/spades.py");
-    run("cp -r -T install $dest_dir/spades");
+    run("cp -r -T SPAdes-3.5.0-Linux $dest_dir/spades");
+    # chdir($dir);
+    # run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
+    # run("chmod 755 install/bin/spades.py");
+    # run("cp -r -T install $dest_dir/spades");
 }
 
 sub install_velvet {
