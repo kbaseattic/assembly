@@ -426,7 +426,7 @@ sub check_gcc {
     my $info = `gcc --version |head -1`;
     my ($version) = $info =~ /(4[0-9.]+)/;
     if ($version < 4.7) {
-        die "gcc verion 4.7 or above required.\n" if ! `which get-apt 2>/dev/null`;
+        die "gcc verion 4.7 or above required.\n" if ! `which apt-get 2>/dev/null`;
         run("add-apt-repository -y ppa:ubuntu-toolchain-r/test");
         # run("apt-get -q -y update");
         run("apt-get -y install gcc-4.7 g++-4.7");
