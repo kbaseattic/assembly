@@ -121,6 +121,13 @@ recipes = {
     )
     """,
 
+    'test_ale' : """
+    (begin
+       (define ki (kiki READS))
+       (tar (all_files (quast (upload (sort (list ki) > :key (lambda (c) (get ale_score (ale c))))))) :name analysis :tag quast)
+    )
+    """,
+
     'kiki' : """
     (begin
        (define ki (kiki READS))
@@ -157,7 +164,7 @@ recipes = {
     ;;; Works for some short read datasets.
     (begin
       (define vt (velvet READS))
-      (if (has_paired READS) 
+      (if (has_paired READS)
         (prog
           (define aa (a6 READS))
           (define assemblies (list vt aa)))
@@ -173,7 +180,7 @@ recipes = {
     (begin
       (define vt (velvet READS))
       (define sp (begin (setparam only_assembler False) (spades READS)))
-      (if (has_paired READS) 
+      (if (has_paired READS)
         (prog
           (define aa (a6 READS))
           (define assemblies (list vt sp aa)))
@@ -191,12 +198,12 @@ recipes = {
       (define pp (bhammer READS))
       (define vt (velvet pp))
       (define sp (spades pp))
-      (if (has_paired READS) 
+      (if (has_paired READS)
         (prog
           (define id (idba pp))
           (define assemblies (list id sp vt)))
         (define assemblies (list sp vt)))
-      (define newsort (sort assemblies > :key (lambda (c) (get ale_score (ale c)))))
+      (define newsort (sort assemblies > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """,
@@ -211,14 +218,14 @@ recipes = {
       (define kval (get best_k (kmergenie pp)))
       (define vt (begin (setparam hash_length kval) (velvet pp)))
       (define sp (spades pp))
-      (if (has_paired READS) 
+      (if (has_paired READS)
         (prog
           (define id (idba pp))
           (define assemblies (list id sp vt)))
         (define assemblies (list sp vt)))
       (define toptwo (slice (sort assemblies > :key (lambda (c) (arast_score c))) 0 2))
       (define gam (gam_ngs toptwo))
-      (define newsort (sort (cons gam assemblies) > :key (lambda (c) (get ale_score (ale c)))))
+      (define newsort (sort (cons gam assemblies) > :key (lambda (c) (arast_score c))))
       (tar (all_files (quast (upload newsort))) :name analysis)
     )
     """
@@ -227,6 +234,3 @@ recipes = {
 set_alias('faster', 'rast_fast')
 set_alias('fast', 'rast')
 set_alias('smart', 'rast_slow')
-
-
-

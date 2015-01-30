@@ -9,11 +9,11 @@ class VelvetAssembler(BaseAssembler, IPlugin):
 
 
     def run(self, reads=None):
-        """ 
+        """
         Build the command and run.
         Return list of contig file(s)
         """
-        
+
         cmd_args = [self.bin_velveth, self.outpath, self.hash_length]
 
         #### Add Paired Reads ####
@@ -31,6 +31,7 @@ class VelvetAssembler(BaseAssembler, IPlugin):
                 cmd_args.append(read1)
                 cmd_args.append(read2)
             except:
+                cmd_args.append('-interleaved')
                 cmd_args.append(read1)
             ## Store (insert,stdev)
             if pairset.insert:
@@ -48,7 +49,7 @@ class VelvetAssembler(BaseAssembler, IPlugin):
             cmd_args.append('-' + infer_filetype(read))
             cmd_args.append(read)
 
-        self.arast_popen(cmd_args)        
+        self.arast_popen(cmd_args)
 
         cmd_args = [self.bin_velvetg, self.outpath, '-exp_cov', 'auto']
 
@@ -58,12 +59,12 @@ class VelvetAssembler(BaseAssembler, IPlugin):
             try:
                 insert = pair_info[suf][0]
                 stdev = pair_info[suf][1]
-                cmd_args += ['-ins_length{}'.format(suf), str(insert), 
+                cmd_args += ['-ins_length{}'.format(suf), str(insert),
                              '-ins_length{}_sd'.format(suf), str(stdev)]
             except:pass
 
         logging.info(cmd_args)
-        self.arast_popen(cmd_args)        
+        self.arast_popen(cmd_args)
         contigs = [self.outpath + '/contigs.fa']
         if not os.path.exists(contigs[0]):
             contigs = []

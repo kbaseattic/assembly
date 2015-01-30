@@ -47,7 +47,8 @@ Compute server components:
       reapr        - REAPR reference-free evaluator (v1.0.17)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
-      spades       - SPAdes assembler (v3.1.0)
+      spate        - Spate metagenome assembler (v0.4.1)
+      spades       - SPAdes assembler (v3.5.0)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -66,7 +67,7 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet);
+my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades spate velvet);
 my @special_comps = qw (allpathslg discovar pacbio jgi_rqc);
 my @extra_depends = qw (cmake3);
 
@@ -242,6 +243,18 @@ sub install_kiki {
     run("cp bin/ki $dest_dir/");
 }
 
+sub install_spate {
+    my $app = "spate";
+    my $version = "0.4.1";
+    my $tag = "v$version";
+    my $file = "$tag.tar.gz";
+    my $url = "https://github.com/GeneAssembly/biosal/archive";
+    download($tag, $file, $url);
+    chdir("biosal-$version");
+    run("make -j applications/spate_metagenome_assembler/spate");
+    run("cp applications/spate_metagenome_assembler/spate $dest_dir/");
+}
+
 sub install_kmergenie {
     my $dir = 'kmergenie-1.6663';
     my $file = "$dir.tar.gz";
@@ -404,13 +417,10 @@ sub install_solexa {
 
 sub install_spades {
     check_gcc();
-    my $dir = 'SPAdes-3.1.0';
+    my $dir = 'SPAdes-3.5.0-Linux';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.1.0');
-    chdir($dir);
-    run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
-    run("chmod 755 install/bin/spades.py");
-    run("cp -r -T install $dest_dir/spades");
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.5.0');
+    run("cp -r -T SPAdes-3.5.0-Linux $dest_dir/spades");
 }
 
 sub install_velvet {
@@ -474,9 +484,11 @@ sub git {
 sub download {
     my ($dir, $file, $url) = @_;
     $dir && $file && $url or die "Subroutine download needs three paramters: dir, file, url";
+
     run("rm -rf $file $dir");
     print("wget $url/$file\n");
     run("wget $url/$file");
+
     if ($file =~ /\.zip$/) {
         run("unzip -o $file");
     } elsif ($file =~ /(\.tar\.gz|\.tgz|\.tar\.bz2)$/) {

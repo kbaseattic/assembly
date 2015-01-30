@@ -11,7 +11,6 @@
 use strict vars;
 
 use Carp;
-use Test::JSON;
 use Test::More;
 use Data::Dumper;
 use English;
@@ -172,10 +171,15 @@ sub test_compressed_files {
 
 sub test_shock_url_input {
     my $json = sysout('ar-upload --single se.fq --ws-json');
-    my $valid = is_valid_json($json, 'AssemblyInput is valid json'); $testCount++;
-    return unless $valid;
-    my $obj = decode_json($json);
-    my $handle = $obj->{'single_end_libs'}->[0]->{'handle'};
+    my $obj;
+    my $handle;
+    eval {
+        $obj = decode_json($json);
+        $handle = $obj->{'single_end_libs'}->[0]->{'handle'};
+    };
+    ok($obj, 'AssemblyInput is valid json'); $testCount++;
+    ok($handle, 'AssemblyInput contains a handle'); $testCount++;
+    return unless $handle;
     # "https://kbase.us/services/shock-api/node/95d35067-ccb2-40ac-8fb3-47aadbcf0b5a?download"
     my $url = sprintf("%s/node/%s?download", $handle->{url} || $handle->{shock_url}, $handle->{id} || $handle->{shock_id});
     sysrun("ar-run -a kiki --single_url '$url' -m test_shock_token_url > job.41");
@@ -184,15 +188,16 @@ sub test_shock_url_input {
 
 sub test_kill_requests {
     my $out;
+    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
     sysrun("ar-run -a kiki --single_url $se -m 'kill after done' >job.51");
 
-    $out = sysout('ar-kill -j 9999999', undef, 1);
+    $out = sysout('ar-kill -j 9999999');
     like($out, qr/Invalid/, "Invalid job handled correctly for kill request: '$out'"); $testCount++;
 
     sysrun("cat job.51 | ar-get --wait --pick > contigs.51");
     validate_contigs('contigs.51');
 
-    $out = sysout('ar-kill -j $(cat job.51|sed "s/[^0-9]*//g")', undef, 1);
+    $out = sysout('ar-kill -j $(cat job.51|sed "s/[^0-9]*//g")');
     like($out, qr/No longer running/, "Completed job handled correctly for kill request: '$out'"); $testCount++;
 }
 
@@ -255,7 +260,7 @@ sub validate_modules_detail {
 sub validate_recipes {
     my ($file) = @_;
     my $out = sysout("cat $file");
-    ok($out =~ /Recipe.*auto.*fast.*rast/sg, "$file has valid recipes"); $testCount++;
+    ok($out =~ /Recipe.*fast.*rast/sg && $out =~ /auto/, "$file has valid recipes"); $testCount++;
 }
 
 sub validate_recipes_detail {

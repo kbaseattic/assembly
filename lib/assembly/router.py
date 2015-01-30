@@ -42,8 +42,10 @@ def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
 
     rmq_host = parser.get('assembly', 'rabbitmq_host')
+    rmq_port = parser.get('assembly', 'rabbitmq_port')
+
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=rmq_host))
+            host=rmq_host, port=int(rmq_port)))
     channel = connection.channel()
     channel.queue_declare(queue=routingKey, durable=True)
     #channel.basic_qos(prefetch_count=1)
@@ -74,6 +76,7 @@ def send_kill_message(user, job_id=None):
             status = job_doc['status']
         except TypeError:
             kill_status += 'Invalid job ID\n'
+            break
 
         if status == 'Queued':
             metadata.update_job(uid, 'status', 'Terminated by user')
@@ -96,8 +99,12 @@ def send_kill_message(user, job_id=None):
 
 def publish_kill_request(user, job_id):
     msg = json.dumps({'user':user, 'job_id':str(job_id)})
+
+    rmq_host = parser.get('assembly', 'rabbitmq_host')
+    rmq_port = parser.get('assembly', 'rabbitmq_port')
+
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host='localhost'))
+            host=rmq_host, port=int(rmq_port)))
     channel = connection.channel()
     channel.exchange_declare(exchange='kill',
                              type='fanout')
@@ -346,12 +353,12 @@ def parser_as_dict(parser):
     return d
 
 
-def start_qc_monitor(arasturl):
+def start_qc_monitor(rabbit_host, rabbit_port):
     """
     Listens on QC queue for finished QC jobs
     """
     connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host = arasturl))
+            host=rabbit_host, port=int(rabbit_port)))
     channel = connection.channel()
     channel.exchange_declare(exchange='qc-complete',
                              type='fanout')

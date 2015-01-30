@@ -73,13 +73,12 @@ class ArastConsumer:
 
     def garbage_collect(self, datapath, required_space, user, job_id, data_id):
         """ Monitor space of disk containing DATAPATH and delete files if necessary."""
-        self.gc_lock.acquire()
         datapath = self.datapath
         required_space = self.min_free_space
         expiration = self.data_expiration_days
 
         ### Remove expired directories
-        def can_remove(d, user, job_id):
+        def can_remove(d, user, job_id, data_id):
             u, data, j = d.split('/')[-4:-1]
             if u == user and j == str(job_id):
                 return False
@@ -87,13 +86,19 @@ class ArastConsumer:
                 return False
             if os.path.isdir(d):
                 return True
+            return False
 
         dir_depth = 3
-        dirs = filter(lambda f: can_remove(f, user, job_id), glob.glob(datapath + '/' + '*/' * dir_depth))
+        dirs = filter(lambda f: can_remove(f, user, job_id, data_id), glob.glob(datapath + '/' + '*/' * dir_depth))
         removed = []
         logging.info('Searching for directories older than {} days'.format(expiration))
         for d in dirs:
-            file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(d))
+            file_modified = None
+            try:
+                file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(d))
+            except os.error as e:
+                logging.warning('GC Ignored "{}": could not get timestamp: {}'.format(d, e))
+                continue
             if datetime.datetime.now() - file_modified > datetime.timedelta(days=expiration):
                 print 'GC: Removing: ', d, datetime.datetime.now() - file_modified
                 removed.append(d)
@@ -108,29 +113,38 @@ class ArastConsumer:
         free_space = float(s.f_bsize * s.f_bavail / (10**9))
         logging.debug("Free space in GB: %s" % free_space)
         logging.debug("Required space in GB: %s" % required_space)
-        while free_space < self.min_free_space:
-            times = []
-            for dir in dirs:
-                times.append(os.path.getmtime(dir))
-            if len(dirs) > 0:
-                old_dir = dirs[times.index(min(times))]
-                dir.remove(old_dir)
-                shutil.rmtree(old_dir, ignore_errors=True)
-            else:
-                logging.error("No more directories to remove")
-                break
-            logging.info("Space required.  %s removed." % old_dir)
+
+        times = []
+        for d in dirs:
+            try:
+                t = os.path.getmtime(d)
+                times.append([t, d])
+            except:
+                pass
+        times.sort()
+        dirs = [x[1] for x in times]
+
+        while free_space < self.min_free_space and len(dirs) > 0:
+            old_dir = dirs.pop(0)
+            shutil.rmtree(old_dir, ignore_errors=True)
+            logging.info("GC: Space required.  %s removed." % old_dir)
             s = os.statvfs(datapath)
             free_space = float(s.f_bsize * s.f_bavail / (10**9))
             logging.debug("Free space in bytes: %s" % free_space)
+
+        if free_space < self.min_free_space and len(dirs) == 0:
+            logging.error("GC: No more directories to remove")
 
         ### Remove empty data directories
         data_dirs = filter(lambda f: os.path.isdir(f), glob.glob(datapath + '/' + '*/' * (dir_depth - 1)))
         for dd in data_dirs:
             if not os.listdir(dd):
                 logging.info('Dir empty, removing: {}'.format(dd))
-                os.rmdir(dd)
-        self.gc_lock.release()
+                try:
+                    os.rmdir(dd)
+                except os.error as e:
+                    logging.warning('GC could not remove empty dir "{}": {}'.format(dd, e))
+
 
     def get_data(self, body):
         """Get data from cache or Shock server."""
@@ -150,7 +164,15 @@ class ArastConsumer:
         data_id = params['data_id']
         token = params['oauth_token']
         uid = params['_id']
-        self.garbage_collect(self.datapath, self.min_free_space, user, job_id, data_id)
+
+        self.gc_lock.acquire()
+        try:
+            self.garbage_collect(self.datapath, self.min_free_space, user, job_id, data_id)
+        except:
+            logging.error('Unexpected error in GC.')
+            raise
+        finally:
+            self.gc_lock.release()
 
         ##### Get data from ID #####
         data_doc = self.metadata.get_data_docs(params['ARASTUSER'], params['data_id'])
@@ -201,16 +223,10 @@ class ArastConsumer:
             all_files.append(file_set)
         return datapath, all_files
 
-    def compute(self, body):
-        error = False
+
+    def prepare_job_data(self, body):
         params = json.loads(body)
         job_id = params['job_id']
-        uid = params['_id']
-        user = params['ARASTUSER']
-        token = params['oauth_token']
-        pipelines = params.get('pipeline')
-        recipe = params.get('recipe')
-        wasp_in = params.get('wasp')
 
         ### Download files (if necessary)
         datapath, all_files = self.get_data(body)
@@ -255,25 +271,42 @@ class ArastConsumer:
                     'out_report' : self.out_report})
 
         self.out_report.write("Arast Pipeline: Job {}\n".format(job_id))
+
+        return job_data
+
+
+    def compute(self, body):
+        print 'compute'
+
         self.job_list_lock.acquire()
         try:
+            job_data = self.prepare_job_data(body)
             self.job_list.append(job_data)
         except:
-            logging.error("Unexpected error in appending new job to job_list")
+            logging.error("Error in adding new job to job_list")
             raise
         finally:
             self.job_list_lock.release()
+
+        status = ''
+        logging.debug('Job Data')
+        logging.debug(job_data)
+
+        params = json.loads(body)
+        job_id = params['job_id']
+        uid = params['_id']
+        user = params['ARASTUSER']
+        token = params['oauth_token']
+        pipelines = params.get('pipeline')
+        recipe = params.get('recipe')
+        wasp_in = params.get('wasp')
+
+        url = shock.verify_shock_url(self.shockurl)
 
         self.start_time = time.time()
 
         timer_thread = UpdateTimer(self.metadata, 29, time.time(), uid, self.done_flag)
         timer_thread.start()
-
-        url = shock.verify_shock_url(self.shockurl)
-
-        status = ''
-        logging.debug('Job Data')
-        logging.debug(job_data)
 
         #### Parse pipeline to wasp exp
         reload(recipes)
@@ -307,29 +340,6 @@ class ArastConsumer:
             w_engine.run_expression(wasp_exp, job_data)
             ###### Upload all result files and place them into appropriate tags
             uploaded_fsets = job_data.upload_results(url, token)
-
-            self.job_list_lock.acquire()
-            try:
-                for i, job in enumerate(self.job_list):
-                    if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
-                        self.job_list.pop(i)
-            except:
-                logging.error("Unexpected error in removing executed jobs from job_list")
-                raise
-            finally:
-                self.job_list_lock.release()
-
-            # kill_list cleanup for cases where a kill request is enqueued right before the corresponding job gets popped
-            self.kill_list_lock.acquire()
-            try:
-                for i, kill_request in enumerate(self.kill_list):
-                    if kill_request['user'] == job_data['user'] and kill_request['job_id'] == job_data['job_id']:
-                        self.kill_list.pop(i)
-            except:
-                logging.error("Unexpected error in removing executed jobs from kill_list")
-                raise
-            finally:
-                self.kill_list_lock.release()
 
             # Format report
             new_report = open('{}.tmp'.format(self.out_report_name), 'w')
@@ -386,10 +396,41 @@ class ArastConsumer:
             ###################
 
             print '============== JOB COMPLETE ==============='
+
         except asmtypes.ArastUserInterrupt:
             status = 'Terminated by user'
             print '============== JOB KILLED ==============='
+
+        finally:
+            self.remove_job_from_lists(job_data)
+
         self.metadata.update_job(uid, 'status', status)
+
+
+    def remove_job_from_lists(self, job_data):
+        self.job_list_lock.acquire()
+        try:
+            for i, job in enumerate(self.job_list):
+                if job['user'] == job_data['user'] and job['job_id'] == job_data['job_id']:
+                    self.job_list.pop(i)
+        except:
+            logging.error("Unexpected error in removing executed jobs from job_list")
+            raise
+        finally:
+            self.job_list_lock.release()
+
+        # kill_list cleanup for cases where a kill request is enqueued right before the corresponding job gets popped
+        self.kill_list_lock.acquire()
+        try:
+            for i, kill_request in enumerate(self.kill_list):
+                if kill_request['user'] == job_data['user'] and kill_request['job_id'] == job_data['job_id']:
+                    self.kill_list.pop(i)
+        except:
+            logging.error("Unexpected error in removing executed jobs from kill_list")
+            raise
+        finally:
+            self.kill_list_lock.release()
+
 
     def upload(self, url, user, token, file, filetype='default'):
         files = {}
@@ -436,13 +477,18 @@ class ArastConsumer:
         logging.info(params)
         job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
         print body
-        uid = job_doc['_id']
         ## Check if job was not killed
-        if job_doc['status'] == 'Terminated by user':
+        if job_doc is None:
+            print 'Error: no job_doc found for {}'.format(params['job_id'])
+            return
+
+        if job_doc.get('status') == 'Terminated by user':
             print 'Job {} was killed, skipping'.format(params['job_id'])
         else:
             self.done_flag = threading.Event()
+            uid = None
             try:
+                uid = job_doc['_id']
                 self.compute(body)
             except Exception as e:
                 tb = format_exc()

@@ -26,7 +26,7 @@ eval {
 my $handle_service = undef;
 eval {
     require Bio::KBase::HandleService;
-    $handle_service = Bio::KBase::HandleService->new();
+    $handle_service = Bio::KBase::HandleService->new("https://kbase.us/services/handle_service");
 };
 
 my $usage = <<End_of_Usage;
