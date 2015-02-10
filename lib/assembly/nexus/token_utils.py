@@ -57,7 +57,10 @@ class InMemoryCache(object):
         return key_id in self.cache_map
 
     def get_public_key(self, key_id):
-        return rsa.PublicKey.load_pkcs1(self.cache_map[key_id])
+        try:
+            return rsa.PublicKey.load_pkcs1(self.cache_map[key_id])
+        except ValueError:
+            return rsa.PublicKey.load_pkcs1_openssl_pem(self.cache_map[key_id])
 
 class FileSystemCache(object):
     """
@@ -84,7 +87,10 @@ class FileSystemCache(object):
         cached_cert_path = os.path.join(self.cache_path,
             "{0}.pem".format(key_id))
         with open(cached_cert_path, 'r') as cert:
-            return rsa.PublicKey.load_pkcs1(cert.read())
+            try:
+                return rsa.PublicKey.load_pkcs1(cert.read())
+            except:
+                return rsa.PublicKey.load_pkcs1_openssl_pem(cert.read())
 
 class LoggingCacheWrapper(object):
 
