@@ -17,7 +17,7 @@ k = 31
 
 [Documentation]
 Author = Sébastien Boisvert
-Version = 0.4.1
+Version = 0.4
 Description = Deterministic and scalable metagenome assembler
 Stages = assembler
 References = https://github.com/GeneAssembly/biosal
