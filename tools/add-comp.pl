@@ -530,11 +530,11 @@ sub install_megahit {
     download($tag, $file, $url);
     chdir("$app-$version");
     run("make -j");
-    my $destination = "$dest_dir/$app/$version-$release/bin";
+    # my $destination = "$dest_dir/$app/$version-$release/bin";
+    my $destination = "$dest_dir/$app";
     run("mkdir -p $destination");
 
-    my @products = qw(megahit  megahit_assemble  megahit_iter_k124  megahit_iter_k61  megahit_iter_k92  sdbg_builder_cpu);
-
+    my @products = qw(megahit megahit_assemble megahit_iter_k124  megahit_iter_k61  megahit_iter_k92  sdbg_builder_cpu);
     for my $product (@products) {
         run("cp $product $destination/");
     }
