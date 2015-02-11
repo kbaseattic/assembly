@@ -40,6 +40,7 @@ Compute server components:
       kiki         - Kiki assembler (git)
       kmergenie    - KmerGenie (v1.6663)
       masurca      - MaSuRCA assembler (v2.2.1)
+      megahit      - MEGAHIT assembler (v0.2.0)
       pacbio       - SMRT Analysis Software (v2.1.1)
       prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
       quast        - QUAST assembly evaluator (v2.3)
