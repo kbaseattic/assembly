@@ -254,6 +254,25 @@
         "description": "MaSuRCA assembler based on a hybrid graph & overlap based algorithms"
     },
     {
+        "stages": "assembler",
+        "name": "megahit",
+        "parameters": [
+            [
+                "foo",
+                "bar"
+            ]
+        ],
+        "author": "Sebastien Boisvert",
+        "short_name": "mh",
+        "module": "megahit",
+        "version": "1.0",
+        "references": "doi:10.1093/bioinformatics/btv033",
+        "base version": "0.2.0",
+        "foo": "bar",
+        "filetypes": "fasta,fa,fastq,fq",
+        "description": "An ultra-fast single-node solution for large and complex metagenomics assembly via succinct de Bruijn graph"
+    },
+    {
         "genome_size": "5000000",
         "stages": "preprocess,assembler,post-process",
         "name": "pacbio",
@@ -436,10 +455,10 @@
         "stages": "assembler",
         "name": "spate",
         "short_name": "spt",
-        "author": "S\u00e9bastien Boisvert",
+        "author": "Sebastien Boisvert",
         "k": "31",
         "module": "spate",
-        "version": "0.4.1",
+        "version": "0.4",
         "references": "https://github.com/GeneAssembly/biosal",
         "parameters": [
             [
