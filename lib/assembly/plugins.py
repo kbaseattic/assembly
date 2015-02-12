@@ -85,18 +85,11 @@ class BasePlugin(object):
 
         shell = kwargs.get('shell', False)
         if not shell:
-            cmd_human = []
-            for w in cmd_args:
-                if w.endswith('/'):
-                    cmd_human.append(os.path.basename(w[:-1]))
-                else:
-                    cmd_human.append(os.path.basename(w))
-            cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
+            cmd_string = human_readable_command(cmd_args)
         else:
             cmd_string = cmd_args
 
         if cmd_args[0].find('..') != -1 and not shell:
-            # cmd_args[0] = os.path.abspath(cmd_args[0])
             raise Exception("Plugin Config not updated: {}".format(cmd_args[0]))
 
         self.out_module.write("Command: {}\n".format(cmd_string))
@@ -796,3 +789,20 @@ def update_settings(settings, new_dict):
         else:
             updated.append(tup)
     return updated
+
+def human_readable_command(cmd_args):
+    cmd_human = []
+    for w in cmd_args:
+        if ' ' in w:
+            sub_args = w.split()
+            sub_cmd = ' '.join([path_base(x) for x in sub_args])
+            cmd_human.append('"' + sub_cmd + '"')
+        else:
+            cmd_human.append(path_base(w))
+    return ' '.join(cmd_human)
+
+def path_base(path):
+    if path.endswith('/'):
+        return os.path.basename(path[:-1])
+    else:
+        return os.path.basename(path)

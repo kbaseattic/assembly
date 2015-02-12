@@ -6,6 +6,7 @@ SHOCK_URL=$ARAST_SHOCK_URL
 
 LIB_DIR=$ARAST_LIB_DIR
 VAR_DIR=$ARAST_VAR_DIR
+CONTROL_CONFIG=$ARAST_CONFIG
 
 LIB_DIR=${LIB_DIR:-$TOP_DIR/lib}
 VAR_DIR=${VAR_DIR:-$TOP_DIR/deployment/var}
@@ -13,7 +14,7 @@ VAR_DIR=${VAR_DIR:-$TOP_DIR/deployment/var}
 LIB_DIR=$LIB_DIR/assembly
 LOG_DIR=$VAR_DIR/log
 
-CONTROL_CONFIG=$LIB_DIR/arast.conf
+CONTROL_CONFIG=${CONTROL_CONFIG:-$LIB_DIR/arast.conf}
 
 
 procs=`ps aux |grep arastd.py |grep python`
