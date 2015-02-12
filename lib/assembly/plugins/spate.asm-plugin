@@ -16,7 +16,7 @@ k = 31
 
 
 [Documentation]
-Author = Sébastien Boisvert
+Author = Sebastien Boisvert
 Version = 0.4
 Description = Deterministic and scalable metagenome assembler
 Stages = assembler
