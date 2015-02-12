@@ -1,0 +1,11 @@
+(begin
+  (define pp (bhammer READS))
+  (define kval (get best_k (kmergenie READS)))
+  (define vt (begin (setparam hash_length kval) (velvet pp)))
+  (define sp (spades pp))
+  (define id (idba pp))
+  (define ma (masurca pp))
+  (define di (discovar pp))
+  (define gam (gam_ngs (sort (list sp id vt ma di) > :key (lambda (c) (arast_score c)))))
+  (tar (all_files (quast (upload gam) (upload sp) (upload id) (upload vt) (upload ma) (upload di))) :name analysis)
+)

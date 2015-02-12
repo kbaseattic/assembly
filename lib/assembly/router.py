@@ -321,6 +321,7 @@ def start(config_file, shock_url=None,
             'server.socket_port': int(parser.get('assembly', 'cherrypy_port')),
             'log.screen': True,
             'ar_shock_url': parser.get('shock', 'host'),
+            'environment': 'production'
             },
     }
 
