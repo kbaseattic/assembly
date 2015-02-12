@@ -8,7 +8,7 @@ executable = megahit/megahit
 [Settings]
 short_name = mh
 filetypes = fasta,fa,fastq,fq
-foo = bar
+min_contig_length = 200
 
 [Parameters]
 # a configuration can not be empty, otherwise the parser
@@ -18,7 +18,7 @@ foo = bar
 # the intrinsic key "process_threads_allowed" does not get
 # populated.
 
-foo = bar
+min_contig_length = 200
 
 [Documentation]
 Author = Sebastien Boisvert
