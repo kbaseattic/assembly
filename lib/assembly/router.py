@@ -388,7 +388,9 @@ class JobResource:
         token_user = authenticate_request()
         if token_user == 'OPTIONS':
             return ('New Job Request') # To handle initial html OPTIONS requess
-        if not (userid == token_user or userid.split('_rast')[0] == token_user):
+        # user IDs can be in the email address format; somehow cherrypy converts @ and . to _
+        sanitized_token_user = token_user.replace('@', '_').replace('.', '_')
+        if not (userid == sanitized_token_user or userid.split('_rast')[0] == sanitized_token_user):
             raise cherrypy.HTTPError(403)
 
         path = parser.get('monitor', 'running_job_user_list')
