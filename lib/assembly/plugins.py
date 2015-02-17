@@ -694,11 +694,10 @@ class ModuleManager():
         if not wlink.output:
             raise Exception('"{}" module failed to produce {}'.format(module, ot))
 
-        ### Store any scalar values in job_data
-        for outtype, outval in output.items():
-            data = {'module': module, 
-                    'module_output': output}
-            job_data['plugin_output'].append(data)
+        ### Store any output values in job_data
+        data = {'module': module, 
+                'module_output': output}
+        job_data['plugin_output'].append(data)
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT

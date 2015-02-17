@@ -436,7 +436,6 @@ class JobResource:
             raise cherrypy.HTTPError(403)
 
         token = cherrypy.request.headers.get('Authorization')
-        print token
 
         ### No job_id, return all
         if not job_id:
