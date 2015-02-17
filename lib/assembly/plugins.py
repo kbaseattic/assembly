@@ -61,6 +61,7 @@ class BasePlugin(object):
             self._restore(backup)
             logging.info('Restored Plugin Object self attributes')
         except UnboundLocalError: pass
+        output['input_data'] = self.data.readfiles
         return output
 
     def arast_popen(self, cmd_args, overrides=True, **kwargs):
@@ -700,6 +701,11 @@ class ModuleManager():
         if not wlink.output:
             raise Exception('"{}" module failed to produce {}'.format(module, ot))
 
+        ### Store any scalar values in job_data
+        for outtype, outval in output.items():
+            data = {'module': module, 
+                    'module_output': output}
+            job_data['plugin_output'].append(data)
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT
