@@ -155,6 +155,11 @@ class FileSetContainer(dict):
     def find_and_update(self, id, newdict):
         self.find(id).update(newdict)
 
+    def __repr__(self):
+        return str(self.filesets)
+
+    def __str__(self):
+        return str(self.filesets)
 
     @property
     def readsets(self):
