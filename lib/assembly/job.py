@@ -20,6 +20,7 @@ class ArastJob(dict):
         self['logfiles'] = []
         self['out_reports'] = []
         self['out_results'] = []
+        self['plugin_output'] = []
 
     def make_plots(self):
         pass

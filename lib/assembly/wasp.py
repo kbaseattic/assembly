@@ -36,6 +36,7 @@ class Env(dict):
             self.meta = meta
             self.global_data = {'stage': 1,
                                 'stages': 0}
+
             self.plugins = []
             self.exceptions = []
             self.errors = []
