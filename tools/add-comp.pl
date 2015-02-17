@@ -40,6 +40,7 @@ Compute server components:
       kiki         - Kiki assembler (git)
       kmergenie    - KmerGenie (v1.6663)
       masurca      - MaSuRCA assembler (v2.2.1)
+      megahit      - MEGAHIT assembler (v0.2.0)
       pacbio       - SMRT Analysis Software (v2.1.1)
       prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
       quast        - QUAST assembly evaluator (v2.3)
@@ -47,7 +48,8 @@ Compute server components:
       reapr        - REAPR reference-free evaluator (v1.0.17)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
-      spades       - SPAdes assembler (v3.1.0)
+      spate        - Spate metagenome assembler (v0.4.1)
+      spades       - SPAdes assembler (v3.5.0)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -66,7 +68,8 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet);
+my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades spate velvet);
+push(@regular_comps, "megahit");
 my @special_comps = qw (allpathslg discovar pacbio jgi_rqc);
 my @extra_depends = qw (cmake3);
 
@@ -242,6 +245,18 @@ sub install_kiki {
     run("cp bin/ki $dest_dir/");
 }
 
+sub install_spate {
+    my $app = "spate";
+    my $version = "0.4.1";
+    my $tag = "v$version";
+    my $file = "$tag.tar.gz";
+    my $url = "https://github.com/GeneAssembly/biosal/archive";
+    download($tag, $file, $url);
+    chdir("biosal-$version");
+    run("make -j applications/spate_metagenome_assembler/spate");
+    run("cp applications/spate_metagenome_assembler/spate $dest_dir/");
+}
+
 sub install_kmergenie {
     my $dir = 'kmergenie-1.6663';
     my $file = "$dir.tar.gz";
@@ -404,13 +419,10 @@ sub install_solexa {
 
 sub install_spades {
     check_gcc();
-    my $dir = 'SPAdes-3.1.0';
+    my $dir = 'SPAdes-3.5.0-Linux';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.1.0');
-    chdir($dir);
-    run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
-    run("chmod 755 install/bin/spades.py");
-    run("cp -r -T install $dest_dir/spades");
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.5.0');
+    run("cp -r -T SPAdes-3.5.0-Linux $dest_dir/spades");
 }
 
 sub install_velvet {
@@ -426,7 +438,7 @@ sub check_gcc {
     my $info = `gcc --version |head -1`;
     my ($version) = $info =~ /(4[0-9.]+)/;
     if ($version < 4.7) {
-        die "gcc verion 4.7 or above required.\n" if ! `which get-apt 2>/dev/null`;
+        die "gcc verion 4.7 or above required.\n" if ! `which apt-get 2>/dev/null`;
         run("add-apt-repository -y ppa:ubuntu-toolchain-r/test");
         # run("apt-get -q -y update");
         run("apt-get -y install gcc-4.7 g++-4.7");
@@ -474,9 +486,11 @@ sub git {
 sub download {
     my ($dir, $file, $url) = @_;
     $dir && $file && $url or die "Subroutine download needs three paramters: dir, file, url";
+
     run("rm -rf $file $dir");
     print("wget $url/$file\n");
     run("wget $url/$file");
+
     if ($file =~ /\.zip$/) {
         run("unzip -o $file");
     } elsif ($file =~ /(\.tar\.gz|\.tgz|\.tar\.bz2)$/) {
@@ -500,3 +514,30 @@ sub verify_user {
 }
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
+
+# megahit v0.2.0
+# https://github.com/voutcn/megahit/archive/v0.2.0.tar.gz
+# Note: dest_dir must be an absolute path
+# Instructions:
+# ./tools/add-comp.pl   -d /kbase/arast/third_party/ -t /tmp/ megahit
+sub install_megahit {
+    my $app = "megahit";
+    my $version = "0.2.0";
+    my $release = "1";
+    my $tag = "v$version";
+    my $file = "$tag.tar.gz";
+    my $url = "https://github.com/voutcn/$app/archive";
+    download($tag, $file, $url);
+    chdir("$app-$version");
+    run("make -j");
+    # my $destination = "$dest_dir/$app/$version-$release/bin";
+    my $destination = "$dest_dir/$app";
+    run("mkdir -p $destination");
+
+    my @products = qw(megahit megahit_assemble megahit_iter_k124  megahit_iter_k61  megahit_iter_k92  sdbg_builder_cpu);
+    for my $product (@products) {
+        run("cp $product $destination/");
+    }
+}
+
+

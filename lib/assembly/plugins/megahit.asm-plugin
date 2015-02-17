@@ -1,0 +1,29 @@
+[Core]
+Name = megahit
+Module = megahit
+
+[Executables]
+executable = megahit/megahit
+
+[Settings]
+short_name = mh
+filetypes = fasta,fa,fastq,fq
+min_contig_length = 200
+
+[Parameters]
+# a configuration can not be empty, otherwise the parser
+# omit some of the key-value pairs...
+# Further, the key-value pairs in the section Parameters must be a subset
+# of the key-value pairs in the section Settings. Otherwise,
+# the intrinsic key "process_threads_allowed" does not get
+# populated.
+
+min_contig_length = 200
+
+[Documentation]
+Author = Sebastien Boisvert
+Version = 1.0
+Base version = 0.2.0
+Description = An ultra-fast single-node solution for large and complex metagenomics assembly via succinct de Bruijn graph
+Stages = assembler
+References =  doi:10.1093/bioinformatics/btv033
