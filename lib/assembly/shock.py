@@ -193,7 +193,6 @@ class Shock:
         tmp_attr['filetype'] = filetype
         attr_fd = self._create_attr_mem(tmp_attr)
         r = None
-        files = None
 
         try:
             with open(filename) as f:
