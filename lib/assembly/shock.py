@@ -6,6 +6,8 @@ import logging
 import os
 import re
 import requests
+from requests_toolbelt import MultipartEncoder
+import copy
 import StringIO
 import subprocess
 import sys
@@ -192,12 +194,20 @@ class Shock:
         attr_fd = self._create_attr_mem(tmp_attr)
         r = None
         files = None
+
         try:
             with open(filename) as f:
-                files = {'upload': f,
-                         'attributes': attr_fd}
+
+                multipart_data = MultipartEncoder(fields = {
+                        'attributes': ('attributes', attr_fd),
+                        'upload': (filename, f)
+                        })
+
+                my_headers = copy.deepcopy(self.headers)
+                my_headers.update({'Content-Type': multipart_data.content_type})
+
                 if auth:
-                    r = requests.post(self.posturl, files=files, headers=self.headers)
+                    r = requests.post(self.posturl, data=multipart_data, headers=my_headers)
                 else:
                     r = requests.post(self.posturl, files=files)
 
