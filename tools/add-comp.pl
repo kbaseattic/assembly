@@ -429,7 +429,7 @@ sub install_velvet {
     git("git://github.com/dzerbino/velvet.git");
     chdir("velvet");
     run("rm -f obj/*.o");
-    run("make -j 'CATEGORIES=9' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1' -j zlib velveth velvetg");
+    run("make -j 'CATEGORIES=9' 'BIGASSEMBLY=1' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1' -j zlib velveth velvetg");
     run("cp velveth $dest_dir/");
     run("cp velvetg $dest_dir/");
 }
