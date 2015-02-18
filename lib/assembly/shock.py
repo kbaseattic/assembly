@@ -203,13 +203,14 @@ class Shock:
                         'upload': (filename, f)
                         })
 
+                content_type = {'Content-Type': multipart_data.content_type}
                 my_headers = copy.deepcopy(self.headers)
-                my_headers.update({'Content-Type': multipart_data.content_type})
+                my_headers.update(content_type)
 
                 if auth:
                     r = requests.post(self.posturl, data=multipart_data, headers=my_headers)
                 else:
-                    r = requests.post(self.posturl, files=files)
+                    r = requests.post(self.posturl, data=multipart_data, headers=content_type)
 
         except requests.exceptions.RequestException as e:
             raise Error("python-requests error: {}. Try with --curl flag.".format(e))
