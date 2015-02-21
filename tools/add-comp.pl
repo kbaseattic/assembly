@@ -32,7 +32,7 @@ Compute server components:
       bowtie2      - Bowtie aligner (v2.1)
       bwa          - BWA aligner (git)
       discovar     - Discovar assembler (FTP latest)
-      fastqc       - FastQC quality control (v0.10.1)
+      fastqc       - FastQC quality control (v0.11.2)
       fastx        - FastX preprocessing toolkit (v0.0.13)
       gam_ngs      - GAM-NGS assembler merger (git)
       idba         - IDBA_UD assembler (v1.1.1)
@@ -203,7 +203,7 @@ sub install_discovar {
 
 sub install_fastqc {
     my $dir = 'FastQC';
-    my $file = 'fastqc_v0.10.1.zip';
+    my $file = 'fastqc_v0.11.2.zip';
     download($dir, $file, 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc');
     run("chmod a+x $dir/fastqc");
     run("cp -r $dir $dest_dir/");
