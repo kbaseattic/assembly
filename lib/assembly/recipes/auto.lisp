@@ -3,6 +3,9 @@
 ;;; 3. Sorts assemblies by ALE score
 (begin
   (define pp (bhammer READS))
+  (if (not (symbol? pp))
+      (prog
+       (define pp READS)))
   (define vt (velvet pp))
   (define sp (spades pp))
   (if (has_paired READS)
