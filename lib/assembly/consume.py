@@ -539,21 +539,28 @@ class ArastConsumer:
         unp_bin = os.path.join(self.modulebin, 'unp')
 
         filepath = os.path.dirname(filename)
+        uncompressed = ['fasta', 'fa', 'fastq', 'fq', 'fna' ]
         supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz',
                      'rar', 'tar', 'tgz','zip']
+        for ext in uncompressed:
+            if filename.endswith('.'+ext):
+                return filename
         for ext in supported:
-            if filename.endswith(ext):
+            if filename.endswith('.'+ext):
                 extracted_file = filename[:filename.index(ext)-1]
                 if os.path.exists(extracted_file): # Check extracted already
                     return extracted_file
-                logger.debug("Extracting %s" % filename)
-                p = subprocess.Popen([unp_bin, filename],
-                                     cwd=filepath, stderr=subprocess.STDOUT)
-                p.wait()
+                logger.info("Extracting {} -> {}...".format(filename, extracted_file))
+                # p = subprocess.Popen([unp_bin, filename],
+                #                      cwd=filepath, stderr=subprocess.STDOUT)
+                # p.wait()
+                out = subprocess.Popen([unp_bin, filename],
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT).communicate()[0]
                 if os.path.exists(extracted_file):
                     return extracted_file
                 else:
-                    logger.error("{} does not exist!".format(extracted_file))
+                    logger.error("Extraction of {} failed: {}".format(filename, out))
                     raise Exception('Archive structure error')
         logger.error("Could not extract {}".format(filename))
         return filename
