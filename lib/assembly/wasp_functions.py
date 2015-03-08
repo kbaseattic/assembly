@@ -1,7 +1,13 @@
+import logging
+import os
+
 import asmtypes
 import wasp
-import os
 from Bio import SeqIO
+
+
+logger = logging.getLogger(__name__)
+
 
 ####### Decorators
 def wasp_contigs_wrapped(func):
@@ -49,9 +55,9 @@ def n50(contigs):
         sum += len(seq_record.seq)
         contigsLength.append(len(seq_record.seq))
 
-    teoN50 = sum / 2.0     
-    contigsLength.sort()   
-    contigsLength.reverse()    
+    teoN50 = sum / 2.0
+    contigsLength.sort()
+    contigsLength.reverse()
 
     #checking N50
     testSum = 0
@@ -61,7 +67,7 @@ def n50(contigs):
         if teoN50 < testSum:
             N50 = con
             break
-    print 'N50 of {}: {}'.format(os.path.basename(contig), N50)
+    logger.info('N50 of {}: {}'.format(os.path.basename(contig), N50))
     return N50
 
 def arast_score(*wasplinks):
@@ -74,9 +80,3 @@ def has_paired(readsets):
         if r.type == 'paired':
             return True
     return False
-        
-        
-
-
-
-
