@@ -39,7 +39,7 @@ job_list_lock = multiprocessing.Lock()
 kill_list = mgr.list()
 kill_list_lock = multiprocessing.Lock()
 
-def start(arasturl, config, num_threads, queue, datapath, binpath):
+def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
 
     #### Get default configuration from ar_compute.conf
     print " [.] Starting Assembly Service Compute Node"
@@ -117,19 +117,26 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     #### Check data write permissions
     rootpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
     datapath = datapath or cparser.get('compute', 'datapath')
-    binpath = binpath or cparser.get('compute','binpath')
+    binpath = binpath or cparser.get('compute', 'binpath')
+    modulebin = modulebin or cparser.get('compute', 'modulebin')
     if not os.path.isabs(datapath): datapath = os.path.join(rootpath, datapath)
     if not os.path.isabs(binpath): binpath = os.path.join(rootpath, binpath)
+    if not os.path.isabs(modulebin): modulebin = os.path.join(rootpath, modulebin)
 
     if os.path.isdir(datapath) and os.access(datapath, os.W_OK):
-        print ' [.] Storage path -- {} : OKAY'.format(datapath)
+        logger.info(' [.] Storage path writeable: {}'.format(datapath))
     else:
-        raise Exception(' [.] Storage path -- {} : ERROR'.format(datapath))
+        raise Exception(' [.] ERROR: Storage path not writeable: {}'.format(datapath))
 
-    if os.path.isdir(binpath) and os.access(datapath, os.R_OK):
-        print " [.] Binary path -- {} : OKAY".format(binpath)
+    if os.path.isdir(binpath) and os.access(binpath, os.R_OK):
+        logger.info(" [.] Third-party binary path readable: {}".format(binpath))
     else:
-        raise Exception(' [.] Binary directory does not exist -- {} : ERROR'.format(binpath))
+        raise Exception(' [.] ERROR: Third-party binary path not readable: {}'.format(binpath))
+
+    if os.path.isdir(modulebin) and os.access(modulebin, os.R_OK):
+        logger.info(" [.] Module binary path readable: {}".format(modulebin))
+    else:
+        raise Exception(' [.] ERROR: Module binary path not readable: {}'.format(modulebin))
 
     ## Start Monitor Thread
     kill_process = multiprocessing.Process(name='killd', target=start_kill_monitor,
@@ -140,7 +147,8 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     for i in range(int(num_threads)):
         worker_name = "worker #%s" % i
         compute = consume.ArastConsumer(shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, num_threads,
-                                        queue, kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf, datapath, binpath)
+                                        queue, kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf,
+                                        datapath, binpath, modulebin)
         logger.info("Master: starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
         workers.append(p)
@@ -191,7 +199,9 @@ parser.add_argument("-q", "--queue", help="specify a queue to pull from",
                     action="store", required=False)
 parser.add_argument("-d", "--compute-data", dest='datapath', help="specify a directory for computation data",
                     action="store", required=False)
-parser.add_argument("-b", "--compute-bin", dest='binpath', help="specify a directory for computation binaries",
+parser.add_argument("-b", "--compute-bin", dest='binpath', help="specify a directory for third-party computation binaries",
+                    action="store", required=False)
+parser.add_argument("-m", "--module-bin", dest='modulebin', help="specify a directory for module computation binaries",
                     action="store", required=False)
 
 args = parser.parse_args()
@@ -204,5 +214,6 @@ queue = args.queue or None
 num_threads = args.threads or None
 datapath = args.datapath or None
 binpath = args.binpath or None
+modulebin = args.modulebin or None
 
-start(arasturl, args.config, num_threads, queue, datapath, binpath)
+start(arasturl, args.config, num_threads, queue, datapath, binpath, modulebin)

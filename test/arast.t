@@ -56,12 +56,12 @@ sub test_setup {
     $ref = 'http://www.mcs.anl.gov/~fangfang/arast/b99.ref.fa';
     $pe1 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq';
     $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
-    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
+    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq.gz';
 
     sysrun("curl -s $ref > ref.fa");
     sysrun("curl -s $pe1 > p1.fq");
     sysrun("curl -s $pe2 > p2.fq");
-    sysrun("curl -s $se > se.fq");
+    sysrun("curl -s $se > se.fastq.gz");
 }
 
 sub test_simple_cases {
@@ -188,7 +188,7 @@ sub test_shock_url_input {
 
 sub test_kill_requests {
     my $out;
-    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
+    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq.gz';
     sysrun("ar-run -a kiki --single_url $se -m 'kill after done' >job.51");
 
     $out = sysout('ar-kill -j 9999999');

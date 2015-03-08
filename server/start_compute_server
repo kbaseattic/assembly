@@ -7,6 +7,7 @@ SERVER_QUEUE=$ARAST_QUEUE
 LIB_DIR=$ARAST_LIB_DIR
 VAR_DIR=$ARAST_VAR_DIR
 BIN_DIR=$ARAST_BIN_DIR
+MODULE_DIR=$ARAST_MODULE_DIR
 DATA_DIR=$ARAST_DATA_DIR
 THREADS=$ARAST_WORKER_THREADS
 
@@ -31,12 +32,13 @@ mkdir -p $LOG_DIR
 ARG_URL=$(     [[ -z "$SERVER_URL"   ]] && echo "" || echo "--server $SERVER_URL")
 ARG_QUEUE=$(   [[ -z "$SERVER_QUEUE" ]] && echo "" || echo "--queue $SERVER_QUEUE")
 ARG_BIN=$(     [[ -z "$BIN_DIR"      ]] && echo "" || echo "--compute-bin $BIN_DIR")
+ARG_MODULE=$(  [[ -z "$MODULE_DIR"   ]] && echo "" || echo "--module-bin $MODULE_DIR")
 ARG_DATA=$(    [[ -z "$DATA_DIR"     ]] && echo "" || echo "--compute-data $DATA_DIR")
 ARG_THREADS=$( [[ -z "$THREADS"      ]] && echo "" || echo "--threads $THREADS")
 
 args=( --config $COMPUTE_CONFIG
        $ARG_URL $ARG_QUEUE
-       $ARG_BIN $ARG_DATA
+       $ARG_BIN $ARG_MODULE $ARG_DATA
        $ARG_THREADS )
 
 nohup $LIB_DIR/ar_computed.py "${args[@]}" >> $LOG_DIR/ar_compute.log 2>&1 &
@@ -54,4 +56,3 @@ else
     echo "Command: $cmd"
     echo
 fi
-

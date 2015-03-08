@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 class ArastConsumer:
     def __init__(self, shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, threads, queue,
-                 kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf, datapath, binpath):
+                 kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf, datapath, binpath, modulebin):
         self.parser = SafeConfigParser()
         self.parser.read(config)
         self.kill_list = kill_list
@@ -50,7 +50,8 @@ class ArastConsumer:
         # Load plugins
         self.threads = threads
         self.binpath = binpath
-        self.pmanager = ModuleManager(threads, kill_list, kill_list_lock, job_list, binpath)
+        self.modulebin = modulebin
+        self.pmanager = ModuleManager(threads, kill_list, kill_list_lock, job_list, binpath, modulebin)
 
         # Set up environment
         self.shockurl = shockurl
@@ -228,7 +229,7 @@ class ArastConsumer:
                 if file_info['filename']:
                     local_file = os.path.join(filepath, file_info['filename'])
                     if os.path.exists(local_file):
-                        local_file = extract_file(local_file)
+                        local_file = self.extract_file(local_file)
                         logger.info("Requested data exists on node: {}".format(local_file))
                     else:
                         local_file = self.download_shock(file_info['shock_url'], user, token,
@@ -237,7 +238,7 @@ class ArastConsumer:
                 elif file_info['direct_url']:
                     local_file = os.path.join(filepath, os.path.basename(file_info['direct_url']))
                     if os.path.exists(local_file):
-                        local_file = extract_file(local_file)
+                        local_file = self.extract_file(local_file)
                         logger.info("Requested data exists on node: {}".format(local_file))
                     else:
                         local_file = self.download_url(file_info['direct_url'], filepath, token=token)
@@ -429,7 +430,7 @@ class ArastConsumer:
 
         finally:
             self.remove_job_from_lists(job_data)
-            self.pmanager = ModuleManager(self.threads, self.kill_list, self.kill_list_lock, self.job_list, self.binpath)
+            self.pmanager = ModuleManager(self.threads, self.kill_list, self.kill_list_lock, self.job_list, self.binpath, self.modulebin)
 
         self.metadata.update_job(uid, 'status', status)
 
@@ -473,11 +474,11 @@ class ArastConsumer:
     def download_shock(self, url, user, token, node_id, outdir):
         sclient = shock.Shock(url, user, token)
         downloaded = sclient.curl_download_file(node_id, outdir=outdir)
-        return extract_file(downloaded)
+        return self.extract_file(downloaded)
 
     def download_url(self, url, outdir, token=None):
         downloaded = shock.curl_download_url(url, outdir=outdir, token=token)
-        return extract_file(downloaded)
+        return self.extract_file(downloaded)
 
     def fetch_job(self):
         connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -528,6 +529,29 @@ class ArastConsumer:
     def start(self):
         self.fetch_job()
 
+    def extract_file(self, filename):
+        """ Decompress files if necessary """
+        unp_bin = os.path.join(self.modulebin, 'unp')
+
+        filepath = os.path.dirname(filename)
+        supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz',
+                     'rar', 'tar', 'tgz','zip']
+        for ext in supported:
+            if filename.endswith(ext):
+                extracted_file = filename[:filename.index(ext)-1]
+                if os.path.exists(extracted_file): # Check extracted already
+                    return extracted_file
+                logger.debug("Extracting %s" % filename)
+                p = subprocess.Popen([unp_bin, filename],
+                                     cwd=filepath, stderr=subprocess.STDOUT)
+                p.wait()
+                if os.path.exists(extracted_file):
+                    return extracted_file
+                else:
+                    print "{} does not exist!".format(extracted_file)
+                    raise Exception('Archive structure error')
+        logger.debug("Could not extract %s" % filename)
+        return filename
 
 ### Helper functions ###
 def touch(path):
@@ -541,32 +565,6 @@ def touch(path):
             os.makedirs(pdir)
         open(path, "a").close()
         os.utime(path, (now, now))
-
-def extract_file(filename):
-    """ Decompress files if necessary """
-    root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
-    module_bin_path = os.path.join(root_path, "module_bin")
-    unp_bin = os.path.join(module_bin_path, 'unp')
-
-    filepath = os.path.dirname(filename)
-    supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz',
-                 'rar', 'tar', 'tgz','zip']
-    for ext in supported:
-        if filename.endswith(ext):
-            extracted_file = filename[:filename.index(ext)-1]
-            if os.path.exists(extracted_file): # Check extracted already
-                return extracted_file
-            logger.debug("Extracting %s" % filename)
-            p = subprocess.Popen([unp_bin, filename],
-                                 cwd=filepath, stderr=subprocess.STDOUT)
-            p.wait()
-            if os.path.exists(extracted_file):
-                return extracted_file
-            else:
-                print "{} does not exist!".format(extracted_file)
-                raise Exception('Archive structure error')
-    logger.debug("Could not extract %s" % filename)
-    return filename
 
 def is_filename(word):
     return word.find('.') != -1 and word.find('=') == -1

@@ -611,15 +611,15 @@ class BaseAligner(BasePlugin):
 
 
 class ModuleManager():
-    def __init__(self, threads, kill_list, kill_list_lock, job_list, binpath):
+    def __init__(self, threads, kill_list, kill_list_lock, job_list, binpath, modulebin):
         self.threads = threads
         self.kill_list = kill_list
         self.kill_list_lock = kill_list_lock
         self.job_list = job_list # Running jobs
         self.binpath = binpath
+        self.module_bin_path = modulebin
 
         self.root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
-        self.module_bin_path = os.path.join(self.root_path, "module_bin")
         self.plugin_path = os.path.join(self.root_path, "lib", "assembly", "plugins")
 
         self.pmanager = PluginManager()
@@ -647,9 +647,9 @@ class ModuleManager():
                 for binary in full_execs:
                     if not os.path.exists(binary[1]):
                         if float(version) < 1:
-                            logger.warn('{} (v{}) -- Binary does not exist for beta plugin -- {}'.format(plugin.name, version, binary[1]))
+                            logger.warn('Third-party binary does not exist for beta plugin: {} (v{}) -- {}'.format(plugin.name, version, binary[1]))
                         else:
-                            raise Exception('[ERROR]: {} (v{})-- Binary does not exist -- {}'.format(plugin.name, version, binary[1]))
+                            raise Exception('ERROR: Third-party binary does not exist for beta plugin: {} (v{}) -- {}'.format(plugin.name, version, binary[1]))
                 self.executables[plugin.name] = full_execs
             except ConfigParser.NoSectionError: pass
             plugins.append(plugin.name)
@@ -698,7 +698,7 @@ class ModuleManager():
             raise Exception('"{}" module failed to produce {}'.format(module, ot))
 
         ### Store any output values in job_data
-        data = {'module': module, 
+        data = {'module': module,
                 'module_output': output}
         job_data['plugin_output'].append(data)
 
