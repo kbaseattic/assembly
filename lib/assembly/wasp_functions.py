@@ -67,7 +67,7 @@ def n50(contigs):
         if teoN50 < testSum:
             N50 = con
             break
-    logger.info('N50 of {}: {}'.format(os.path.basename(contig), N50))
+    logger.debug('N50 of {} = {}'.format(contig, N50))
     return N50
 
 def arast_score(*wasplinks):
