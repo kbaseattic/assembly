@@ -62,6 +62,7 @@ class BasePlugin(object):
             self._restore(backup)
             logger.info('Restored Plugin Object self attributes')
         except UnboundLocalError: pass
+        output['input_data'] = self.data.readfiles
         return output
 
     def arast_popen(self, cmd_args, overrides=True, **kwargs):
@@ -86,18 +87,11 @@ class BasePlugin(object):
 
         shell = kwargs.get('shell', False)
         if not shell:
-            cmd_human = []
-            for w in cmd_args:
-                if w.endswith('/'):
-                    cmd_human.append(os.path.basename(w[:-1]))
-                else:
-                    cmd_human.append(os.path.basename(w))
-            cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
+            cmd_string = human_readable_command(cmd_args)
         else:
             cmd_string = cmd_args
 
         if cmd_args[0].find('..') != -1 and not shell:
-            # cmd_args[0] = os.path.abspath(cmd_args[0])
             raise Exception("Plugin Config not updated: {}".format(cmd_args[0]))
 
         self.out_module.write("Command: {}\n".format(cmd_string))
@@ -703,6 +697,10 @@ class ModuleManager():
         if not wlink.output:
             raise Exception('"{}" module failed to produce {}'.format(module, ot))
 
+        ### Store any output values in job_data
+        data = {'module': module, 
+                'module_output': output}
+        job_data['plugin_output'].append(data)
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT
@@ -799,3 +797,20 @@ def update_settings(settings, new_dict):
         else:
             updated.append(tup)
     return updated
+
+def human_readable_command(cmd_args):
+    cmd_human = []
+    for w in cmd_args:
+        if ' ' in w:
+            sub_args = w.split()
+            sub_cmd = ' '.join([path_base(x) for x in sub_args])
+            cmd_human.append('"' + sub_cmd + '"')
+        else:
+            cmd_human.append(path_base(w))
+    return ' '.join(cmd_human)
+
+def path_base(path):
+    if path.endswith('/'):
+        return os.path.basename(path[:-1])
+    else:
+        return os.path.basename(path)

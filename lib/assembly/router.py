@@ -321,6 +321,7 @@ def start(config_file, shock_url=None,
             'server.socket_port': int(parser.get('assembly', 'cherrypy_port')),
             'log.screen': True,
             'ar_shock_url': parser.get('shock', 'host'),
+            'environment': 'production'
             },
     }
 
@@ -435,7 +436,6 @@ class JobResource:
             raise cherrypy.HTTPError(403)
 
         token = cherrypy.request.headers.get('Authorization')
-        print token
 
         ### No job_id, return all
         if not job_id:

@@ -1,4 +1,6 @@
 import sys
+import os
+from ConfigParser import SafeConfigParser
 
 def parse(recipe):
     desc = ''
@@ -44,193 +46,34 @@ def prefix_value(recipe, key, prefix):
         if word.find(':{}'.format(key)) != -1:
             return recipe.replace(words[i+1], '{}_{}'.format(prefix, words[i+1]))
 
-recipes = {
-    'scaffolds' : """
-    (begin
-      (define pp (bhammer (sga_preprocess READS)))
-      (define sp (spades pp))
-      (define id (idba pp))
-      (define gam (gam_ngs sp id))
-      (quast (upload (sspace pp gam)) (upload (get scaffolds sp)) (upload (get scaffolds id)))
-    )
-    """,
+def load_recipes():
+    rootpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
+    default_recipe_path = "lib/assembly/recipes"
 
-    'auto333' : """
-    (begin
-      (define pp (bhammer READS))
-      (define kval (get best_k (kmergenie READS)))
-      (define vt (begin (setparam hash_length kval) (velvet pp)))
-      (define ki (begin (setparam k kval) (kiki pp)))
-      (define sp (spades pp))
-      (define id (idba pp))
-      (define ma (masurca pp))
-      (define di (discovar pp))
-      (define allsort (sort (list sp id vt ki ma di) > :key (lambda (c) (get ale_score (ale c)))))
-      (define gam (gam_ngs (slice allsort 0 3)))
-      (tar (all_files (quast gam di ma id sp ki vt) :name analysis))
-    )
+    # TODO: find a clean way to get the path to the configuration file
+    # config = args.config
+    # cparser = SafeConfigParser()
+    # cparser.read(config)
+    # recipe_path = cparser.get('compute', 'recipe_path') or default_recipe_path
+    recipe_path = default_recipe_path
 
-    """,
+    if not os.path.isabs(recipe_path):
+        recipe_path = os.path.join(rootpath, recipe_path)
 
-    'superduper' : """
-    (begin
-      (define pp (bhammer READS))
-      (define kval (get best_k (kmergenie READS)))
-      (define vt (begin (setparam hash_length kval) (velvet pp)))
-      (define sp (spades pp))
-      (define id (idba pp))
-      (define ma (masurca pp))
-      (define di (discovar pp))
-      (define gam (gam_ngs (sort (list sp id vt ma di) > :key (lambda (c) (arast_score c)))))
-      (tar (all_files (quast (upload gam) (upload sp) (upload id) (upload vt) (upload ma) (upload di))) :name analysis)
-    )
+    extension = ".lisp"
+    for recipe_file in os.listdir(recipe_path):
+        if recipe_file.endswith(extension):
+            recipe_name = recipe_file[:-len(extension)]
+            file_descriptor = open(recipe_path+ "/" + recipe_file)
+            content = file_descriptor.read()
+            file_descriptor.close()
+            recipes[recipe_name] = content
 
-    """,
+    set_alias('faster', 'rast_fast')
+    set_alias('fast', 'rast')
+    set_alias('smart', 'rast_slow')
 
-    'tune_velvet' : """
-    (begin
-      (define pp (sga_preprocess READS))
-      (define bh (bhammer READS))
-      (define ppbh (bhammer pp))
-      (define kpp (get best_k (kmergenie pp)))
-      (define kbh (get best_k (kmergenie bh)))
-      (define kppbh (get best_k (kmergenie ppbh)))
-      (define k (get best_k (kmergenie READS)))
-      (define vtpp (begin (setparam hash_length kpp) (velvet pp)))
-      (define vtbh (begin (setparam hash_length kbh) (velvet bh)))
-      (define vtppbh (begin (setparam hash_length kppbh) (velvet ppbh)))
-      (define vt (begin (setparam hash_length k) (velvet READS)))
-      (tar (all_files (quast vt vtpp vtbh vtppbh)) :name analysis))
-    )
-    """,
+recipes = {}
 
-    'test' : """
-    (begin
-      (define newsort (sort (list (kiki READS) (velvet READS)) > :key (lambda (c) (arast_score c))))
-      (tar (all_files (quast (upload newsort))) :name analysis :tag quast)
-    )
-    """,
-
-    'test_gam_ale' : """
-    (begin
-      (define assemblies (list (kiki READS) (velvet READS)))
-      (define toptwo (slice (sort assemblies > :key (lambda (c) (arast_score c))) 0 2))
-      (define gam (gam_ngs toptwo))
-      (define newsort (sort (cons gam assemblies) > :key (lambda (c) (get ale_score (ale c)))))
-      (tar (all_files (quast (upload newsort))) :name analysis)
-    )
-    """,
-
-    'test_ale' : """
-    (begin
-       (define ki (kiki READS))
-       (tar (all_files (quast (upload (sort (list ki) > :key (lambda (c) (get ale_score (ale c))))))) :name analysis :tag quast)
-    )
-    """,
-
-    'kiki' : """
-    (begin
-       (define ki (kiki READS))
-       (tar (all_files (quast (upload (sort (list ki) > :key (lambda (c) (arast_score c)))))) :name analysis :tag quast)
-    )
-    """,
-
-    'full_spades' : """
-    ;;; Runs BayesHammer on reads and assembles with SPAdes.
-    (begin
-      (define sp (begin (setparam only_assembler False) (spades READS)))
-      (tar (all_files (quast (upload (sort (list sp) > :key (lambda (c) (arast_score c)))))) :name analysis :tag quast)
-    )
-    """,
-
-    'miseq' : """
-    ;;; Runs Velvet with hash length 35.
-    ;;; Runs BayesHammer on reads and assembles with SPAdes with k up to 99.
-    ;;; Results are sorted by ARAST quality score.
-    ;;; Works for Illumina MiSeq reads.
-    (begin
-      (define vt (begin (setparam hash_length 35) (velvet READS)))
-      (define sp (begin
-         (setparam only_assembler False)
-         (setparam read_length medium2)
-         (spades READS)))
-      (tar (all_files (quast (upload (sort (list vt sp) > :key (lambda (c) (arast_score c)))))) :name analysis :tag quast)
-    )
-    """,
-
-    'faster' : """
-    ;;; Assembles with A6 and Velvet.
-    ;;; Results are sorted by ARAST quality Score.
-    ;;; Works for some short read datasets.
-    (begin
-      (define vt (velvet READS))
-      (if (has_paired READS)
-        (prog
-          (define aa (a6 READS))
-          (define assemblies (list vt aa)))
-        (define assemblies (list vt)))
-      (define newsort (sort assemblies > :key (lambda (c) (arast_score c))))
-      (tar (all_files (quast (upload newsort))) :name analysis)
-    )
-    """,
-
-    'fast' : """
-    ;;; Assembles with A6, Velvet and SPAdes (with BayesHammer for error correction).
-    ;;; Results are sorted by ARAST quality Score.
-    (begin
-      (define vt (velvet READS))
-      (define sp (begin (setparam only_assembler False) (spades READS)))
-      (if (has_paired READS)
-        (prog
-          (define aa (a6 READS))
-          (define assemblies (list vt sp aa)))
-        (define assemblies (list vt sp)))
-      (define newsort (sort assemblies > :key (lambda (c) (arast_score c))))
-      (tar (all_files (quast (upload newsort))) :name analysis)
-    )
-    """,
-
-    'auto': """
-    ;;; 1. Runs BayesHammer on reads
-    ;;; 2. Assembles with Velvet, IDBA and SPAdes
-    ;;; 3. Sorts assemblies by ALE score
-    (begin
-      (define pp (bhammer READS))
-      (define vt (velvet pp))
-      (define sp (spades pp))
-      (if (has_paired READS)
-        (prog
-          (define id (idba pp))
-          (define assemblies (list id sp vt)))
-        (define assemblies (list sp vt)))
-      (define newsort (sort assemblies > :key (lambda (c) (arast_score c))))
-      (tar (all_files (quast (upload newsort))) :name analysis)
-    )
-    """,
-
-    'smart': """
-    ;;; 1. Runs BayesHammer on reads, Kmergenie to choose hash-length for Velvet
-    ;;; 2. Assembles with Velvet, IDBA and SPAdes
-    ;;; 3. Sorts assemblies by ALE score
-    ;;; 4. Merges the two best assemblies with GAM-NGS
-    (begin
-      (define pp (bhammer READS))
-      (define kval (get best_k (kmergenie pp)))
-      (define vt (begin (setparam hash_length kval) (velvet pp)))
-      (define sp (spades pp))
-      (if (has_paired READS)
-        (prog
-          (define id (idba pp))
-          (define assemblies (list id sp vt)))
-        (define assemblies (list sp vt)))
-      (define toptwo (slice (sort assemblies > :key (lambda (c) (arast_score c))) 0 2))
-      (define gam (gam_ngs toptwo))
-      (define newsort (sort (cons gam assemblies) > :key (lambda (c) (arast_score c))))
-      (tar (all_files (quast (upload newsort))) :name analysis)
-    )
-    """
-}
-
-set_alias('faster', 'rast_fast')
-set_alias('fast', 'rast')
-set_alias('smart', 'rast_slow')
+# load recipes when the module is loaded.
+load_recipes()

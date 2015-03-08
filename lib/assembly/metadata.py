@@ -29,6 +29,10 @@ class MetadataConnection:
 
         # Get local data
         self.jobs = self.get_jobs()
+
+        # Ensure compound index
+        self.jobs.ensure_index([("ARASTUSER", pymongo.ASCENDING), ("job_id", pymongo.ASCENDING)])
+
         self.data_collection = self.get_data()
 
     def get_jobs(self):

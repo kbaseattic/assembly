@@ -38,6 +38,7 @@ class Env(dict):
             self.meta = meta
             self.global_data = {'stage': 1,
                                 'stages': 0}
+
             self.plugins = []
             self.exceptions = []
             self.errors = []
@@ -104,8 +105,16 @@ def eval(x, env):
     ##################################
 
     elif x[0] == 'if':             # (if test conseq alt)
-        (_, test, conseq, alt) = x
-        return eval((conseq if eval(test, env) else alt), env)
+        if len(x) == 4:
+            (_, test, conseq, alt) = x
+        elif len(x) == 3:
+            (_, test, conseq) = x
+            alt = None
+        if eval(test, env):
+            return eval(conseq, env)
+        elif alt:
+            return eval(alt, env)
+            
     elif x[0] == 'set!':           # (set! var exp)
         (_, var, exp) = x
         env.find(var)[var] = eval(exp, env)
@@ -121,8 +130,8 @@ def eval(x, env):
         except Exception as e:
             print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
             print traceback.format_exc()
-            env.errors.append(e)
-            env.exceptions.append(traceback.format_exc())
+            # env.errors.append(e)
+            # env.exceptions.append(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':
         seq = [link for link in eval(x[1], env) if link is not None and link.output]
@@ -221,6 +230,10 @@ def eval(x, env):
                     env.exceptions.append(traceback.format_exc())
         if val:
             return val if len(val) > 1 else val[0]
+
+    elif x[0] == 'print':
+        for exp in x[1:]:
+            print eval(exp, env)
     elif x[0] == 'prog':          # same as begin, but use same env
         val = []
         for exp in x[1:]:

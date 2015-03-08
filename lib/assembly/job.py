@@ -3,7 +3,6 @@ import re
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import numpy.numarray as na
 
 import asmtypes
 import shock 
@@ -20,47 +19,48 @@ class ArastJob(dict):
         self['logfiles'] = []
         self['out_reports'] = []
         self['out_results'] = []
+        self['plugin_output'] = []
 
     def make_plots(self):
         pass
 
-    def plot_ale(self):
-        a_scores = []
-        names = []
-        for pl in self['pipelines']:
-            try:
-                a_scores.append(pl['stats']['ale_score'])
-                names.append(pl['name'])
-            except:
-                pass
+    # def plot_ale(self):
+    #     a_scores = []
+    #     names = []
+    #     for pl in self['pipelines']:
+    #         try:
+    #             a_scores.append(pl['stats']['ale_score'])
+    #             names.append(pl['name'])
+    #         except:
+    #             pass
             
-        if len(a_scores) < 2:
-            print ('Not enough ALE scores')
-            return
+    #     if len(a_scores) < 2:
+    #         print ('Not enough ALE scores')
+    #         return
 
-        ## normalize scores
-        old_min = min(a_scores)
-        old_max = max(a_scores)
-        new_min = 5
-        new_max = 100
-        old_range = old_max - old_min
-        new_range = new_max - new_min
-        n_scores = []
-        for a in a_scores:
-            n = (((a - old_min) * new_range) / old_range) + new_min
-            n_scores.append(n)
+    #     ## normalize scores
+    #     old_min = min(a_scores)
+    #     old_max = max(a_scores)
+    #     new_min = 5
+    #     new_max = 100
+    #     old_range = old_max - old_min
+    #     new_range = new_max - new_min
+    #     n_scores = []
+    #     for a in a_scores:
+    #         n = (((a - old_min) * new_range) / old_range) + new_min
+    #         n_scores.append(n)
 
-        xlocations = na.array(range(len(n_scores))) + 0.5
-        width = 0.5
-        fig = plt.figure()
-        plt.bar(xlocations, n_scores, width=width, linewidth=0, color='#CC99FF')
-        plt.xticks(xlocations + width/2, names)
-        plt.xlim(0, xlocations[-1]+width*2)
-        plt.title("Relative ALE Scores")
-        plt.yticks(range(0, new_max + 10, 10))
-        ale_fig = os.path.join(self['datapath'], str(self['job_id']), 'ale.png')
-        plt.savefig(ale_fig)
-        return ale_fig
+    #     xlocations = na.array(range(len(n_scores))) + 0.5
+    #     width = 0.5
+    #     fig = plt.figure()
+    #     plt.bar(xlocations, n_scores, width=width, linewidth=0, color='#CC99FF')
+    #     plt.xticks(xlocations + width/2, names)
+    #     plt.xlim(0, xlocations[-1]+width*2)
+    #     plt.title("Relative ALE Scores")
+    #     plt.yticks(range(0, new_max + 10, 10))
+    #     ale_fig = os.path.join(self['datapath'], str(self['job_id']), 'ale.png')
+    #     plt.savefig(ale_fig)
+    #     return ale_fig
         
 
     def export(self):

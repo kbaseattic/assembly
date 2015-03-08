@@ -48,6 +48,8 @@ class ArastConsumer:
         self.job_list = job_list
         self.job_list_lock = job_list_lock
         # Load plugins
+        self.threads = threads
+        self.binpath = binpath
         self.pmanager = ModuleManager(threads, kill_list, kill_list_lock, job_list, binpath)
 
         # Set up environment
@@ -408,7 +410,6 @@ class ArastConsumer:
             del job_data['raw_reads']
             self.metadata.update_job(uid, 'data', job_data)
             self.metadata.update_job(uid, 'result_data', uploaded_fsets)
-
             ###### Legacy Support #######
             filesets = uploaded_fsets.append(asmtypes.set_factory('report', [report_info]))
             contigsets = [fset for fset in uploaded_fsets if fset.type == 'contigs' or fset.type == 'scaffolds']
@@ -428,6 +429,7 @@ class ArastConsumer:
 
         finally:
             self.remove_job_from_lists(job_data)
+            self.pmanager = ModuleManager(self.threads, self.kill_list, self.kill_list_lock, self.job_list, self.binpath)
 
         self.metadata.update_job(uid, 'status', status)
 
