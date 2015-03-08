@@ -423,11 +423,13 @@ class ArastConsumer:
             self.metadata.update_job(uid, 'contig_ids', [contig_ids])
             ###################
 
+            sys.stdout.flush()
             touch(os.path.join(jobpath, "_DONE_"))
             logger.info('============== JOB COMPLETE ===============')
 
         except asmtypes.ArastUserInterrupt:
             status = 'Terminated by user'
+            sys.stdout.flush()
             touch(os.path.join(jobpath, "_CANCELLED__"))
             logger.info('============== JOB KILLED ===============')
 
