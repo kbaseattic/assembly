@@ -50,8 +50,8 @@ class MegahitAssembler(BaseAssembler, IPlugin):
         # in the configuration file.
         command += ['-o', os.path.join(self.outpath, "megahit")]
 
-        logger.info("Command line: {}".format(" ".join(command)))
-
+        # logging covered by arast_popen
+        # logger.info("Command line: {}".format(" ".join(command)))
         self.arast_popen(command)
 
         contigs = os.path.join(self.outpath, 'megahit', 'final.contigs.fa')
