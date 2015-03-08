@@ -141,7 +141,7 @@ class BasePlugin(object):
                 except Empty:
                     break
                 else: # got line
-                    logger.debug(line)
+                    logger.debug(line.strip())
                     self.is_urgent_output(line)
                     self.out_module.write(line)
 

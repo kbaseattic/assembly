@@ -435,6 +435,7 @@ class ArastConsumer:
 
         finally:
             self.remove_job_from_lists(job_data)
+            logger.debug('Reinitialize plugin manager...') # Reinitialize to get live changes
             self.pmanager = ModuleManager(self.threads, self.kill_list, self.kill_list_lock, self.job_list, self.binpath, self.modulebin)
 
         self.metadata.update_job(uid, 'status', status)
@@ -505,8 +506,8 @@ class ArastConsumer:
 
     def callback(self, ch, method, properties, body):
         params = json.loads(body)
-        display = ['ARASTUSER', 'job_id', 'message']
-        logger.info('Incoming job: ' + ', '.join(['{}: {}'.format(k, params[k]) for k in display]))
+        display = ['ARASTUSER', 'job_id', 'message', 'recipe', 'pipeline', 'wasp']
+        logger.info('Incoming job: ' + ', '.join(['{}: {}'.format(k, params[k]) for k in display if params[k]]))
         logger.debug(params)
         job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
 
@@ -604,7 +605,7 @@ def is_dir_busy(d):
 def free_space_in_path(path):
     s = os.statvfs(path)
     free_space = float(s.f_bsize * s.f_bavail / (10**9))
-    logger.debug("Free space in %s: %s GB".format(path, free_space))
+    logger.debug("Free space in {}: {} GB".format(path, free_space))
     return free_space
 
 class UpdateTimer(threading.Thread):

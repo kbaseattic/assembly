@@ -7,6 +7,7 @@ SHOCK_URL=$ARAST_SHOCK_URL
 LIB_DIR=$ARAST_LIB_DIR
 VAR_DIR=$ARAST_VAR_DIR
 CONTROL_CONFIG=$ARAST_CONFIG
+VERBOSE=$ARAST_VERBOSE
 
 LIB_DIR=${LIB_DIR:-$TOP_DIR/lib}
 VAR_DIR=${VAR_DIR:-$TOP_DIR/deployment/var}
@@ -27,8 +28,9 @@ fi
 mkdir -p $LOG_DIR
 
 ARG_SHOCK=$( [[ -z "$SHOCK_URL" ]] && echo "" || echo "--shock-url $SHOCK_URL")
+ARG_VERBOSE=$( [[ -z "$VERBOSE" ]] && echo "" || echo "--verbose")
 
-args=( $ARG_SHOCK
+args=( $ARG_SHOCK $ARG_VERBOSE
        --config $CONTROL_CONFIG
        --logfile $LOG_DIR/ar_server.log )
 

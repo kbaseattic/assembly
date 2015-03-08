@@ -25,8 +25,6 @@ import shock
 import utils
 
 
-logging.basicConfig(format="[%(asctime)s %(levelname)s %(process)d %(name)s] %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 #context = daemon.DaemonContext(stdout=sys.stdout) #temp print to stdout
@@ -175,7 +173,7 @@ def kill_callback(ch, method, properties, body):
     kill_request = json.loads(body)
     job_list_lock.acquire()
     logger.info('Job list (len={}): '.format(len(job_list),
-                                             [(j.get('job_id'), j.get('user')) for j in job_list])
+                                             [(j.get('job_id'), j.get('user')) for j in job_list]))
     kill_list_lock.acquire()
     for job_data in job_list:
         if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
@@ -197,6 +195,8 @@ parser.add_argument("-t", "--threads", help="specify number of worker threads",
                     action="store", required=False)
 parser.add_argument("-q", "--queue", help="specify a queue to pull from",
                     action="store", required=False)
+parser.add_argument("-l", "--logfile", help="specify the logfile",
+                    action="store", required=False)
 parser.add_argument("-d", "--compute-data", dest='datapath', help="specify a directory for computation data",
                     action="store", required=False)
 parser.add_argument("-b", "--compute-bin", dest='binpath', help="specify a directory for third-party computation binaries",
@@ -206,14 +206,20 @@ parser.add_argument("-m", "--module-bin", dest='modulebin', help="specify a dire
 
 args = parser.parse_args()
 
-if args.verbose:
-    logging.root.setLevel(logging.DEBUG)
-
 arasturl = args.server or None
 queue = args.queue or None
 num_threads = args.threads or None
 datapath = args.datapath or None
 binpath = args.binpath or None
 modulebin = args.modulebin or None
+logfile = args.logfile or 'ar_compute.log'
+
+utils.verify_dir(os.path.dirname(logfile))
+
+logging.basicConfig(format="[%(asctime)s %(levelname)s %(process)d %(name)s] %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO, filename=logfile)
+
+if args.verbose:
+    logging.root.setLevel(logging.DEBUG)
 
 start(arasturl, args.config, num_threads, queue, datapath, binpath, modulebin)
