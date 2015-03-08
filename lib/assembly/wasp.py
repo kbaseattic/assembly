@@ -231,7 +231,7 @@ def eval(x, env):
             except Exception as e:
                 if list(e):
                     logger.error('Failed to eval "{}": {}'.format(to_string(exp), e))
-                    logger.debug(traceback.format_exc()))
+                    logger.debug(traceback.format_exc())
                     # print(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
