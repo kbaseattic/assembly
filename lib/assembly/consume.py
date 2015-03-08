@@ -19,20 +19,20 @@ import multiprocessing
 import re
 import threading
 import subprocess
-from plugins import ModuleManager
-from job import ArastJob
 from multiprocessing import current_process as proc
 from traceback import format_tb, format_exc
 
 import assembly as asm
-from assembly import ignored
 import metadata as meta
 import asmtypes
 import shock
 import wasp
 import recipes
 import utils
+from assembly import ignored
+from job import ArastJob
 from kbase import typespec_to_assembly_data as kb_to_asm
+from plugins import ModuleManager
 
 from ConfigParser import SafeConfigParser
 
