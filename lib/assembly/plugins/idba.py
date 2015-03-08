@@ -80,5 +80,5 @@ def infer_filetype(file):
             return filemap[ext]
     return ''
 
-def files_in_readsets(readsets):
-    return [fi.get('filename') for fi in s['file_infos'] for s in readsets]
+def files_in_readsets(filesets):
+    return [fi.get('filename') for fs in filesets for fi in fs['file_infos']]
