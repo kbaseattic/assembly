@@ -42,7 +42,7 @@ kill_list_lock = multiprocessing.Lock()
 def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
 
     #### Get default configuration from ar_compute.conf
-    print " [.] Starting Assembly Service Compute Node"
+    logger.info("[.] Starting Assembly Service Compute Node")
     cparser = SafeConfigParser()
     cparser.read(config)
     logging.getLogger('yapsy').setLevel(logging.WARNING)
@@ -56,10 +56,10 @@ def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
         num_threads =  cparser.get('compute','threads')
 
     #### Retrieve system configuration from AssemblyRAST server
-    print " [.] AssemblyRAST host: %s" % arasturl
+    logger.info("[.] AssemblyRAST host: {}".format(arasturl))
     try:
         ctrl_conf = json.loads(requests.get('{}/admin/system/config'.format(full_arasturl)).content)
-        print " [.] Retrieved system config from host"
+        logger.info("[.] Retrieved system config from host")
     except:
         raise Exception('Could not communicate with server for system config')
 
@@ -75,24 +75,24 @@ def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
     if rmq_host == 'localhost':
         rmq_host = arasturl
 
-    print ' [.] Shock URL: %s' % shockurl
-    print " [.] MongoDB host: %s" % mongo_host
-    print " [.] MongoDB port: %s" % mongo_port
-    print " [.] RabbitMQ host: %s" % rmq_host
-    print " [.] RabbitMQ port: %s" % rmq_port
+    logger.info('[.] Shock URL: {}'.format(shockurl))
+    logger.info("[.] MongoDB host: {}".format(mongo_host))
+    logger.info("[.] MongoDB port: {}".format(mongo_port))
+    logger.info("[.] RabbitMQ host: {}".format(rmq_host))
+    logger.info("[.] RabbitMQ port: {}".format(rmq_port))
 
     # Check shock status
-    print " [.] Connecting to Shock server..."
+    logger.info("[.] Connecting to Shock server...")
     shockurl = utils.verify_url(shockurl, 7445)
     try:
         res = requests.get(shockurl)
     except Exception as e:
         logger.error("Shock connection error: {}".format(e))
         sys.exit(1)
-    print " [.] Shock connection successful"
+    logger.info("[.] Shock connection successful")
 
     # Check MongoDB status
-    print " [.] Connecting to MongoDB server..."
+    logger.info("[.] Connecting to MongoDB server...")
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
         connection.close()
@@ -100,10 +100,10 @@ def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
     except pymongo.errors.PyMongoError as e:
         logger.error("MongoDB connection error: {}".format(e))
         sys.exit(1)
-    print " [.] MongoDB connection successful."
+    logger.info("[.] MongoDB connection successful.")
 
     # Check RabbitMQ status
-    print " [.] Connecting to RabbitMQ server..."
+    logger.info("[.] Connecting to RabbitMQ server...")
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters(
             host=rmq_host, port=rmq_port))
@@ -111,7 +111,7 @@ def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
     except Exception as e:
         logger.error("RabbitMQ connection error: {}".format(e))
         sys.exit(1)
-    print " [.] RabbitMQ connection successful"
+    logger.info("[.] RabbitMQ connection successful")
 
 
     #### Check data write permissions
@@ -124,19 +124,19 @@ def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
     if not os.path.isabs(modulebin): modulebin = os.path.join(rootpath, modulebin)
 
     if os.path.isdir(datapath) and os.access(datapath, os.W_OK):
-        logger.info(' [.] Storage path writeable: {}'.format(datapath))
+        logger.info('[.] Storage path writeable: {}'.format(datapath))
     else:
-        raise Exception(' [.] ERROR: Storage path not writeable: {}'.format(datapath))
+        raise Exception('ERROR: Storage path not writeable: {}'.format(datapath))
 
     if os.path.isdir(binpath) and os.access(binpath, os.R_OK):
-        logger.info(" [.] Third-party binary path readable: {}".format(binpath))
+        logger.info("[.] Third-party binary path readable: {}".format(binpath))
     else:
-        raise Exception(' [.] ERROR: Third-party binary path not readable: {}'.format(binpath))
+        raise Exception('ERROR: Third-party binary path not readable: {}'.format(binpath))
 
     if os.path.isdir(modulebin) and os.access(modulebin, os.R_OK):
-        logger.info(" [.] Module binary path readable: {}".format(modulebin))
+        logger.info("[.] Module binary path readable: {}".format(modulebin))
     else:
-        raise Exception(' [.] ERROR: Module binary path not readable: {}'.format(modulebin))
+        raise Exception('ERROR: Module binary path not readable: {}'.format(modulebin))
 
     ## Start Monitor Thread
     kill_process = multiprocessing.Process(name='killd', target=start_kill_monitor,
@@ -168,7 +168,7 @@ def start_kill_monitor(rmq_host, rmq_port):
     channel.basic_consume(kill_callback,
                           queue=queue_name,
                           no_ack=True)
-    print ' [*] Waiting for kill commands'
+    logger.info('Waiting for kill commands')
     channel.start_consuming()
 
 def kill_callback(ch, method, properties, body):
