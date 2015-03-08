@@ -174,12 +174,12 @@ def start_kill_monitor(rmq_host, rmq_port):
 def kill_callback(ch, method, properties, body):
     kill_request = json.loads(body)
     job_list_lock.acquire()
-    print >> sys.stderr, 'job_list (len={}): '.format(len(job_list)),
-    print >> sys.stderr, [(j.get('job_id'), j.get('user')) for j in job_list]
+    logger.info('Job list (len={}): '.format(len(job_list),
+                                             [(j.get('job_id'), j.get('user')) for j in job_list])
     kill_list_lock.acquire()
     for job_data in job_list:
         if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
-            print >> sys.stderr, 'Job to be deleted is on this node: {}'.format(body)
+            logger.warning('Job to be deleted is on this node: {}'.format(body))
             kill_list.append(kill_request)
     kill_list_lock.release()
     job_list_lock.release()

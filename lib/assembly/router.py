@@ -831,6 +831,7 @@ class SystemResource:
                 node_ip = args[0]
                 command = args[1]
                 if command == 'close':
+                    sys.stdout.flush()
                     return self.close_connection(node_ip)
         elif resource == 'config':
             return json.dumps(parser_as_dict(parser))

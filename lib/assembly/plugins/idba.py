@@ -21,8 +21,6 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         if len(pairs) == 0:
             raise Exception('IDBA assembler requires paired-end library')
 
-        logger.info('PE libs = '.format(files_in_readsets(pairs)))
-
         readset = pairs.pop(0)
 
         if len(pairs) > 0:
