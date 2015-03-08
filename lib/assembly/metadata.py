@@ -175,7 +175,6 @@ class MetadataConnection:
         if data_id:
             doc = self.data_collection.find_one({'ARASTUSER': user,'data_id':int(data_id)})
         else:
-            print user
             doc = self.data_collection.find({'ARASTUSER': user})
         return doc
 
