@@ -17,6 +17,9 @@ import tempfile
 import utils
 
 
+logger = logging.getLogger(__name__)
+
+
 def verify_shock_url(url):
     return utils.verify_url(url, 7445)
 
@@ -71,7 +74,7 @@ def curl_download_url(url, outdir=None, filename=None, token=None):
 
     downloaded = os.path.join(outdir, filename)
     if os.path.exists(downloaded):
-        print('File Downloaded: {}'.format(downloaded))
+        logger.info('File Downloaded: {}'.format(downloaded))
         return downloaded
     else:
         raise Error('Data does not exist')
@@ -114,7 +117,7 @@ class Shock:
 
         try:
             if res['status'] == 200:
-                print >> sys.stderr, "Upload complete: {}".format(filename)
+                logger.info("Upload complete: {}".format(filename))
             else:
                 raise Error("Upload failed: {}. {}".format(res['status'], res.get("error")))
         except AttributeError:
@@ -234,7 +237,7 @@ class Shock:
         if auth:
             cmd += ['-H', '"Authorization: OAuth {}"'.format(self.token)]
 
-        # print >> sys.stderr, "curl_post_file: {}".format(' '.join(cmd))
+        logger.debug("curl_post_file: {}".format(' '.join(cmd)))
         r = subprocess.check_output(' '.join(cmd), shell=True)
         res = json.loads(r)
         return res
