@@ -4,21 +4,28 @@ import subprocess
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
+logger = logging.getLogger(__name__)
+
 class IdbaAssembler(BaseAssembler, IPlugin):
     new_version = True
 
     def run(self):
-        """ 
+        """
         Build the command and run.
         Return list of contig file(s)
         """
         # Only supports one set of reads
-        
-        if not len(self.data.readsets_paired) == 1:
-            raise Exception('IDBA assembler requires one paired-end library')
 
-        readset = self.data.readsets[0]
+        if not len(self.data.readsets_paired):
+            raise Exception('IDBA assembler requires paired-end library')
+
+        readset = self.data.readsets_paired.pop(0)
+
+        if len(self.data.readsets_paired):
+            logger.warning('IDBA supports one PE lib; additional pairs ignored: {}'.format(self.data.readsets_paired))
+
         if self.data.readsets_single:
+            logger.warning("IDBA does not support single end files; discarding: {}".format(self.data.readsets_single))
             self.out_module.write('Warning, discarding single end files\n')
 
         cmd_args = [self.bin_idba_ud,
@@ -46,7 +53,7 @@ class IdbaAssembler(BaseAssembler, IPlugin):
             read_file = fa_file
 
         base = os.path.join(self.outpath, 'run')
-        cmd_args += ['-r', read_file, '-o', base, '--maxk', self.max_k] 
+        cmd_args += ['-r', read_file, '-o', base, '--maxk', self.max_k]
         self.arast_popen(cmd_args, cwd=self.outpath)
 
         contigs = os.path.join(base, 'contig.fa')
@@ -68,7 +75,3 @@ def infer_filetype(file):
         if file.endswith(ext):
             return filemap[ext]
     return ''
-
-
-
-    
