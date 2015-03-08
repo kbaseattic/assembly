@@ -16,16 +16,20 @@ class IdbaAssembler(BaseAssembler, IPlugin):
         """
         # Only supports one set of reads
 
-        if not len(self.data.readsets_paired):
+        pairs = self.data.readsets_paired
+
+        if len(pairs) == 0:
             raise Exception('IDBA assembler requires paired-end library')
 
-        readset = self.data.readsets_paired.pop(0)
+        logger.info('PE libs = '.format(files_in_readsets(pairs)))
 
-        if len(self.data.readsets_paired):
-            logger.warning('IDBA supports one PE lib; additional pairs ignored: {}'.format(self.data.readsets_paired))
+        readset = pairs.pop(0)
+
+        if len(pairs) > 0:
+            logger.warning('IDBA supports one PE lib; additional pairs ignored: {}'.format(files_in_readsets(pairs)))
 
         if self.data.readsets_single:
-            logger.warning("IDBA does not support single end files; discarding: {}".format(self.data.readsets_single))
+            logger.warning("IDBA does not support single end files; discarding: {}".format(files_in_readsets(self.data.readsets_single)))
             self.out_module.write('Warning, discarding single end files\n')
 
         cmd_args = [self.bin_idba_ud,
@@ -75,3 +79,6 @@ def infer_filetype(file):
         if file.endswith(ext):
             return filemap[ext]
     return ''
+
+def files_in_readsets(readsets):
+    return [fi.get('filename') for fi in s['file_infos'] for s in readsets]
