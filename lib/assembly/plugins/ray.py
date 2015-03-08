@@ -5,15 +5,17 @@ import subprocess
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
+logger = logging.getLogger(__name__)
+
 class RayAssembler(BaseAssembler, IPlugin):
     def run(self):
-        """ 
+        """
         Build the command and run.
         Return list of contig file(s)
         """
-        
+
         cmd_args = ["mpirun", "-np", self.process_threads_allowed, self.executable, '-k', self.k]
-        
+
         reads = self.data.readsets
         for lib in reads:
             if lib.type == 'paired':
@@ -41,5 +43,3 @@ class RayAssembler(BaseAssembler, IPlugin):
         if os.path.exists(scaffolds):
             output['scaffolds'] = [scaffolds]
         return output
-
-

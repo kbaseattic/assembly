@@ -4,6 +4,8 @@ from plugins import BaseMetaAssembler
 from yapsy.IPlugin import IPlugin
 import asmtypes
 
+logger = logging.getLogger(__name__)
+
 class GamNgsAssembler(BaseMetaAssembler, IPlugin):
     new_version = True
 
@@ -23,7 +25,7 @@ class GamNgsAssembler(BaseMetaAssembler, IPlugin):
                 mfile = asmtypes.set_factory('contigs', [self.merge(mfile, cset)],
                                              name='merged{}_contigs'.format(i+1))
             merged_files = mfile.files
-            
+
         return {'contigs': merged_files}
 
     def merge(self, contigset1, contigset2):
@@ -44,7 +46,7 @@ class GamNgsAssembler(BaseMetaAssembler, IPlugin):
         merged_file = merge_prefix + '.gam.fasta'
         if os.path.exists(merged_file):
             return merged_file
-        
+
 
     def prepare_lib(self, cset):
         libfile = os.path.join(self.outpath, cset.name + '.lib')
@@ -65,7 +67,7 @@ class GamNgsAssembler(BaseMetaAssembler, IPlugin):
         cmd_args = ['samtools', 'rmdup', sortedfile, undupfile]
         self.arast_popen(cmd_args, overrides=False)
         if not os.path.exists(undupfile):
-            logging.warning('Unable to perform alignment')
+            logger.warning('Unable to perform alignment')
             raise Exception('Unable to perform alignment')
         cmd_args = ['samtools', 'index', undupfile]
         self.arast_popen(cmd_args, overrides=False)
@@ -73,9 +75,6 @@ class GamNgsAssembler(BaseMetaAssembler, IPlugin):
         lib.write('{}\n'.format(undupfile))
         lib.write('50 10000\n')
         lib.close()
-        return {'file': libfile, 
-                'name': cset.name, 
+        return {'file': libfile,
+                'name': cset.name,
                 'contigs': cset.files[0]}
-
-            
-            

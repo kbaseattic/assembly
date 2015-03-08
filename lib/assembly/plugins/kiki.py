@@ -5,6 +5,8 @@ import subprocess
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
+logger = logging.getLogger(__name__)
+
 class KikiAssembler(BaseAssembler, IPlugin):
     new_version = True
 

@@ -6,9 +6,11 @@ from plugins import BasePreprocessor
 from yapsy.IPlugin import IPlugin
 from assembly import get_qual_encoding
 
+logger = logging.getLogger(__name__)
+
 class TagdustPreprocessor(BasePreprocessor, IPlugin):
     def run(self):
-        """ 
+        """
         Build the command and run.
 
         """
@@ -29,14 +31,14 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
                 td_file = os.path.join(self.outpath, fixes[0] + '.td.' + fixes[1])
                 synced_file = os.path.join(self.outpath, fixes[0] + '.td_sync.' + fixes[1])
                 cmd_args += [td_file, os.path.join(os.getcwd(), self.library), f]
-                logging.info("TagDust Plugin: {}".format(cmd_args))
+                logger.info("TagDust plugin: {}".format(cmd_args))
                 self.arast_popen(cmd_args, cwd=self.outpath)
                 td_unsynced_files.append(td_file)
                 td_synced_files.append(synced_file)
 
             if file_set.type == 'paired' and len(td_unsynced_files) == 2:
                 raw_file = raw_reads[i].files[0]
-                cmd_args = [self.sync, raw_file, 
+                cmd_args = [self.sync, raw_file,
                             td_unsynced_files[0], td_unsynced_files[1],
                             td_synced_files[0], td_synced_files[1]]
                 self.arast_popen(cmd_args, cwd=self.outpath)
@@ -46,4 +48,3 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
             processed_reads.append(new_files)
 
         return {'reads': processed_reads}
-

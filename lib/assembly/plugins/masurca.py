@@ -5,15 +5,17 @@ import subprocess
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
+logger = logging.getLogger(__name__)
+
 class MasurcaAssembler(BaseAssembler, IPlugin):
     def run(self):
-        """ 
+        """
         Build the command and run.
         Return list of contig file(s)
         """
-        
+
         ## Build config file
-        config_fname = os.path.join(self.outpath, 
+        config_fname = os.path.join(self.outpath,
                                     str(self.job_data['job_id']) + '_config.txt')
         cf = open(config_fname, 'w')
 
@@ -95,5 +97,3 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
             output['contigs'] = [mv_contigs]
 
         return output
-
-    

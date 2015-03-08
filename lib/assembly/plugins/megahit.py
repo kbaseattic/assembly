@@ -5,6 +5,8 @@ from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 import multiprocessing
 
+logger = logging.getLogger(__name__)
+
 class MegahitAssembler(BaseAssembler, IPlugin):
     def run(self):
         """
@@ -48,11 +50,7 @@ class MegahitAssembler(BaseAssembler, IPlugin):
         # in the configuration file.
         command += ['-o', os.path.join(self.outpath, "megahit")]
 
-        print(["command"] + command)
-
-        logging.warning("megahit plugin =>")
-        logging.warning(" ".join(command))
-        logging.warning(command)
+        logger.info("Command line: {}".format(" ".join(command)))
 
         self.arast_popen(command)
 
