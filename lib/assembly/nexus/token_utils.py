@@ -62,6 +62,7 @@ class InMemoryCache(object):
         except ValueError:
             return rsa.PublicKey.load_pkcs1_openssl_pem(self.cache_map[key_id])
 
+
 class FileSystemCache(object):
     """
     Cache signing certificates to the filesystem.
@@ -87,10 +88,17 @@ class FileSystemCache(object):
         cached_cert_path = os.path.join(self.cache_path,
             "{0}.pem".format(key_id))
         with open(cached_cert_path, 'r') as cert:
+<<<<<<< HEAD
             try:
                 return rsa.PublicKey.load_pkcs1(cert.read())
             except:
                 return rsa.PublicKey.load_pkcs1_openssl_pem(cert.read())
+=======
+	    try:
+		return rsa.PublicKey.load_pkcs1(cert.read())
+	    except:
+		return rsa.PublicKey.load_pkcs1_openssl_pem(cert.read())
+>>>>>>> d16fa01313b9499502b1d81e6b5aa261b5801ac3
 
 class LoggingCacheWrapper(object):
 
@@ -206,8 +214,3 @@ class TokenRequestError(Exception):
     def __init__(self, error):
         super(TokenRequestError, self).__init__()
         self.error = error
-
-
-
-
-
