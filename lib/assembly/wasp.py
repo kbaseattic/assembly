@@ -114,7 +114,7 @@ def eval(x, env):
             return eval(conseq, env)
         elif alt:
             return eval(alt, env)
-            
+
     elif x[0] == 'set!':           # (set! var exp)
         (_, var, exp) = x
         env.find(var)[var] = eval(exp, env)
@@ -126,10 +126,13 @@ def eval(x, env):
             env.parameters[param] = value
     elif x[0] == 'define':         # (define var exp)
         (_, var, exp) = x
-        try: env[var] = eval(exp, env)
+        try:
+            env[var] = eval(exp, env)
         except Exception as e:
-            print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
-            print traceback.format_exc()
+            logger.error('Failed to evaluate definition of "{}": {}\n{}'.
+                         format(var, e, traceback.format_exc()))
+            # print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
+            # print traceback.format_exc()
             # env.errors.append(e)
             # env.exceptions.append(traceback.format_exc())
             env[var] = None
@@ -160,8 +163,10 @@ def eval(x, env):
             val = eval(exp, env)
             results = val
         except Exception as e:
-            print ' [!]: {} -- {}'.format(to_string(exp), e)
-            print traceback.format_exc()
+            logger.error('Failed to evaluate upload of "{}": {}\n{}'.
+                         format(to_string(exp), e, traceback.format_exc()))
+            # print ' [!]: {} -- {}'.format(to_string(exp), e)
+            # print traceback.format_exc()
             env.errors.append(e)
             env.exceptions.append(traceback.format_exc())
             results = None
@@ -225,7 +230,9 @@ def eval(x, env):
                 if ret:val.append(ret)
             except Exception as e:
                 if list(e):
-                    print(traceback.format_exc())
+                    logger.error('Failed to eval "{}": {}\n{}'.
+                                 format(to_string(exp), e, traceback.format_exc()))
+                    # print(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
         if val:
@@ -234,15 +241,18 @@ def eval(x, env):
     elif x[0] == 'print':
         for exp in x[1:]:
             print eval(exp, env)
+
     elif x[0] == 'prog':          # same as begin, but use same env
         val = []
         for exp in x[1:]:
             try:
                 ret = eval(exp, env)
-                if ret:val.append(ret)
+                if ret: val.append(ret)
             except Exception as e:
                 if list(e):
-                    print(traceback.format_exc())
+                    logger.error('Failed to eval "{}": {}\n{}'.
+                                 format(to_string(exp), e, traceback.format_exc()))
+                    # print(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
         if val:
@@ -318,7 +328,8 @@ def repl(prompt='lis.py> '):
     "A prompt-read-eval-print loop."
     while True:
         val = eval(parse(raw_input(prompt)))
-        if val is not None: print to_string(val)
+        if val is not None:
+            print to_string(val)
 
 def run(exp, env):
     stages = 0
@@ -393,9 +404,9 @@ class WaspLink(dict):
 
     def traverse(self):
         if self['link']:
-            print self['default_output']['name']
+            logger.debug("traverse: {}".format(self['default_output']['name']))
             for i,wlink in enumerate(self['link']):
-                print 'link ', i
+                logger.debug('link: {}'.format(i))
                 wlink.traverse()
 
     def find_module(self, module):
@@ -437,7 +448,8 @@ class WaspEngine():
         for w in self.assembly_env.emissions + w_chain:
             try:
                 job_data.add_results(w['default_output'])
-            except: print 'Output', w
+            except:
+                logger.info('Output {}'.format(w))
         job_data['tracebacks'] = [str(e) for e in self.assembly_env.exceptions]
         job_data['errors'] = [str(e) for e in self.assembly_env.errors]
         return w_chain[0]
