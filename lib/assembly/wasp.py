@@ -129,8 +129,8 @@ def eval(x, env):
         try:
             env[var] = eval(exp, env)
         except Exception as e:
-            logger.error('Failed to evaluate definition of "{}": {}\n{}'.
-                         format(var, e, traceback.format_exc()))
+            logger.error('Failed to evaluate definition of "{}": {}'.format(var, e))
+            logger.debug(traceback.format_exc())
             # print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
             # print traceback.format_exc()
             # env.errors.append(e)
@@ -163,8 +163,8 @@ def eval(x, env):
             val = eval(exp, env)
             results = val
         except Exception as e:
-            logger.error('Failed to evaluate upload of "{}": {}\n{}'.
-                         format(to_string(exp), e, traceback.format_exc()))
+            logger.warn('Failed to evaluate upload of "{}": {}'. format(to_string(exp), e))
+            logger.debug(traceback.format_exc())
             # print ' [!]: {} -- {}'.format(to_string(exp), e)
             # print traceback.format_exc()
             env.errors.append(e)
@@ -230,8 +230,8 @@ def eval(x, env):
                 if ret:val.append(ret)
             except Exception as e:
                 if list(e):
-                    logger.error('Failed to eval "{}": {}\n{}'.
-                                 format(to_string(exp), e, traceback.format_exc()))
+                    logger.error('Failed to eval "{}": {}'.format(to_string(exp), e))
+                    logger.debug(traceback.format_exc()))
                     # print(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
@@ -250,8 +250,8 @@ def eval(x, env):
                 if ret: val.append(ret)
             except Exception as e:
                 if list(e):
-                    logger.error('Failed to eval "{}": {}\n{}'.
-                                 format(to_string(exp), e, traceback.format_exc()))
+                    logger.error('Failed to eval "{}": {}'.format(to_string(exp), e))
+                    logger.debug(traceback.format_exc())
                     # print(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
@@ -449,7 +449,7 @@ class WaspEngine():
             try:
                 job_data.add_results(w['default_output'])
             except:
-                logger.info('Output {}'.format(w))
+                logger.warn('Output not added: {}'.format(w))
         job_data['tracebacks'] = [str(e) for e in self.assembly_env.exceptions]
         job_data['errors'] = [str(e) for e in self.assembly_env.errors]
         return w_chain[0]
