@@ -36,7 +36,9 @@ from kbase import typespec_to_assembly_data as kb_to_asm
 
 from ConfigParser import SafeConfigParser
 
+
 logger = logging.getLogger(__name__)
+
 
 class ArastConsumer:
     def __init__(self, shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, threads, queue,
@@ -102,14 +104,15 @@ class ArastConsumer:
             try:
                 file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(d))
             except os.error as e:
-                logger.warning('GC Ignored "{}": could not get timestamp: {}'.format(d, e))
+                logger.warning('GC ignored "{}": could not get timestamp: {}'.format(d, e))
                 continue
-            if datetime.datetime.now() - file_modified > datetime.timedelta(days=expiration):
-                print 'GC: Removing: ', d, datetime.datetime.now() - file_modified
+            tdiff = datetime.datetime.now() - file_modified
+            if tdiff > datetime.timedelta(days=expiration):
+                logger.info('GC: removing expired directory: {} (modified {} ago)'.format(d, tdiff))
                 removed.append(d)
                 shutil.rmtree(d, ignore_errors=True)
             else:
-                logger.debug('GC: not removing: {}; time diff = {}'.format(d, datetime.datetime.now() - file_modified))
+                logger.debug('GC: not removing: {} (modified {} ago)'.format(d, tdiff))
         for r in removed:
             dirs.remove(r)
 
@@ -548,9 +551,9 @@ class ArastConsumer:
                 if os.path.exists(extracted_file):
                     return extracted_file
                 else:
-                    print "{} does not exist!".format(extracted_file)
+                    logger.error("{} does not exist!".format(extracted_file))
                     raise Exception('Archive structure error')
-        logger.debug("Could not extract %s" % filename)
+        logger.error("Could not extract {}".format(filename))
         return filename
 
 ### Helper functions ###
