@@ -550,11 +550,13 @@ class ArastConsumer:
                 extracted_file = filename[:filename.index(ext)-1]
                 if os.path.exists(extracted_file): # Check extracted already
                     return extracted_file
-                logger.info("Extracting {} -> {}...".format(filename, extracted_file))
+                logger.info("Extracting {}...".format(filename))
                 # p = subprocess.Popen([unp_bin, filename],
                 #                      cwd=filepath, stderr=subprocess.STDOUT)
                 # p.wait()
+                # Hide the "broken pipe" message from unp
                 out = subprocess.Popen([unp_bin, filename],
+                                       cwd=filepath,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT).communicate()[0]
                 if os.path.exists(extracted_file):
