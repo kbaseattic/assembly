@@ -1,3 +1,4 @@
+import logging
 import os
 from plugins import BaseAssessment
 from yapsy.IPlugin import IPlugin
