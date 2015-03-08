@@ -4,6 +4,8 @@ import subprocess
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
+logger = logging.getLogger(__name__)
+
 class VelvetAssembler(BaseAssembler, IPlugin):
     new_version = True
 
@@ -63,7 +65,7 @@ class VelvetAssembler(BaseAssembler, IPlugin):
                              '-ins_length{}_sd'.format(suf), str(stdev)]
             except:pass
 
-        logging.info(cmd_args)
+        logger.debug(cmd_args)
         self.arast_popen(cmd_args)
         contigs = [self.outpath + '/contigs.fa']
         if not os.path.exists(contigs[0]):

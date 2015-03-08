@@ -100,13 +100,13 @@ class Shock:
         self.auth_checked = True
         return self.auth
 
-    def upload_file(self, filename, filetype, curl=False, auth=False):
+    def upload_file(self, filename, filetype, curl=False, auth=False, silent=True):
         if not self.auth_checked:
             self.check_anonymous_post_allowed()
         auth = auth or self.auth
         # print >> sys.stderr, "upload: filename={}, filetype={}, curl={}, auth={}".format(filename, filetype, curl, auth)
         if curl:
-            res = self._curl_post_file(filename, filetype, auth)
+            res = self._curl_post_file(filename, filetype, auth, silent)
         else:
             res = self._post_file(filename, filetype, auth)
 
@@ -121,7 +121,7 @@ class Shock:
         return res
 
     def upload_reads(self, filename, curl=False, auth=False):
-        return self.upload_file(filename, filetype='reads', curl=curl, auth=auth)
+        return self.upload_file(filename, filetype='reads', curl=curl, auth=auth, silent=False)
 
     def upload_contigs(self, filename, curl=False, auth=False):
         return self.upload_file(filename, filetype='contigs', curl=curl, auth=auth)
@@ -209,7 +209,7 @@ class Shock:
 
 	return res
 
-    def _curl_post_file(self, filename, filetype='', auth=False):
+    def _curl_post_file(self, filename, filetype='', auth=False, silent=True):
         tmp_attr = dict(self.attrs)
         tmp_attr['filetype'] = filetype
         attr_file = self._create_attr_file(tmp_attr, 'attrs')
@@ -219,6 +219,8 @@ class Shock:
                '-F', 'upload=@{}'.format(filename),
                '{}/node/'.format(self.shockurl)]
 
+        if silent:
+            cmd += ['-s']
         if auth:
             cmd += ['-H', '"Authorization: OAuth {}"'.format(self.token)]
 

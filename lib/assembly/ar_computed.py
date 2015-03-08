@@ -18,9 +18,16 @@ import re
 import requests
 
 from ConfigParser import SafeConfigParser
+from multiprocessing import current_process as proc
+
 import consume
 import shock
 import utils
+
+
+logging.basicConfig(format="[%(asctime)s %(levelname)s %(process)d %(name)s] %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 #context = daemon.DaemonContext(stdout=sys.stdout) #temp print to stdout
 #TODO change to log file
@@ -80,7 +87,7 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     try:
         res = requests.get(shockurl)
     except Exception as e:
-        logging.error("Shock connection error: {}".format(e))
+        logger.error("Shock connection error: {}".format(e))
         sys.exit(1)
     print " [.] Shock connection successful"
 
@@ -89,9 +96,9 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
         connection.close()
-        logging.info("MongoDB Info: %s" % connection.server_info())
+        logger.info("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
-        logging.error("MongoDB connection error: {}".format(e))
+        logger.error("MongoDB connection error: {}".format(e))
         sys.exit(1)
     print " [.] MongoDB connection successful."
 
@@ -102,7 +109,7 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
             host=rmq_host, port=rmq_port))
         connection.close()
     except Exception as e:
-        logging.error("RabbitMQ connection error: {}".format(e))
+        logger.error("RabbitMQ connection error: {}".format(e))
         sys.exit(1)
     print " [.] RabbitMQ connection successful"
 
@@ -131,10 +138,10 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
 
     workers = []
     for i in range(int(num_threads)):
-        worker_name = "[Worker %s]:" % i
+        worker_name = "worker #%s" % i
         compute = consume.ArastConsumer(shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, num_threads,
                                         queue, kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf, datapath, binpath)
-        logging.info("[Master]: Starting %s" % worker_name)
+        logger.info("Master: starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
         workers.append(p)
         p.start()
@@ -188,8 +195,9 @@ parser.add_argument("-b", "--compute-bin", dest='binpath', help="specify a direc
                     action="store", required=False)
 
 args = parser.parse_args()
+
 if args.verbose:
-    logging.basicConfig(level=logging.DEBUG)
+    logging.root.setLevel(logging.DEBUG)
 
 arasturl = args.server or None
 queue = args.queue or None

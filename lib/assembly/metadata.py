@@ -8,7 +8,10 @@ import pymongo
 import uuid
 import time
 import json
+import re
 from ConfigParser import SafeConfigParser
+
+logger = logging.getLogger(__name__)
 
 class MetadataConnection:
     def __init__(self, host, port, db, collections):
@@ -71,9 +74,9 @@ class MetadataConnection:
         col.update({query_key : query_value},
                     {'$set' : {key : value}})
         if col.find_one({query_key : query_value}) is not None:
-            logging.info("Doc updated: %s:%s:%s" % (query_value, key, value))
+            logger.info("Doc updated: %s:%s:%s" % (query_value, key, value))
         else:
-            logging.warning("Doc %s not updated!" % query_value)
+            logger.warning("Doc %s not updated!" % query_value)
 
 
     def get_next_id(self, user, category):
@@ -97,9 +100,12 @@ class MetadataConnection:
                     {'$set' : {field : value}})
 
         if jobs.find_one({'_id' : job_id}) is not None:
-            logging.info("Job updated: %s:%s:%s" % (job_id, field, value))
+            if re.search(r'(status|contig_ids)', field):
+                logger.info("Job updated: %s - %s - %s" % (job_id, field, value))
+            else:
+                logger.debug("Job updated: %s - %s - %s" % (job_id, field, value))
         else:
-            logging.warning("Job %s not updated!" % job_id)
+            logger.warning("Job %s not updated!" % job_id)
 
     def list_jobs(self, user):
         r = []
@@ -113,7 +119,7 @@ class MetadataConnection:
             job = self.get_jobs().find({'ARASTUSER':user, 'job_id':int(job_id)})[0]
         except:
             job = None
-            logging.error("Job %s does not exist" % job_id)
+            logger.error("Job %s does not exist" % job_id)
         return job
 
     def get_job_by_uid(self, uid):
