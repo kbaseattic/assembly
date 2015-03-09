@@ -113,7 +113,7 @@ def get_parser():
     p_get.add_argument("-r", "--report", action="store_true", help="Print assembly stats report")
     p_get.add_argument("-l", "--log", action="store_true", help="Print assembly job log")
     p_get.add_argument("-o", "--outdir", action="store", help="Download to specified dir")
-    p_get.add_argument("-w", "--wait", action="store_true", help="Wait until job is done")
+    p_get.add_argument("-w", "--wait", action="store", nargs='?', const=True, help="Wait until job is done")
 
     # login options
     p_login.add_argument("--rast", action="store_true", help="Log in using RAST account")
@@ -232,7 +232,10 @@ def cmd_get(args, aclient):
     aclient.validate_job(args.job)
 
     if args.wait:
-        stat = aclient.wait_for_job(args.job)
+        if type(args.wait) is str:
+            stat = aclient.wait_for_job(args.job, args.wait)
+        else:
+            stat = aclient.wait_for_job(args.job)
         if 'FAIL' in stat:
             print 'Job failed: ', stat
             sys.exit()
