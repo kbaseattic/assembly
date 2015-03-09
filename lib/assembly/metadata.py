@@ -78,7 +78,7 @@ class MetadataConnection:
         col.update({query_key : query_value},
                     {'$set' : {key : value}})
         if col.find_one({query_key : query_value}) is not None:
-            logger.info("Doc updated: %s:%s:%s" % (query_value, key, value))
+            logger.info("Doc updated: %s - %s - %s" % (query_value, key, value))
         else:
             logger.warning("Doc %s not updated!" % query_value)
 

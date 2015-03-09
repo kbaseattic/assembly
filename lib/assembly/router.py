@@ -38,6 +38,9 @@ parser = None
 metadata = None
 rjobmon = None
 
+logger = logging.getLogger(__name__)
+
+
 def send_message(body, routingKey):
     """ Place the job request on the correct job queue """
 
@@ -54,7 +57,7 @@ def send_message(body, routingKey):
                           body=body,
                           properties=pika.BasicProperties(
                           delivery_mode=2)) #persistant message
-    logging.debug(" [x] Sent to queue: %r: %r" % (routingKey, body))
+    logger.info("Sent to queue: %r: %r" % (routingKey, body))
     connection.close()
 
 
@@ -111,7 +114,7 @@ def publish_kill_request(user, job_id):
     channel.basic_publish(exchange='kill',
                           routing_key='',
                           body=msg,)
-    logging.debug(" [x] Sent to kill exchange: {}".format(job_id))
+    logger.info("Sent to kill exchange: {}".format(job_id))
     connection.close()
 
 
@@ -147,7 +150,7 @@ def route_job(body):
     ## Check that user queue limit is not reached
     uid = metadata.insert_job(client_params)
     metadata.rjob_insert(uid, client_params)
-    logging.info("Inserting job record: %s" % client_params)
+    logger.debug("Inserting job record: {}".format(client_params))
     metadata.update_job(uid, 'status', 'Queued')
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
@@ -170,7 +173,7 @@ def register_data(body):
     client_params = json.loads(body) #dict of params
     keep = ['assembly_data', 'client', 'ARASTUSER', 'message', 'version', 'kbase_assembly_input']
     data_info = {k:client_params.get(k) for k in keep if client_params.get(k)}
-    logging.info('Register Data: {}'.format(data_info))
+    logger.info('Register data: {}'.format(data_info))
     return metadata.insert_data(data_info['ARASTUSER'], data_info)
 
 
@@ -201,7 +204,7 @@ def analyze_data(body): #run fastqc
 
     ## Check that user queue limit is not reached
     uid = metadata.insert_job(client_params)
-    logging.info("Inserting job record: %s" % client_params)
+    logger.debug("Inserting job record: {}".format(client_params))
     metadata.update_job(uid, 'status', 'Queued')
     p = dict(client_params)
     metadata.update_job(uid, 'message', p['message'])
@@ -226,7 +229,7 @@ def authenticate_request():
         return 'OPTIONS'
     token = cherrypy.request.headers.get('Authorization')
     if not token:
-        print "Auth error"
+        logger.warning("Auth error")
         raise cherrypy.HTTPError(403)
 
     #parse out username
@@ -235,7 +238,7 @@ def authenticate_request():
     if m:
         user = m.group(1)
     else:
-        print "Auth error"
+        logger.warning("Auth error")
         raise cherrypy.HTTPError(403, 'Bad Token')
     auth_info = metadata.get_auth_info(user)
 
@@ -250,7 +253,7 @@ def authenticate_request():
         ctime = datetime.datetime.today()
         globus_user = user
         if (ctime - atime).seconds > 15*60: # 15 min auth token
-            print 'Token expired, reauthenticating with Globus'
+            logger.warning('Token expired, reauthenticating with Globus')
             nexus = nexusclient.NexusClient(config_file = nexus_config_file)
             globus_user = nexus.authenticate_user(token)
             metadata.update_auth_info(globus_user, token, str(ctime))
@@ -282,7 +285,7 @@ def start(config_file, shock_url=None,
           rabbit_host=None, rabbit_port=None):
 
     global parser, metadata, rjobmon
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
 
     parser = SafeConfigParser()
     parser.read(config_file)
@@ -367,7 +370,7 @@ def start_qc_monitor(rabbit_host, rabbit_port):
     queue_name = result.method.queue
     channel.queue_bind(exchange='qc',
                        queue=queue_name)
-    print ' [*] Waiting for QC completion'
+    logger.info('Waiting for QC completion')
     channel.basic_consume(qc_callback,
                           queue=queue_name,
                           no_ack=True)
@@ -555,7 +558,7 @@ class JobResource:
             else:
                 result_data = doc['contig_ids'][0]
         except Exception as e:
-            print e
+            logger.warn("Could not get assembly nodes")
             raise cherrypy.HTTPError(500)
         return json.dumps(result_data)
 
@@ -831,6 +834,7 @@ class SystemResource:
                 node_ip = args[0]
                 command = args[1]
                 if command == 'close':
+                    logger.warning("Closing connection: {}".format(node_ip))
                     sys.stdout.flush()
                     return self.close_connection(node_ip)
         elif resource == 'config':
@@ -882,7 +886,7 @@ class ShockResource(object):
 class Root(object):
     @cherrypy.expose
     def default(self):
-        print 'root'
+        logger.info('Accessing root')
 
 
 ########### Running Jobs Service
@@ -902,15 +906,15 @@ class RunningJobsMonitor():
             job = self.meta.get_job_by_uid(same)
             if (self.past_jobs[same]['timestamp'] == jobs[same]['timestamp'] and
                 jobs[same]['status'] == 'running'):
-                print 'Stale, removing:', same
+                logger.info('Removing stale job: {}'.format(same))
                 self.meta.rjob_remove(same)
             elif jobs[same]['status'] == 'running':
-                logging.info('Running: {}'.format(same))
+                logger.info('Running: {}'.format(same))
             elif job['status'] == 'queued':
-                logging.info('Queued: {}'.format(same))
+                logger.info('Queued: {}'.format(same))
             else:
                 self.meta.rjob_remove(same)
-                print 'Rogue job, removing', same
+                logger.warning('Removing rogue job: {}'.format(same))
         self.past_jobs = jobs
 
     def user_jobs(self, user):

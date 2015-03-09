@@ -39,8 +39,11 @@ kill_list_lock = multiprocessing.Lock()
 
 def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
 
+    logger.info("==========================================")
+    logger.info("  Starting Assembly Service Compute Node")
+    logger.info("==========================================")
+
     #### Get default configuration from ar_compute.conf
-    logger.info("[.] Starting Assembly Service Compute Node")
     cparser = SafeConfigParser()
     cparser.read(config)
     logging.getLogger('yapsy').setLevel(logging.WARNING)
@@ -94,7 +97,7 @@ def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
         connection.close()
-        logger.info("MongoDB Info: %s" % connection.server_info())
+        logger.debug("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
         logger.error("MongoDB connection error: {}".format(e))
         sys.exit(1)

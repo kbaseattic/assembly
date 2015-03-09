@@ -122,9 +122,8 @@ class Client:
             interval = int(interval)
         except ValueError:
             interval = 30
-        if interval < 5:
-            interval = 5
-        sys.stderr.write('interval = {}\n'.format(interval))
+        if interval < 2:
+            interval = 2
         while not self.is_job_done(job_id):
             time.sleep(interval)
         return self.get_job_status(1, job_id)
