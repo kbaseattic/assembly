@@ -1,8 +1,11 @@
+import logging
 import os
 from plugins import BaseAligner
 from yapsy.IPlugin import IPlugin
 
 from asmtypes import ArastDataInputError
+
+logger = logging.getLogger(__name__)
 
 class BwaAligner(BaseAligner, IPlugin):
     def run(self, contig_file=None, reads=None, merged_pair=False):
@@ -45,7 +48,7 @@ class BwaAligner(BaseAligner, IPlugin):
             if not os.path.exists(bamfile):
                 raise Exception('Unable to complete alignment')
 
-        ## Convert back to sam    
+        ## Convert back to sam
         samfile = bamfile.replace('.bam', '.sam')
         self.arast_popen(['samtools', 'view', '-h', '-o', samfile, bamfile])
 

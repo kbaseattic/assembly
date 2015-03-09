@@ -7,8 +7,10 @@ SERVER_QUEUE=$ARAST_QUEUE
 LIB_DIR=$ARAST_LIB_DIR
 VAR_DIR=$ARAST_VAR_DIR
 BIN_DIR=$ARAST_BIN_DIR
+MODULE_DIR=$ARAST_MODULE_DIR
 DATA_DIR=$ARAST_DATA_DIR
 THREADS=$ARAST_WORKER_THREADS
+VERBOSE=$ARAST_VERBOSE
 
 LIB_DIR=${LIB_DIR:-$TOP_DIR/lib}
 VAR_DIR=${VAR_DIR:-$TOP_DIR/deployment/var}
@@ -31,18 +33,21 @@ mkdir -p $LOG_DIR
 ARG_URL=$(     [[ -z "$SERVER_URL"   ]] && echo "" || echo "--server $SERVER_URL")
 ARG_QUEUE=$(   [[ -z "$SERVER_QUEUE" ]] && echo "" || echo "--queue $SERVER_QUEUE")
 ARG_BIN=$(     [[ -z "$BIN_DIR"      ]] && echo "" || echo "--compute-bin $BIN_DIR")
+ARG_MODULE=$(  [[ -z "$MODULE_DIR"   ]] && echo "" || echo "--module-bin $MODULE_DIR")
 ARG_DATA=$(    [[ -z "$DATA_DIR"     ]] && echo "" || echo "--compute-data $DATA_DIR")
 ARG_THREADS=$( [[ -z "$THREADS"      ]] && echo "" || echo "--threads $THREADS")
+ARG_VERBOSE=$( [[ -z "$VERBOSE"      ]] && echo "" || echo "--verbose")
 
 args=( --config $COMPUTE_CONFIG
+       --logfile $LOG_DIR/ar_compute.log
        $ARG_URL $ARG_QUEUE
-       $ARG_BIN $ARG_DATA
-       $ARG_THREADS )
+       $ARG_BIN $ARG_MODULE $ARG_DATA
+       $ARG_THREADS $ARG_VERBOSE)
 
-nohup $LIB_DIR/ar_computed.py "${args[@]}" >> $LOG_DIR/ar_compute.log 2>&1 &
+nohup $LIB_DIR/ar_computed.py "${args[@]}" > $LOG_DIR/ar_compute.out 2>&1 &
 echo $! >$VAR_DIR/ar_compute.pid
 pid=$(cat $VAR_DIR/ar_compute.pid)
-cmd="$LIB_DIR/ar_computed.py ${args[@]} >> $LOG_DIR/ar_compute.log 2>&1 &"
+cmd="$LIB_DIR/ar_computed.py ${args[@]} > $LOG_DIR/ar_compute.out 2>&1 &"
 
 sleep 2
 if [[ -z $(ps -f -p $pid | grep ar_computed) ]]; then
@@ -54,4 +59,3 @@ else
     echo "Command: $cmd"
     echo
 fi
-

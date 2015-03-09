@@ -16,9 +16,10 @@ import shutil
 import glob
 from contextlib import contextmanager
 
-# import metadata as meta
-
 from ConfigParser import SafeConfigParser
+
+
+logger = logging.getLogger(__name__)
 
 def get_default(key):
     """Get assemblers default value from config file."""
@@ -46,7 +47,7 @@ def tar(outpath, asm_data, tarname):
         pass
 
     outfile += tarname
-    targs = ['tar', '-czvf', outfile, asm_data]
+    targs = ['tar', '-czf', outfile, asm_data]
     t = subprocess.Popen(targs)
     t.wait()
     return outfile
@@ -59,7 +60,7 @@ def tar_directory(outpath, directory, tarname):
         pass
 
     outfile += tarname
-    targs = ['tar', '-czvf', outfile, './']
+    targs = ['tar', '-czf', outfile, './']
     t = subprocess.Popen(targs, cwd=directory)
     t.wait()
     return outfile
@@ -71,9 +72,9 @@ def tar_list(outpath, file_list, tarname):
     try: os.makedirs(outfile)
     except: pass
     outfile += tarname
-    targs = ['tar', '-czvf', outfile]
+    targs = ['tar', '-czf', outfile]
     targs += [os.path.relpath(path, common_path) for path in file_list]
-    logging.debug("Tar command: %s: " % targs)
+    logger.debug("Tar command: %s: " % targs)
     t = subprocess.Popen(targs, cwd=common_path)
     t.wait()
     return outfile
@@ -150,10 +151,10 @@ def get_qual_encoding(file):
             line = f.readline()
             for c in line:
                 if ord(c) > 74:
-                    logging.info("Detected phred64 quality encoding")
+                    logger.info("Detected phred64 quality encoding")
                     return 'phred64'
                 elif ord(c) < 64:
-                    logging.info("Detected phred33 quality encoding")
+                    logger.info("Detected phred33 quality encoding")
                     return 'phred33'
         if len(bline) == 0: #EOF
             break

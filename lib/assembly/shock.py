@@ -17,6 +17,9 @@ import tempfile
 import utils
 
 
+logger = logging.getLogger(__name__)
+
+
 def verify_shock_url(url):
     return utils.verify_url(url, 7445)
 
@@ -46,7 +49,7 @@ def get_handle(handle, token=None, ret=None):
     return {'text': r.text, 'json': r.json}.get(ret, r.content)
 
 
-def curl_download_url(url, outdir=None, filename=None, token=None):
+def curl_download_url(url, outdir=None, filename=None, token=None, silent=False):
     if outdir:
         try: os.makedirs(outdir)
         except OSError: pass
@@ -60,18 +63,21 @@ def curl_download_url(url, outdir=None, filename=None, token=None):
 
     cmd = ['curl', '-k', '-X', 'GET',
            '-o', filename, '"{}"'.format(url) ]
+
+    if silent:
+        cmd += ['-s']
     if token:
         cmd += ['-H', '"Authorization: OAuth {}"'.format(token)]
 
-    # print("filename = {}".format(filename))
-    # print("curl cmd = {}".format(" ".join(cmd)))
-
+    sys.stderr.write("Downloading: {}\n".format(' '.join(cmd)))
+    logger.debug("curl_download_url: {}".format(' '.join(cmd)))
     p = subprocess.Popen(' '.join(cmd), cwd=outdir, shell=True)
     p.wait()
+    sys.stderr.write("\n")
 
     downloaded = os.path.join(outdir, filename)
     if os.path.exists(downloaded):
-        print('File Downloaded: {}'.format(downloaded))
+        logger.info('File downloaded: {}'.format(downloaded))
         return downloaded
     else:
         raise Error('Data does not exist')
@@ -102,19 +108,19 @@ class Shock:
         self.auth_checked = True
         return self.auth
 
-    def upload_file(self, filename, filetype, curl=False, auth=False):
+    def upload_file(self, filename, filetype, curl=False, auth=False, silent=False):
         if not self.auth_checked:
             self.check_anonymous_post_allowed()
         auth = auth or self.auth
-        # print >> sys.stderr, "upload: filename={}, filetype={}, curl={}, auth={}".format(filename, filetype, curl, auth)
+
         if curl:
-            res = self._curl_post_file(filename, filetype, auth)
+            res = self._curl_post_file(filename, filetype, auth, silent)
         else:
             res = self._post_file(filename, filetype, auth)
 
         try:
             if res['status'] == 200:
-                print >> sys.stderr, "Upload complete: {}".format(filename)
+                logger.info("Upload complete: {}".format(filename))
             else:
                 raise Error("Upload failed: {}. {}".format(res['status'], res.get("error")))
         except AttributeError:
@@ -123,7 +129,7 @@ class Shock:
         return res
 
     def upload_reads(self, filename, curl=False, auth=False):
-        return self.upload_file(filename, filetype='reads', curl=curl, auth=auth)
+        return self.upload_file(filename, filetype='reads', curl=curl, auth=auth, silent=False)
 
     def upload_contigs(self, filename, curl=False, auth=False):
         return self.upload_file(filename, filetype='contigs', curl=curl, auth=auth)
@@ -219,7 +225,7 @@ class Shock:
 
 	return res
 
-    def _curl_post_file(self, filename, filetype='', auth=False):
+    def _curl_post_file(self, filename, filetype='', auth=False, silent=False):
         tmp_attr = dict(self.attrs)
         tmp_attr['filetype'] = filetype
         attr_file = self._create_attr_file(tmp_attr, 'attrs')
@@ -229,10 +235,15 @@ class Shock:
                '-F', 'upload=@{}'.format(filename),
                '{}/node/'.format(self.shockurl)]
 
+        if silent:
+            cmd += ['-s']
         if auth:
             cmd += ['-H', '"Authorization: OAuth {}"'.format(self.token)]
 
-        # print >> sys.stderr, "curl_post_file: {}".format(' '.join(cmd))
+        sys.stderr.write("Uploading: {}\n".format(' '.join(cmd)))
+        logger.debug("curl_post_file: {}".format(' '.join(cmd)))
         r = subprocess.check_output(' '.join(cmd), shell=True)
+        sys.stderr.write("\n")
+
         res = json.loads(r)
         return res

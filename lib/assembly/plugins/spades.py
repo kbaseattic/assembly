@@ -4,6 +4,8 @@ import os
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
+logger = logging.getLogger(__name__)
+
 class SpadesAssembler(BaseAssembler, IPlugin):
     new_version = True
 
@@ -19,7 +21,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         lib_num = 1
         for readset in self.data.readsets_paired:
             if lib_num > 5:
-                print '> 5 pairs not supported!'
+                logger.error('> 5 pairs not supported!')
                 self.out_module.write('> 5 pairs not supported!')
                 break
             if len(readset.files) == 1: # Interleaved
@@ -28,8 +30,8 @@ class SpadesAssembler(BaseAssembler, IPlugin):
                 cmd_args += ['--pe{}-1'.format(lib_num), readset.files[0],
                              '--pe{}-2'.format(lib_num), readset.files[1]]
                 for extra in readset.files[2:]:
-                    self.out_module.write('WARNING: Not using {}'.format(extra))
-                    print('WARNING: Not using {}'.format(extra))
+                    self.out_module.write('WARNING: Not using extra data: {}'.format(extra))
+                    logger.warn('Not using extra data: {}'.format(extra))
             else:
                 raise Exception('Spades module file error')
             lib_num += 1
@@ -66,4 +68,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
             output['contigs'] = [contigs]
         if os.path.exists(scaffolds):
             output['scaffolds'] = [scaffolds]
+
+        logger.debug('Output = {}'.format(output))
+
         return output

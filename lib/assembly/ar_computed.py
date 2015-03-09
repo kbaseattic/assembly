@@ -18,9 +18,14 @@ import re
 import requests
 
 from ConfigParser import SafeConfigParser
+from multiprocessing import current_process as proc
+
 import consume
 import shock
 import utils
+
+
+logger = logging.getLogger(__name__)
 
 #context = daemon.DaemonContext(stdout=sys.stdout) #temp print to stdout
 #TODO change to log file
@@ -32,10 +37,13 @@ job_list_lock = multiprocessing.Lock()
 kill_list = mgr.list()
 kill_list_lock = multiprocessing.Lock()
 
-def start(arasturl, config, num_threads, queue, datapath, binpath):
+def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
+
+    logger.info("==========================================")
+    logger.info("  Starting Assembly Service Compute Node")
+    logger.info("==========================================")
 
     #### Get default configuration from ar_compute.conf
-    print " [.] Starting Assembly Service Compute Node"
     cparser = SafeConfigParser()
     cparser.read(config)
     logging.getLogger('yapsy').setLevel(logging.WARNING)
@@ -49,10 +57,10 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
         num_threads =  cparser.get('compute','threads')
 
     #### Retrieve system configuration from AssemblyRAST server
-    print " [.] AssemblyRAST host: %s" % arasturl
+    logger.info("[.] AssemblyRAST host: {}".format(arasturl))
     try:
         ctrl_conf = json.loads(requests.get('{}/admin/system/config'.format(full_arasturl)).content)
-        print " [.] Retrieved system config from host"
+        logger.info("[.] Retrieved system config from host")
     except:
         raise Exception('Could not communicate with server for system config')
 
@@ -68,61 +76,68 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
     if rmq_host == 'localhost':
         rmq_host = arasturl
 
-    print ' [.] Shock URL: %s' % shockurl
-    print " [.] MongoDB host: %s" % mongo_host
-    print " [.] MongoDB port: %s" % mongo_port
-    print " [.] RabbitMQ host: %s" % rmq_host
-    print " [.] RabbitMQ port: %s" % rmq_port
+    logger.info('[.] Shock URL: {}'.format(shockurl))
+    logger.info("[.] MongoDB host: {}".format(mongo_host))
+    logger.info("[.] MongoDB port: {}".format(mongo_port))
+    logger.info("[.] RabbitMQ host: {}".format(rmq_host))
+    logger.info("[.] RabbitMQ port: {}".format(rmq_port))
 
     # Check shock status
-    print " [.] Connecting to Shock server..."
+    logger.info("[.] Connecting to Shock server...")
     shockurl = utils.verify_url(shockurl, 7445)
     try:
         res = requests.get(shockurl)
     except Exception as e:
-        logging.error("Shock connection error: {}".format(e))
+        logger.error("Shock connection error: {}".format(e))
         sys.exit(1)
-    print " [.] Shock connection successful"
+    logger.info("[.] Shock connection successful")
 
     # Check MongoDB status
-    print " [.] Connecting to MongoDB server..."
+    logger.info("[.] Connecting to MongoDB server...")
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
         connection.close()
-        logging.info("MongoDB Info: %s" % connection.server_info())
+        logger.debug("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
-        logging.error("MongoDB connection error: {}".format(e))
+        logger.error("MongoDB connection error: {}".format(e))
         sys.exit(1)
-    print " [.] MongoDB connection successful."
+    logger.info("[.] MongoDB connection successful.")
 
     # Check RabbitMQ status
-    print " [.] Connecting to RabbitMQ server..."
+    logger.info("[.] Connecting to RabbitMQ server...")
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters(
             host=rmq_host, port=rmq_port))
         connection.close()
     except Exception as e:
-        logging.error("RabbitMQ connection error: {}".format(e))
+        logger.error("RabbitMQ connection error: {}".format(e))
         sys.exit(1)
-    print " [.] RabbitMQ connection successful"
+    logger.info("[.] RabbitMQ connection successful")
 
 
     #### Check data write permissions
     rootpath = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
     datapath = datapath or cparser.get('compute', 'datapath')
-    binpath = binpath or cparser.get('compute','binpath')
+    binpath = binpath or cparser.get('compute', 'binpath')
+    modulebin = modulebin or cparser.get('compute', 'modulebin')
     if not os.path.isabs(datapath): datapath = os.path.join(rootpath, datapath)
     if not os.path.isabs(binpath): binpath = os.path.join(rootpath, binpath)
+    if not os.path.isabs(modulebin): modulebin = os.path.join(rootpath, modulebin)
 
     if os.path.isdir(datapath) and os.access(datapath, os.W_OK):
-        print ' [.] Storage path -- {} : OKAY'.format(datapath)
+        logger.info('[.] Storage path writeable: {}'.format(datapath))
     else:
-        raise Exception(' [.] Storage path -- {} : ERROR'.format(datapath))
+        raise Exception('ERROR: Storage path not writeable: {}'.format(datapath))
 
-    if os.path.isdir(binpath) and os.access(datapath, os.R_OK):
-        print " [.] Binary path -- {} : OKAY".format(binpath)
+    if os.path.isdir(binpath) and os.access(binpath, os.R_OK):
+        logger.info("[.] Third-party binary path readable: {}".format(binpath))
     else:
-        raise Exception(' [.] Binary directory does not exist -- {} : ERROR'.format(binpath))
+        raise Exception('ERROR: Third-party binary path not readable: {}'.format(binpath))
+
+    if os.path.isdir(modulebin) and os.access(modulebin, os.R_OK):
+        logger.info("[.] Module binary path readable: {}".format(modulebin))
+    else:
+        raise Exception('ERROR: Module binary path not readable: {}'.format(modulebin))
 
     ## Start Monitor Thread
     kill_process = multiprocessing.Process(name='killd', target=start_kill_monitor,
@@ -131,10 +146,11 @@ def start(arasturl, config, num_threads, queue, datapath, binpath):
 
     workers = []
     for i in range(int(num_threads)):
-        worker_name = "[Worker %s]:" % i
+        worker_name = "worker #%s" % i
         compute = consume.ArastConsumer(shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, num_threads,
-                                        queue, kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf, datapath, binpath)
-        logging.info("[Master]: Starting %s" % worker_name)
+                                        queue, kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf,
+                                        datapath, binpath, modulebin)
+        logger.info("Master: starting %s" % worker_name)
         p = multiprocessing.Process(name=worker_name, target=compute.start)
         workers.append(p)
         p.start()
@@ -153,18 +169,18 @@ def start_kill_monitor(rmq_host, rmq_port):
     channel.basic_consume(kill_callback,
                           queue=queue_name,
                           no_ack=True)
-    print ' [*] Waiting for kill commands'
+    logger.info('Waiting for kill commands')
     channel.start_consuming()
 
 def kill_callback(ch, method, properties, body):
     kill_request = json.loads(body)
     job_list_lock.acquire()
-    print >> sys.stderr, 'job_list (len={}): '.format(len(job_list)),
-    print >> sys.stderr, [(j.get('job_id'), j.get('user')) for j in job_list]
+    logger.info('Job list (len={}): '.format(len(job_list),
+                                             [(j.get('job_id'), j.get('user')) for j in job_list]))
     kill_list_lock.acquire()
     for job_data in job_list:
         if kill_request['user'] == job_data['user'] and kill_request['job_id'] == str(job_data['job_id']):
-            print >> sys.stderr, 'Job to be deleted is on this node: {}'.format(body)
+            logger.warning('Job to be deleted is on this node: {}'.format(body))
             kill_list.append(kill_request)
     kill_list_lock.release()
     job_list_lock.release()
@@ -182,19 +198,31 @@ parser.add_argument("-t", "--threads", help="specify number of worker threads",
                     action="store", required=False)
 parser.add_argument("-q", "--queue", help="specify a queue to pull from",
                     action="store", required=False)
+parser.add_argument("-l", "--logfile", help="specify the logfile",
+                    action="store", required=False)
 parser.add_argument("-d", "--compute-data", dest='datapath', help="specify a directory for computation data",
                     action="store", required=False)
-parser.add_argument("-b", "--compute-bin", dest='binpath', help="specify a directory for computation binaries",
+parser.add_argument("-b", "--compute-bin", dest='binpath', help="specify a directory for third-party computation binaries",
+                    action="store", required=False)
+parser.add_argument("-m", "--module-bin", dest='modulebin', help="specify a directory for module computation binaries",
                     action="store", required=False)
 
 args = parser.parse_args()
-if args.verbose:
-    logging.basicConfig(level=logging.DEBUG)
 
 arasturl = args.server or None
 queue = args.queue or None
 num_threads = args.threads or None
 datapath = args.datapath or None
 binpath = args.binpath or None
+modulebin = args.modulebin or None
+logfile = args.logfile or 'ar_compute.log'
 
-start(arasturl, args.config, num_threads, queue, datapath, binpath)
+utils.verify_dir(os.path.dirname(logfile))
+
+logging.basicConfig(format="[%(asctime)s %(levelname)s %(process)d %(name)s] %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO, filename=logfile)
+
+if args.verbose:
+    logging.root.setLevel(logging.DEBUG)
+
+start(arasturl, args.config, num_threads, queue, datapath, binpath, modulebin)
