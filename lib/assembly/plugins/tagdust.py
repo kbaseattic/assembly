@@ -31,7 +31,6 @@ class TagdustPreprocessor(BasePreprocessor, IPlugin):
                 td_file = os.path.join(self.outpath, fixes[0] + '.td.' + fixes[1])
                 synced_file = os.path.join(self.outpath, fixes[0] + '.td_sync.' + fixes[1])
                 cmd_args += [td_file, os.path.join(os.getcwd(), self.library), f]
-                logger.info("TagDust plugin: {}".format(cmd_args))
                 self.arast_popen(cmd_args, cwd=self.outpath)
                 td_unsynced_files.append(td_file)
                 td_synced_files.append(synced_file)

@@ -77,7 +77,7 @@ def curl_download_url(url, outdir=None, filename=None, token=None, silent=False)
 
     downloaded = os.path.join(outdir, filename)
     if os.path.exists(downloaded):
-        logger.info('File Downloaded: {}'.format(downloaded))
+        logger.info('File downloaded: {}'.format(downloaded))
         return downloaded
     else:
         raise Error('Data does not exist')

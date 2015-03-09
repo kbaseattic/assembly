@@ -63,9 +63,9 @@ def start(config_file, shock_url=None, mongo_host=None, mongo_port=None,
     # Check MongoDB status
     try:
         connection = pymongo.Connection(mongo_host, mongo_port)
-        logging.debug("MongoDB Info: %s" % connection.server_info())
+        logger.debug("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
-        logging.error("MongoDB connection error: {}".format(e))
+        logger.error("MongoDB connection error: {}".format(e))
         sys.exit('MongoDB error: {}'.format(e))
     logger.info("[.] MongoDB connection successful.")
 
