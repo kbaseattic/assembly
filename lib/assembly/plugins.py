@@ -107,6 +107,7 @@ class BasePlugin(object):
             env_copy = os.environ.copy()
             env_copy['OMP_NUM_THREADS'] = self.process_threads_allowed
             p = subprocess.Popen(cmd_args, env=env_copy,
+                                 cwd=self.outpath,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT,
                                  preexec_fn=os.setsid, **kwargs)
