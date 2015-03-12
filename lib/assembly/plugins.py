@@ -101,13 +101,13 @@ class BasePlugin(object):
         except Exception as e:
             logger.error('Could not write to report: {} -- {}'.format(cmd_string, e))
         m_start_time = time.time()
-        # print "Command args: {}".format(cmd_args)
+
         logger.info("Command line: {}".format(cmd_string if shell else " ".join(cmd_args)))
         try:
             env_copy = os.environ.copy()
             env_copy['OMP_NUM_THREADS'] = self.process_threads_allowed
             p = subprocess.Popen(cmd_args, env=env_copy,
-                                 cwd=self.outpath,
+                                 # cwd=self.outpath,              # weird: adding cwd causes tagdust to fail
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT,
                                  preexec_fn=os.setsid, **kwargs)

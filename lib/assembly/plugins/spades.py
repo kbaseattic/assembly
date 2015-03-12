@@ -66,7 +66,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         if self.careful == 'True':
             cmd_args.append('--careful')
 
-        self.arast_popen(cmd_args)
+        self.arast_popen(cmd_args, cwd=self.outpath)
 
         contigs = os.path.join(self.outpath, 'contigs.fasta')
         scaffolds = os.path.join(self.outpath, 'scaffolds.fasta')
