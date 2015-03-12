@@ -129,7 +129,7 @@ def eval(x, env):
         try:
             env[var] = eval(exp, env)
         except Exception as e:
-            logger.error('Failed to evaluate definition of "{}": {}'.format(var, e))
+            logger.warning('Failed to evaluate definition of "{}": {}'.format(var, e))
             logger.debug(traceback.format_exc())
             # print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
             # print traceback.format_exc()
@@ -230,7 +230,7 @@ def eval(x, env):
                 if ret:val.append(ret)
             except Exception as e:
                 if list(e):
-                    logger.error('Failed to eval "{}": {}'.format(to_string(exp), e))
+                    logger.warning('Failed to eval "{}": {}'.format(to_string(exp), e))
                     logger.debug(traceback.format_exc())
                     # print(traceback.format_exc())
                     env.errors.append(e)
@@ -250,7 +250,7 @@ def eval(x, env):
                 if ret: val.append(ret)
             except Exception as e:
                 if list(e):
-                    logger.error('Failed to eval "{}": {}'.format(to_string(exp), e))
+                    logger.warning('Failed to eval "{}": {}'.format(to_string(exp), e))
                     logger.debug(traceback.format_exc())
                     # print(traceback.format_exc())
                     env.errors.append(e)
