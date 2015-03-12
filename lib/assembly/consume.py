@@ -128,6 +128,7 @@ class ArastConsumer:
             except:
                 pass
         times.sort()
+        logger.debug("Directories sorted by time: {}".format(times))
         dirs = [x[1] for x in times]
 
         busy_dirs = []
@@ -152,11 +153,13 @@ class ArastConsumer:
                         checked_dirs.append(bd)
                         continue
                     free_space = self.remove_dir(bd)
-                    self.remove_empty_dirs()
+                    # self.remove_empty_dirs()
                 if free_space < self.min_free_space:
                     busy_dirs = checked_dirs
                     time.sleep(20)
             free_space = free_space_in_path(self.datapath)
+
+        self.remove_empty_dirs()
 
 
     def remove_dir(self, d):
