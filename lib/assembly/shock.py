@@ -90,7 +90,10 @@ class Error(Exception):
 
 class Shock:
     def __init__(self, shockurl, user, token):
+
+        self._validate_endpoint(shockurl)
         self.shockurl = shockurl
+
         self.posturl = '{}/node/'.format(shockurl)
         self.user = user
         self.token = token
@@ -98,6 +101,20 @@ class Shock:
         self.headers = token_to_req_headers(token)
         self.auth_checked = False
         self.auth = True
+
+    def _validate_endpoint(self, url):
+        """
+        Make sure that the endpoint is online.
+        Otherwise, the endpoint will need to be started.
+        """
+        try:
+            request = requests.get(url)
+
+        except Exception, e:
+            print("Error, service {} is not available.".format(url))
+
+            # propagate the exception
+            raise e
 
     def check_anonymous_post_allowed(self):
         cmd = ['curl', '-s', '-k', '-X', 'POST', self.posturl]
