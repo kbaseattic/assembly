@@ -18,10 +18,10 @@ import utils
 from kbase import typespec_to_assembly_data as kb_to_asm
 from shock import Shock
 
-""" Assembly Service client library. """
-
 
 class Client:
+    """ Assembly Service client library. """
+
     def __init__(self, url, user, token):
         self.url = utils.verify_url(url)
         self.user = user
@@ -30,6 +30,9 @@ class Client:
                         'Content-type': 'application/json',
                         'Accept': 'text/plain'}
         self.shock = None
+
+    def get_user(self):
+       return self.user
 
     def init_shock(self):
         if self.shock is None:
