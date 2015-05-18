@@ -19,24 +19,26 @@ import multiprocessing
 import re
 import threading
 import subprocess
-from plugins import ModuleManager
-from job import ArastJob
 from multiprocessing import current_process as proc
 from traceback import format_tb, format_exc
 
 import assembly as asm
-from assembly import ignored
 import metadata as meta
 import asmtypes
 import shock
 import wasp
 import recipes
 import utils
+from assembly import ignored
+from job import ArastJob
 from kbase import typespec_to_assembly_data as kb_to_asm
+from plugins import ModuleManager
 
 from ConfigParser import SafeConfigParser
 
+
 logger = logging.getLogger(__name__)
+
 
 class ArastConsumer:
     def __init__(self, shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, threads, queue,
@@ -102,14 +104,15 @@ class ArastConsumer:
             try:
                 file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(d))
             except os.error as e:
-                logger.warning('GC Ignored "{}": could not get timestamp: {}'.format(d, e))
+                logger.warning('GC ignored "{}": could not get timestamp: {}'.format(d, e))
                 continue
-            if datetime.datetime.now() - file_modified > datetime.timedelta(days=expiration):
-                print 'GC: Removing: ', d, datetime.datetime.now() - file_modified
+            tdiff = datetime.datetime.now() - file_modified
+            if tdiff > datetime.timedelta(days=expiration):
+                logger.info('GC: removing expired directory: {} (modified {} ago)'.format(d, tdiff))
                 removed.append(d)
                 shutil.rmtree(d, ignore_errors=True)
             else:
-                logger.debug('GC: not removing: {}; time diff = {}'.format(d, datetime.datetime.now() - file_modified))
+                logger.debug('GC: not removing: {} (modified {} ago)'.format(d, tdiff))
         for r in removed:
             dirs.remove(r)
 
@@ -125,6 +128,7 @@ class ArastConsumer:
             except:
                 pass
         times.sort()
+        logger.debug("Directories sorted by time: {}".format(times))
         dirs = [x[1] for x in times]
 
         busy_dirs = []
@@ -149,11 +153,13 @@ class ArastConsumer:
                         checked_dirs.append(bd)
                         continue
                     free_space = self.remove_dir(bd)
-                    self.remove_empty_dirs()
+                    # self.remove_empty_dirs()
                 if free_space < self.min_free_space:
                     busy_dirs = checked_dirs
                     time.sleep(20)
             free_space = free_space_in_path(self.datapath)
+
+        self.remove_empty_dirs()
 
 
     def remove_dir(self, d):
@@ -420,16 +426,19 @@ class ArastConsumer:
             self.metadata.update_job(uid, 'contig_ids', [contig_ids])
             ###################
 
+            sys.stdout.flush()
             touch(os.path.join(jobpath, "_DONE_"))
             logger.info('============== JOB COMPLETE ===============')
 
         except asmtypes.ArastUserInterrupt:
             status = 'Terminated by user'
+            sys.stdout.flush()
             touch(os.path.join(jobpath, "_CANCELLED__"))
             logger.info('============== JOB KILLED ===============')
 
         finally:
             self.remove_job_from_lists(job_data)
+            logger.debug('Reinitialize plugin manager...') # Reinitialize to get live changes
             self.pmanager = ModuleManager(self.threads, self.kill_list, self.kill_list_lock, self.job_list, self.binpath, self.modulebin)
 
         self.metadata.update_job(uid, 'status', status)
@@ -500,8 +509,8 @@ class ArastConsumer:
 
     def callback(self, ch, method, properties, body):
         params = json.loads(body)
-        display = ['ARASTUSER', 'job_id', 'message']
-        logger.info('Incoming job: ' + ', '.join(['{}: {}'.format(k, params[k]) for k in display]))
+        display = ['ARASTUSER', 'job_id', 'message', 'recipe', 'pipeline', 'wasp']
+        logger.info('Incoming job: ' + ', '.join(['{}: {}'.format(k, params[k]) for k in display if params[k]]))
         logger.debug(params)
         job_doc = self.metadata.get_job(params['ARASTUSER'], params['job_id'])
 
@@ -534,23 +543,32 @@ class ArastConsumer:
         unp_bin = os.path.join(self.modulebin, 'unp')
 
         filepath = os.path.dirname(filename)
+        uncompressed = ['fasta', 'fa', 'fastq', 'fq', 'fna' ]
         supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz',
                      'rar', 'tar', 'tgz','zip']
+        for ext in uncompressed:
+            if filename.endswith('.'+ext):
+                return filename
         for ext in supported:
-            if filename.endswith(ext):
+            if filename.endswith('.'+ext):
                 extracted_file = filename[:filename.index(ext)-1]
                 if os.path.exists(extracted_file): # Check extracted already
                     return extracted_file
-                logger.debug("Extracting %s" % filename)
-                p = subprocess.Popen([unp_bin, filename],
-                                     cwd=filepath, stderr=subprocess.STDOUT)
-                p.wait()
+                logger.info("Extracting {}...".format(filename))
+                # p = subprocess.Popen([unp_bin, filename],
+                #                      cwd=filepath, stderr=subprocess.STDOUT)
+                # p.wait()
+                # Hide the "broken pipe" message from unp
+                out = subprocess.Popen([unp_bin, filename],
+                                       cwd=filepath,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT).communicate()[0]
                 if os.path.exists(extracted_file):
                     return extracted_file
                 else:
-                    print "{} does not exist!".format(extracted_file)
+                    logger.error("Extraction of {} failed: {}".format(filename, out))
                     raise Exception('Archive structure error')
-        logger.debug("Could not extract %s" % filename)
+        logger.error("Could not extract {}".format(filename))
         return filename
 
 ### Helper functions ###
@@ -590,7 +608,7 @@ def is_dir_busy(d):
 def free_space_in_path(path):
     s = os.statvfs(path)
     free_space = float(s.f_bsize * s.f_bavail / (10**9))
-    logger.debug("Free space in %s: %s GB".format(path, free_space))
+    logger.debug("Free space in {}: {} GB".format(path, free_space))
     return free_space
 
 class UpdateTimer(threading.Thread):

@@ -6,9 +6,11 @@ from plugins import BaseAligner
 from yapsy.IPlugin import IPlugin
 from assembly import get_qual_encoding
 
+logger = logging.getLogger(__name__)
+
 class Bowtie2Aligner(BaseAligner, IPlugin):
     def run(self):
-        """ 
+        """
         Map READS to CONTIGS and return alignment.
         Set MERGED_PAIR to True if reads[1] is a merged
         paired end file
@@ -16,7 +18,7 @@ class Bowtie2Aligner(BaseAligner, IPlugin):
         contig_file = self.data.contigfiles[0]
         reads = self.data.readfiles
 
-        ## Index contigs 
+        ## Index contigs
         prefix = os.path.join(self.outpath, 'bt2')
         cmd_args = [self.build_bin, '-f', contig_file, prefix]
         self.arast_popen(cmd_args, overrides=False)
@@ -56,7 +58,7 @@ class Bowtie2Aligner(BaseAligner, IPlugin):
             if not os.path.exists(bamfile):
                 raise Exception('Unable to complete alignment')
 
-        ## Convert back to sam    
+        ## Convert back to sam
         samfile = bamfile.replace('.bam', '.sam')
         self.arast_popen(['samtools', 'view', '-h', '-o', samfile, bamfile])
 

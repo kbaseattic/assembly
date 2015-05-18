@@ -1,12 +1,15 @@
+import logging
 import os
 from plugins import BaseAssessment
 from yapsy.IPlugin import IPlugin
 from asmtypes import ArastDataOutputError
 
+logger = logging.getLogger(__name__)
+
 class ReaprAssessment(BaseAssessment, IPlugin):
     OUTPUT = 'contigs'
     def run(self):
-        """ 
+        """
         Build the command and run.
         Return list of file(s)
         """
@@ -20,10 +23,10 @@ class ReaprAssessment(BaseAssessment, IPlugin):
             self.out_module.write('WARNING: Reapr will use only one read library')
         read_pair = reads[0].files
         bamfile =  os.path.join(self.outpath, 'out.bam')
-        cmd_args = [self.executable, 'smaltmap', contigs[0], 
+        cmd_args = [self.executable, 'smaltmap', contigs[0],
                     read_pair[0], read_pair[1], bamfile]
         self.arast_popen(cmd_args)
-        
+
         if not os.path.exists(bamfile):
             raise ArastDataOutputError('REAPR: Unable to create alignment')
 
@@ -41,6 +44,3 @@ class ReaprAssessment(BaseAssessment, IPlugin):
         broken = os.path.join(self.outpath, '04.break.broken_assembly.fa')
         if os.path.exists(broken):
             return {'contigs': [broken]}
-            
-
-

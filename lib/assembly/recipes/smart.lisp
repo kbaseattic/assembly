@@ -4,6 +4,8 @@
 ;;; 4. Merges the two best assemblies with GAM-NGS
 (begin
   (define pp (bhammer READS))
+  (if (not (symbol? pp))
+      (define pp READS))
   (define kval (get best_k (kmergenie pp)))
   (define vt (begin (setparam hash_length kval) (velvet pp)))
   (define sp (spades pp))

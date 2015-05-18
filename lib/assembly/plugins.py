@@ -27,6 +27,7 @@ import wasp
 
 logger = logging.getLogger(__name__)
 
+
 class BasePlugin(object):
     """
     job_data dictionary must contain:
@@ -97,15 +98,16 @@ class BasePlugin(object):
         self.out_module.write("Command: {}\n".format(cmd_string))
         try:
             self.out_report.write('Command: {}\n'.format(cmd_string))
-        except:
-            logger.error('Could not write to report: {}'.format(cmd_string))
+        except Exception as e:
+            logger.error('Could not write to report: {} -- {}'.format(cmd_string, e))
         m_start_time = time.time()
-        # print "Command args: {}".format(cmd_args)
+
         logger.info("Command line: {}".format(cmd_string if shell else " ".join(cmd_args)))
         try:
             env_copy = os.environ.copy()
             env_copy['OMP_NUM_THREADS'] = self.process_threads_allowed
             p = subprocess.Popen(cmd_args, env=env_copy,
+                                 # cwd=self.outpath,              # weird: adding cwd causes tagdust to fail
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT,
                                  preexec_fn=os.setsid, **kwargs)
@@ -140,17 +142,19 @@ class BasePlugin(object):
                 except Empty:
                     break
                 else: # got line
-                    logger.debug(line)
+                    logger.debug(line.strip())
                     self.is_urgent_output(line)
                     self.out_module.write(line)
 
         except subprocess.CalledProcessError as e:
-            out = 'Process Failed.\nExit Code: {}\nOutput:{}\n'.format(
-                e.returncode, e.output)
+            logger.warn('Process Failed.\nExit Code: {}\nOutput:{}\n'.format(e.returncode, e.output))
+
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
-        try: self.out_report.write('Command: {}\n'.format(m_ftime))
-        except: print 'Could not write to report: {}'.format(cmd_string)
+        try:
+            self.out_report.write('Command: {}\n'.format(m_ftime))
+        except Exception as e:
+            logger.error('Could not write to report: {} -- {}'.format(cmd_string, e))
 
     def is_urgent_output(self, line):
         """
@@ -490,7 +494,8 @@ class BasePreprocessor(BasePlugin):
             for extra in output['extra']:
                 readsets.append(asmtypes.set_factory('single', extra,
                                                      name='{}_single'.format(self.name)))
-        except Exception as e: print e
+        except Exception as e:
+            logger.warn('Wasp handles extra output: {}'.format(e))
         return {'reads': readsets}
 
     # Must implement run() method

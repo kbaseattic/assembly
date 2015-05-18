@@ -5,6 +5,8 @@ import subprocess
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
+logger = logging.getLogger(__name__)
+
 class A6Assembler(BaseAssembler, IPlugin):
     # TODO: update quast logic. For now output scaffolds as contigs.
     # OUTPUT = 'scaffolds'
@@ -30,12 +32,12 @@ class A6Assembler(BaseAssembler, IPlugin):
                 assert d.insert is not None
                 libfile.write('ins={}\n'.format(d.insert))
             except:
-                logging.info('No Insert Info Given')
+                logger.info('No insert info given')
         cmd_args.append(libfile.name)
         libfile.close()
 
         if not num_pe:
-            logging.error('a6 expect at least one paired-end library')
+            logger.error('a6 expect at least one paired-end library')
             return
 
         cmd_args.append('a6')
@@ -52,5 +54,3 @@ class A6Assembler(BaseAssembler, IPlugin):
             output['scaffolds'] = scaffolds
 
         return output
-
-

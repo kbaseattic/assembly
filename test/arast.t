@@ -38,7 +38,7 @@ if ($dir) {
     chdir($dir);
 }
 
-my ($ref, $pe1, $pe2, $se);
+my ($ref, $pe1, $pe2, $se, $seb);
 
 my $testCount = 0;
 foreach my $testname (@tests) {
@@ -56,12 +56,13 @@ sub test_setup {
     $ref = 'http://www.mcs.anl.gov/~fangfang/arast/b99.ref.fa';
     $pe1 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq';
     $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
-    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq.gz';
+    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
+    $seb = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq.bz2';
 
     sysrun("curl -s $ref > ref.fa");
     sysrun("curl -s $pe1 > p1.fq");
     sysrun("curl -s $pe2 > p2.fq");
-    sysrun("curl -s $se > se.fastq.gz");
+    sysrun("curl -s $se  > se.fq");
 }
 
 sub test_simple_cases {
@@ -81,7 +82,7 @@ sub test_simple_cases {
     sysrun("ar-stat --list-data > stat.data.3");
 
     sysrun("ar-upload -f se.fq -m 'my test data' > data.4");
-    sysrun("ar-run -a velvet --single_url $se | ar-get --wait --pick > contigs.4");
+    sysrun("ar-run -a velvet --single_url $seb | ar-get --wait --pick > contigs.4");
     validate_contigs('contigs.4');
 
     sysrun("ar-upload --single se.fq --cov 10 --gs 1000000 > data.5");
@@ -188,7 +189,7 @@ sub test_shock_url_input {
 
 sub test_kill_requests {
     my $out;
-    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq.gz';
+    $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
     sysrun("ar-run -a kiki --single_url $se -m 'kill after done' >job.51");
 
     $out = sysout('ar-kill -j 9999999');
