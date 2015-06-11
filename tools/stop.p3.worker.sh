@@ -14,4 +14,4 @@ cd $DIR/..
 
 source env/server-env-for-p3-worker.sh
 
-server/stop_service
+server/stop_computer_server

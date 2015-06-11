@@ -14,4 +14,4 @@ cd $DIR/..
 
 source env/server-env-for-p3-worker.sh
 
-server/start_service
+server/start_compute_server

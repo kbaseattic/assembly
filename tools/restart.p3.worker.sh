@@ -14,4 +14,4 @@ cd $DIR/..
 
 source env/server-env-for-p3-worker.sh
 
-server/restart_service
+server/restart_compute_server
