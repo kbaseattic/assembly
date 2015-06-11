@@ -40,7 +40,7 @@ Compute server components:
       kiki         - Kiki assembler (git)
       kmergenie    - KmerGenie (v1.6663)
       masurca      - MaSuRCA assembler (v2.2.1)
-      megahit      - MEGAHIT assembler (v0.2.0)
+      megahit      - MEGAHIT assembler (git)
       pacbio       - SMRT Analysis Software (v2.1.1)
       prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
       quast        - QUAST assembly evaluator (v2.3)
@@ -68,9 +68,8 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades spate velvet);
-push(@regular_comps, "megahit");
-my @special_comps = qw (allpathslg discovar pacbio jgi_rqc);
+my @regular_comps = qw (a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca megahit quast prodigal ray reapr seqtk solexa spades velvet);
+my @special_comps = qw (allpathslg discovar jgi_rqc pacbio spate);
 my @extra_depends = qw (cmake3);
 
 my @all_comps = (@regular_comps, @special_comps);
@@ -434,6 +433,17 @@ sub install_velvet {
     run("cp velvetg $dest_dir/");
 }
 
+sub install_megahit {
+    git("git://github.com/voutcn/megahit.git");
+    run("cd megahit; make clean; make -j");
+    run("mkdir -p $dest_dir/megahit");
+
+    my @products = qw(megahit megahit_assemble megahit_iter_k124  megahit_iter_k61  megahit_iter_k92  sdbg_builder_cpu);
+    for my $product (@products) {
+        run("cp megahit/$product $dest_dir/megahit/");
+    }
+}
+
 sub check_gcc {
     my $info = `gcc --version |head -1`;
     my ($version) = $info =~ /(4[0-9.]+)/;
@@ -514,30 +524,4 @@ sub verify_user {
 }
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
-
-# megahit v0.2.0
-# https://github.com/voutcn/megahit/archive/v0.2.0.tar.gz
-# Note: dest_dir must be an absolute path
-# Instructions:
-# ./tools/add-comp.pl   -d /kbase/arast/third_party/ -t /tmp/ megahit
-sub install_megahit {
-    my $app = "megahit";
-    my $version = "0.2.0";
-    my $release = "1";
-    my $tag = "v$version";
-    my $file = "$tag.tar.gz";
-    my $url = "https://github.com/voutcn/$app/archive";
-    download($tag, $file, $url);
-    chdir("$app-$version");
-    run("make -j");
-    # my $destination = "$dest_dir/$app/$version-$release/bin";
-    my $destination = "$dest_dir/$app";
-    run("mkdir -p $destination");
-
-    my @products = qw(megahit megahit_assemble megahit_iter_k124  megahit_iter_k61  megahit_iter_k92  sdbg_builder_cpu);
-    for my $product (@products) {
-        run("cp $product $destination/");
-    }
-}
-
 
