@@ -18,7 +18,6 @@ import pika
 import router
 from ConfigParser import SafeConfigParser
 
-import cloud
 import shock
 import utils
 
