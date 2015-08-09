@@ -131,10 +131,6 @@ def eval(x, env):
         except Exception as e:
             logger.error('Failed to evaluate definition of "{}": {}'.format(var, e))
             logger.debug(traceback.format_exc())
-            # print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
-            # print traceback.format_exc()
-            # env.errors.append(e)
-            # env.exceptions.append(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':
         seq = [link for link in eval(x[1], env) if link is not None and link.output]
@@ -165,8 +161,6 @@ def eval(x, env):
         except Exception as e:
             logger.warn('Failed to evaluate upload of "{}": {}'. format(to_string(exp), e))
             logger.debug(traceback.format_exc())
-            # print ' [!]: {} -- {}'.format(to_string(exp), e)
-            # print traceback.format_exc()
             env.errors.append(e)
             env.exceptions.append(traceback.format_exc())
             results = None
@@ -232,7 +226,6 @@ def eval(x, env):
                 if list(e):
                     logger.error('Failed to eval "{}": {}'.format(to_string(exp), e))
                     logger.debug(traceback.format_exc())
-                    # print(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
         if val:
@@ -252,7 +245,6 @@ def eval(x, env):
                 if list(e):
                     logger.error('Failed to eval "{}": {}'.format(to_string(exp), e))
                     logger.debug(traceback.format_exc())
-                    # print(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
         if val:
@@ -425,13 +417,17 @@ class WaspEngine():
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
         self.assembly_env.plugins = self.pmanager.plugins
         self.job_data = job_data
-        init_link = WaspLink()
+        reads_link = WaspLink()
+        contigs_link = WaspLink()
         if 'initial_data' not in job_data:
             job_data['initial_data'] = asmtypes.FileSetContainer(job_data.wasp_data().referencesets +
-                                                                 job_data.wasp_data().readsets)
-        init_link['default_output'] = list(job_data['initial_data'].readsets)
+                                                                 job_data.wasp_data().readsets +
+                                                                 job_data.wasp_data().contigsets)
+        reads_link['default_output'] = list(job_data['initial_data'].readsets)
+        reads_link['default_output'] = list(job_data['initial_data'].contigsets)
 
-        self.assembly_env.update({self.constants_reads: init_link})
+        self.assembly_env.update({self.constants_reads: reads_link})
+        self.assembly_env.update({self.constants_contigs: reads_link})
         self.assembly_env.update({'arast_score': wf.arast_score,
                                   'has_paired': wf.has_paired,
                                   'n50': wf.n50})

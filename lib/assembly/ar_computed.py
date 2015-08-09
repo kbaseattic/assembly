@@ -95,7 +95,8 @@ def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
     # Check MongoDB status
     logger.info("[.] Connecting to MongoDB server...")
     try:
-        connection = pymongo.Connection(mongo_host, mongo_port)
+        #connection = pymongo.Connection(mongo_host, mongo_port)
+        connection = pymongo.mongo_client.MongoClient(mongo_host, mongo_port)
         connection.close()
         logger.debug("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
@@ -217,10 +218,10 @@ binpath = args.binpath or None
 modulebin = args.modulebin or None
 logfile = args.logfile or 'ar_compute.log'
 
-utils.verify_dir(os.path.dirname(logfile))
+# utils.verify_dir(os.path.dirname(logfile))
 
 logging.basicConfig(format="[%(asctime)s %(levelname)s %(process)d %(name)s] %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO, filename=logfile)
+                    datefmt="%Y-%m-%d %H:%M:%S", level=logging.DEBUG, filename=logfile)
 
 if args.verbose:
     logging.root.setLevel(logging.DEBUG)

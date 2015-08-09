@@ -158,7 +158,7 @@ class ArastJob(dict):
         """
         all_sets = []
         #### Convert Old Reads Format to ReadSets
-        for set_type in ['reads', 'reference']:
+        for set_type in ['reads', 'reference', 'contigs']:
             if set_type in self:
                 for fs in self[set_type]:
                     ### Get supported set attributes (ins, std, etc)

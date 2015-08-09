@@ -24,7 +24,8 @@ class MetadataConnection:
         self.rjobs_collection = collections.get('running')
 
         # Connect
-        self.connection = pymongo.Connection(self.host, self.port)
+        self.connection = pymongo.mongo_client.MongoClient(self.host, self.port)
+        #self.connection = pymongo.Connection(self.host, self.port)
         self.database = self.connection[self.db]
 
         # Get local data
@@ -51,13 +52,15 @@ class MetadataConnection:
         return job_id
 
     def insert_doc(self, collection, data):
-        connection = pymongo.Connection(self.host, self.port)
+        #connection = pymongo.Connection(self.host, self.port)
+        connection = self.connection
         database = connection[self.db]
         col = database[collection]
         col.insert(data)
 
     def list (self, collection):
-        connection = pymongo.Connection(self.host, self.port)
+        #connection = pymongo.Connection(self.host, self.port)
+        connection = self.connection
         database = connection[self.db]
         col = database[collection]
         for r in col.find({}):
@@ -65,13 +68,15 @@ class MetadataConnection:
         return col.find({})
 
     def remove_doc(self, collection, key, value):
-        connection = pymongo.Connection(self.host, self.port)
+        #connection = pymongo.Connection(self.host, self.port)
+        connection = self.connection
         database = connection[self.db]
         col = database[collection]
         col.remove({key:value})
 
     def update_doc(self, collection, query_key, query_value, key, value):
-        connection = pymongo.Connection(self.host, self.port)
+        #connection = pymongo.Connection(self.host, self.port)
+        connection = self.connection
         database = connection[self.db]
         col = database[collection]
 
@@ -84,7 +89,8 @@ class MetadataConnection:
 
 
     def get_next_id(self, user, category):
-        connection = pymongo.Connection(self.host, self.port)
+        #connection = pymongo.Connection(self.host, self.port)
+        connection = self.connection
         database = connection[self.db]
         ids = database[category]
         next_id = 1
@@ -138,7 +144,8 @@ class MetadataConnection:
         return job['status'].find('success') != -1
 
     def get_auth_info(self, user):
-        connection = pymongo.Connection(self.host, self.port)
+        #connection = pymongo.Connection(self.host, self.port)
+        connection = self.connection
         database = connection[self.db]
         col = database[self.auth_collection]
         try:

@@ -6,15 +6,15 @@ from plugins import BaseAssessment
 from yapsy.IPlugin import IPlugin
 import asmtypes
 
+import traceback
+
 logger = logging.getLogger(__name__)
 
 class QuastAssessment(BaseAssessment, IPlugin):
     new_version = True
 
     def run(self):
-
         contigsets = self.data.contigsets
-
         for i,c, in enumerate(contigsets):
             c['tags'].append('quast-{}'.format(i+1))
         contigfiles = self.data.contigfiles
@@ -41,9 +41,10 @@ class QuastAssessment(BaseAssessment, IPlugin):
 
         #### Add Contig files ####
         cmd_args += contigfiles
-        cmd_args += ['-l', '"{}"'.format(', '.join([cset.name for cset in contigsets]))]
-
-
+        try:
+            cmd_args += ['-l', '"{}"'.format(', '.join([cset.name for cset in contigsets]))]
+        except (KeyError, TypeError): # No name
+            pass
         #### Run Quast ####
         self.arast_popen(cmd_args)
 

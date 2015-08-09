@@ -276,6 +276,7 @@ class ArastConsumer:
         ### Create data to pass to pipeline
         reads = []
         reference = []
+        contigs = []
         for fileset in all_files:
             if len(fileset['files']) != 0:
                 if (fileset['type'] == 'single' or
@@ -283,6 +284,8 @@ class ArastConsumer:
                     reads.append(fileset)
                 elif fileset['type'] == 'reference':
                     reference.append(fileset)
+                elif fileset['type'] == 'contigs':
+                    contigs.append(fileset)
                 else:
                     raise Exception('fileset error')
 
@@ -292,6 +295,7 @@ class ArastConsumer:
                     'reads': reads,
                     'logfiles': [],
                     'reference': reference,
+                    'contigs': contigs,
                     'initial_reads': list(reads),
                     'raw_reads': copy.deepcopy(reads),
                     'params': [],

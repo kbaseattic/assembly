@@ -64,6 +64,7 @@ def get_parser():
     p_upload.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
     p_upload.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify a reference contig file")
     p_upload.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
+    p_upload.add_argument("--contigs", action="append", dest="contigs", nargs='*', help="specify a contig file")
     p_upload.add_argument("-m", "--message", action="store", dest="message", help="Attach a description to job")
     p_upload.add_argument("--curl", action="store_true", help="Use curl for http requests")
     p_upload.add_argument("--json", action="store_true", help="Print data info json object")
@@ -78,6 +79,7 @@ def get_parser():
     p_run.add_argument("--single_url", action="append", dest="single_url", nargs='*', help="Specify a URL for a single end file and parameters")
     p_run.add_argument("--reference", action="append", dest="reference", nargs='*', help="specify sequence file(s)")
     p_run.add_argument("--reference_url", action="append", dest="reference_url", nargs='*', help="Specify a URL for a reference contig file and parameters")
+    p_run.add_argument("--contigs", action="append", dest="contigs", nargs='*', help="specify a contig file")
     p_run.add_argument("--curl", action="store_true", help="Use curl for http requests")
 
     data_group = p_run.add_mutually_exclusive_group()
@@ -276,7 +278,7 @@ def cmd_avail(args, aclient):
 def prepare_assembly_data(args, aclient, usage):
     """Parses args and uploads files
     returns data spec for submission in run/upload commands"""
-    if not (args.pair or args.single or args.pair_url or args.single_url):
+    if not (args.pair or args.single or args.pair_url or args.single_url or args.contigs):
         sys.exit(usage)
 
     adata = client.AssemblyData()
@@ -289,9 +291,9 @@ def prepare_assembly_data(args, aclient, usage):
     file_lists = []
 
     all_lists = [args.pair, args.pair_url, args.single, args.single_url,
-                 args.reference, args.reference_url]
+                 args.reference, args.reference_url, args.contigs]
     all_types = ['paired', 'paired_url', 'single', 'single_url',
-                 'reference', 'reference_url']
+                 'reference', 'reference_url', 'contigs']
 
     for li in all_lists:
         if li is None:
