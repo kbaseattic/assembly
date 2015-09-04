@@ -43,8 +43,9 @@ class QuastAssessment(BaseAssessment, IPlugin):
         cmd_args += contigfiles
         try:
             cmd_args += ['-l', '"{}"'.format(', '.join([cset.name for cset in contigsets]))]
-        except (KeyError, TypeError): # No name
+        except TypeError: # Contigset has no names
             pass
+
         #### Run Quast ####
         self.arast_popen(cmd_args)
 

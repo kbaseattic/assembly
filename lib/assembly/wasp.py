@@ -424,10 +424,10 @@ class WaspEngine():
                                                                  job_data.wasp_data().readsets +
                                                                  job_data.wasp_data().contigsets)
         reads_link['default_output'] = list(job_data['initial_data'].readsets)
-        reads_link['default_output'] = list(job_data['initial_data'].contigsets)
+        contigs_link['default_output'] = list(job_data['initial_data'].contigsets)
 
         self.assembly_env.update({self.constants_reads: reads_link})
-        self.assembly_env.update({self.constants_contigs: reads_link})
+        self.assembly_env.update({self.constants_contigs: contigs_link})
         self.assembly_env.update({'arast_score': wf.arast_score,
                                   'has_paired': wf.has_paired,
                                   'n50': wf.n50})
