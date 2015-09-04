@@ -6,8 +6,6 @@ from plugins import BaseAssessment
 from yapsy.IPlugin import IPlugin
 import asmtypes
 
-import traceback
-
 logger = logging.getLogger(__name__)
 
 class QuastAssessment(BaseAssessment, IPlugin):
