@@ -210,7 +210,9 @@ parser.add_argument("-m", "--module-bin", dest='modulebin', help="specify a dire
 args = parser.parse_args()
 
 arasturl = args.server or None
-queue = args.queue or None
+queues = []
+if args.queue:
+    queues = args.queue.split(',')
 num_threads = args.threads or None
 datapath = args.datapath or None
 binpath = args.binpath or None
@@ -226,4 +228,4 @@ logging.basicConfig(format="[%(asctime)s %(levelname)s %(process)d %(name)s] %(m
 if args.verbose:
     logging.root.setLevel(logging.DEBUG)
 
-start(arasturl, args.config, num_threads, queue, datapath, binpath, modulebin)
+start(arasturl, args.config, num_threads, queues, datapath, binpath, modulebin)
