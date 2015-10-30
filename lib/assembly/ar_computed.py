@@ -70,7 +70,7 @@ def start(arasturl, config, num_threads, queue, datapath, binpath, modulebin):
     rmq_port = int(ctrl_conf['assembly']['rabbitmq_port'])
     rmq_host = ctrl_conf['assembly']['rabbitmq_host']
     if not queue:
-        queue = ctrl_conf['rabbitmq']['default_routing_key']
+        queue = [ctrl_conf['rabbitmq']['default_routing_key']]
     if mongo_host == 'localhost':
         mongo_host = arasturl
     if rmq_host == 'localhost':
