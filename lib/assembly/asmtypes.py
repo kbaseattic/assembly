@@ -63,7 +63,7 @@ class FileSet(dict):
 
     @property
     def name(self):
-        return self['name'] or None
+        return self.get('name')
 
     @property
     def type(self):

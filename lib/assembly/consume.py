@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 class ArastConsumer:
-    def __init__(self, shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, threads, queue,
+    def __init__(self, shockurl, rmq_host, rmq_port, mongo_host, mongo_port, config, threads, queues,
                  kill_list, kill_list_lock, job_list, job_list_lock, ctrl_conf, datapath, binpath, modulebin):
         self.parser = SafeConfigParser()
         self.parser.read(config)
@@ -62,7 +62,7 @@ class ArastConsumer:
         self.rmq_port = rmq_port
         self.mongo_host = mongo_host
         self.mongo_port = mongo_port
-        self.queue = queue
+        self.queues = queues
         self.min_free_space = float(self.parser.get('compute','min_free_space'))
         self.data_expiration_days = float(self.parser.get('compute','data_expiration_days'))
         m = ctrl_conf['meta']
@@ -279,6 +279,7 @@ class ArastConsumer:
         ### Create data to pass to pipeline
         reads = []
         reference = []
+        contigs = []
         for fileset in all_files:
             if len(fileset['files']) != 0:
                 if (fileset['type'] == 'single' or
@@ -286,6 +287,8 @@ class ArastConsumer:
                     reads.append(fileset)
                 elif fileset['type'] == 'reference':
                     reference.append(fileset)
+                elif fileset['type'] == 'contigs':
+                    contigs.append(fileset)
                 else:
                     raise Exception('fileset error')
 
@@ -295,6 +298,7 @@ class ArastConsumer:
                     'reads': reads,
                     'logfiles': [],
                     'reference': reference,
+                    'contigs': contigs,
                     'initial_reads': list(reads),
                     'raw_reads': copy.deepcopy(reads),
                     'params': [],
@@ -494,16 +498,16 @@ class ArastConsumer:
                 host=self.rmq_host, port=self.rmq_port))
         channel = connection.channel()
         channel.basic_qos(prefetch_count=1)
-        result = channel.queue_declare(queue=self.queue,
-                                       exclusive=False,
+        result = channel.queue_declare(exclusive=False,
                                        auto_delete=False,
                                        durable=True)
-
         logger.info('Fetching job...')
 
         channel.basic_qos(prefetch_count=1)
-        channel.basic_consume(self.callback,
-                              queue=self.queue)
+        for queue in self.queues:
+            print 'Using queue: {}'.format(queue)
+            channel.basic_consume(self.callback,
+                              queue=queue)
 
         channel.start_consuming()
 

@@ -91,7 +91,6 @@ class BasePlugin(object):
             cmd_string = human_readable_command(cmd_args)
         else:
             cmd_string = cmd_args
-
         if cmd_args[0].find('..') != -1 and not shell:
             raise Exception("Plugin Config not updated: {}".format(cmd_args[0]))
 
@@ -101,7 +100,6 @@ class BasePlugin(object):
         except Exception as e:
             logger.error('Could not write to report: {} -- {}'.format(cmd_string, e))
         m_start_time = time.time()
-
         logger.info("Command line: {}".format(cmd_string if shell else " ".join(cmd_args)))
         try:
             env_copy = os.environ.copy()
@@ -258,7 +256,6 @@ class BasePlugin(object):
         out_internal = open('{}.{}'.format(self.out_module.name, self.name), 'w')
         plugin_data['out_report'] = self.out_report
         self.plugin_engine = wasp.WaspEngine(self.pmanager, plugin_data)
-
         #### Get default outputs of last module and pass on persistent data
         job_data['wasp_chain']['outpath'] = self.outpath
         if job_data['wasp_chain']['link']:

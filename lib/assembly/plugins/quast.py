@@ -12,9 +12,7 @@ class QuastAssessment(BaseAssessment, IPlugin):
     new_version = True
 
     def run(self):
-
         contigsets = self.data.contigsets
-
         for i,c, in enumerate(contigsets):
             c['tags'].append('quast-{}'.format(i+1))
         contigfiles = self.data.contigfiles
@@ -41,8 +39,10 @@ class QuastAssessment(BaseAssessment, IPlugin):
 
         #### Add Contig files ####
         cmd_args += contigfiles
-        cmd_args += ['-l', '"{}"'.format(', '.join([cset.name for cset in contigsets]))]
-
+        try:
+            cmd_args += ['-l', '"{}"'.format(', '.join([cset.name for cset in contigsets]))]
+        except TypeError: # Contigset has no names
+            pass
 
         #### Run Quast ####
         self.arast_popen(cmd_args)

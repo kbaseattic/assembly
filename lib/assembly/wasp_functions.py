@@ -70,8 +70,27 @@ def n50(contigs):
     logger.info('N50 = {}: {}'.format(N50, contig))
     return N50
 
+
+@wasp_contigs
+def ambig_ratio(contigs):
+    """Number of N's per 100 Kbp"""
+    total = 0
+    ambig = 0
+    ratio = 0
+    for seq_record in SeqIO.parse(open(contigs[0]), "fasta"):
+        ambig = ambig + seq_record.seq.count('N')
+        total = total + len(seq_record.seq)
+    try:
+        ratio = 100000.0 * ambig / total
+    except ZeroDivisionError, e:
+        pass
+    return ratio
+
+
 def arast_score(*wasplinks):
-    return n50(*wasplinks)
+    """Penalty on ambiguous bases moves velvet down the ranks"""
+    return n50(*wasplinks) - 666 * ambig_ratio(*wasplinks)
+
 
 ####### Wasp expressions
 @wasp_filesets

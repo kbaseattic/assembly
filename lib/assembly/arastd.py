@@ -18,7 +18,6 @@ import pika
 import router
 from ConfigParser import SafeConfigParser
 
-import cloud
 import shock
 import utils
 
@@ -62,8 +61,8 @@ def start(config_file, shock_url=None, mongo_host=None, mongo_port=None,
 
     # Check MongoDB status
     try:
-        connection = pymongo.Connection(mongo_host, mongo_port)
-        logger.debug("MongoDB Info: %s" % connection.server_info())
+        connection = pymongo.mongo_client.MongoClient(mongo_host, mongo_port)
+        logging.info("MongoDB Info: %s" % connection.server_info())
     except pymongo.errors.PyMongoError as e:
         logger.error("MongoDB connection error: {}".format(e))
         sys.exit('MongoDB error: {}'.format(e))
@@ -119,7 +118,7 @@ parser.add_argument("-c", "--config", help="specify the config file",
 
 args = parser.parse_args()
 
-logfile = args.logfile or 'ar_compute.log'
+logfile = args.logfile or 'ar_server.log'
 utils.verify_dir(os.path.dirname(logfile))
 
 logging.basicConfig(format="[%(asctime)s %(levelname)s %(name)s] %(message)s",
