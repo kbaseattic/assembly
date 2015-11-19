@@ -223,7 +223,7 @@ if os.path.dirname(logfile):
     utils.verify_dir(os.path.dirname(logfile))
 
 logging.basicConfig(format="[%(asctime)s %(levelname)s %(process)d %(name)s] %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S", level=logging.DEBUG, filename=logfile)
+                    datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO, filename=logfile)
 
 if args.verbose:
     logging.root.setLevel(logging.DEBUG)
