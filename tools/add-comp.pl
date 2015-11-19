@@ -49,7 +49,7 @@ Compute server components:
       seqtk        - Modified Seqtk preprocessing toolkit (git)
       solexa       - SolexaQA preprocessing tool (v2.1)
       spate        - Spate metagenome assembler (v0.4.1)
-      spades       - SPAdes assembler (v3.5.0)
+      spades       - SPAdes assembler (v3.6.1)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -418,10 +418,10 @@ sub install_solexa {
 
 sub install_spades {
     check_gcc();
-    my $dir = 'SPAdes-3.5.0-Linux';
+    my $dir = 'SPAdes-3.6.1-Linux';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.5.0');
-    run("cp -r -T SPAdes-3.5.0-Linux $dest_dir/spades");
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.6.1');
+    run("cp -r -T SPAdes-3.6.1-Linux $dest_dir/spades");
 }
 
 sub install_velvet {
@@ -524,4 +524,3 @@ sub verify_user {
 }
 
 sub run { system(@_) == 0 or confess("FAILED: ". join(" ", @_)); }
-
