@@ -281,6 +281,12 @@ sub install_miniasm {
     run("cd miniasm; make clean; make -j");
 
     run("wget http://lh3lh3.users.sf.net/download/pls2fasta && chmod 755 pls2fasta");
+    run("wget https://github.com/levinas/soot/raw/master/misc/gfa2fasta.pl && chmod 755 gfa2fasta.pl");
+
+    run("cp minimap/minimap $dest_dir/");
+    run("cp miniasm/miniasm $dest_dir/");
+    run("cp pls2fasta $dest_dir/");
+    run("cp gfa2fasta.pl $dest_dir/");
 }
 
 sub install_smrt {
