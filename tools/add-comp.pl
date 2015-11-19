@@ -22,7 +22,7 @@ Options:
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
       regular      - regular components (modules to be deployed on all compute nodes)
-      special      - special components (large modules: pacbio, allpathslg, etc)
+      special      - special components (large modules: smrt, allpathslg, etc)
       all          - all components
 
       a5           - A5 pipeline (v.20140604)
@@ -41,15 +41,16 @@ Compute server components:
       kmergenie    - KmerGenie (v1.6663)
       masurca      - MaSuRCA assembler (v2.2.1)
       megahit      - MEGAHIT assembler (git)
-      pacbio       - SMRT Analysis Software (v2.1.1)
+      miniasm      - MiniASM assembler for long noisy reads (git)
       prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
       quast        - QUAST assembly evaluator (v2.3)
       ray          - Ray assembler (git)
       reapr        - REAPR reference-free evaluator (v1.0.17)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
+      smrt         - SMRT Analysis Software (v2.1.1)
       solexa       - SolexaQA preprocessing tool (v2.1)
       spate        - Spate metagenome assembler (v0.4.1)
-      spades       - SPAdes assembler (v3.6.1)
+      spades       - SPAdes assembler (v3.6.2)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -68,8 +69,8 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca megahit quast prodigal ray reapr seqtk solexa spades velvet);
-my @special_comps = qw (allpathslg discovar jgi_rqc pacbio spate);
+my @regular_comps = qw (a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca megahit miniasm quast prodigal ray reapr seqtk solexa spades velvet);
+my @special_comps = qw (allpathslg discovar jgi_rqc smrt spate);
 my @extra_depends = qw (cmake3);
 
 my @all_comps = (@regular_comps, @special_comps);
@@ -273,7 +274,16 @@ sub install_masurca {
     run("cp -r -T $dir $dest_dir/masurca");
 }
 
-sub install_pacbio {
+sub install_miniasm {
+    git("git://github.com/lh3/minimap");
+    git("git://github.com/lh3/miniasm");
+    run("cd minimap; make clean; make -j");
+    run("cd miniasm; make clean; make -j");
+
+    run("wget http://lh3lh3.users.sf.net/download/pls2fasta && chmod 755 pls2fasta");
+}
+
+sub install_smrt {
     my $dir = 'smrtanalysis-2.1.1';
     my $file = '2tqk61';
     my $url = 'http://programs.pacificbiosciences.com/l/1652/2013-11-05';
@@ -418,10 +428,10 @@ sub install_solexa {
 
 sub install_spades {
     check_gcc();
-    my $dir = 'SPAdes-3.6.1-Linux';
+    my $dir = 'SPAdes-3.6.2-Linux';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.6.1');
-    run("cp -r -T SPAdes-3.6.1-Linux $dest_dir/spades");
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.6.2');
+    run("cp -r -T SPAdes-3.6.2-Linux $dest_dir/spades");
 }
 
 sub install_velvet {
