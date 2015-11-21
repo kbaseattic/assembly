@@ -38,7 +38,7 @@ if ($dir) {
     chdir($dir);
 }
 
-my ($ref, $pe1, $pe2, $se, $seb);
+my ($ref, $pe1, $pe2, $se, $seb, $pb);
 
 my $testCount = 0;
 foreach my $testname (@tests) {
