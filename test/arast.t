@@ -90,6 +90,8 @@ sub test_simple_cases {
     sysrun("ar-stat -l > stat.data.5");
     sysrun("ar-filter -c 2.5 -l 500 < contigs.5 > filter.5"); validate_contigs('filter.5');
 
+    sysrun("ar-run --contigs contigs.4 filter.5 -r contig_compare -m compare_contigs_4vs5 | ar-get -w -r >report.4vs5"); validate_report('report.4vs5');
+
     sysrun("ar-upload --pair p1.fq p2.fq insert=300 stdev=100 > data.6");
     sysrun("cat data.6 | ar-run -p megahit -m 'k sweep' -p 'none tagdust' velvet ?hash_length=29-37:4 > job.6");
     sysrun("ar-stat -n 9999 -d > stat.detail.6");
