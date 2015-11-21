@@ -1,7 +1,10 @@
-;;; 1. Runs BayesHammer on reads, Kmergenie to choose hash-length for Velvet
-;;; 2. Assembles with Velvet, IDBA and SPAdes
-;;; 3. Sorts assemblies by ALE score
-;;; 4. Merges the two best assemblies with GAM-NGS
+;;; For short reads:
+;;;   1. Runs BayesHammer on reads, Kmergenie to choose hash-length for Velvet
+;;;   2. Assembles with Velvet, IDBA and SPAdes
+;;;   3. Sorts assemblies by ALE score
+;;;   4. Merges the two best assemblies with GAM-NGS
+;;; For long reads:
+;;;   Assembles with MiniASM
 (begin
   (if (has_short_reads_only READS)
       (prog
