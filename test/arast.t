@@ -58,6 +58,7 @@ sub test_setup {
     $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
     $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
     $seb = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq.bz2';
+    $pb  = 'http://www.mcs.anl.gov/~fangfang/arast/pacbio.lambda.fa';
 
     sysrun("curl -s $ref > ref.fa");
     sysrun("curl -s $pe1 > p1.fq");
@@ -106,6 +107,7 @@ sub test_simple_cases {
     sysrun('ar-kill -j $(cat job.7|sed "s/[^0-9]*//g")');
 
     sysrun('cat data.6 | tee data.8 | ar-run -a a5 a6 > job.8');
+    sysrun('ar-run --single_url $pb -m pacbio > job.9');
 
     sysrun("cat job.2 | ar-get -w -a 1");
     sysrun("cat job.2 | ar-get -p > contigs.2"); validate_contigs('contigs.2');
@@ -122,6 +124,8 @@ sub test_simple_cases {
 
     sysrun("cat job.8 | ar-get -w --report > report.8"); validate_report('report.8');
     sysrun("cat job.8 | ar-get -l > log.8"); validate_log('log.8', 1);
+
+    sysrun("cat job.9 | ar-get -w --report > report.9"); validate_report('report.9');
 
     sysrun('ar-stat -j $(cat job.7|sed "s/[^0-9]*//g") > stat.term.7');
     like(`cat stat.term.7`, qr/Terminated/, 'job properly terminated'); $testCount++;
