@@ -107,7 +107,7 @@ sub test_simple_cases {
     sysrun('ar-kill -j $(cat job.7|sed "s/[^0-9]*//g")');
 
     sysrun('cat data.6 | tee data.8 | ar-run -a a5 a6 > job.8');
-    sysrun('ar-run --single_url $pb -m pacbio > job.9');
+    sysrun("ar-run --single_url $pb -m pacbio > job.9");
 
     sysrun("cat job.2 | ar-get -w -a 1");
     sysrun("cat job.2 | ar-get -p > contigs.2"); validate_contigs('contigs.2');
