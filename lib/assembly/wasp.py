@@ -430,6 +430,7 @@ class WaspEngine():
         self.assembly_env.update({self.constants_contigs: contigs_link})
         self.assembly_env.update({'arast_score': wf.arast_score,
                                   'has_paired': wf.has_paired,
+                                  'has_short_reads_only': wf.has_short_reads_only,
                                   'n50': wf.n50})
 
     def run_expression(self, exp, job_data=None):

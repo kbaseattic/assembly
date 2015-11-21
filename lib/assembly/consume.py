@@ -249,6 +249,9 @@ class ArastConsumer:
                     else:
                         local_file = self.download_url(file_info['direct_url'], filepath, token=token)
                 file_info['local_file'] = local_file
+                if file_set['type'] == 'single' and asm.is_long_read_file(local_file):
+                    if not 'long_read' in file_set['tags']:
+                        file_set['tags'].append('long_read') # pacbio or nanopore reads
                 file_set['files'].append(local_file) #legacy
             all_files.append(file_set)
         return datapath, all_files
@@ -547,7 +550,7 @@ class ArastConsumer:
         unp_bin = os.path.join(self.modulebin, 'unp')
 
         filepath = os.path.dirname(filename)
-        uncompressed = ['fasta', 'fa', 'fastq', 'fq', 'fna' ]
+        uncompressed = ['fasta', 'fa', 'fastq', 'fq', 'fna', 'h5' ]
         supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz',
                      'rar', 'tar', 'tgz','zip']
         for ext in uncompressed:

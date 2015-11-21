@@ -1,0 +1,30 @@
+[Core]
+Name = miniasm
+Module = miniasm
+
+[Executables]
+executable = miniasm
+minimap = minimap
+pls2fasta = pls2fasta
+gfa2fasta = gfa2fasta.pl
+seqtk = seqtk
+
+[Settings]
+short_name = ma
+filetypes = h5,fasta,fa,fastq,fq
+min_span = 1000
+min_coverage = 2
+min_overlap = 1000
+
+[Parameters]
+min_span = 1000
+min_coverage = 2
+min_overlap = 1000
+
+[Documentation]
+Author = Fangfang Xia
+Version = 1.0
+Base version = 0.1
+Description = Ultra-fast long read assembler miniasm by Heng Li
+Stages = assembler
+References = https://github.com/lh3/miniasm

@@ -67,7 +67,7 @@ class FileSet(dict):
 
     @property
     def type(self):
-        return self['type'] or None
+        return self.get('type')
 
     def add_tag(self, tag):
         if not tag in self['tags']:
@@ -78,6 +78,7 @@ class FileSet(dict):
 
     def update_fileinfo(self, fileinfos):
         self['file_infos'] = fileinfos
+
 
 class ReadSet(FileSet):
     def __init__(self, set_type, file_infos,  **kwargs):
@@ -94,6 +95,9 @@ class ReadSet(FileSet):
     @property
     def stdev(self):
         return self['stdev']
+
+    def is_long_read(self):
+        return 'long_read' in self['tags']
 
 
 class ContigSet(FileSet):

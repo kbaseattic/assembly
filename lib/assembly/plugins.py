@@ -132,6 +132,7 @@ class BasePlugin(object):
                         self.is_urgent_output(line)
                         self.out_module.write(line)
                 time.sleep(5)
+
             p.wait()
 
             #Flush again
@@ -143,6 +144,9 @@ class BasePlugin(object):
                     logger.debug(line.strip())
                     self.is_urgent_output(line)
                     self.out_module.write(line)
+
+            if p.returncode != 0:
+                logger.warn('Process failed with exit code: {}'.format(p.returncode))
 
         except subprocess.CalledProcessError as e:
             logger.warn('Process Failed.\nExit Code: {}\nOutput:{}\n'.format(e.returncode, e.output))

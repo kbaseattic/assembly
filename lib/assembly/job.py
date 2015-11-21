@@ -163,7 +163,7 @@ class ArastJob(dict):
                 for fs in self[set_type]:
                     ### Get supported set attributes (ins, std, etc)
                     kwargs = {}
-                    for key in ['insert', 'stdev']:
+                    for key in ['insert', 'stdev', 'tags']:
                         if key in fs:
                             kwargs[key] = fs[key]
                     all_sets.append(asmtypes.set_factory(fs['type'],
@@ -214,4 +214,3 @@ class ArastPipeline(dict):
 class ArastModule(dict):
     def __init__(self, *args):
         dict.__init__(self, *args)
-
