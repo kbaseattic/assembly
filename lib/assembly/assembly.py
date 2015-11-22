@@ -14,6 +14,7 @@ import re
 import subprocess
 import shutil
 import glob
+import itertools
 from contextlib import contextmanager
 from Bio import SeqIO
 from ConfigParser import SafeConfigParser
@@ -181,32 +182,22 @@ def arast_reads(filelist):
         filedicts.append({'type':'single', 'files':[f]})
     return filedicts
 
-def is_long_read_file(file):
+def is_long_read_file(file, sample=50, thresh=350):
     if re.search(r'\.h5$', file, re.IGNORECASE) is not None:
         return True
-
-    handle = None
-    ftype = None
     if re.search(r'\.fa$|\.fasta$', file, re.IGNORECASE) is not None:
-        handle = open(file, "rU")
         ftype = 'fasta'
     elif re.search(r'\.fq$|\.fastq$', file, re.IGNORECASE) is not None:
-        handle = open(file, "rU")
         ftype = 'fastq'
+    else:
+        return False
 
-    seen_long = False
-    sample = 50
-    thresh = 350
-    if handle is not None:
-        for i, record in enumerate(SeqIO.parse(handle, ftype)):
+    with open(file, 'rU') as handle:
+        for record in itertools.islice(SeqIO.parse(handle, ftype), 0, sample):
             if len(record.seq) > thresh:
                 logger.info("Long read detected: {} = {} bp".format(record.id, len(record.seq)))
-                seen_long = True
-                break
-            if i > sample:
-                break
-        handle.close()
-    return seen_long
+                return True
+        return False
 
 
 
