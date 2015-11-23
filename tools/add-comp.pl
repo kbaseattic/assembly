@@ -454,7 +454,7 @@ sub install_megahit {
     run("cd megahit; make clean; make -j");
     run("mkdir -p $dest_dir/megahit");
 
-    my @products = qw(megahit megahit_assemble megahit_iter_k124  megahit_iter_k61  megahit_iter_k92  sdbg_builder_cpu);
+    my @products = qw(megahit megahit_toolkit megahit_sdbg_build megahit_asm_core);
     for my $product (@products) {
         run("cp megahit/$product $dest_dir/megahit/");
     }
