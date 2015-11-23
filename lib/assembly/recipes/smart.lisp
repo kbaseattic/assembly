@@ -3,7 +3,7 @@
 ;;;   2. Assembles with Velvet, IDBA and SPAdes
 ;;;   3. Sorts assemblies by ALE score
 ;;;   4. Merges the two best assemblies with GAM-NGS
-;;; For long reads:
+;;; For long reads (PacBio or Nanopore):
 ;;;   Assembles with MiniASM
 (begin
   (if (has_short_reads_only READS)

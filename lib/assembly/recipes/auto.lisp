@@ -2,7 +2,7 @@
 ;;;   1. Runs BayesHammer on reads
 ;;;   2. Assembles with Velvet, IDBA and SPAdes
 ;;;   3. Sorts assemblies by ALE score
-;;; For long reads:
+;;; For long reads (PacBio or Nanopore):
 ;;;   Assembles with MiniASM
 (begin
   (if (has_short_reads_only READS)
