@@ -31,7 +31,7 @@ class MiniasmAssembler(BaseAssembler, IPlugin):
             elif re.search(r'\.fq$|\.fastq$', filename, re.IGNORECASE) is not None:
                 # convert fastq to fasta using seqtk
                 new_file = os.path.join(self.outpath, os.path.splitext(basename)[0] + '.fasta')
-                cmd_string = '{} seq {} > {}'.format(self.seqtk, filename, new_file)
+                cmd_string = '{} seq -A {} > {}'.format(self.seqtk, filename, new_file)
                 self.arast_popen(cmd_string, cwd=self.outpath, shell=True)
             elif re.search(r'\.bax\.h5$|\.plx\.h5$', filename, re.IGNORECASE) is not None:
                 # convert h5 to fasta using pls2fasta
