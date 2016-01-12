@@ -105,6 +105,7 @@ class BasePlugin(object):
             env_copy = os.environ.copy()
             env_copy['OMP_NUM_THREADS'] = self.process_threads_allowed
             p = subprocess.Popen(cmd_args, env=env_copy,
+                                 # cwd=self.outpath,              # weird: adding cwd causes tagdust to fail
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT,
                                  preexec_fn=os.setsid, **kwargs)
@@ -131,6 +132,7 @@ class BasePlugin(object):
                         self.is_urgent_output(line)
                         self.out_module.write(line)
                 time.sleep(5)
+
             p.wait()
 
             #Flush again
@@ -142,6 +144,9 @@ class BasePlugin(object):
                     logger.debug(line.strip())
                     self.is_urgent_output(line)
                     self.out_module.write(line)
+
+            if p.returncode != 0:
+                logger.warn('Process failed with exit code: {}'.format(p.returncode))
 
         except subprocess.CalledProcessError as e:
             logger.warn('Process Failed.\nExit Code: {}\nOutput:{}\n'.format(e.returncode, e.output))

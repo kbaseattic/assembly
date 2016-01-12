@@ -99,3 +99,13 @@ def has_paired(readsets):
         if r.type == 'paired':
             return True
     return False
+
+@wasp_filesets
+def has_short_reads_only(readsets):
+    short_reads_only = True
+    logger.debug('readsets = {}'.format(readsets))
+    for r in readsets:
+        if r.is_long_read():
+            short_reads_only = False
+            break
+    return short_reads_only

@@ -5,9 +5,9 @@ import subprocess
 from plugins import BaseAssembler
 from yapsy.IPlugin import IPlugin
 
-class PacbioAssembler(BaseAssembler, IPlugin):
+class SmrtAssembler(BaseAssembler, IPlugin):
     def run(self):
-        """ 
+        """
         Build the command and run.
         Return list of contig file(s)
         """
@@ -28,15 +28,13 @@ class PacbioAssembler(BaseAssembler, IPlugin):
                 cmd_args += ['-f', lib.files[0]]
 
         cmd_args.append('-o')
-        cmd_args.append(self.outpath + 'pacbio')
+        cmd_args.append(self.outpath + 'smrt')
 
         self.arast_popen(cmd_args)
-        self.arast_popen(['cp', os.path.join(self.outpath+'pacbio', 'contigs.fa'), self.outpath])
+        self.arast_popen(['cp', os.path.join(self.outpath+'smrt', 'contigs.fa'), self.outpath])
 
         contigs = os.path.join(self.outpath, 'contigs.fa')
 
         if os.path.exists(contigs):
             return {'contigs': [contigs]}
         return
-
-        

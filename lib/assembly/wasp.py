@@ -129,7 +129,7 @@ def eval(x, env):
         try:
             env[var] = eval(exp, env)
         except Exception as e:
-            logger.error('Failed to evaluate definition of "{}": {}'.format(var, e))
+            logger.warning('Failed to evaluate definition of "{}": {}'.format(var, e))
             logger.debug(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':
@@ -224,7 +224,7 @@ def eval(x, env):
                 if ret:val.append(ret)
             except Exception as e:
                 if list(e):
-                    logger.error('Failed to eval "{}": {}'.format(to_string(exp), e))
+                    logger.warning('Failed to eval "{}": {}'.format(to_string(exp), e))
                     logger.debug(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
@@ -243,7 +243,7 @@ def eval(x, env):
                 if ret: val.append(ret)
             except Exception as e:
                 if list(e):
-                    logger.error('Failed to eval "{}": {}'.format(to_string(exp), e))
+                    logger.warning('Failed to eval "{}": {}'.format(to_string(exp), e))
                     logger.debug(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
@@ -430,6 +430,7 @@ class WaspEngine():
         self.assembly_env.update({self.constants_contigs: contigs_link})
         self.assembly_env.update({'arast_score': wf.arast_score,
                                   'has_paired': wf.has_paired,
+                                  'has_short_reads_only': wf.has_short_reads_only,
                                   'n50': wf.n50})
 
     def run_expression(self, exp, job_data=None):

@@ -128,6 +128,7 @@ class ArastConsumer:
             except:
                 pass
         times.sort()
+        logger.debug("Directories sorted by time: {}".format(times))
         dirs = [x[1] for x in times]
 
         busy_dirs = []
@@ -152,11 +153,13 @@ class ArastConsumer:
                         checked_dirs.append(bd)
                         continue
                     free_space = self.remove_dir(bd)
-                    self.remove_empty_dirs()
+                    # self.remove_empty_dirs()
                 if free_space < self.min_free_space:
                     busy_dirs = checked_dirs
                     time.sleep(20)
             free_space = free_space_in_path(self.datapath)
+
+        self.remove_empty_dirs()
 
 
     def remove_dir(self, d):
@@ -246,6 +249,9 @@ class ArastConsumer:
                     else:
                         local_file = self.download_url(file_info['direct_url'], filepath, token=token)
                 file_info['local_file'] = local_file
+                if file_set['type'] == 'single' and asm.is_long_read_file(local_file):
+                    if not 'long_read' in file_set['tags']:
+                        file_set['tags'].append('long_read') # pacbio or nanopore reads
                 file_set['files'].append(local_file) #legacy
             all_files.append(file_set)
         return datapath, all_files
@@ -544,7 +550,7 @@ class ArastConsumer:
         unp_bin = os.path.join(self.modulebin, 'unp')
 
         filepath = os.path.dirname(filename)
-        uncompressed = ['fasta', 'fa', 'fastq', 'fq', 'fna' ]
+        uncompressed = ['fasta', 'fa', 'fastq', 'fq', 'fna', 'h5' ]
         supported = ['tar.gz', 'tar.bz2', 'bz2', 'gz', 'lz',
                      'rar', 'tar', 'tgz','zip']
         for ext in uncompressed:
