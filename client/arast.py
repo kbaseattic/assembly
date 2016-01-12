@@ -29,8 +29,8 @@ CLIENT_NAME = 'CLI'
 
 ARAST_URL = os.getenv('ARAST_URL') or conf.URL
 ARAST_QUEUE = os.getenv('ARAST_QUEUE')
-ARAST_AUTH_USER = os.getenv('ARAST_AUTH_USER') or os.getenv('KB_AUTH_USER_ID')
 ARAST_AUTH_TOKEN = os.getenv('ARAST_AUTH_TOKEN') or os.getenv('KB_AUTH_TOKEN')
+ARAST_AUTH_USER = os.getenv('ARAST_AUTH_USER') or os.getenv('KB_AUTH_USER_ID') or utils.parse_user_from_token(ARAST_AUTH_TOKEN)
 ARAST_AUTH_SERVICE = os.getenv('ARAST_AUTH_SERVICE')
 
 ARAST_ENVIRON = None
