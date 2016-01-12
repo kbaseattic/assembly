@@ -91,7 +91,6 @@ class BasePlugin(object):
             cmd_string = human_readable_command(cmd_args)
         else:
             cmd_string = cmd_args
-
         if cmd_args[0].find('..') != -1 and not shell:
             raise Exception("Plugin Config not updated: {}".format(cmd_args[0]))
 
@@ -101,12 +100,12 @@ class BasePlugin(object):
         except Exception as e:
             logger.error('Could not write to report: {} -- {}'.format(cmd_string, e))
         m_start_time = time.time()
-        # print "Command args: {}".format(cmd_args)
         logger.info("Command line: {}".format(cmd_string if shell else " ".join(cmd_args)))
         try:
             env_copy = os.environ.copy()
             env_copy['OMP_NUM_THREADS'] = self.process_threads_allowed
             p = subprocess.Popen(cmd_args, env=env_copy,
+                                 # cwd=self.outpath,              # weird: adding cwd causes tagdust to fail
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT,
                                  preexec_fn=os.setsid, **kwargs)
@@ -133,6 +132,7 @@ class BasePlugin(object):
                         self.is_urgent_output(line)
                         self.out_module.write(line)
                 time.sleep(5)
+
             p.wait()
 
             #Flush again
@@ -144,6 +144,9 @@ class BasePlugin(object):
                     logger.debug(line.strip())
                     self.is_urgent_output(line)
                     self.out_module.write(line)
+
+            if p.returncode != 0:
+                logger.warn('Process failed with exit code: {}'.format(p.returncode))
 
         except subprocess.CalledProcessError as e:
             logger.warn('Process Failed.\nExit Code: {}\nOutput:{}\n'.format(e.returncode, e.output))
@@ -257,7 +260,6 @@ class BasePlugin(object):
         out_internal = open('{}.{}'.format(self.out_module.name, self.name), 'w')
         plugin_data['out_report'] = self.out_report
         self.plugin_engine = wasp.WaspEngine(self.pmanager, plugin_data)
-
         #### Get default outputs of last module and pass on persistent data
         job_data['wasp_chain']['outpath'] = self.outpath
         if job_data['wasp_chain']['link']:

@@ -254,53 +254,52 @@
         "description": "MaSuRCA assembler based on a hybrid graph & overlap based algorithms"
     },
     {
-        "stages": "assembler",
         "name": "megahit",
         "parameters": [
             [
-                "foo",
-                "bar"
+                "min_contig_length",
+                "200"
             ]
         ],
         "author": "Sebastien Boisvert",
+        "description": "An ultra-fast single-node solution for large and complex metagenomics assembly via succinct de Bruijn graph",
         "short_name": "mh",
         "module": "megahit",
         "version": "1.0",
         "references": "doi:10.1093/bioinformatics/btv033",
         "base version": "0.2.0",
-        "foo": "bar",
+        "stages": "assembler",
         "filetypes": "fasta,fa,fastq,fq",
-        "description": "An ultra-fast single-node solution for large and complex metagenomics assembly via succinct de Bruijn graph"
+        "min_contig_length": "200"
     },
     {
-        "genome_size": "5000000",
-        "stages": "preprocess,assembler,post-process",
-        "name": "pacbio",
-        "short_name": "pb",
+        "min_coverage": "2",
+        "stages": "assembler",
+        "name": "miniasm",
+        "short_name": "ma",
+        "min_overlap": "1000",
+        "min_span": "1000",
+        "module": "miniasm",
+        "version": "1.0",
+        "references": "https://github.com/lh3/miniasm",
         "author": "Fangfang Xia",
-        "module": "pacbio",
-        "min_long_read_length": "6000",
-        "version": "0.5",
-        "references": "doi:10.1038/nmeth.2474",
-        "coverage": "15",
-        "nproc": "4",
+        "base version": "0.1",
         "parameters": [
             [
-                "genome_size",
-                "5000000"
+                "min_coverage",
+                "2"
             ],
             [
-                "coverage",
-                "15"
+                "min_overlap",
+                "1000"
             ],
             [
-                "min_long_read_length",
-                "6000"
+                "min_span",
+                "1000"
             ]
         ],
-        "filetypes": "h5,fastq,fq",
-        "dashes": "1",
-        "description": "PacBio non-hybrid assembly pipeline for SMRT long reads"
+        "filetypes": "h5,fasta,fa,fastq,fq",
+        "description": "Ultra-fast long read assembler miniasm by Heng Li"
     },
     {
         "name": "prodigal",
@@ -415,6 +414,36 @@
         ],
         "filetypes": "fastq,fq",
         "description": "SGA component for preprocessing reads (runs subcommand 'preprocess')"
+    },
+    {
+        "genome_size": "5000000",
+        "stages": "preprocess,assembler,post-process",
+        "name": "smrt",
+        "short_name": "sm",
+        "author": "Fangfang Xia",
+        "module": "smrt",
+        "min_long_read_length": "6000",
+        "version": "0.5",
+        "references": "doi:10.1038/nmeth.2474",
+        "coverage": "15",
+        "nproc": "4",
+        "parameters": [
+            [
+                "genome_size",
+                "5000000"
+            ],
+            [
+                "coverage",
+                "15"
+            ],
+            [
+                "min_long_read_length",
+                "6000"
+            ]
+        ],
+        "filetypes": "h5,fastq,fq",
+        "dashes": "1",
+        "description": "PacBio SMRT assembly pipeline for long reads"
     },
     {
         "stages": "preprocess,assembler",
