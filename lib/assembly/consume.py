@@ -250,6 +250,8 @@ class ArastConsumer:
                         local_file = self.download_url(file_info['direct_url'], filepath, token=token)
                 file_info['local_file'] = local_file
                 if file_set['type'] == 'single' and asm.is_long_read_file(local_file):
+                    if not 'tags' in file_set:
+                        file_set['tags'] = []
                     if not 'long_read' in file_set['tags']:
                         file_set['tags'].append('long_read') # pacbio or nanopore reads
                 file_set['files'].append(local_file) #legacy
