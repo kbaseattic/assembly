@@ -23,8 +23,9 @@ class BwaAligner(BaseAligner, IPlugin):
         for i, readset in enumerate(self.data.readsets):
             samfile = os.path.join(self.outpath, '{}_{}.sam'.format(os.path.basename(readset.files[0]), i))
             cmd_args = [self.executable, 'mem', '-t', self.process_threads_allowed, contig_file] + readset.files
-            if readset.type == 'paired':
-                cmd_args.append('-p')
+            # Note: -p should not be set for regular paired end reads; maybe for interleaved PE libs
+            # if readset.type == 'paired':
+                # cmd_args.append('-p')
             cmd_args += ['>', samfile]
             self.arast_popen(' '.join(cmd_args), shell=True, overrides=False)
             if not os.path.exists(samfile):

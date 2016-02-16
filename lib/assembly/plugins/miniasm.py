@@ -46,7 +46,7 @@ class MiniasmAssembler(BaseAssembler, IPlugin):
         output = {}
 
         if not fasta_reads:
-            logger.warn('No read file suitable for miniasm')
+            logger.warn('No read file suitable for miniasm; miniasm only works on long reads.')
             return output
 
         # concatenate fasta files
