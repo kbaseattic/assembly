@@ -3,7 +3,7 @@ Name = masurca
 Module = masurca
 
 [Executables]
-executable = masurca/bin/runSRCA.pl
+executable = masurca/bin/masurca
 jellyfish_path = masurca/bin
 sr_path = masurca/bin
 ca_path = masurca/CA/Linux-amd64/bin
@@ -38,4 +38,3 @@ Version = 0.5
 Description = MaSuRCA assembler based on a hybrid graph & overlap based algorithms
 Stages = assembler
 References = 10.1093/bioinformatics/btt476
-
