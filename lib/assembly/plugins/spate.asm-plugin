@@ -1,0 +1,23 @@
+[Core]
+Name = spate
+Module = spate
+
+[Executables]
+executable = spate
+
+[Settings]
+short_name = spt
+filetypes = fasta,fa,fastq,fq
+dashes = 1
+k = 31
+
+[Parameters]
+k = 31
+
+
+[Documentation]
+Author = Sebastien Boisvert
+Version = 0.4
+Description = Deterministic and scalable metagenome assembler
+Stages = assembler
+References = https://github.com/GeneAssembly/biosal

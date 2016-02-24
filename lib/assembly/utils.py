@@ -67,3 +67,16 @@ def load_json_from_file(json_file):
     except (IOError, ValueError) as e:
         raise Error(e)
     return doc
+
+
+def is_non_zero_file(fpath):
+    return True if os.path.isfile(fpath) and os.path.getsize(fpath) > 0 else False
+
+
+def parse_user_from_token(token):
+    user = None
+    if token:
+        match = re.match('^un=([^|]*)', token)
+        if match:
+            user = match.group(1)
+    return user

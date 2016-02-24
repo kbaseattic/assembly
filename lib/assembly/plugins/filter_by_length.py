@@ -8,7 +8,7 @@ from assembly import get_qual_encoding
 
 class FilterByLengthPreprocessor(BasePreprocessor, IPlugin):
     def run(self):
-        """ 
+        """
         Build the command and run.
 
         """
@@ -27,16 +27,16 @@ class FilterByLengthPreprocessor(BasePreprocessor, IPlugin):
                 cmd_string = '{} seq -U -L {} -N {} {} > {}'.format(
                     self.seqtk_bin, self.min, self.end, f, filtered_file)
                 self.arast_popen(cmd_string, cwd=self.outpath, shell=True)
-                if os.path.getsize(filtered_file) == 0:
+                if not os.path.isfile(filtered_file) or os.path.getsize(filtered_file) == 0:
                     raise Exception('Error trimming')
                 new_files.append(filtered_file)
                 new_synced_files.append(synced_file)
-            
+
             if self.sync == 'True':
                 if file_set.type == 'paired' and len(new_files) == 2:
                     # sync
                     raw_file = raw_reads[i].files[0]
-                    cmd_args = [self.sync_bin, raw_file, 
+                    cmd_args = [self.sync_bin, raw_file,
                                 new_files[0], new_files[1],
                                 new_synced_files[0], new_synced_files[1]]
                     self.arast_popen(cmd_args, cwd=self.outpath)
@@ -45,4 +45,3 @@ class FilterByLengthPreprocessor(BasePreprocessor, IPlugin):
                 new_files += new_files
             processed_reads += new_files
         return {'reads': processed_reads}
-

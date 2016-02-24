@@ -1,75 +1,104 @@
 [
     {
-        "a": "0.4",
-        "stages": "post-process",
-        "short_name": "Ss",
-        "extend": "False",
-        "reverse_complement": "False",
-        "k": "-1",
-        "description": "SSPACE pre-assembled contig scaffolder",
-        "m": "-1",
-        "module": "sspace",
-        "n": "-1",
-        "minimum_overlap": "15",
-        "references": "doi:10.1093/bioinformatics/btq683",
+        "limitations": "Updated to 2014 version; may crashes on some datasets (try a modified version in A6)",
+        "name": "a5",
+        "parameters": [],
         "author": "Chris Bun",
-        "version": "1.0",
-        "x": "0",
-        "parameters": [
-            [
-                "a",
-                "0.4"
-            ],
-            [
-                "extend",
-                "False"
-            ],
-            [
-                "k",
-                "-1"
-            ],
-            [
-                "m",
-                "-1"
-            ],
-            [
-                "n",
-                "-1"
-            ],
-            [
-                "minimum_overlap",
-                "15"
-            ],
-            [
-                "x",
-                "0"
-            ]
-        ],
-        "filetypes": "fasta,fa,fastq,fq",
-        "name": "sspace"
+        "modules": "tagdust,sga,idba,sspace",
+        "module": "a5",
+        "version": "1.1",
+        "references": "doi:10.1371/journal.pone.0042304",
+        "stages": "preprocess,assembler,post-process",
+        "filetypes": "fastq,fq,fastq.bz2,fq.bz2",
+        "description": "A5 microbial assembly pipeline"
     },
     {
-        "probcutoff": "0.05",
-        "stages": "preprocess",
-        "name": "trim_sort",
-        "short_name": "dtrim",
+        "limitations": "Does not support reads longer than 255 bp",
+        "name": "a6",
+        "parameters": [],
         "author": "Chris Bun",
-        "module": "trim_sort",
-        "length": "25",
+        "modules": "tagdust,sga,idba,sspace",
+        "short_name": "a6",
+        "module": "a6",
         "version": "1.0",
-        "references": "doi:10.1186/1471-2105-11-485",
-        "parameters": [
-            [
-                "probcutoff",
-                "0.05"
-            ],
-            [
-                "length",
-                "25"
-            ]
-        ],
+        "references": "https://github.com/levinas/a5",
+        "stages": "preprocess,assembler,post-process",
+        "filetypes": "fastq,fq,fastq.bz2,fq.bz2",
+        "description": "Modified A5 microbial assembly pipeline"
+    },
+    {
+        "name": "ale",
+        "parameters": [],
+        "author": "Chris Bun",
+        "short_name": "ale",
+        "module": "ale",
+        "version": "0.1",
+        "references": "doi: 10.1093/bioinformatics/bts723",
+        "stages": "post-process",
+        "filetypes": "bam,sam,fasta,fa",
+        "description": "ALE likelihood-based estimator of assembly quality"
+    },
+    {
+        "name": "bhammer",
+        "parameters": [],
+        "author": "Chris Bun",
+        "short_name": "Bh",
+        "module": "bhammer",
+        "version": "1.0",
+        "references": "doi:10.1089/cmb.2012.0021",
+        "stages": "preprocess",
         "filetypes": "fastq,fq",
-        "description": "DynamicTrim and LengthSort from SolexaQA"
+        "description": "SPAdes component for quality control of sequence data"
+    },
+    {
+        "name": "bowtie2",
+        "parameters": [],
+        "author": "Chris Bun",
+        "module": "bowtie2",
+        "version": "1.0",
+        "references": "doi:10.1038/nmeth.1923",
+        "stages": "post-process",
+        "filetypes": "fastq,fq",
+        "description": "Bowtie2 aligner that maps reads to contigs"
+    },
+    {
+        "name": "bwa",
+        "parameters": [],
+        "author": "Chris Bun",
+        "short_name": "bwa",
+        "module": "bwa",
+        "version": "1.0",
+        "references": "10.1093/bioinformatics/btp324",
+        "stages": "post-process",
+        "filetypes": "fastq,fq",
+        "description": "BWA aligner that maps reads to contigs"
+    },
+    {
+        "stages": "preprocess,assembler,post-process",
+        "name": "discovar",
+        "short_name": "ds",
+        "author": "Fangfang Xia",
+        "contig_threshold": "300",
+        "module": "discovar",
+        "version": "0.1",
+        "references": "http://www.broadinstitute.org/software/discovar/blog",
+        "picard": "/usr/bin/picard-tools",
+        "parameters": [],
+        "filetypes": "fastq,fq",
+        "dashes": "1",
+        "description": "Discovar assembly pipeline for illumina 250+ bp reads"
+    },
+    {
+        "name": "fastqc",
+        "parameters": [],
+        "author": "Chris Bun",
+        "short_name": "fqc",
+        "module": "fastqc",
+        "version": "1.0",
+        "references": "http://www.bioinformatics.babraham.ac.uk/projects/fastqc",
+        "stages": "preprocess",
+        "filetypes": "fastq,fq",
+        "description": "FastQC quality control tool for sequence data"
     },
     {
         "stages": "preprocess",
@@ -100,6 +129,66 @@
         "description": "Length-based sequencing reads filter and trimmer based on seqtk"
     },
     {
+        "name": "gam_ngs",
+        "parameters": [],
+        "author": "Chris Bun",
+        "short_name": "gam",
+        "module": "gam_ngs",
+        "version": "0.1",
+        "references": "doi:10.1186/1471-2105-14-S7-S6",
+        "stages": "post-process",
+        "filetypes": "fasta,fa",
+        "description": "GAM-NGS genomic assemblies merger"
+    },
+    {
+        "stages": "assembler",
+        "name": "idba",
+        "short_name": "idba",
+        "author": "Chris Bun",
+        "scaffold": "True",
+        "max_k": "50",
+        "module": "idba",
+        "version": "1.0",
+        "references": "doi:10.1093/bioinformatics/bts174",
+        "single_lib": "True",
+        "parameters": [
+            [
+                "scaffold",
+                "True"
+            ],
+            [
+                "max_k",
+                "50"
+            ]
+        ],
+        "filetypes": "fasta,fa,fastq,fq",
+        "description": "IDBA iterative graph-based assembler for single-cell and standard data"
+    },
+    {
+        "stages": "assembler",
+        "name": "kiki",
+        "short_name": "ki",
+        "author": "Chris Bun",
+        "contig_threshold": "800",
+        "k": "21",
+        "module": "kiki",
+        "version": "1.0",
+        "references": "https://github.com/GeneAssembly/kiki",
+        "parameters": [
+            [
+                "k",
+                "21"
+            ],
+            [
+                "contig_threshold",
+                "800"
+            ]
+        ],
+        "filetypes": "fasta,fa,fastq,fq",
+        "dashes": "1",
+        "description": "Kiki overlap-based parallel microbial and metagenomic assembler"
+    },
+    {
         "name": "kmergenie",
         "parameters": [],
         "author": "Chris Bun",
@@ -110,42 +199,6 @@
         "stages": "preporcess",
         "filetypes": "fasta,fa,fastq,fq",
         "description": "Informed and automated k-mer size selection for genome assembly"
-    },
-    {
-        "name": "bwa",
-        "parameters": [],
-        "author": "Chris Bun",
-        "short_name": "bwa",
-        "module": "bwa",
-        "version": "1.0",
-        "references": "10.1093/bioinformatics/btp324",
-        "stages": "post-process",
-        "filetypes": "fastq,fq",
-        "description": "BWA aligner that maps reads to contigs"
-    },
-    {
-        "stages": "assembler",
-        "name": "velvet",
-        "short_name": "vt",
-        "author": "Chris Bun",
-        "module": "velvet",
-        "version": "1.0",
-        "auto_insert": "False",
-        "references": "doi:10.1101/gr.074492.107",
-        "base version": "1.2.10",
-        "hash_length": "29",
-        "parameters": [
-            [
-                "auto_insert",
-                "False"
-            ],
-            [
-                "hash_length",
-                "29"
-            ]
-        ],
-        "filetypes": "fasta,fa,fastq,fq",
-        "description": "Velvet de-bruijn graph based assembler"
     },
     {
         "num_threads": "auto",
@@ -201,6 +254,135 @@
         "description": "MaSuRCA assembler based on a hybrid graph & overlap based algorithms"
     },
     {
+        "name": "megahit",
+        "parameters": [
+            [
+                "min_contig_length",
+                "200"
+            ]
+        ],
+        "author": "Sebastien Boisvert",
+        "description": "An ultra-fast single-node solution for large and complex metagenomics assembly via succinct de Bruijn graph",
+        "short_name": "mh",
+        "module": "megahit",
+        "version": "1.0",
+        "references": "doi:10.1093/bioinformatics/btv033",
+        "base version": "0.2.0",
+        "stages": "assembler",
+        "filetypes": "fasta,fa,fastq,fq",
+        "min_contig_length": "200"
+    },
+    {
+        "min_coverage": "2",
+        "stages": "assembler",
+        "name": "miniasm",
+        "short_name": "ma",
+        "min_overlap": "1000",
+        "min_span": "1000",
+        "module": "miniasm",
+        "version": "1.0",
+        "references": "https://github.com/lh3/miniasm",
+        "author": "Fangfang Xia",
+        "base version": "0.1",
+        "parameters": [
+            [
+                "min_coverage",
+                "2"
+            ],
+            [
+                "min_overlap",
+                "1000"
+            ],
+            [
+                "min_span",
+                "1000"
+            ]
+        ],
+        "filetypes": "h5,fasta,fa,fastq,fq",
+        "description": "Ultra-fast long read assembler miniasm by Heng Li"
+    },
+    {
+        "name": "prodigal",
+        "parameters": [],
+        "author": "Chris Bun",
+        "short_name": "pd",
+        "module": "prodigal",
+        "version": "0.5",
+        "references": "doi:10.1186/1471-2105-11-119",
+        "stages": "post-process",
+        "filetypes": "fasta,fa",
+        "description": "Prodigal microbial gene predictor"
+    },
+    {
+        "stages": "post-process",
+        "name": "quast",
+        "short_name": "qu",
+        "author": "Chris Bun",
+        "module": "quast",
+        "scaffold_mode": "False",
+        "version": "1.0",
+        "references": "doi:10.1093/bioinformatics/btt086",
+        "parameters": [
+            [
+                "min_contig",
+                "500"
+            ]
+        ],
+        "filetypes": "fasta,fa",
+        "min_contig": "500",
+        "description": "QUAST assembly quality assessment tool (run by default)"
+    },
+    {
+        "stages": "assembler",
+        "name": "ray",
+        "short_name": "ra",
+        "author": "Fangfang Xia",
+        "k": "31",
+        "module": "ray",
+        "version": "1.0",
+        "references": "doi:10.1186/gb-2012-13-12-r122",
+        "parameters": [
+            [
+                "k",
+                "31"
+            ]
+        ],
+        "filetypes": "fasta,fa,fastq,fq",
+        "dashes": "1",
+        "description": "Ray graph-based parallel microbial and metagenomic assembler"
+    },
+    {
+        "a": "True",
+        "name": "reapr",
+        "parameters": [
+            [
+                "a",
+                "True"
+            ]
+        ],
+        "author": "Chris Bun",
+        "short_name": "re",
+        "module": "reapr",
+        "version": "1.0",
+        "references": "doi:10.1186/gb-2013-14-5-r47",
+        "stages": "post-process",
+        "filetypes": "fasta,fa",
+        "description": "REAPR assembly error recognizer using paired-end reads"
+    },
+    {
+        "name": "sga_ec",
+        "parameters": [],
+        "author": "Chris Bun",
+        "short_name": "sgae",
+        "module": "sga_ec",
+        "dependencies": "sga_preprocess",
+        "references": "doi:10.1101/gr.126953.111",
+        "version": "1.0",
+        "stages": "preprocess",
+        "filetypes": "fastq,fq",
+        "description": "SGA component for error correction (runs subcommands: 'index' & 'correct')"
+    },
+    {
         "min_length": "29",
         "stages": "preprocess",
         "name": "sga_preprocess",
@@ -234,228 +416,12 @@
         "description": "SGA component for preprocessing reads (runs subcommand 'preprocess')"
     },
     {
-        "name": "bhammer",
-        "parameters": [],
-        "author": "Chris Bun",
-        "short_name": "Bh",
-        "module": "bhammer",
-        "version": "1.0",
-        "references": "doi:10.1089/cmb.2012.0021",
-        "stages": "preprocess",
-        "filetypes": "fastq,fq",
-        "description": "SPAdes component for quality control of sequence data"
-    },
-    {
-        "stages": "assembler",
-        "name": "idba",
-        "short_name": "idba",
-        "author": "Chris Bun",
-        "scaffold": "True",
-        "max_k": "50",
-        "module": "idba",
-        "version": "1.0",
-        "references": "doi:10.1093/bioinformatics/bts174",
-        "single_lib": "True",
-        "parameters": [
-            [
-                "scaffold",
-                "True"
-            ],
-            [
-                "max_k",
-                "50"
-            ]
-        ],
-        "filetypes": "fasta,fa,fastq,fq",
-        "description": "IDBA iterative graph-based assembler for single-cell and standard data"
-    },
-    {
-        "name": "prodigal",
-        "parameters": [],
-        "author": "Chris Bun",
-        "short_name": "pd",
-        "module": "prodigal",
-        "version": "0.5",
-        "references": "doi:10.1186/1471-2105-11-119",
-        "stages": "post-process",
-        "filetypes": "fasta,fa",
-        "description": "Prodigal microbial gene predictor"
-    },
-    {
-        "name": "fastqc",
-        "parameters": [],
-        "author": "Chris Bun",
-        "short_name": "fqc",
-        "module": "fastqc",
-        "version": "1.0",
-        "references": "http://www.bioinformatics.babraham.ac.uk/projects/fastqc",
-        "stages": "preprocess",
-        "filetypes": "fastq,fq",
-        "description": "FastQC quality control tool for sequence data"
-    },
-    {
-        "stages": "assembler",
-        "name": "ray",
-        "short_name": "ra",
-        "author": "Fangfang Xia",
-        "k": "31",
-        "module": "ray",
-        "version": "1.0",
-        "references": "doi:10.1186/gb-2012-13-12-r122",
-        "parameters": [
-            [
-                "k",
-                "31"
-            ]
-        ],
-        "filetypes": "fasta,fa,fastq,fq",
-        "dashes": "1",
-        "description": "Ray graph-based parallel microbial and metagenomic assembler"
-    },
-    {
-        "executable": "../../bin/swap/swap",
-        "stages": "assembler",
-        "name": "swap",
-        "short_name": "swp",
-        "author": "Chris Bun",
-        "k": "31",
-        "module": "swap",
-        "version": "1.0",
-        "references": "http://sourceforge.net/projects/swapassembler",
-        "fastq_to_fasta": "../../bin/fastx_toolkit/bin/fastq_to_fasta",
-        "parameters": [
-            [
-                "k",
-                "31"
-            ]
-        ],
-        "filetypes": "fasta,fa,fastq,fq",
-        "description": "SWAP Assembler"
-    },
-    {
-        "name": "gam_ngs",
-        "parameters": [],
-        "author": "Chris Bun",
-        "short_name": "gam",
-        "module": "gam_ngs",
-        "version": "0.1",
-        "references": "doi:10.1186/1471-2105-14-S7-S6",
-        "stages": "post-process",
-        "filetypes": "fasta,fa",
-        "description": "GAM-NGS genomic assemblies merger"
-    },
-    {
-        "name": "ale",
-        "parameters": [],
-        "author": "Chris Bun",
-        "short_name": "ale",
-        "module": "ale",
-        "version": "0.1",
-        "references": "doi: 10.1093/bioinformatics/bts723",
-        "stages": "post-process",
-        "filetypes": "bam,sam,fasta,fa",
-        "description": "ALE likelihood-based estimator of assembly quality"
-    },
-    {
-        "executable": "../../bin/ki",
-        "stages": "assembler",
-        "name": "kiki",
-        "short_name": "ki",
-        "author": "Chris Bun",
-        "contig_threshold": "1000",
-        "k": "29",
-        "module": "kiki",
-        "version": "1.0",
-        "references": "https://github.com/GeneAssembly/kiki",
-        "parameters": [
-            [
-                "k",
-                "29"
-            ],
-            [
-                "contig_threshold",
-                "1000"
-            ]
-        ],
-        "filetypes": "fasta,fa,fastq,fq",
-        "dashes": "1",
-        "description": "Kiki overlap-based parallel microbial and metagenomic assembler"
-    },
-    {
-        "limitations": "Updated to 2014 version; may crashes on some datasets (try a modified version in A6)",
-        "name": "a5",
-        "parameters": [],
-        "author": "Chris Bun",
-        "modules": "tagdust,sga,idba,sspace",
-        "module": "a5",
-        "version": "1.1",
-        "references": "doi:10.1371/journal.pone.0042304",
-        "stages": "preprocess,assembler,post-process",
-        "filetypes": "fastq,fq,fastq.bz2,fq.bz2",
-        "description": "A5 microbial assembly pipeline"
-    },
-    {
-        "name": "tagdust",
-        "parameters": [],
-        "author": "Chris Bun",
-        "short_name": "tag",
-        "module": "tagdust",
-        "version": "1.0",
-        "references": "doi:10.1093/bioinformatics/btp527",
-        "stages": "preprocess",
-        "filetypes": "fasta,fa,fastq,fq",
-        "description": "TagDust sequencing artifacts remover"
-    },
-    {
-        "name": "sga_ec",
-        "parameters": [],
-        "author": "Chris Bun",
-        "short_name": "sgae",
-        "module": "sga_ec",
-        "dependencies": "sga_preprocess",
-        "references": "doi:10.1101/gr.126953.111",
-        "version": "1.0",
-        "stages": "preprocess",
-        "filetypes": "fastq,fq",
-        "description": "SGA component for error correction (runs subcommands: 'index' & 'correct')"
-    },
-    {
-        "stages": "preprocess,assembler",
-        "name": "spades",
-        "short_name": "Sp",
-        "author": "Chris Bun",
-        "read_length": "short",
-        "modules": "bhammer",
-        "mismatch_correction": "True",
-        "module": "spades",
-        "only_assembler": "True",
-        "references": "doi:10.1089/cmb.2012.0021",
-        "version": "1.2",
-        "base version": "3.1.0",
-        "parameters": [
-            [
-                "read_length",
-                "short (short, medium, medium2, long)"
-            ],
-            [
-                "only_assembler",
-                "True (bool)"
-            ],
-            [
-                "mismatch_correction",
-                "True (bool)"
-            ]
-        ],
-        "filetypes": "fasta,fa,fastq,fq",
-        "description": "SPAdes single-cell and standard assembler based on paired de Bruijn graphs"
-    },
-    {
         "genome_size": "5000000",
         "stages": "preprocess,assembler,post-process",
-        "name": "pacbio",
-        "short_name": "pb",
+        "name": "smrt",
+        "short_name": "sm",
         "author": "Fangfang Xia",
-        "module": "pacbio",
+        "module": "smrt",
         "min_long_read_length": "6000",
         "version": "0.5",
         "references": "doi:10.1038/nmeth.2474",
@@ -477,84 +443,186 @@
         ],
         "filetypes": "h5,fastq,fq",
         "dashes": "1",
-        "description": "PacBio non-hybrid assembly pipeline for SMRT long reads"
+        "description": "PacBio SMRT assembly pipeline for long reads"
     },
     {
-        "a": "True",
-        "name": "reapr",
+        "stages": "preprocess,assembler",
+        "name": "spades",
+        "short_name": "Sp",
+        "author": "Chris Bun",
+        "read_length": "short",
+        "modules": "bhammer",
+        "mismatch_correction": "True",
+        "module": "spades",
+        "only_assembler": "True",
+        "references": "doi:10.1089/cmb.2012.0021",
+        "parameters": [
+            [
+                "read_length",
+                "short (short, medium, medium2, long)"
+            ],
+            [
+                "careful",
+                "False (bool)"
+            ],
+            [
+                "only_assembler",
+                "True (bool)"
+            ],
+            [
+                "mismatch_correction",
+                "True (bool)"
+            ]
+        ],
+        "version": "1.2",
+        "base version": "3.5.0",
+        "careful": "False",
+        "filetypes": "fasta,fa,fastq,fq",
+        "description": "SPAdes single-cell and standard assembler based on paired de Bruijn graphs"
+    },
+    {
+        "stages": "assembler",
+        "name": "spate",
+        "short_name": "spt",
+        "author": "Sebastien Boisvert",
+        "k": "31",
+        "module": "spate",
+        "version": "0.4",
+        "references": "https://github.com/GeneAssembly/biosal",
+        "parameters": [
+            [
+                "k",
+                "31"
+            ]
+        ],
+        "filetypes": "fasta,fa,fastq,fq",
+        "dashes": "1",
+        "description": "Deterministic and scalable metagenome assembler"
+    },
+    {
+        "a": "0.4",
+        "stages": "post-process",
+        "short_name": "Ss",
+        "extend": "False",
+        "reverse_complement": "False",
+        "k": "-1",
+        "description": "SSPACE pre-assembled contig scaffolder",
+        "m": "-1",
+        "module": "sspace",
+        "n": "-1",
+        "minimum_overlap": "15",
+        "references": "doi:10.1093/bioinformatics/btq683",
+        "author": "Chris Bun",
+        "version": "1.0",
+        "x": "0",
         "parameters": [
             [
                 "a",
-                "True"
+                "0.4"
+            ],
+            [
+                "extend",
+                "False"
+            ],
+            [
+                "k",
+                "-1"
+            ],
+            [
+                "m",
+                "-1"
+            ],
+            [
+                "n",
+                "-1"
+            ],
+            [
+                "minimum_overlap",
+                "15"
+            ],
+            [
+                "x",
+                "0"
             ]
         ],
-        "author": "Chris Bun",
-        "short_name": "re",
-        "module": "reapr",
-        "version": "1.0",
-        "references": "doi:10.1186/gb-2013-14-5-r47",
-        "stages": "post-process",
-        "filetypes": "fasta,fa",
-        "description": "REAPR assembly error recognizer using paired-end reads"
+        "filetypes": "fasta,fa,fastq,fq",
+        "name": "sspace"
     },
     {
-        "limitations": "Does not support reads longer than 255 bp",
-        "name": "a6",
-        "parameters": [],
-        "author": "Chris Bun",
-        "modules": "tagdust,sga,idba,sspace",
-        "short_name": "a6",
-        "module": "a6",
-        "version": "1.0",
-        "references": "https://github.com/levinas/a5",
-        "stages": "preprocess,assembler,post-process",
-        "filetypes": "fastq,fq,fastq.bz2,fq.bz2",
-        "description": "Modified A5 microbial assembly pipeline"
-    },
-    {
-        "stages": "post-process",
-        "name": "quast",
-        "short_name": "qu",
-        "author": "Chris Bun",
-        "module": "quast",
-        "scaffold_mode": "False",
-        "version": "1.0",
-        "references": "doi:10.1093/bioinformatics/btt086",
+        "name": "swap",
         "parameters": [
             [
-                "min_contig",
-                "500"
+                "k",
+                "31"
             ]
         ],
-        "filetypes": "fasta,fa",
-        "min_contig": "500",
-        "description": "QUAST assembly quality assessment tool (run by default)"
+        "author": "Chris Bun",
+        "k": "31",
+        "short_name": "swp",
+        "module": "swap",
+        "version": "1.0",
+        "references": "http://sourceforge.net/projects/swapassembler",
+        "stages": "assembler",
+        "filetypes": "fasta,fa,fastq,fq",
+        "description": "SWAP Assembler"
     },
     {
-        "name": "bowtie2",
+        "name": "tagdust",
         "parameters": [],
         "author": "Chris Bun",
-        "module": "bowtie2",
+        "short_name": "tag",
+        "module": "tagdust",
         "version": "1.0",
-        "references": "doi:10.1038/nmeth.1923",
-        "stages": "post-process",
-        "filetypes": "fastq,fq",
-        "description": "Bowtie2 aligner that maps reads to contigs"
+        "references": "doi:10.1093/bioinformatics/btp527",
+        "stages": "preprocess",
+        "filetypes": "fasta,fa,fastq,fq",
+        "description": "TagDust sequencing artifacts remover"
     },
     {
-        "executable": "../../bin/discovar",
-        "stages": "preprocess,assembler,post-process",
-        "name": "discovar",
-        "short_name": "ds",
-        "author": "Fangfang Xia",
-        "picard": "/usr/bin/picard-tools",
-        "module": "discovar",
-        "version": "0.1",
-        "references": "http://www.broadinstitute.org/software/discovar/blog",
-        "parameters": [],
+        "probcutoff": "0.05",
+        "stages": "preprocess",
+        "name": "trim_sort",
+        "short_name": "dtrim",
+        "author": "Chris Bun",
+        "module": "trim_sort",
+        "length": "25",
+        "version": "1.0",
+        "references": "doi:10.1186/1471-2105-11-485",
+        "parameters": [
+            [
+                "probcutoff",
+                "0.05"
+            ],
+            [
+                "length",
+                "25"
+            ]
+        ],
         "filetypes": "fastq,fq",
-        "contig_threshold": "300",
-        "dashes": "1",
-        "description": "Discovar assembly pipeline for illumina 250+ bp reads"
+        "description": "DynamicTrim and LengthSort from SolexaQA"
+    },
+    {
+        "stages": "assembler",
+        "name": "velvet",
+        "short_name": "vt",
+        "author": "Chris Bun",
+        "module": "velvet",
+        "version": "1.0",
+        "auto_insert": "False",
+        "references": "doi:10.1101/gr.074492.107",
+        "base version": "1.2.10",
+        "hash_length": "29",
+        "parameters": [
+            [
+                "auto_insert",
+                "False"
+            ],
+            [
+                "hash_length",
+                "29"
+            ]
+        ],
+        "filetypes": "fasta,fa,fastq,fq",
+        "description": "Velvet de-bruijn graph based assembler"
     }
 ]

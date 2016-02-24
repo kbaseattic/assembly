@@ -1,12 +1,11 @@
 import os
 import re
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy.numarray as na
+# import matplotlib
+# matplotlib.use('Agg')
+# import matplotlib.pyplot as plt
 
 import asmtypes
-import shock 
+import shock
 
 class ArastJob(dict):
     """
@@ -20,48 +19,49 @@ class ArastJob(dict):
         self['logfiles'] = []
         self['out_reports'] = []
         self['out_results'] = []
+        self['plugin_output'] = []
 
     def make_plots(self):
         pass
 
-    def plot_ale(self):
-        a_scores = []
-        names = []
-        for pl in self['pipelines']:
-            try:
-                a_scores.append(pl['stats']['ale_score'])
-                names.append(pl['name'])
-            except:
-                pass
-            
-        if len(a_scores) < 2:
-            print ('Not enough ALE scores')
-            return
+    # def plot_ale(self):
+    #     a_scores = []
+    #     names = []
+    #     for pl in self['pipelines']:
+    #         try:
+    #             a_scores.append(pl['stats']['ale_score'])
+    #             names.append(pl['name'])
+    #         except:
+    #             pass
 
-        ## normalize scores
-        old_min = min(a_scores)
-        old_max = max(a_scores)
-        new_min = 5
-        new_max = 100
-        old_range = old_max - old_min
-        new_range = new_max - new_min
-        n_scores = []
-        for a in a_scores:
-            n = (((a - old_min) * new_range) / old_range) + new_min
-            n_scores.append(n)
+    #     if len(a_scores) < 2:
+    #         print ('Not enough ALE scores')
+    #         return
 
-        xlocations = na.array(range(len(n_scores))) + 0.5
-        width = 0.5
-        fig = plt.figure()
-        plt.bar(xlocations, n_scores, width=width, linewidth=0, color='#CC99FF')
-        plt.xticks(xlocations + width/2, names)
-        plt.xlim(0, xlocations[-1]+width*2)
-        plt.title("Relative ALE Scores")
-        plt.yticks(range(0, new_max + 10, 10))
-        ale_fig = os.path.join(self['datapath'], str(self['job_id']), 'ale.png')
-        plt.savefig(ale_fig)
-        return ale_fig
-        
+    #     ## normalize scores
+    #     old_min = min(a_scores)
+    #     old_max = max(a_scores)
+    #     new_min = 5
+    #     new_max = 100
+    #     old_range = old_max - old_min
+    #     new_range = new_max - new_min
+    #     n_scores = []
+    #     for a in a_scores:
+    #         n = (((a - old_min) * new_range) / old_range) + new_min
+    #         n_scores.append(n)
+
+    #     xlocations = na.array(range(len(n_scores))) + 0.5
+    #     width = 0.5
+    #     fig = plt.figure()
+    #     plt.bar(xlocations, n_scores, width=width, linewidth=0, color='#CC99FF')
+    #     plt.xticks(xlocations + width/2, names)
+    #     plt.xlim(0, xlocations[-1]+width*2)
+    #     plt.title("Relative ALE Scores")
+    #     plt.yticks(range(0, new_max + 10, 10))
+    #     ale_fig = os.path.join(self['datapath'], str(self['job_id']), 'ale.png')
+    #     plt.savefig(ale_fig)
+    #     return ale_fig
+
 
     def export(self):
         pass
@@ -83,7 +83,7 @@ class ArastJob(dict):
     def add_pipeline(self, num, modules):
         """ MODULES is a list or dict """
         pipeline = ArastPipeline({'number': num})
-                                
+
         if type(modules) is list:
             for i, module in enumerate(modules):
                 new_module = ArastModule({'number': i+1,
@@ -136,7 +136,7 @@ class ArastJob(dict):
                     os.symlink(f['local_file'], new_file)
                 else: new_file = f['local_file']
                 res = self.upload_file(url, self['user'], token, new_file, filetype=fset.type)
-                f.update({'shock_url': url, 'shock_id': res['data']['id'], 
+                f.update({'shock_url': url, 'shock_id': res['data']['id'],
                           'filename': os.path.basename(new_file)})
                 new_files.append(f)
             fset.update_fileinfo(new_files)
@@ -153,21 +153,21 @@ class ArastJob(dict):
 
     def wasp_data(self):
         """
-        Compatibility layer for wasp data types.  
+        Compatibility layer for wasp data types.
         Scans self for certain data types and populates a FileSetContainer
         """
         all_sets = []
         #### Convert Old Reads Format to ReadSets
-        for set_type in ['reads', 'reference']:
+        for set_type in ['reads', 'reference', 'contigs']:
             if set_type in self:
                 for fs in self[set_type]:
                     ### Get supported set attributes (ins, std, etc)
                     kwargs = {}
-                    for key in ['insert', 'stdev']:
+                    for key in ['insert', 'stdev', 'tags']:
                         if key in fs:
                             kwargs[key] = fs[key]
-                    all_sets.append(asmtypes.set_factory(fs['type'], 
-                                                         [asmtypes.FileInfo(f) for f in fs['files']], 
+                    all_sets.append(asmtypes.set_factory(fs['type'],
+                                                         [asmtypes.FileInfo(f) for f in fs['files']],
                                                          **kwargs))
 
         #### Convert final_contigs from pipeline mode
@@ -176,7 +176,7 @@ class ArastJob(dict):
                 ## Remove left over contigs
                 del(self['contigs'])
                 for contig_data in self['final_contigs']:
-                    all_sets.append(asmtypes.set_factory('contigs', 
+                    all_sets.append(asmtypes.set_factory('contigs',
                                                          [asmtypes.FileInfo(fs,) for fs in contig_data['files']],
                                                          #{'name':contig_data['name']}))
                                                          name=contig_data['name']))
@@ -187,11 +187,11 @@ class ArastJob(dict):
         #         all_sets.append(asmtypes.set_factory(set_type, [asmtypes.FileInfo(fs) for fs in self[set_type]]))
 
         return asmtypes.FileSetContainer(all_sets)
-    
-        
+
+
 class ArastPipeline(dict):
     """ Pipeline object """
-    
+
     def __init__(self, *args):
         dict.__init__(self, *args)
         self['modules'] = []
@@ -214,4 +214,3 @@ class ArastPipeline(dict):
 class ArastModule(dict):
     def __init__(self, *args):
         dict.__init__(self, *args)
-

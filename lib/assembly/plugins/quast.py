@@ -6,13 +6,13 @@ from plugins import BaseAssessment
 from yapsy.IPlugin import IPlugin
 import asmtypes
 
+logger = logging.getLogger(__name__)
+
 class QuastAssessment(BaseAssessment, IPlugin):
     new_version = True
 
     def run(self):
-
         contigsets = self.data.contigsets
-
         for i,c, in enumerate(contigsets):
             c['tags'].append('quast-{}'.format(i+1))
         contigfiles = self.data.contigfiles
@@ -24,7 +24,7 @@ class QuastAssessment(BaseAssessment, IPlugin):
         else: scaffolds = False
 
         ref = self.initial_data.referencefiles or None
-        
+
         cmd_args = [os.path.join(os.getcwd(),self.executable),
                     '--threads', self.process_threads_allowed,
                     '--min-contig', self.min_contig,
@@ -39,17 +39,18 @@ class QuastAssessment(BaseAssessment, IPlugin):
 
         #### Add Contig files ####
         cmd_args += contigfiles
-        cmd_args += ['-l', '"{}"'.format(', '.join([cset.name for cset in contigsets]))]
-        
+        try:
+            cmd_args += ['-l', '"{}"'.format(', '.join([cset.name for cset in contigsets]))]
+        except TypeError: # Contigset has no names
+            pass
 
         #### Run Quast ####
         self.arast_popen(cmd_args)
-        
+
         output = {}
         report = os.path.join(self.outpath, 'report.txt')
         if not os.path.exists(report):
-            print 'No Quast Output'
+            logger.warning('No Quast Output')
             report = None
         else: output['report'] = report
         return output
-    

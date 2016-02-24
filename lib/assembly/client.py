@@ -116,10 +116,16 @@ class Client:
             sys.exit("Invalid job ID: {}".format(job_id))
         return
 
-    def wait_for_job(self, job_id):
+    def wait_for_job(self, job_id, interval=30):
         self.validate_job(job_id)
+        try:
+            interval = int(interval)
+        except ValueError:
+            interval = 30
+        if interval < 2:
+            interval = 2
         while not self.is_job_done(job_id):
-            time.sleep(5)
+            time.sleep(interval)
         return self.get_job_status(1, job_id)
 
     def check_job(self, job_id):
@@ -193,7 +199,6 @@ class Client:
 
     def req(self, url, req_type='get', data=None, ret=None):
         """Authenticated request. Parses CherryPy message and raises HTTPError"""
-        # print "req_{}: {}".format(req_type, url)
         try:
             if req_type == 'get':
                 r = requests.get(url, headers=self.headers)

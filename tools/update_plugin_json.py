@@ -8,7 +8,7 @@ import re
 PLUGIN_DIR = '../lib/assembly/plugins/'
 OUT_JSON = 'ar_modules.json'
 
-plugin_configs = [p for p in os.listdir(PLUGIN_DIR) 
+plugin_configs = [p for p in sorted(os.listdir(PLUGIN_DIR))
                   if re.search('-plugin', p)]
 
 plugins_data = []
@@ -20,6 +20,7 @@ for plugin_config in plugin_configs:
               dict(parser.items('Settings')).items() +
               dict({'parameters' : dict(parser.items('Parameters')).items()}).items() +
               dict(parser.items('Documentation')).items())
+
     plugins_data.append(pd)
 
 with open(OUT_JSON, 'w') as outfile:

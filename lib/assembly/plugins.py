@@ -19,12 +19,14 @@ from Queue import Queue, Empty
 import ConfigParser
 import traceback
 
-
-# A-Rast modules
 import assembly
 import asmtypes
 import pipe as phelper
 import wasp
+
+
+logger = logging.getLogger(__name__)
+
 
 class BasePlugin(object):
     """
@@ -48,7 +50,7 @@ class BasePlugin(object):
         ### !!! This won't work in parallel
         try:
             backup = self._save()
-            logging.info('Previous instance found, backing up.')
+            logger.info('Previous instance found, backing up.')
         except AttributeError: pass
 
         ### Compatibility
@@ -59,8 +61,9 @@ class BasePlugin(object):
         #### If this was an internal plugin run, restore outer plugin logfile
         try:
             self._restore(backup)
-            logging.info('Restored Plugin Object self attributes')
+            logger.info('Restored Plugin Object self attributes')
         except UnboundLocalError: pass
+        output['input_data'] = self.data.readfiles
         return output
 
     def arast_popen(self, cmd_args, overrides=True, **kwargs):
@@ -85,30 +88,24 @@ class BasePlugin(object):
 
         shell = kwargs.get('shell', False)
         if not shell:
-            cmd_human = []
-            for w in cmd_args:
-                if w.endswith('/'):
-                    cmd_human.append(os.path.basename(w[:-1]))
-                else:
-                    cmd_human.append(os.path.basename(w))
-            cmd_string = ''.join(['{} '.format(w) for w in cmd_human])
+            cmd_string = human_readable_command(cmd_args)
         else:
             cmd_string = cmd_args
-
         if cmd_args[0].find('..') != -1 and not shell:
-            # cmd_args[0] = os.path.abspath(cmd_args[0])
             raise Exception("Plugin Config not updated: {}".format(cmd_args[0]))
 
         self.out_module.write("Command: {}\n".format(cmd_string))
-        try: self.out_report.write('Command: {}\n'.format(cmd_string))
-        except: print 'Could not write to report: {}'.format(cmd_string)
+        try:
+            self.out_report.write('Command: {}\n'.format(cmd_string))
+        except Exception as e:
+            logger.error('Could not write to report: {} -- {}'.format(cmd_string, e))
         m_start_time = time.time()
-        print "Command args: {}".format(cmd_args)
-        print "Command line: {}\n".format(cmd_string if shell else " ".join(cmd_args))
+        logger.info("Command line: {}".format(cmd_string if shell else " ".join(cmd_args)))
         try:
             env_copy = os.environ.copy()
             env_copy['OMP_NUM_THREADS'] = self.process_threads_allowed
             p = subprocess.Popen(cmd_args, env=env_copy,
+                                 # cwd=self.outpath,              # weird: adding cwd causes tagdust to fail
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT,
                                  preexec_fn=os.setsid, **kwargs)
@@ -131,10 +128,11 @@ class BasePlugin(object):
                     except Empty:
                         break
                     else: # got line
-                        logging.info(line.strip())
+                        logger.debug(line.strip())
                         self.is_urgent_output(line)
                         self.out_module.write(line)
                 time.sleep(5)
+
             p.wait()
 
             #Flush again
@@ -143,17 +141,22 @@ class BasePlugin(object):
                 except Empty:
                     break
                 else: # got line
-                    logging.info(line)
+                    logger.debug(line.strip())
                     self.is_urgent_output(line)
                     self.out_module.write(line)
 
+            if p.returncode != 0:
+                logger.warn('Process failed with exit code: {}'.format(p.returncode))
+
         except subprocess.CalledProcessError as e:
-            out = 'Process Failed.\nExit Code: {}\nOutput:{}\n'.format(
-                e.returncode, e.output)
+            logger.warn('Process Failed.\nExit Code: {}\nOutput:{}\n'.format(e.returncode, e.output))
+
         m_elapsed_time = time.time() - m_start_time
         m_ftime = str(datetime.timedelta(seconds=int(m_elapsed_time)))
-        try: self.out_report.write('Command: {}\n'.format(m_ftime))
-        except: print 'Could not write to report: {}'.format(cmd_string)
+        try:
+            self.out_report.write('Command: {}\n'.format(m_ftime))
+        except Exception as e:
+            logger.error('Could not write to report: {} -- {}'.format(cmd_string, e))
 
     def is_urgent_output(self, line):
         """
@@ -182,7 +185,7 @@ class BasePlugin(object):
                     kl.pop(i)
                     popped = True
         except:
-            logging.error("Unexpected error in removing executed job to be killed from kill_list")
+            logger.error("Unexpected error in removing executed job to be killed from kill_list")
             raise
         finally:
             self.pmanager.kill_list_lock.release()
@@ -193,7 +196,7 @@ class BasePlugin(object):
     def create_directories(self, job_data):
         datapath = (job_data['datapath'] + '/' + str(job_data['job_id']) +
                     '/' + self.name + '_' + str(uuid.uuid4())) + '/'
-        logging.info("Creating directory: {}".format(datapath))
+        logger.info("Creating directory: {}".format(datapath))
 
         os.makedirs(datapath)
         return datapath
@@ -257,7 +260,6 @@ class BasePlugin(object):
         out_internal = open('{}.{}'.format(self.out_module.name, self.name), 'w')
         plugin_data['out_report'] = self.out_report
         self.plugin_engine = wasp.WaspEngine(self.pmanager, plugin_data)
-
         #### Get default outputs of last module and pass on persistent data
         job_data['wasp_chain']['outpath'] = self.outpath
         if job_data['wasp_chain']['link']:
@@ -305,7 +307,7 @@ class BasePlugin(object):
         return allfiles
 
     def run_checks(self, settings, job_data):
-        logging.info("Doing checks")
+        logger.info("Doing checks")
         # TODO Check binary exists
         # TODO Check data is valid
         pass
@@ -379,7 +381,7 @@ class BasePlugin(object):
 
     def estimate_insert_stdev(self, contig_file, reads, min_lines=4000):
         """ Map READS to CONTIGS using bwa and return insert size """
-        logging.info('Estimating insert size')
+        logger.info('Estimating insert size')
         min_reads = min_lines * 4
         sub_reads = []
         for r in reads:
@@ -395,13 +397,13 @@ class BasePlugin(object):
         exp = '(bwa (contigs {}) (paired {} {}))'.format(contig_file, reads[0], reads[1])
         samfile = self.plugin_engine.run_expression(exp).files[0]
         if os.path.getsize(samfile) == 0:
-            logging.error('Error estimating insert length')
+            logger.error('Error estimating insert length')
             raise Exception('estimate ins failed')
         cmd_args = [self.tools['ins_from_sam'], samfile]
         results = subprocess.check_output(cmd_args)
         insert_size = int(float(re.split('\s|,', results)[9]))
         stdev = int(float(re.split('\=|\s', results)[-2]))
-        logging.info('Estimated Insert Length: {}'.format(insert_size))
+        logger.info('Estimated Insert Length: {}'.format(insert_size))
         return insert_size, stdev
 
     def calculate_genome_size(self, fasta):
@@ -493,7 +495,8 @@ class BasePreprocessor(BasePlugin):
             for extra in output['extra']:
                 readsets.append(asmtypes.set_factory('single', extra,
                                                      name='{}_single'.format(self.name)))
-        except Exception as e: print e
+        except Exception as e:
+            logger.warn('Wasp handles extra output: {}'.format(e))
         return {'reads': readsets}
 
     # Must implement run() method
@@ -614,15 +617,15 @@ class BaseAligner(BasePlugin):
 
 
 class ModuleManager():
-    def __init__(self, threads, kill_list, kill_list_lock, job_list, binpath):
+    def __init__(self, threads, kill_list, kill_list_lock, job_list, binpath, modulebin):
         self.threads = threads
         self.kill_list = kill_list
         self.kill_list_lock = kill_list_lock
         self.job_list = job_list # Running jobs
         self.binpath = binpath
+        self.module_bin_path = modulebin
 
         self.root_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..'))
-        self.module_bin_path = os.path.join(self.root_path, "module_bin")
         self.plugin_path = os.path.join(self.root_path, "lib", "assembly", "plugins")
 
         self.pmanager = PluginManager()
@@ -650,13 +653,13 @@ class ModuleManager():
                 for binary in full_execs:
                     if not os.path.exists(binary[1]):
                         if float(version) < 1:
-                            print '[Warning]: {} (v{}) -- Binary does not exist for beta plugin -- {}'.format(plugin.name, version, binary[1])
+                            logger.warn('Third-party binary does not exist for beta plugin: {} (v{}) -- {}'.format(plugin.name, version, binary[1]))
                         else:
-                            raise Exception('[ERROR]: {} (v{})-- Binary does not exist -- {}'.format(plugin.name, version, binary[1]))
+                            raise Exception('ERROR: Third-party binary does not exist for beta plugin: {} (v{}) -- {}'.format(plugin.name, version, binary[1]))
                 self.executables[plugin.name] = full_execs
             except ConfigParser.NoSectionError: pass
             plugins.append(plugin.name)
-        print "Plugins found [{}]: {}".format(num_plugins, sorted(plugins))
+        logger.info("Plugins found [{}]: {}".format(num_plugins, sorted(plugins)))
 
 
     def run_proc(self, module, wlink, job_data, parameters):
@@ -700,6 +703,10 @@ class ModuleManager():
         if not wlink.output:
             raise Exception('"{}" module failed to produce {}'.format(module, ot))
 
+        ### Store any output values in job_data
+        data = {'module': module,
+                'module_output': output}
+        job_data['plugin_output'].append(data)
 
     def output_type(self, module):
         return self.pmanager.getPluginByName(module).plugin_object.OUTPUT
@@ -744,7 +751,7 @@ class ModuleManager():
 
     def has_plugin(self, plugin):
         if not plugin.lower() in self.plugins:
-            logging.error("{} plugin not found".format(plugin))
+            logger.error("{} plugin not found".format(plugin))
             return False
         return True
 
@@ -796,3 +803,20 @@ def update_settings(settings, new_dict):
         else:
             updated.append(tup)
     return updated
+
+def human_readable_command(cmd_args):
+    cmd_human = []
+    for w in cmd_args:
+        if ' ' in w:
+            sub_args = w.split()
+            sub_cmd = ' '.join([path_base(x) for x in sub_args])
+            cmd_human.append('"' + sub_cmd + '"')
+        else:
+            cmd_human.append(path_base(w))
+    return ' '.join(cmd_human)
+
+def path_base(path):
+    if path.endswith('/'):
+        return os.path.basename(path[:-1])
+    else:
+        return os.path.basename(path)

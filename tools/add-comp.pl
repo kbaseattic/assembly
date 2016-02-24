@@ -22,7 +22,7 @@ Options:
 Compute server components:
       basic        - basic dependencies (apt-get, pip, cpan, etc)
       regular      - regular components (modules to be deployed on all compute nodes)
-      special      - special components (large modules: pacbio, allpathslg, etc)
+      special      - special components (large modules: smrt, allpathslg, etc)
       all          - all components
 
       a5           - A5 pipeline (v.20140604)
@@ -32,7 +32,7 @@ Compute server components:
       bowtie2      - Bowtie aligner (v2.1)
       bwa          - BWA aligner (git)
       discovar     - Discovar assembler (FTP latest)
-      fastqc       - FastQC quality control (v0.10.1)
+      fastqc       - FastQC quality control (v0.11.2)
       fastx        - FastX preprocessing toolkit (v0.0.13)
       gam_ngs      - GAM-NGS assembler merger (git)
       idba         - IDBA_UD assembler (v1.1.1)
@@ -40,14 +40,17 @@ Compute server components:
       kiki         - Kiki assembler (git)
       kmergenie    - KmerGenie (v1.6663)
       masurca      - MaSuRCA assembler (v2.2.1)
-      pacbio       - SMRT Analysis Software (v2.1.1)
+      megahit      - MEGAHIT assembler (git)
+      miniasm      - MiniASM assembler for long noisy reads (git)
       prodigal     - Prodigal Prokaryotic Gene Prediction (v2.60)
       quast        - QUAST assembly evaluator (v2.3)
       ray          - Ray assembler (git)
       reapr        - REAPR reference-free evaluator (v1.0.17)
       seqtk        - Modified Seqtk preprocessing toolkit (git)
+      smrt         - SMRT Analysis Software (v2.1.1)
       solexa       - SolexaQA preprocessing tool (v2.1)
-      spades       - SPAdes assembler (v3.1.0)
+      spate        - Spate metagenome assembler (v0.4.1)
+      spades       - SPAdes assembler (v3.6.2)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -66,8 +69,8 @@ GetOptions( 'd|dest=s' => \$dest_dir,
 
 if ($help || @ARGV == 0) { print $usage; exit 0 }
 
-my @regular_comps = qw (basic a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca quast prodigal ray reapr seqtk solexa spades velvet);
-my @special_comps = qw (allpathslg discovar pacbio jgi_rqc);
+my @regular_comps = qw (a5 a6 ale bowtie2 bwa fastqc fastx gam_ngs idba kiki kmergenie masurca megahit miniasm quast prodigal ray reapr seqtk solexa spades velvet);
+my @special_comps = qw (allpathslg discovar jgi_rqc smrt spate);
 my @extra_depends = qw (cmake3);
 
 my @all_comps = (@regular_comps, @special_comps);
@@ -122,7 +125,7 @@ sub install_template {
 
 sub install_basic {
     my @apt = qw(python-nova build-essential python-pip rabbitmq-server git mongodb cmake zlib1g-dev mpich2 samtools openjdk-7-jre subversion python-matplotlib unzip r-base unp cpanminus picard-tools gcc-4.7 g++-4.7 graphviz csh pkg-config sparsehash libboost-all-dev gawk);
-    my @pip = qw(pika python-daemon pymongo requests yapsy numpy biopython);
+    my @pip = qw(pika python-daemon pymongo requests yapsy numpy biopython requests_toolbelt);
 
     # run("apt-get -q -y update");
     run("apt-get -y install " . join(" ", @apt));
@@ -200,7 +203,7 @@ sub install_discovar {
 
 sub install_fastqc {
     my $dir = 'FastQC';
-    my $file = 'fastqc_v0.10.1.zip';
+    my $file = 'fastqc_v0.11.2.zip';
     download($dir, $file, 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc');
     run("chmod a+x $dir/fastqc");
     run("cp -r $dir $dest_dir/");
@@ -242,6 +245,18 @@ sub install_kiki {
     run("cp bin/ki $dest_dir/");
 }
 
+sub install_spate {
+    my $app = "spate";
+    my $version = "0.4.1";
+    my $tag = "v$version";
+    my $file = "$tag.tar.gz";
+    my $url = "https://github.com/GeneAssembly/biosal/archive";
+    download($tag, $file, $url);
+    chdir("biosal-$version");
+    run("make -j applications/spate_metagenome_assembler/spate");
+    run("cp applications/spate_metagenome_assembler/spate $dest_dir/");
+}
+
 sub install_kmergenie {
     my $dir = 'kmergenie-1.6663';
     my $file = "$dir.tar.gz";
@@ -259,7 +274,22 @@ sub install_masurca {
     run("cp -r -T $dir $dest_dir/masurca");
 }
 
-sub install_pacbio {
+sub install_miniasm {
+    git("git://github.com/lh3/minimap");
+    git("git://github.com/lh3/miniasm");
+    run("cd minimap; make clean; make -j");
+    run("cd miniasm; make clean; make -j");
+
+    run("wget http://lh3lh3.users.sf.net/download/pls2fasta && chmod 755 pls2fasta");
+    run("wget https://github.com/levinas/soot/raw/master/misc/gfa2fasta.pl && chmod 755 gfa2fasta.pl");
+
+    run("cp minimap/minimap $dest_dir/");
+    run("cp miniasm/miniasm $dest_dir/");
+    run("cp pls2fasta $dest_dir/");
+    run("cp gfa2fasta.pl $dest_dir/");
+}
+
+sub install_smrt {
     my $dir = 'smrtanalysis-2.1.1';
     my $file = '2tqk61';
     my $url = 'http://programs.pacificbiosciences.com/l/1652/2013-11-05';
@@ -404,22 +434,30 @@ sub install_solexa {
 
 sub install_spades {
     check_gcc();
-    my $dir = 'SPAdes-3.1.0';
+    my $dir = 'SPAdes-3.6.2-Linux';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.1.0');
-    chdir($dir);
-    run("PREFIX=$tmp_dir/$dir/install ./spades_compile.sh");
-    run("chmod 755 install/bin/spades.py");
-    run("cp -r -T install $dest_dir/spades");
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.6.2');
+    run("cp -r -T SPAdes-3.6.2-Linux $dest_dir/spades");
 }
 
 sub install_velvet {
     git("git://github.com/dzerbino/velvet.git");
     chdir("velvet");
     run("rm -f obj/*.o");
-    run("make -j 'CATEGORIES=9' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1' -j zlib velveth velvetg");
+    run("make -j 'CATEGORIES=9' 'BIGASSEMBLY=1' 'MAXKMERLENGTH=99' 'LONGSEQUENCES=1' 'OPENMP=1' -j zlib velveth velvetg");
     run("cp velveth $dest_dir/");
     run("cp velvetg $dest_dir/");
+}
+
+sub install_megahit {
+    git("git://github.com/voutcn/megahit.git");
+    run("cd megahit; make clean; make -j");
+    run("mkdir -p $dest_dir/megahit");
+
+    my @products = qw(megahit megahit_toolkit megahit_sdbg_build megahit_asm_core);
+    for my $product (@products) {
+        run("cp megahit/$product $dest_dir/megahit/");
+    }
 }
 
 sub check_gcc {
@@ -474,9 +512,11 @@ sub git {
 sub download {
     my ($dir, $file, $url) = @_;
     $dir && $file && $url or die "Subroutine download needs three paramters: dir, file, url";
+
     run("rm -rf $file $dir");
     print("wget $url/$file\n");
     run("wget $url/$file");
+
     if ($file =~ /\.zip$/) {
         run("unzip -o $file");
     } elsif ($file =~ /(\.tar\.gz|\.tgz|\.tar\.bz2)$/) {

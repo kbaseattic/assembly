@@ -7,7 +7,7 @@ Getopt::Long::Configure("pass_through");
 
 my $usage = <<End_of_Usage;
 
-Usage: ar-run  [-h] 
+Usage: ar-run  [-h]
                [-f [SINGLE [SINGLE ...]]]
                [--pair [PAIR [PAIR ...]]]
                [--pair_url [PAIR_URL [PAIR_URL ...]]]
@@ -26,23 +26,23 @@ Usage: ar-run  [-h]
 Run an Assembly RAST job
 
 Optional arguments:
-  -h, --help            show this help message and exit
+  -h, --help            Show this help message and exit
   -s server_addr        Specify ARAST server address
   -a [ASSEMBLERS [ASSEMBLERS ...]], --assemblers [ASSEMBLERS [ASSEMBLERS ...]]
-                        specify assemblers to use. None will invoke automatic
+                        Specify assemblers to use. None will invoke automatic
                         mode
   -p [PIPELINE [PIPELINE ...]], --pipeline [PIPELINE [PIPELINE ...]]
-                        invoke a pipeline. None will invoke automatic mode
+                        Invoke a pipeline. None will invoke automatic mode
   -r [RECIPE [RECIPE ...]], --recipe [RECIPE [RECIPE ...]]
-                        invoke a recipe
+                        Invoke a recipe
   -w [WASP [WASP ...]], --wasp [WASP [WASP ...]]
-                        invoke a wasp expression
+                        Invoke a wasp expression
   -m MESSAGE, --message MESSAGE
                         Attach a description to job
   --data DATA_ID        Reuse uploaded data
   --data-json JSON      Reuse uploaded data from a json file
   --reference [REFERENCE [REFERENCE ...]]
-                        specify sequence file(s)
+                        Specify sequence file(s)
   --reference_url [REFERENCE_URL [REFERENCE_URL ...]]
                         Specify a URL for a reference contig file and parameters
   --pair [PAIR [PAIR ...]]
@@ -54,6 +54,8 @@ Optional arguments:
                         Specify a single end file and parameters
   --single_url [SINGLE_URL [SINGLE_URL ...]]
                         Specify a URL for a single end file and parameters
+  --contigs [CONTIGS [CONTIGS ...]]
+                        Specify a contig file
   --curl                Use curl for http requests
 
 End_of_Usage
@@ -77,7 +79,7 @@ my $have_data;
 my $argv;
 for (@ARGV) {
     if (/ /) { $argv .= "\"$_\" " } else { $argv .= "$_ " }
-    $have_data = 1 if /(-f|--single|--single_url|--pair|--pair_url|--data)\b/;
+    $have_data = 1 if /(-f|--single|--single_url|--pair|--pair_url|--data|--contigs)\b/;
 }
 
 if (!$have_data) {
@@ -88,4 +90,3 @@ if (!$have_data) {
 }
 
 !system "$arast run $argv" or die $!."\n";
-

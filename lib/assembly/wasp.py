@@ -13,6 +13,8 @@ import assembly as utils
 import asmtypes
 import wasp_functions as wf
 
+logger = logging.getLogger(__name__)
+
 Symbol = str
 
 class Env(dict):
@@ -36,13 +38,14 @@ class Env(dict):
             self.meta = meta
             self.global_data = {'stage': 1,
                                 'stages': 0}
+
             self.plugins = []
             self.exceptions = []
             self.errors = []
 
         self.parameters = {}
         ### Updata job status
-        
+
     def find(self, var):
         "Find the innermost Env where var appears."
         return self if var in self else self.outer.find(var)
@@ -51,23 +54,23 @@ class Env(dict):
         "Increment the stage and update the status"
         if module in self.plugins:
             try:
-                self.meta.update_job(self.uid, 'status', 
-                                     'Stage {}/{}: {}'.format(self.global_data['stage'], 
+                self.meta.update_job(self.uid, 'status',
+                                     'Stage {}/{}: {}'.format(self.global_data['stage'],
                                                               self.global_data['stages']
                                                               , module))
                 self.global_data['stage'] += 1
             except: pass
-    
+
 def add_globals(env):
     "Add some Scheme standard procedures to an environment."
     import math, operator as op
     env.update(vars(math)) # sin, sqrt, ...
     env.update(
      {'+':op.add, '-':op.sub, '*':op.mul, '/':op.div, 'not':op.not_,
-      '>':op.gt, '<':op.lt, '>=':op.ge, '<=':op.le, '=':op.eq, 
+      '>':op.gt, '<':op.lt, '>=':op.ge, '<=':op.le, '=':op.eq,
       'equal?':op.eq, 'eq?':op.is_, 'length':len, 'cons':lambda x,y:[x]+y,
-      'car':lambda x:x[0],'cdr':lambda x:x[1:], 'append':op.add,  
-      'list':lambda *x:list(x), 'list?': lambda x:isa(x,list), 
+      'car':lambda x:x[0],'cdr':lambda x:x[1:], 'append':op.add,
+      'list':lambda *x:list(x), 'list?': lambda x:isa(x,list),
       'null?':lambda x:x==[], 'symbol?':lambda x: isa(x, Symbol),
       'slice': lambda x,begin,end: x[begin:end]})
     return env
@@ -82,7 +85,7 @@ def eval(x, env):
         except:
             raise Exception('Module "{}" not found'.format(x))
     elif not isa(x, list):         # constant literal
-        return x                
+        return x
     elif x[0] == 'quote':          # (quote exp)
         (_, exp) = x
         return exp
@@ -94,7 +97,7 @@ def eval(x, env):
         try:
             for exp in x[1:]:
                 eval_files += eval(exp, env).files
-            wlink['default_output'] = asmtypes.set_factory(x[0], eval_files, 
+            wlink['default_output'] = asmtypes.set_factory(x[0], eval_files,
                                                            name='{}_override'.format(x[0]))
         except Exception as e:
             wlink['default_output'] = asmtypes.set_factory(x[0], x[1:])
@@ -102,12 +105,20 @@ def eval(x, env):
     ##################################
 
     elif x[0] == 'if':             # (if test conseq alt)
-        (_, test, conseq, alt) = x
-        return eval((conseq if eval(test, env) else alt), env)
+        if len(x) == 4:
+            (_, test, conseq, alt) = x
+        elif len(x) == 3:
+            (_, test, conseq) = x
+            alt = None
+        if eval(test, env):
+            return eval(conseq, env)
+        elif alt:
+            return eval(alt, env)
+
     elif x[0] == 'set!':           # (set! var exp)
         (_, var, exp) = x
         env.find(var)[var] = eval(exp, env)
-    elif x[0] == 'setparam': 
+    elif x[0] == 'setparam':
         (_, param, value) = x
         try:
             env.parameters[param] = env.find(value)[value]
@@ -115,20 +126,19 @@ def eval(x, env):
             env.parameters[param] = value
     elif x[0] == 'define':         # (define var exp)
         (_, var, exp) = x
-        try: env[var] = eval(exp, env)
-        except Exception as e: 
-            print ' [!] Failed to evaluate definition of "{}": {}'.format(var, e)
-            print traceback.format_exc()
-            env.errors.append(e)
-            env.exceptions.append(traceback.format_exc())
+        try:
+            env[var] = eval(exp, env)
+        except Exception as e:
+            logger.warning('Failed to evaluate definition of "{}": {}'.format(var, e))
+            logger.debug(traceback.format_exc())
             env[var] = None
     elif x[0] == 'sort':
         seq = [link for link in eval(x[1], env) if link is not None and link.output]
-        logging.debug(seq)
+        logger.debug(seq)
         if len(seq) == 1: return seq
         try: pred = x[2]
         except: pred = '<'
-        try: 
+        try:
             k = x[3]
             assert k == ':key'
             lam = x[4]
@@ -148,9 +158,9 @@ def eval(x, env):
         try:
             val = eval(exp, env)
             results = val
-        except Exception as e: 
-            print ' [!]: {} -- {}'.format(to_string(exp), e)
-            print traceback.format_exc()
+        except Exception as e:
+            logger.warn('Failed to evaluate upload of "{}": {}'. format(to_string(exp), e))
+            logger.debug(traceback.format_exc())
             env.errors.append(e)
             env.exceptions.append(traceback.format_exc())
             results = None
@@ -177,7 +187,7 @@ def eval(x, env):
         assert type(chain) is WaspLink
         all_files = utils.ls_recursive(chain['outpath'])
         module = chain['module']
-        chain['default_output'] = asmtypes.set_factory('misc', all_files, 
+        chain['default_output'] = asmtypes.set_factory('misc', all_files,
                                                        name='{}.all_files'.format(module),
                                                        keep_name=True)
         return chain
@@ -190,7 +200,7 @@ def eval(x, env):
             tar_name = '{}.tar.gz'.format(kwargs['name'])
         else: # Generate Tar Name
             tar_name = '{}.tar.gz'.format('_'.join([w['module'] for w in wlinks]))
-            
+
         ### Tag the tarball fileset
         tag = kwargs.get('tag')
         tags = [tag] if tag else []
@@ -201,10 +211,10 @@ def eval(x, env):
         for w in wlinks:
             filelist += w.files
         chain['default_output'] = asmtypes.set_factory(
-            'tar', utils.tar_list(env.outpath, filelist, tar_name), 
+            'tar', utils.tar_list(env.outpath, filelist, tar_name),
             name=tar_name, keep_name=True, tags=tags)
         return chain
-        
+
     elif x[0] == 'begin':          # (begin exp*) Return each intermediate
         inner_env = Env(outer=env)
         val = []
@@ -214,20 +224,27 @@ def eval(x, env):
                 if ret:val.append(ret)
             except Exception as e:
                 if list(e):
-                    print(traceback.format_exc())
+                    logger.warning('Failed to eval "{}": {}'.format(to_string(exp), e))
+                    logger.debug(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
         if val:
             return val if len(val) > 1 else val[0]
+
+    elif x[0] == 'print':
+        for exp in x[1:]:
+            print eval(exp, env)
+
     elif x[0] == 'prog':          # same as begin, but use same env
         val = []
         for exp in x[1:]:
             try:
                 ret = eval(exp, env)
-                if ret:val.append(ret)
+                if ret: val.append(ret)
             except Exception as e:
                 if list(e):
-                    print(traceback.format_exc())
+                    logger.warning('Failed to eval "{}": {}'.format(to_string(exp), e))
+                    logger.debug(traceback.format_exc())
                     env.errors.append(e)
                     env.exceptions.append(traceback.format_exc())
         if val:
@@ -241,7 +258,7 @@ def eval(x, env):
         try: ## Assembly functions
             return proc(*exps, env=env)
         except TypeError as e: ## Built-in functions
-            logging.info(traceback.format_exc())
+            logger.debug(traceback.format_exc())
             return proc(*exps)
 ################ parse, read, and user interaction
 
@@ -259,7 +276,7 @@ def extract_kwargs(exp):
             skip = True
         else:
             stripped.append(x)
-    return stripped, kwargs        
+    return stripped, kwargs
 
 def read(s):
     "Read a Scheme expression from a string."
@@ -303,7 +320,8 @@ def repl(prompt='lis.py> '):
     "A prompt-read-eval-print loop."
     while True:
         val = eval(parse(raw_input(prompt)))
-        if val is not None: print to_string(val)
+        if val is not None:
+            print to_string(val)
 
 def run(exp, env):
     stages = 0
@@ -334,12 +352,12 @@ class WaspLink(dict):
         return self['default_output']
 
     def insert_output(self, output, default_type, module_name):
-        """ Parses the output dict of a completed module and stores the 
+        """ Parses the output dict of a completed module and stores the
         data and information within the WaspLink object """
         filesets = []
         for outtype, outvalue in output.items():
             name = '{}_{}'.format(module_name, outtype)
-            if not type(outvalue) is list: 
+            if not type(outvalue) is list:
                 outvalue = [outvalue]
             ## Store default output
             if default_type == outtype:
@@ -347,7 +365,7 @@ class WaspLink(dict):
                     for out in outvalue:
                         out['tags'].append(module_name)
                     self['default_output'] = outvalue
-                    
+
                 else: # Files
                     self['default_output'] = asmtypes.set_factory(outtype, [asmtypes.FileInfo(f) for f in outvalue],
                                                                   name=name)
@@ -378,9 +396,9 @@ class WaspLink(dict):
 
     def traverse(self):
         if self['link']:
-            print self['default_output']['name']
+            logger.debug("traverse: {}".format(self['default_output']['name']))
             for i,wlink in enumerate(self['link']):
-                print 'link ', i 
+                logger.debug('link: {}'.format(i))
                 wlink.traverse()
 
     def find_module(self, module):
@@ -399,15 +417,20 @@ class WaspEngine():
         self.assembly_env.update({k:self.get_wasp_func(k, job_data) for k in self.pmanager.plugins})
         self.assembly_env.plugins = self.pmanager.plugins
         self.job_data = job_data
-        init_link = WaspLink()
+        reads_link = WaspLink()
+        contigs_link = WaspLink()
         if 'initial_data' not in job_data:
             job_data['initial_data'] = asmtypes.FileSetContainer(job_data.wasp_data().referencesets +
-                                                                 job_data.wasp_data().readsets)
-        init_link['default_output'] = list(job_data['initial_data'].readsets)
-        
-        self.assembly_env.update({self.constants_reads: init_link})
+                                                                 job_data.wasp_data().readsets +
+                                                                 job_data.wasp_data().contigsets)
+        reads_link['default_output'] = list(job_data['initial_data'].readsets)
+        contigs_link['default_output'] = list(job_data['initial_data'].contigsets)
+
+        self.assembly_env.update({self.constants_reads: reads_link})
+        self.assembly_env.update({self.constants_contigs: contigs_link})
         self.assembly_env.update({'arast_score': wf.arast_score,
                                   'has_paired': wf.has_paired,
+                                  'has_short_reads_only': wf.has_short_reads_only,
                                   'n50': wf.n50})
 
     def run_expression(self, exp, job_data=None):
@@ -420,9 +443,10 @@ class WaspEngine():
         if type(w_chain) is not list: # Single
             w_chain = [w_chain]
         for w in self.assembly_env.emissions + w_chain:
-            try: 
+            try:
                 job_data.add_results(w['default_output'])
-            except: print 'Output', w
+            except:
+                logger.warn('Output not added: {}'.format(w))
         job_data['tracebacks'] = [str(e) for e in self.assembly_env.exceptions]
         job_data['errors'] = [str(e) for e in self.assembly_env.errors]
         return w_chain[0]
@@ -453,7 +477,7 @@ def pipelines_to_exp(pipes, job_id):
     add_reads = ['sspace', 'reapr', 'bwa', 'bowtie2']
 
     all_pipes = []
-    for pipe in pipes:        
+    for pipe in pipes:
         exp = 'READS'
         params = []
         for m in pipe:
@@ -479,7 +503,7 @@ def pipelines_to_exp(pipes, job_id):
         #all_pipes.append(exp)
         all_pipes.append(exp)
 
-        
+
     #### Check for duplicates and redefine
     val_num = 0
     replacements = []
@@ -503,7 +527,7 @@ def pipelines_to_exp(pipes, job_id):
     for replacement in replacements:
         for i, pipe in enumerate(all_pipes):
             all_pipes[i] = pipe.replace(*replacement)
-    
+
     #### Form final expression
     ranked_upload = '(upload (sort (list {}) > :key (lambda (c) (arast_score c))))'.format(' '.join(all_pipes))
     final_exp = '(begin {} (tar (all_files (quast {})) :name {}_analysis :tag quast))'.format(' '.join(defs), ranked_upload, job_id)

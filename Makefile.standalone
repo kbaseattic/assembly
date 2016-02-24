@@ -18,7 +18,9 @@ deploy: deploy-client
 
 deploy-client: deploy-libs deploy-scripts
 
-deploy-libs: 
+deploy-compute: deploy-module-bin deploy-libs deploy-scripts
+
+deploy-libs:
 	mkdir -p $(TARGET)/lib
 	rsync --exclude '*.bak*' -arv lib/. $(TARGET)/lib/.
 
@@ -47,8 +49,11 @@ deploy-scripts:
 	scripts=`$(ABS_PATH_SCRIPT) $(TARGET)/bin`; \
 	echo "Assembly scripts deployed in $$scripts"
 
+deploy-module-bin:
+	mkdir -p $(TARGET)/module_bin
+	rsync -arv module_bin/. $(TARGET)/module_bin/.
+
 test: test-client
 
 test-client:
 	cd test && ./arast.t -d tmp
-

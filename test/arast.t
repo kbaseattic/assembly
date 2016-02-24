@@ -38,7 +38,7 @@ if ($dir) {
     chdir($dir);
 }
 
-my ($ref, $pe1, $pe2, $se);
+my ($ref, $pe1, $pe2, $se, $seb, $pb);
 
 my $testCount = 0;
 foreach my $testname (@tests) {
@@ -57,11 +57,13 @@ sub test_setup {
     $pe1 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_1.fq';
     $pe2 = 'http://www.mcs.anl.gov/~fangfang/arast/b99_2.fq';
     $se  = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq';
+    $seb = 'http://www.mcs.anl.gov/~fangfang/arast/se.fastq.bz2';
+    $pb  = 'http://www.mcs.anl.gov/~fangfang/arast/pacbio.lambda.fa';
 
     sysrun("curl -s $ref > ref.fa");
     sysrun("curl -s $pe1 > p1.fq");
     sysrun("curl -s $pe2 > p2.fq");
-    sysrun("curl -s $se > se.fq");
+    sysrun("curl -s $se  > se.fq");
 }
 
 sub test_simple_cases {
@@ -81,7 +83,7 @@ sub test_simple_cases {
     sysrun("ar-stat --list-data > stat.data.3");
 
     sysrun("ar-upload -f se.fq -m 'my test data' > data.4");
-    sysrun("ar-run -a velvet --single_url $se | ar-get --wait --pick > contigs.4");
+    sysrun("ar-run -a velvet --single_url $seb | ar-get --wait --pick > contigs.4");
     validate_contigs('contigs.4');
 
     sysrun("ar-upload --single se.fq --cov 10 --gs 1000000 > data.5");
@@ -89,8 +91,10 @@ sub test_simple_cases {
     sysrun("ar-stat -l > stat.data.5");
     sysrun("ar-filter -c 2.5 -l 500 < contigs.5 > filter.5"); validate_contigs('filter.5');
 
+    sysrun("ar-run --contigs contigs.4 filter.5 -r contig_compare -m compare_contigs_4vs5 | ar-get -w -r >report.4vs5"); validate_report('report.4vs5');
+
     sysrun("ar-upload --pair p1.fq p2.fq insert=300 stdev=100 > data.6");
-    sysrun("cat data.6 | ar-run -p kiki -m 'k sweep' -p 'none tagdust' velvet ?hash_length=29-37:4 > job.6");
+    sysrun("cat data.6 | ar-run -p megahit -m 'k sweep' -p 'none tagdust' velvet ?hash_length=29-37:4 > job.6");
     sysrun("ar-stat -n 9999 -d > stat.detail.6");
     sysrun('ar-stat --job $(cat data.6|sed "s/[^0-9]*//g") > stat.data.json.6');
 
@@ -103,6 +107,7 @@ sub test_simple_cases {
     sysrun('ar-kill -j $(cat job.7|sed "s/[^0-9]*//g")');
 
     sysrun('cat data.6 | tee data.8 | ar-run -a a5 a6 > job.8');
+    sysrun("ar-run --single_url $pb -m pacbio > job.9");
 
     sysrun("cat job.2 | ar-get -w -a 1");
     sysrun("cat job.2 | ar-get -p > contigs.2"); validate_contigs('contigs.2');
@@ -119,6 +124,8 @@ sub test_simple_cases {
 
     sysrun("cat job.8 | ar-get -w --report > report.8"); validate_report('report.8');
     sysrun("cat job.8 | ar-get -l > log.8"); validate_log('log.8', 1);
+
+    sysrun("cat job.9 | ar-get -w --report > report.9"); validate_report('report.9');
 
     sysrun('ar-stat -j $(cat job.7|sed "s/[^0-9]*//g") > stat.term.7');
     like(`cat stat.term.7`, qr/Terminated/, 'job properly terminated'); $testCount++;
