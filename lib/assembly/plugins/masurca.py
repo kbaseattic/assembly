@@ -19,11 +19,11 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
                                     str(self.job_data['job_id']) + '_config.txt')
         cf = open(config_fname, 'w')
 
-        cf.write('PATHS\n')
-        cf.write('JELLYFISH_PATH={}\n'.format(self.jellyfish_path))
-        cf.write('SR_PATH={}\n'.format(self.sr_path))
-        cf.write('CA_PATH={}\n'.format(self.ca_path))
-        cf.write('END\n')
+        # cf.write('PATHS\n')
+        # cf.write('JELLYFISH_PATH={}\n'.format(self.jellyfish_path))
+        # cf.write('SR_PATH={}\n'.format(self.sr_path))
+        # cf.write('CA_PATH={}\n'.format(self.ca_path))
+        # cf.write('END\n')
 
         cf.write('DATA\n')
         for readset in self.data.readsets_paired:
