@@ -53,7 +53,7 @@ class VelvetAssembler(BaseAssembler, IPlugin):
 
         self.arast_popen(cmd_args)
 
-        cmd_args = [self.bin_velvetg, self.outpath, '-exp_cov', 'auto']
+        cmd_args = [self.bin_velvetg, self.outpath, '-exp_cov', 'auto', '-scaffolding', 'no']
 
         ## Velvet only supports one library?
 
