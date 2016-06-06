@@ -302,6 +302,41 @@
         "description": "Ultra-fast long read assembler miniasm by Heng Li"
     },
     {
+        "stages": "preprocess,assembler",
+        "name": "plasmid_spades",
+        "short_name": "Sp",
+        "author": "Fangfang Xia",
+        "read_length": "short",
+        "modules": "bhammer",
+        "mismatch_correction": "True",
+        "module": "plasmid_spades",
+        "only_assembler": "True",
+        "references": "doi:http://dx.doi.org/10.1101/048942",
+        "parameters": [
+            [
+                "read_length",
+                "short (short, medium, medium2, long)"
+            ],
+            [
+                "careful",
+                "False (bool)"
+            ],
+            [
+                "only_assembler",
+                "True (bool)"
+            ],
+            [
+                "mismatch_correction",
+                "True (bool)"
+            ]
+        ],
+        "version": "1.0",
+        "base version": "3.8.0",
+        "careful": "False",
+        "filetypes": "fasta,fa,fastq,fq",
+        "description": "plasmidSPAdes: Assembling Plasmids from Whole Genome Sequencing Data"
+    },
+    {
         "name": "prodigal",
         "parameters": [],
         "author": "Chris Bun",
@@ -474,8 +509,8 @@
                 "True (bool)"
             ]
         ],
-        "version": "1.2",
-        "base version": "3.5.0",
+        "version": "1.5",
+        "base version": "3.8.0",
         "careful": "False",
         "filetypes": "fasta,fa,fastq,fq",
         "description": "SPAdes single-cell and standard assembler based on paired de Bruijn graphs"
