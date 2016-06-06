@@ -22,8 +22,8 @@ read_length = short (short, medium, medium2, long)
 
 [Documentation]
 Author = Chris Bun
-Version = 1.2
-Base version = 3.5.0
+Version = 1.5
+Base version = 3.8.0
 Description = SPAdes single-cell and standard assembler based on paired de Bruijn graphs
 Stages = preprocess,assembler
 Modules = bhammer
