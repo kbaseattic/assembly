@@ -1,0 +1,30 @@
+[Core]
+Name = plasmid_spades
+Module = plasmid_spades
+
+[Executables]
+executable = spades/bin/spades.py
+
+[Settings]
+short_name = Sp
+filetypes = fasta,fa,fastq,fq
+only_assembler = True
+mismatch_correction = True
+read_length = short
+careful = False
+
+[Parameters]
+only_assembler = True (bool)
+mismatch_correction = True (bool)
+careful = False (bool)
+read_length = short (short, medium, medium2, long)
+
+
+[Documentation]
+Author = Fangfang Xia
+Version = 1.0
+Base version = 3.8.0
+Description = plasmidSPAdes: Assembling Plasmids from Whole Genome Sequencing Data
+Stages = preprocess,assembler
+Modules = bhammer
+References = doi:http://dx.doi.org/10.1101/048942
