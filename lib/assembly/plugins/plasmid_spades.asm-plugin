@@ -1,6 +1,6 @@
 [Core]
-Name = spades
-Module = spades
+Name = plasmid_spades
+Module = plasmid_spades
 
 [Executables]
 executable = spades/bin/spades.py
@@ -21,10 +21,10 @@ read_length = short (short, medium, medium2, long)
 
 
 [Documentation]
-Author = Chris Bun
-Version = 1.5
+Author = Fangfang Xia
+Version = 1.0
 Base version = 3.8.0
-Description = SPAdes single-cell and standard assembler based on paired de Bruijn graphs
+Description = plasmidSPAdes: Assembling Plasmids from Whole Genome Sequencing Data
 Stages = preprocess,assembler
 Modules = bhammer
-References = doi:10.1089/cmb.2012.0021
+References = doi:http://dx.doi.org/10.1101/048942

@@ -50,7 +50,7 @@ Compute server components:
       smrt         - SMRT Analysis Software (v2.1.1)
       solexa       - SolexaQA preprocessing tool (v2.1)
       spate        - Spate metagenome assembler (v0.4.1)
-      spades       - SPAdes assembler (v3.6.2)
+      spades       - SPAdes assembler (v3.8.0)
       velvet       - Velvet assembler (git)
 
 Examples:
@@ -434,10 +434,10 @@ sub install_solexa {
 
 sub install_spades {
     check_gcc();
-    my $dir = 'SPAdes-3.6.2-Linux';
+    my $dir = 'SPAdes-3.8.0-Linux';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.6.2');
-    run("cp -r -T SPAdes-3.6.2-Linux $dest_dir/spades");
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.8.0');
+    run("cp -r -T SPAdes-3.8.0-Linux $dest_dir/spades");
 }
 
 sub install_velvet {
