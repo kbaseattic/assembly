@@ -38,8 +38,8 @@ class SpadesAssembler(BaseAssembler, IPlugin):
 
         lib_num = 1
         for readset in self.data.readsets_single:
-            platform = readset.platform.lower()
-            if platform in ['sanger', 'pacbio', 'nanopore']:
+            platform = readset.platform
+            if platform and platform.lower() in ['sanger', 'pacbio', 'nanopore']:
                 cmd_args += ['--'+platform, readset.files[0]]
                 continue
             if lib_num > 5:
