@@ -38,17 +38,22 @@ class SpadesAssembler(BaseAssembler, IPlugin):
 
         lib_num = 1
         for readset in self.data.readsets_single:
+            platform = readset.platform.lower()
+            if platform in ['sanger', 'pacbio', 'nanopore']:
+                cmd_args += ['--'+platform, readset.files[0]]
+                continue
             if lib_num > 5:
                 logger.warning('> 5 singles not supported!')
                 self.out_module.write('> 5 singles not supported!')
                 break
-            # single_num = lib_num if lib_num < 5 else 5
-            # cmd_args += ['--pe{}-s'.format(single_num), readset.files[0]]
             cmd_args += ['--s{}'.format(lib_num), readset.files[0]]
             lib_num += 1
 
         if self.only_assembler == 'True':
             cmd_args.append('--only-assembler')
+
+        if self.read_length == 'short' or self.read_length == '100':
+            cmd_args += ['-k', '21,33,55']
 
         if self.read_length == 'medium' or self.read_length == '150':
             cmd_args += ['-k', '21,33,55,77']
@@ -61,6 +66,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
 
         cmd_args += ['-o', self.outpath]
         cmd_args += ['-t', self.process_threads_allowed]  # number of threads = 4
+
         if self.mismatch_correction == 'True':
             cmd_args.append('--mismatch-correction')
         if self.careful == 'True':
