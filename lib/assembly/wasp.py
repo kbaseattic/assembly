@@ -193,6 +193,8 @@ def eval(x, env):
         return chain
     elif x[0] == 'tar': ## Tar outputs from WaspLink(s)
         bare_exp, kwargs = extract_kwargs(x)
+        print 'tar'
+        print bare_exp
         wlinks = [eval(exp, env) for exp in bare_exp[1:]]
 
         ### Format tarball name

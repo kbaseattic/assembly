@@ -18,19 +18,12 @@ class ReaprAssessment(BaseAssessment, IPlugin):
         if len(contigs) > 1:
             raise Exception('Reapr: multiple contig files!')
 
-        #### Fix contig headers
-        target_contigs_prefix = contigs[0] + '.facheck'
-        target_contigs = target_contigs_prefix + '.fa'
-        if not os.path.exists(target_contigs):
-            cmd_args = [self.executable, 'facheck', contigs[0], target_contigs_prefix]
-            self.arast_popen(cmd_args)
-
         #### Generate Bamfiles
         if len(reads) > 1:
             self.out_module.write('WARNING: Reapr will use only one read library')
         read_pair = reads[0].files
         bamfile =  os.path.join(self.outpath, 'out.bam')
-        cmd_args = [self.executable, 'smaltmap', target_contigs,
+        cmd_args = [self.executable, 'smaltmap', contigs[0],
                     read_pair[0], read_pair[1], bamfile]
         self.arast_popen(cmd_args)
 
@@ -39,7 +32,7 @@ class ReaprAssessment(BaseAssessment, IPlugin):
 
         #### Run REAPR Pipeline
         rpr_outpath = os.path.join(self.outpath, 'output')
-        cmd_args = [self.executable, 'pipeline', target_contigs, bamfile, rpr_outpath]
+        cmd_args = [self.executable, 'pipeline', contigs[0], bamfile, rpr_outpath]
         self.arast_popen(cmd_args)
 
         # Move files into root dir
@@ -48,7 +41,6 @@ class ReaprAssessment(BaseAssessment, IPlugin):
             new = os.path.join(self.outpath, f)
             os.rename(old, new)
 
-        broken = os.path.join(self.outpath, '01.stats.per_base.gz')
-        errors = os.path.join(self.outpath, '03.score.errors.gff.gz')
+        broken = os.path.join(self.outpath, '04.break.broken_assembly.fa')
         if os.path.exists(broken):
-            return {'contigs': [broken, errors]}
+            return {'contigs': [broken]}

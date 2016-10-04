@@ -1,0 +1,22 @@
+[Core]
+Name = reapr
+Module = reapr
+
+[Executables]
+executable = reapr/reapr
+
+[Settings]
+short_name = re
+filetypes = fasta,fa
+a = True
+
+[Parameters]
+a = True
+
+
+[Documentation]
+Author = Chris Bun
+Version = 1.0
+Description = REAPR assembly error recognizer using paired-end reads
+Stages = post-process
+References = doi:10.1186/gb-2013-14-5-r47
