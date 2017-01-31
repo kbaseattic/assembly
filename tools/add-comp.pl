@@ -434,10 +434,10 @@ sub install_solexa {
 
 sub install_spades {
     check_gcc();
-    my $dir = 'SPAdes-3.9.1-Linux';
+    my $dir = 'SPAdes-3.10.0-Linux';
     my $file = "$dir.tar.gz";
-    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.9.1');
-    run("cp -r -T SPAdes-3.9.1-Linux $dest_dir/spades");
+    download($dir, $file, 'http://spades.bioinf.spbau.ru/release3.10.0');
+    run("cp -r -T SPAdes-3.10.0-Linux $dest_dir/spades");
 }
 
 sub install_velvet {

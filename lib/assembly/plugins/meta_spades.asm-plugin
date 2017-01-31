@@ -23,7 +23,7 @@ read_length = auto (auto, short, medium, medium2, long)
 [Documentation]
 Author = Fangfang Xia
 Version = 1.0
-Base version = 3.9.1
+Base version = 3.10.0
 Description = metaSPAdes: a new versatile de novo metagenomics assembler
 Stages = preprocess,assembler
 Modules = bhammer
