@@ -248,6 +248,7 @@ class Shock:
         attr_file = self._create_attr_file(tmp_attr, 'attrs')
         cmd = ['curl',
                '-X', 'POST',
+               '--retry', '2',
                '-F', 'attributes=@{}'.format(attr_file),
                '-F', 'upload=@{}'.format(filename),
                '{}/node/'.format(self.shockurl)]
