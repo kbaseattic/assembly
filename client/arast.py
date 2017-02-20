@@ -21,6 +21,48 @@ from assembly import shock
 from assembly import utils
 from assembly import __version__
 
+COMMAND_VIEW_DATA = 'view-data'
+
+class CommandExecutor:
+    """
+    Execute a command line for the RAST Assembly service.
+    """
+    def __init__(self, arguments, client):
+        self.arguments = arguments
+        self.client = client
+        self._fill_command_table()
+
+    def execute_command(self):
+        command = self.arguments.command
+        function = self._table[command]
+
+        function()
+
+    def _view_data(self):
+        """
+        Display information about a data object uploaded by the
+        user.
+
+        Example:
+        arast view-data --data 18
+
+        This is equivalent to
+
+        arast stat --data 18
+        """
+
+        user = self.client.get_user()
+        data_id = self.arguments.data_id
+
+        print("view-data, user {}, data_id {}".format(user, data_id))
+
+        data_json = self.client.get_data_json(self.arguments.data_id)
+        print(data_json)
+
+    def _fill_command_table(self):
+        self._table = {}
+        self._table[COMMAND_VIEW_DATA] = self._view_data
+
 
 CLIENT_VERSION = __version__
 CLIENT_NAME = 'CLI'
@@ -119,6 +161,10 @@ def get_parser():
 
     # login options
     p_login.add_argument("--rast", action="store_true", help="Log in using RAST account")
+
+    # the view-data command.
+    p_view_data = subparsers.add_parser(COMMAND_VIEW_DATA, description='Inspect data', help='Inspect a dataset using a data identifier.')
+    p_view_data.add_argument("--data", action="store", dest="data_id", help="Data identifier")
 
     return parser
 
@@ -335,6 +381,13 @@ def prepare_assembly_data(args, aclient, usage):
 
 
 def run_command():
+    """
+    Parse the arguments and create a client to handle the work.
+    The Python library argparse has the function set_defaults(function=my_function)
+    to also assign behavior for a given sub-command.
+    However, the client is needed by all of the cmd_* commands anyway, so this is
+    presumably why the sub-command routing is done here at the end of this function.
+    """
     parser = get_parser()
     args = parser.parse_args()
     usage = parser.format_usage()
@@ -385,8 +438,10 @@ def run_command():
     elif args.command == 'avail':
         cmd_avail(args, aclient)
     elif args.command == 'kill':
-        print aclient.kill_jobs(args.job)
-
+        print(aclient.kill_jobs(args.job))
+    else:
+        executor = CommandExecutor(args, aclient)
+        executor.execute_command()
 
 def main():
     try:
