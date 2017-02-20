@@ -10,20 +10,20 @@ short_name = Sp
 filetypes = fasta,fa,fastq,fq
 only_assembler = True
 mismatch_correction = True
-read_length = short
+read_length = auto
 careful = False
 
 [Parameters]
 only_assembler = True (bool)
 mismatch_correction = True (bool)
 careful = False (bool)
-read_length = short (short, medium, medium2, long)
+read_length = auto (auto, short, medium, medium2, long)
 
 
 [Documentation]
 Author = Chris Bun
-Version = 1.5
-Base version = 3.8.0
+Version = 1.6
+Base version = 3.10.0
 Description = SPAdes single-cell and standard assembler based on paired de Bruijn graphs
 Stages = preprocess,assembler
 Modules = bhammer

@@ -273,6 +273,41 @@
         "min_contig_length": "200"
     },
     {
+        "stages": "preprocess,assembler",
+        "name": "meta_spades",
+        "short_name": "Ms",
+        "author": "Fangfang Xia",
+        "read_length": "auto",
+        "modules": "bhammer",
+        "mismatch_correction": "False",
+        "module": "meta_spades",
+        "only_assembler": "False",
+        "references": "arXiv:1604.03071",
+        "parameters": [
+            [
+                "read_length",
+                "auto (auto, short, medium, medium2, long)"
+            ],
+            [
+                "careful",
+                "False (bool)"
+            ],
+            [
+                "only_assembler",
+                "False (bool)"
+            ],
+            [
+                "mismatch_correction",
+                "False (bool)"
+            ]
+        ],
+        "version": "1.0",
+        "base version": "3.10.0",
+        "careful": "False",
+        "filetypes": "fasta,fa,fastq,fq",
+        "description": "metaSPAdes: a new versatile de novo metagenomics assembler"
+    },
+    {
         "min_coverage": "2",
         "stages": "assembler",
         "name": "miniasm",
@@ -331,7 +366,7 @@
             ]
         ],
         "version": "1.0",
-        "base version": "3.8.0",
+        "base version": "3.10.0",
         "careful": "False",
         "filetypes": "fasta,fa,fastq,fq",
         "description": "plasmidSPAdes: Assembling Plasmids from Whole Genome Sequencing Data"
@@ -485,7 +520,7 @@
         "name": "spades",
         "short_name": "Sp",
         "author": "Chris Bun",
-        "read_length": "short",
+        "read_length": "auto",
         "modules": "bhammer",
         "mismatch_correction": "True",
         "module": "spades",
@@ -494,7 +529,7 @@
         "parameters": [
             [
                 "read_length",
-                "short (short, medium, medium2, long)"
+                "auto (auto, short, medium, medium2, long)"
             ],
             [
                 "careful",
@@ -509,8 +544,8 @@
                 "True (bool)"
             ]
         ],
-        "version": "1.5",
-        "base version": "3.8.0",
+        "version": "1.6",
+        "base version": "3.10.0",
         "careful": "False",
         "filetypes": "fasta,fa,fastq,fq",
         "description": "SPAdes single-cell and standard assembler based on paired de Bruijn graphs"

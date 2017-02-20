@@ -6,7 +6,7 @@ from yapsy.IPlugin import IPlugin
 
 logger = logging.getLogger(__name__)
 
-class SpadesAssembler(BaseAssembler, IPlugin):
+class MetaSpadesAssembler(BaseAssembler, IPlugin):
     new_version = True
 
     def run(self):
@@ -17,7 +17,7 @@ class SpadesAssembler(BaseAssembler, IPlugin):
         SPAdes takes as input forward-reverse paired-end reads as well as single (unpaired) reads in FASTA or FASTQ format. However, in order to run read error correction, reads should be in FASTQ format. Currently SPAdes accepts <=5 paired-end library, which can be stored in several files or several pairs of files. The number of unpaired libraries is also limited to 5.
         """
 
-        cmd_args = [self.executable]
+        cmd_args = [self.executable, '--meta']
         lib_num = 1
         for readset in self.data.readsets_paired:
             if lib_num > 5:
@@ -38,14 +38,12 @@ class SpadesAssembler(BaseAssembler, IPlugin):
 
         lib_num = 1
         for readset in self.data.readsets_single:
-            platform = readset.platform
-            if platform and platform.lower() in ['sanger', 'pacbio', 'nanopore']:
-                cmd_args += ['--'+platform, readset.files[0]]
-                continue
             if lib_num > 5:
                 logger.warning('> 5 singles not supported!')
                 self.out_module.write('> 5 singles not supported!')
                 break
+            # single_num = lib_num if lib_num < 5 else 5
+            # cmd_args += ['--pe{}-s'.format(single_num), readset.files[0]]
             cmd_args += ['--s{}'.format(lib_num), readset.files[0]]
             lib_num += 1
 
@@ -66,7 +64,6 @@ class SpadesAssembler(BaseAssembler, IPlugin):
 
         cmd_args += ['-o', self.outpath]
         cmd_args += ['-t', self.process_threads_allowed]  # number of threads = 4
-
         if self.mismatch_correction == 'True':
             cmd_args.append('--mismatch-correction')
         if self.careful == 'True':
