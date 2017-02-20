@@ -18,10 +18,10 @@ import utils
 from kbase import typespec_to_assembly_data as kb_to_asm
 from shock import Shock
 
-""" Assembly Service client library. """
-
 
 class Client:
+    """ Assembly Service client library. """
+
     def __init__(self, url, user, token):
         self.url = utils.verify_url(url)
         self.user = user
@@ -31,11 +31,17 @@ class Client:
                         'Accept': 'text/plain'}
         self.shock = None
 
+    def get_user(self):
+       return self.user
+
     def init_shock(self):
         if self.shock is None:
-            shockres = self.req_get('{}/shock'.format(self.url))
+            address = '{}/shock'.format(self.url)
+
+            shockres = self.req_get(address)
             self.shockurl = utils.verify_url(json.loads(shockres)['shockurl'])
             self.shock = Shock(self.shockurl, self.user, self.token)
+
 
     def upload_data_shock(self, filename, curl=False):
         self.init_shock()
@@ -49,6 +55,7 @@ class Client:
 
     def upload_data_file_info(self, filename, curl=False):
         """ Returns FileInfo Object """
+
         self.init_shock()
         res = self.shock.upload_reads(filename, curl=curl)
         return asmtypes.FileInfo(filename, shock_url=self.shockurl, shock_id=res['data']['id'],
