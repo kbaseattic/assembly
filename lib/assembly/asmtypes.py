@@ -84,6 +84,7 @@ class ReadSet(FileSet):
     def __init__(self, set_type, file_infos,  **kwargs):
         self['insert'] = None
         self['stdev'] = None
+        self['platform'] = None
         FileSet.__init__(self, set_type, file_infos, **kwargs)
         self.__dict__.update(kwargs)
         self['type'] = set_type
@@ -95,6 +96,10 @@ class ReadSet(FileSet):
     @property
     def stdev(self):
         return self['stdev']
+
+    @property
+    def platform(self):
+        return self['platform']
 
     def is_long_read(self):
         return 'long_read' in self['tags']

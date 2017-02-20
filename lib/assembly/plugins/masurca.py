@@ -19,11 +19,11 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
                                     str(self.job_data['job_id']) + '_config.txt')
         cf = open(config_fname, 'w')
 
-        cf.write('PATHS\n')
-        cf.write('JELLYFISH_PATH={}\n'.format(self.jellyfish_path))
-        cf.write('SR_PATH={}\n'.format(self.sr_path))
-        cf.write('CA_PATH={}\n'.format(self.ca_path))
-        cf.write('END\n')
+        # cf.write('PATHS\n')
+        # cf.write('JELLYFISH_PATH={}\n'.format(self.jellyfish_path))
+        # cf.write('SR_PATH={}\n'.format(self.sr_path))
+        # cf.write('CA_PATH={}\n'.format(self.ca_path))
+        # cf.write('END\n')
 
         cf.write('DATA\n')
         for readset in self.data.readsets_paired:
@@ -69,7 +69,7 @@ class MasurcaAssembler(BaseAssembler, IPlugin):
         cf.write('USE_LINKING_MATES={}\n'.format(use_linking_mates))
         cf.write('LIMIT_JUMP_COVERAGE = {}\n'.format(self.limit_jump_coverage))
         cf.write('CA_PARAMETERS = {}\n'.format(self.ca_parameters))
-        cf.write('KMER_COUNT_THREASHOLD = {}\n'.format(self.kmer_count_threshold))
+        cf.write('KMER_COUNT_THRESHOLD = {}\n'.format(self.kmer_count_threshold))
         if self.num_threads == 'auto':
             num_threads = self.process_threads_allowed
         else:

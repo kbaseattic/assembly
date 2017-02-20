@@ -12,6 +12,6 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 cd $DIR/..
 
-source env/server-env-for-p3-worker.sh
+source env/server-env-for-kb-worker.sh
 
-server/stop_compute_server
+server/restart_compute_server
