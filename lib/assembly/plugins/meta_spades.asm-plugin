@@ -1,0 +1,30 @@
+[Core]
+Name = meta_spades
+Module = meta_spades
+
+[Executables]
+executable = spades/bin/spades.py
+
+[Settings]
+short_name = Ms
+filetypes = fasta,fa,fastq,fq
+only_assembler = False
+mismatch_correction = False
+read_length = auto
+careful = False
+
+[Parameters]
+only_assembler = False (bool)
+mismatch_correction = False (bool)
+careful = False (bool)
+read_length = auto (auto, short, medium, medium2, long)
+
+
+[Documentation]
+Author = Fangfang Xia
+Version = 1.0
+Base version = 3.10.0
+Description = metaSPAdes: a new versatile de novo metagenomics assembler
+Stages = preprocess,assembler
+Modules = bhammer
+References = arXiv:1604.03071
