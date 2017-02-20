@@ -23,7 +23,7 @@ read_length = short (short, medium, medium2, long)
 [Documentation]
 Author = Fangfang Xia
 Version = 1.0
-Base version = 3.8.0
+Base version = 3.10.0
 Description = plasmidSPAdes: Assembling Plasmids from Whole Genome Sequencing Data
 Stages = preprocess,assembler
 Modules = bhammer
