@@ -3,6 +3,6 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-./stop_service; sleep 1; echo
+./stop_service; sleep 3; echo
 ./start_service
 
