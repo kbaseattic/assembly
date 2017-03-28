@@ -3,5 +3,5 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-./start_control_server && ./start_compute_server
+./start_control_server && sleep 3 && ./start_compute_server
 
