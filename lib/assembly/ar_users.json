@@ -16,6 +16,10 @@
 	"job_limit": -1
     },
     {
+	"user": "jimdavis",
+	"job_limit": 20
+    },
+    {
 	"user": "kbjenkins",
 	"job_limit": 20
     }
