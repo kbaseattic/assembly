@@ -183,7 +183,7 @@ class ArastConsumer:
         logger.debug('New Data Format')
         return self._get_data(body)
 
-    def _get_data(self, body):
+    def _get_data(self, body, try_local=False):
         params = json.loads(body)
         filepath = os.path.join(self.datapath, params['ARASTUSER'],
                                 str(params['data_id']))
@@ -234,16 +234,16 @@ class ArastConsumer:
                 #### File is stored on Shock
                 if file_info['filename']:
                     local_file = os.path.join(filepath, file_info['filename'])
-                    if os.path.exists(local_file):
+                    if try_local and os.path.exists(local_file):
                         local_file = self.extract_file(local_file)
                         logger.info("Requested data exists on node: {}".format(local_file))
                     else:
                         local_file = self.download_shock(file_info['shock_url'], user, token,
-                                                   file_info['shock_id'], filepath)
+                                                         file_info['shock_id'], filepath)
 
                 elif file_info['direct_url']:
                     local_file = os.path.join(filepath, os.path.basename(file_info['direct_url']))
-                    if os.path.exists(local_file):
+                    if try_local and os.path.exists(local_file):
                         local_file = self.extract_file(local_file)
                         logger.info("Requested data exists on node: {}".format(local_file))
                     else:
