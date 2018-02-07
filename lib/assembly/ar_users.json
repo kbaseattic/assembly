@@ -16,6 +16,18 @@
 	"job_limit": -1
     },
     {
+	"user": "fangfang_patricbrc_org",
+	"job_limit": -1
+    },
+    {
+	"user": "brettin_patricbrc_org",
+	"job_limit": -1
+    },
+    {
+	"user": "mshukla_patricbrc_org",
+	"job_limit": -1
+    },
+    {
 	"user": "jimdavis",
 	"job_limit": 20
     },
