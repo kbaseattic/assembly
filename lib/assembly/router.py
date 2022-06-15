@@ -775,7 +775,7 @@ class UserResource(object):
 
     # Pull user id from URL
     def __getattr__(self, name):
-        if name is not ('_cp_config'): #assume username
+        if name != '_cp_config': #assume username
             cherrypy.request.params['userid'] = name
             return self.default
         raise AttributeError("%r object has no attribute %r" % (self.__class__.__name__, name))
